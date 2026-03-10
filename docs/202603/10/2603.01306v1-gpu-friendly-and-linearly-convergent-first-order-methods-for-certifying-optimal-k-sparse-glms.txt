@@ -1,0 +1,3993 @@
+Title: GPU-friendly and Linearly Convergent First-order Methods for Certifying Optimal $k$-sparse GLMs
+
+URL Source: https://arxiv.org/pdf/2603.01306v1
+
+Published Time: Tue, 03 Mar 2026 03:04:12 GMT
+
+Number of Pages: 56
+
+Markdown Content:
+# GPU-friendly and Linearly Convergent First-order Methods for Certifying Optimal k-sparse GLMs 
+
+Jiachang Liu ∗, †, Andrea Lodi ‡, and Soroosh Shafiee †∗Center for Data Science for Enterprise and Society, Cornell University, Ithaca, USA 
+
+> †
+
+School of Operations Research and Information Engineering, Cornell University, Ithaca, USA 
+
+> ‡
+
+Jacobs Technion-Cornell Institute, Cornell Tech and Technion–IIT, New York, USA, 
+
+{jiachang.liu, andrea.lodi, shafiee }@cornell.edu 
+
+Abstract 
+
+We investigate the problem of certifying optimality for sparse generalized linear models (GLMs), where sparsity is enforced through a cardinality constraint. While Branch-and-Bound (BnB) frameworks can certify optimality using perspective relaxations, existing methods for solving these relaxations are computationally intensive, limiting their scalability. To address this challenge, we reformulate the relaxations as composite optimization problems and develop a unified proximal framework that is both linearly convergent and computationally efficient. Under specific geometric regularity conditions, our analysis links primal quadratic growth to dual quadratic decay, yielding error bounds that make the Fenchel duality gap a sharp proxy for progress towards the solution set. This leads to a duality gap-based restart scheme that upgrades a broad class of sublinear proximal methods to provably linearly convergent methods, and applies beyond the sparse GLM setting. For the implicit perspective regularizer, we further derive specialized routines to evaluate the regularizer and its proximal operator exactly in log-linear time, avoiding costly generic conic solvers. The resulting iterations are dominated by matrix–vector multiplications, which enables GPU acceleration. Experiments on synthetic and real-world datasets show orders-of-magnitude faster dual-bound computations and substantially improved BnB scalability on large instances. 
+
+## 1 Introduction 
+
+Sparse generalized linear models (GLMs) are essential tools in machine learning (ML) and statistics, with broad applications in healthcare, finance, engineering, and science. In this paper, we study the global optimization of cardinality-constrained GLMs; a formal formulation is given in Section 2.3. While many scalable approaches rely on convex surrogates (e.g., lasso) or other heuristics, such approximations can yield poor solutions in the presence of high-dimensional or highly correlated features [Liu et al., 2022b, 2023]. This limitation is particularly problematic in high-stakes applications like healthcare, where accuracy, reliability, and interpretability are essential. Therefore, we emphasize the pursuit of certifiably optimal solutions to the exact 
+
+ℓ0-constrained formulation. Such problems are NP-hard, and a standard approach is to solve them with mixed-integer programming using branch-and-bound (BnB), which requires computing valid lower bounds at every node of the search tree. However, the standard big–M relaxation is often weak, leading to loose lower bounds and slow pruning. To address this issue, the perspective relaxation [Ceria and Soares, 1999, G¨ unl¨ uk and Linderoth, 2010, Atamt¨ urk and G´ omez, 2023] has become a popular mechanism for strengthening node relaxations and improving BnB performance. The perspective relaxation yields a tighter lower bound than the standard 1
+
+> arXiv:2603.01306v1 [math.OC] 1 Mar 2026
+
+big–M relaxation [Liu et al., 2025, Lemma 2.1] and can often be expressed as a conic convex program. However, solving the perspective relaxations at scale is challenging. One standard approach is to use the interior-point method (IPM), but it does not scale well due to its reliance on solving linear systems, which has a cubic complexity in the number of variables and cannot be easily parallelized on modern hardware like GPUs. Additionally, IPM cannot be effectively warm-started. Due to these limitations, there has been growing interest in solving such relaxations using first-order methods [Hazimeh et al., 2022, Liu et al., 2023], which are more scalable and can be easily warm-started. However, in order to truly benefit from GPUs, these first-order methods must avoid expensive subroutines that cannot be parallelized. It is unclear how to design such first-order methods that can fully leverage GPU parallelism for perspective relaxations. Another drawback of first-order methods is their slow convergence. From a theoretical perspective, there is a lack of understanding regarding the convergence rates of these methods, particularly for obtaining the safe lower bounds required for pruning in BnB. Since iterative methods produce only approximate solutions, the objective value at any iterate is an upper bound on the minimum of the relaxation, which is not a valid lower bound for the original problem. While techniques exist to derive safe lower bounds from inexact solutions, the convergence rate of these bounds has not been addressed. This is critical as the speed at which accurate lower bounds are obtained directly dictates the efficiency of the BnB algorithm. Ideally, one would like to achieve a linear rate, but it is unclear if such rates are attainable for these perspective relaxations using first-order methods. Both the aforementioned computational challenges and the theoretical gap on convergence rates give rise to the central question of our paper, namely Central Research Question 
+
+Can we solve the perspective relaxations within branch-and-bound and obtain valid lower bounds by designing a GPU-friendly first-order method with provable linear convergence? 
+
+Our answer to this question is positive. Below, we list the main technical contributions we have developed in order to answer this question affirmatively. 
+
+⋄ Composite Reformulation: We reformulate the perspective relaxation as an unconstrained convex composite problem, introducing a novel non-smooth regularizer implicitly defined by the perspective function. 
+
+⋄ Geometric Analysis: We analyze a general composite structure and uncover two favorable geometric properties. Namely, under certain regularity conditions, the primal problem satisfies the quadratic growth condition , while the dual problem satisfies the quadratic decay condition , a term we introduce as the dual counterpart to the primal quadratic growth. 
+
+⋄ Linearly Convergent Restart Scheme: Exploiting these geometric properties, we propose a novel gap-based restart scheme . This generic framework, which applies broadly to convex composite problems beyond perspective relaxations, accelerates a broad class of proximal methods, including fixed-stepsize, linesearch-based, and linesearch-free variants, to achieve 
+
+provable linear convergence rates for both the primal and dual objectives and sequences. 
+
+⋄ Efficient Implementation for Sparse GLMs: We prove that the implicit perspective regu-larizer satisfies the required geometric conditions and show that both its function value and proximal operator can be evaluated exactly and efficiently in log-linear time. This enables the use of efficient, GPU-friendly first-order methods without solving expensive conic subproblems. 2⋄ Empirical Performance: We validate the practical efficiency of our approach on both synthetic and real-world datasets, showcasing substantial speedups of one to two orders of magnitude on CPUs and an additional order of magnitude on GPUs in computing dual bounds and certifying optimal solutions for large-scale sparse GLMs. 
+
+Relation to Liu et al. [2025]. Liu et al. [2025] study proximal methods for the perspective relaxation at the root node. This paper extends that conference version by studying perspective relaxations at every node , adding the geometric analysis and linearly convergent restart scheme highlighted above, and reporting GPU-accelerated BnB experiments for certifying optimality. 
+
+1.1 Related Works 
+
+MIP for ML. Mixed integer programming (MIP) has been applied to medical scoring sys-tems [Ustun and Rudin, 2016, 2019, Liu et al., 2022a], portfolio optimization [Bienstock, 1996, Wei et al., 2024], nonlinear identification systems [Bertsimas and Gurnee, 2023, Liu et al., 2023], decision trees [Bertsimas and Dunn, 2017, Hu et al., 2019], survival analysis [Zhang et al., 2023, Liu et al., 2024], hierarchical models [Bertsimas and Van Parys, 2020a], regression and classification models [Atamturk and G´ omez, 2020, Bertsimas and Van Parys, 2020a, Bertsimas et al., 2020, Bertsimas and Van Parys, 2020b, Hazimeh and Mazumder, 2020, Xie and Deng, 2020, Atamt¨ urk et al., 2021, Dedieu et al., 2021, Hazimeh et al., 2022, Liu et al., 2023, Guyard et al., 2024], graphical models [Manzour et al., 2021, Kucukyavuz et al., 2023], explainability [Dash et al., 2018, Lodi and Ram´ ırez-Ayerbe, 2024], and outlier detection [G´ omez, 2021, G´ omez and Neto, 2025]. Most work targets high-quality feasible solutions, with few addressing optimality certification [Tillmann et al., 2024]; we focus on computationally scalable optimality certification for sparse GLMs. 
+
+Perspective Formulations. Applications of perspective relaxations like ours (Section 2.3) date back to Ceria and Soares [1999]. Perspective formulations for separable functions have been developed in [G¨ unl¨ uk and Linderoth, 2010, Xie and Deng, 2020, Wei et al., 2022, Bacci et al., 2024, Shafiee and Kılın¸ c-Karzan, 2024], and for rank-one functions in [Atamt¨ urk and G´ omez, 2023, Wei et al., 2020, 2022, Han and G´ omez, 2025, Shafiee and Kılın¸ c-Karzan, 2024]. Our work uses separable perspective formulations arising from the Tikhonov regularization term in sparse GLMs. We introduce a new implicit function based on the perspective function and derive its Fenchel conjugate, proximal operator, function evaluation, and geometric properties. 
+
+Lower Bound Calculation. Commercial MIP solvers typically iteratively linearize the objective function using the outer approximation method [Kelley, 1960] (via cutting planes) and solve the resulting linear programs [Schrijver, 1998, Wolsey, 2020]. However, this approach often produces loose lower bounds, especially when high-quality cuts are not generated. Alternatively, solvers may solve conic convex relaxations with IPMs [Dikin, 1967, Renegar, 2001, Nesterov and Nemirovskii, 1994], but IPMs are not scalable. Recent approaches use first-order methods, including subgradient descent [Bertsimas et al., 2020], alternating direction method of multipliers (ADMM) [Liu et al., 2023], and coordinate descent [Hazimeh et al., 2022]. Our work builds on this direction. Our implicit formulation enables proximal gradient methods with low-cost subroutines that parallelize well on GPUs. Crucially, we establish provable global linear convergence rates for derived safe lower bounds at every node in BnB, which previous first-order methods for this problem did not provide. 
+
+Proximal Gradient Methods For convex composite problems with a smooth term, proximal gradient descent (PGD) achieves a sublinear rate of O(1 /k ) [Chen and Rockafellar, 1997, Combettes and Wajs, 2005]. Applying Nesterov acceleration leads to the fast iterative shrinkage-thresholding algorithm (FISTA) with an improved sublinear rate of O(1 /k 2) [Nesterov, 1983, 3Beck and Teboulle, 2009, Tseng, 2008]. Recent parameter-free variants, notably the Adaptive Gradient Descent (AdProxGD) [Malitsky and Mishchenko, 2024] and the Adaptive Composite Fast Gradient Method (AC-FGM) [Li and Lan, 2025], remove manual step-size tuning. Although these rates are optimal in general, first-order methods can converge linearly under strict regularity conditions, such as strong convexity, the Polyak- Lojasiewicz condition [Karimi et al., 2016], or the quadratic growth condition [Luo and Tseng, 1993, Drusvyatskiy and Lewis, 2018]. Under the quadratic growth condition, restart schemes can accelerate momentum methods, ranging from heuristic schemes [O’Donoghue and Candes, 2015] to more systematic schemes [Fercoq and Qu, 2019] based on proximal gradient mappings or function values [Roulet and d’Aspremont, 2017]. We propose a restart scheme based on the duality gap ; unlike existing schemes that rely solely on primal information, it applies broadly and yields linear convergence. 
+
+Relationship to Dual-Based Strategies. Our use of the duality gap for restarts shares conceptual roots with FDPG [Beck and Teboulle, 2014], but offers a new perspective and improves the convergence rate. FDPG applies FISTA to the dual, yielding O(1 /k 2) for the dual objective, but only O(1 /k ) for the recovered primal. We proceed in the reverse direction by optimizing the primal and construct a dual sequence to monitor the duality gap. With a gap-based restart strategy, we ensure both the primal and dual sequences converge linearly ,outperforming the FDPG’s sublinear rate. Moreover, we do not assume the strong convexity, which makes the dual objective globally smooth. 
+
+GPU Acceleration. Recent work uses GPUs to accelerate continuous optimization problems, including linear programming [Applegate et al., 2021, Lu et al., 2024], quadratic programming [Lu and Yang, 2025], and semidefinite programming [Han et al., 2024]. A natural way to leverage GPUs for discrete problems is through GPU-based LPs within MIP solvers, as demonstrated by De Rosa et al. [2024] for clustering. However, their approach may require iteratively generating many cutting planes to approximate the original objective. In contrast, we develop a customized proximal gradient method that directly handles the nonlinear objective, while the computation is GPU-friendly since it mainly involves matrix–vector multiplication. Other first-order methods, such as ADMM [Liu et al., 2023] and coordinate descent [Hazimeh et al., 2022], are less suitable for GPUs: ADMM requires solving linear systems, while coordinate descent is inherently sequential. 
+
+## 2 Preliminaries and Problem Formulation 
+
+In this section, we review the mathematical background needed to analyze the perspective relaxation of sparse GLMs within a BnB framework. We first introduce standard notation and convex analysis concepts used throughout the paper. We then state the sparse GLM problem and the perspective relaxation solved at each node of the BnB tree. We next recast the perspective relaxation as an unconstrained composite optimization problem . Finally, we present its Fenchel dual, which forms the basis for our duality-gap-based restart scheme. 
+
+2.1 Notation 
+
+Throughout the paper, we work in the standard Euclidean space Rp, where the inner product of two vectors β, γ ∈ Rp is denoted by β⊤γ, and the (Euclidean) norm of β is denoted by 
+
+∥β∥2. The extended real line is defined as R := R ∪ {−∞ , +∞} . For any p ∈ N, we define [p] := {1, . . . , p }. We also define [ p1 : p2] := {p1, . . . , p 2} for any p1, p 2 ∈ N with p2 ≥ p1. The number of elements in a finite set J is denoted by |J | . For a set J ⊆ [p], the subvector βJ
+
+consists of the components of β ∈ Rp indexed by J . For example, the subvector β[p1:p2] consists of the components of β from index p1 to p2. We denote by 1p and 0p the vectors of all ones and all zeros in Rp, respectively, and drop the subscript p when the dimension is clear from 4context. For a vector β ∈ Rp, we use the notation |β(1) | ≥ · · · ≥ | β(p)| to denote the magnitudes of its entries sorted in nonincreasing order (ties broken arbitrarily). Equivalently, β(j) denotes an entry of β whose magnitude is the j-th largest among {| β1|, . . . , |βp|} . Given a set C ⊆ Rp,we denote by int (C) and rint (C), the interior and the relative interior of C, respectively. The distance function between β ∈ Rp and the set C is defined as dist (β, C) := inf γ∈C ∥β − γ∥2. The distance between two sets B, C ⊆ Rp is defined as dist (B, C) = inf β∈B dist (β, C). We use δC (β)to denote the indicator function of the set C, defined as δC (β) = 0 if β ∈ C ; = + ∞ otherwise. 
+
+2.2 Convex Analysis Background 
+
+For an extended-valued function h : Rp → R, its (effective) domain is defined as dom (h) := {β ∈
+
+Rp | h(β) < +∞} . The epigraph of h is defined as the set epi (h) = {(β, t ) | h(β) ≤ t}. The function h is proper if it never takes −∞ and has nonempty domain. It is called closed if its epigraph is closed. The Fenchel conjugate of h is defined as 
+
+h∗(α) := sup 
+
+> β∈Rp
+
+β⊤α − h(β),
+
+and the proximal operator of h is defined as prox h(β) := arg min 
+
+> γ∈Rp
+
+12 ∥γ − β∥22 + h(γ).
+
+The function h is essentially smooth if int (dom (h)) is nonempty, h is differentiable on int (dom (h)), and lim t→+∞ ∥∇ h  βt ∥2 = + ∞ for any sequence {βt} ⊂ int (dom (h)) converging to a boundary point of int (dom (h)). The function h is locally smooth if its gradient ∇h exists and is locally Lipschitz continuous on int ( dom (h)), that is, for every compact set B ⊂ int ( dom (h)), there exists a constant LB > 0 such that ∥∇ h(β) − ∇ h (γ) ∥2 ≤ LB∥β − γ∥2, for all β, γ ∈ B .The function h is piecewise linear-quadratic (PLQ) if dom (h) can be represented as the union of finitely many polyhedral sets, relative to each of which h is a quadratic function, i.e. , for each polyhedral set P in the union, there exist a symmetric matrix Q ∈ Rp×p, a vector b ∈ Rp, and a scalar c ∈ R such that h(β) = 12 β⊤Qβ + b⊤β + c for all β ∈ P . The subdifferential of a proper convex function h at a point β ∈ Rp, denoted by ∂h (β), is defined as the set of s ∈ Rp such that 
+
+h (γ) ≥ h(β) + s⊤ (γ − β) for all γ ∈ Rp.A proper, closed, and convex function h : Rp → R is said to be firmly convex relative to a vector ν ∈ Rp if the tilted function hν (β) := h(β) − ν⊤β satisfies the quadratic growth condition .That is, for any compact set B ⊂ Rp, there exists a constant κ > 0 such that 
+
+hν (β) ≥ (inf hν ) + κ
+
+2 dist 2  β, (∂h ν )−1(0) ∀β ∈ B .
+
+The function h is said to be firmly convex if h is firmly convex relative to any ν ∈ Rp for which (∂h ν )−1 (0) is non-empty. 
+
+2.3 Sparse GLMs, Branch-and-Bound, and Perspective Relaxations 
+
+We aim to solve the following sparse GLM optimization problem to global optimality: min 
+
+> β∈Rp
+
+f (Xβ , y) + λ2∥β∥22 : ∥β∥∞ ≤ M, ∥β∥0 ≤ k , (1) where X ∈ Rn×p (with X̸ = 0) and y ∈ Rn denote the feature matrix and label vector, respectively. Here, M > 0 is a user-specified box-constraint parameter, f : Rn × Rn → R is convex and differentiable, k ∈ N limits the number of nonzero coefficients, and λ2 > 0 is a regularization parameter. 5We use auxiliary binary variables z ∈ { 0, 1}p and a big–M reformulation to arrive at the following mixed-integer nonlinear programming (MINLP) problem: min 
+
+> (β,z)∈R2p
+
+n
+
+f (Xβ , y) + λ2∥β∥22 : z ∈ { 0, 1}p, 1⊤z ≤ k, |βj | ≤ M z j , ∀j ∈ [p]
+
+o
+
+. (2) At a high level, mixed-integer MIP solvers address such problems using branch-and-bound (BnB), recursively partitioning the search space by fixing some zj variables to 0 /1. At each node N of the BnB tree, the perspective relaxation can be used to derive a tighter lower bound by solving the following convex relaxation: min  
+
+> (β,z)∈D
+
+f (Xβ , y) + λ2
+
+X
+
+> j∈[p]
+
+β2 
+
+> j
+
+/z j , (3) where the domain D at node N is defined as 
+
+D := 
+
+
+
+(β, z) ∈ R2p 1⊤z ≤ k, |βj | ≤ M z j , ∀j ∈ [p],zj = 0 , ∀j ∈ J 0, zj = 1 , ∀j ∈ J 1, zj ∈ [0 , 1] , ∀j ∈ J f ,
+
+
+
+. (4) Here, the binary variables z are relaxed to be continuous in [0 , 1], and the term β2 
+
+> j
+
+/z j is defined as 0 if βj = zj = 0 and + ∞ if βj̸ = 0 and zj = 0. At any node N in the BnB tree, the sets 
+
+J0, J1, and Jf form a partition of [ p] and correspond to the indices with zj = 0, zj = 1, and 
+
+zj ∈ [0 , 1], respectively. If J0 = J1 = ∅, then problem (3) corresponds to the root node of the BnB tree. 
+
+2.4 Composite Reformulation and Fenchel Duality 
+
+We start by reformulating the perspective relaxation (3) as an unconstrained optimization problem. To this end, we define the implicit regularization function gN : Rp → R as 
+
+gN (β) := inf 
+
+> z∈Rp
+
+
+
+12
+
+X
+
+> j∈[p]
+
+β2 
+
+> j
+
+/z j : (β, z) ∈ D 
+
+ , (5) where we adopt the convention that the infimum over an empty set is + ∞. The function gN
+
+captures the perspective term β2 
+
+> j
+
+/z j along with the cardinality and branching constraints on 
+
+z at node N . We can therefore interpret gN as a regularizer and rewrite (3) in the following composite form: inf 
+
+> β∈Rp
+
+Φ ( β) := F (Xβ ) + G (β) , (6) where F (Xβ ) := f (Xβ , y) is the loss function and G (β) := 2 λ2 gN (β) is the regularization function. Using the standard Fenchel duality framework, the dual problem of (6) is given by sup 
+
+> ζ∈Rn
+
+n
+
+Ψ ( ζ) := −F ∗ (−ζ) − G∗ 
+
+X⊤ζ
+
+o 
+
+, (7) where F ∗ and G∗ are the Fenchel conjugates of F and G, respectively. By weak duality, Φ( β) ≥ Ψ( ζ) for any feasible pair ( β, ζ), meaning Ψ( ζ) provides a valid lower bound for problem (1) . However, solving this problem efficiently is non-trivial. Directly applying standard first-order methods often yields slow sublinear convergence rates. To address this, the next section introduces a general primal–dual algorithmic framework. By exploiting specific geometric properties of F and G, we will show that this framework can achieve a linear convergence rate, enabling fast computation of tight lower bounds for the sparse GLM problems. 63 A Linearly Convergent Algorithmic Framework 
+
+In this section, we develop a unified analysis for composite optimization problems that satisfy specific geometric regularity conditions. We consider the class of composite optimization problems defined by the primal and dual objective functions Φ ( β) = F (Xβ ) + G (β) and Ψ ( ζ) = −F ∗ (−ζ) − G∗ 
+
+X⊤ζ
+
+
+
+.
+
+We begin by stating the general regularity assumptions required for our analysis. 
+
+Assumption 3.1. The function F : Rn → R is convex and locally smooth. The function 
+
+G : Rp → R is proper, closed, and convex. Moreover, there are no lines along which F or G are finite and affine. Since F is assumed to be locally smooth, its domain necessarily has a nonempty interior. The assumption that there are no lines along which F or G are finite and affine further implies that the interiors of the domains of the conjugate functions F ∗ and G∗ are nonempty [Rockafellar, 1970, Corollary 13.4.2]. We next define Φ ⋆ := inf β∈Rp Φ( β) and Ψ ⋆ := sup ζ∈Rn Ψ( ζ) as the optimal objective values of the primal and dual problems, respectively. To support the primal–dual analysis, we impose the following Slater-type assumption. 
+
+Assumption 3.2. The sets rint (dom (Φ)) and int (dom (Ψ)) are nonempty. Specifically, there exist Slater points βs ∈ Rp and ζs ∈ Rn such that βs ∈ rint ( dom (G)), Xβ s ∈ int ( dom (F )), 
+
+−ζs ∈ int(dom( F ∗)), and X⊤ζs ∈ int(dom( G∗)). Under Assumption 3.2, the generalized Fenchel’s Duality Theorem [Rockafellar, 1970, Corol-lary 31.2.1] ensures that both primal and dual problems are solvable and the strong duality holds. That is, Φ( β⋆) = Φ ⋆ = Ψ ⋆ = Ψ( ζ⋆),
+
+where β⋆ denotes an optimal primal solution and ζ⋆ denotes an optimal dual solution. We denote the set of all optimal primal solutions by B⋆. Furthermore, the KKT conditions [Rockafellar, 1970, Theorem 31.3] characterize any optimal primal–dual pair ( β⋆, ζ⋆) as 
+
+X⊤ζ⋆ ∈ ∂G (β⋆), Xβ ⋆ ∈ ∂F ∗(−ζ⋆), β⋆ ∈ ∂G ∗(X⊤ζ⋆), −ζ⋆ = ∇F (Xβ ⋆). (8) A key consequence of Assumption 3.1 is that F is essentially smooth, which implies that its conjugate F ∗ is essentially strictly convex [Rockafellar, 1970, Theorem 26.3], which ensures that the dual solution ζ⋆ is unique . We summarize these existence and uniqueness results in the following lemma. 
+
+Lemma 3.3. Under Assumptions 3.1 and 3.2, the primal and dual problems are solvable and strong duality holds, that is, Φ⋆ = Ψ ⋆. Moreover, the dual problem admits a unique optimal solution. 
+
+While Lemma 3.3 guarantees the existence and uniqueness of solutions, these properties alone are insufficient to achieve linear convergence rates. To achieve faster convergence, the objective functions must exhibit specific curvature properties around the optimal set. In the following subsection, we formalize these requirements by introducing stronger geometric regularity conditions. 
+
+3.1 Structural Geometry 
+
+We now introduce the specific structural assumptions required to establish our main error bounds. These conditions strengthen standard convexity by imposing local curvature requirements compatible with the perspective relaxation structure. 7Assumption 3.4. The following conditions hold. (i) The set of optimal primal solutions B⋆ is compact and satisfies XB⋆ ⊂ int(dom( F )). (ii) The functions F and G are firmly convex relative to −ζ⋆ and X⊤ζ⋆, respectively. (iii) The subdifferentials ∂F ∗(−ζ⋆) and ∂G ∗(X⊤ζ⋆) are polyhedral sets. (iv) The optimal dual solution satisfies −ζ⋆ ∈ int(dom( F ∗)) and X⊤ζ⋆ ∈ int(dom( G∗)). Assumptions 3.4 (i)–(iii) constitute the quadratic growth condition commonly used in the primal analysis of first-order methods [Zhou and So, 2017, Drusvyatskiy and Lewis, 2018]. In contrast, Assumption 3.4 (iv) targets the structural properties of the dual objective, a perspective that has received less attention in the existing literature. Under these combined assumptions, we establish the following fundamental geometric bounds. 
+
+Theorem 3.5. Under Assumptions 3.1–3.4, let ζ⋆ denote the unique dual optimal solution. For any compact sets B ⊂ Rp and Z ⊂ Rn satisfying ζ⋆ ∈ Z , −Z ⊂ int (dom (F ∗)) and 
+
+X⊤Z ⊂ int(dom( G∗)) , there exist constants αB, κ Z > 0 such that 
+
+Φ( β) ≥ Φ⋆ + αB
+
+2 dist 2(β, B⋆), ∀β ∈ B , and − Ψ( ζ) ≤ − Ψ⋆ + κZ
+
+2 ∥ζ − ζ⋆∥2, ∀ζ ∈ Z .
+
+See Figure 1 for an illustration of the primal quadratic growth and dual quadratic decay conditions established in Theorem 3.5. Theorem 3.5 reveals a striking symmetry. While the primal objective function Φ( β) grows at least quadratically away from the optimal solution set B⋆, the dual objective function Ψ( ζ) decays at most quadratically away from the unique dual solution ζ⋆. Consequently, we refer to the property guaranteed by Assumption 3.4 (iv) as the quadratic decay condition , characterizing it as the dual counterpart to the primal quadratic growth condition presented in Assumptions 3.4 (i)–(iii). Φ( β)
+
+> Φ⋆
+
+Ψ( ζ)         
+
+> Ψ⋆
+> Φ⋆+αB
+> 2dist 2(β,B⋆)
+> Ψ⋆−κZ
+> 2∥ζ−ζ⋆∥2
+
+Figure 1: Illustration of quadratic growth for the primal objective Φ( β) and quadratic decay for the dual objective Ψ( ζ). The proof of Theorem 3.5 relies on two technical lemmas regarding firmly convex functions. The first establishes a subdifferential error bound. 
+
+Lemma 3.6. Let h be a proper, closed, convex function such that there are no lines along which 
+
+h is finite and affine. If h is firmly convex relative to some ν ∈ int (dom (h∗)) , then for any compact set U ⊂ int(dom( h∗)) with ν ∈ U , there exists a constant αU > 0 such that 
+
+dist ( ∂h ∗ (μ) , ∂h ∗ (ν)) ≤ 2
+
+αU
+
+∥μ − ν∥2, ∀μ ∈ U .
+
+8The proof of Lemma 3.6 is provided in Appendix B.1. Lemma 3.6 can be viewed as the dual counterpart to the subdifferential error bound in [Drusvyatskiy and Lewis, 2018, Theorem 3.3]. While Drusvyatskiy and Lewis [2018] analyze the primal subdifferential ∂h , our result characterizes the behavior of the conjugate subdifferential ∂h ∗. Notably, the inequality direction is reversed, reflecting the sign flip inherent in the Fenchel dual formulation. Building on this error bound, we derive a quadratic upper bound for the conjugate function value. 
+
+Lemma 3.7. Let h be a proper, closed, convex function such that there are no lines along which h is finite and affine. If h is firmly convex relative to some ν ∈ int (dom (h∗)) , then for any compact set U ⊂ int (dom (h∗)) with ν ∈ U , there exists a constant αU > 0 and a vector 
+
+s ∈ ∂h ∗(ν) such that 
+
+h∗(μ) ≤ h∗(ν) + s⊤ (μ − ν) + αU
+
+2 ∥μ − ν∥2, ∀μ ∈ U .
+
+The proof of Lemma 3.7 is provided in Appendix B.2. We can now prove Theorem 3.5 by leveraging Lemma 3.7. The proof of Theorem 3.5 is provided in Appendix B.3. The primal quadratic growth and dual quadratic decay established above constitute the fundamental geometric properties of our problem structure. 
+
+3.2 Primal–Dual Error Bounds 
+
+While Theorem 3.5 characterizes the primal and dual landscapes independently , we now establish the rigorous connection between them. To facilitate this analysis, we first introduce the following regularity condition on the primal loss function. 
+
+Assumption 3.8. The loss function F is strictly convex. With this assumption in place, we can relate the primal optimality gap Φ( β) − Φ⋆ to two critical dual quantities: the dual distance to optimality ∥ζ − ζ⋆∥22 and the dual optimality gap Ψ⋆ − Ψ( ζ). The link between these quantities relies on a specific construction of the dual variable. Inspired by the KKT condition −ζ⋆ = ∇F (Xβ ⋆) in (8) , we define the induced dual vector ζ
+
+associated with an arbitrary primal feasible solution β via the mapping 
+
+ζ := −∇ F (Xβ ).
+
+In the following theorem, we prove that under this mapping, the primal optimality gap strictly controls the dual error, effectively allowing the primal convergence to drive the dual convergence. 
+
+Theorem 3.9. Under Assumptions 3.1–3.8, let B⋆ denote the set of primal optimal solutions and ζ⋆ denote the unique dual optimal solution. Let B ⊆ dom (G) be a compact set such that 
+
+B⋆ ⊆ B . Define the corresponding dual image set Z := {−∇ F (Xβ ) | β ∈ B} , and assume that the interior conditions −Z ⊂ int (dom (F ∗)) and X⊤Z ⊂ int (dom (G∗)) hold. Then, there exist constants σB, κ B > 0 such that for any primal vector β ∈ B and its induced dual vector 
+
+ζ := −∇ F (Xβ ), we have 
+
+σB
+
+2 ∥ζ − ζ⋆∥22 ≤ Φ( β) − Φ⋆ and Ψ( ζ⋆) − Ψ( ζ) ≤ κB
+
+σB
+
+ Φ( β) − Φ⋆.
+
+The proof of Theorem 3.9 is provided in Appendix B.4. To provide geometric intuition for the first inequality in Theorem 3.9, we draw a parallel to standard results in smooth convex optimization. Recall that if a function h is globally L-smooth, its Fenchel conjugate h∗ is (1 /L )-strongly convex [Beck, 2017, Theorem 5.10]. Moreover, for any z ∈ Rp and a minimizer 
+
+z⋆ = arg min h(z), the smoothness of h implies a lower bound on the optimality gap [Beck, 2017, Theorem 5.8]: 12L ∥∇ h(z)∥22 ≤ h(z) − h(z⋆).
+
+9If we interpret ∇h(z) as a dual variable, this inequality is analogous to the first bound in Theorem 3.9. However, our result extends this relationship to a more complex setting where the primal objective F + G has a non-smooth composite structure, and the loss function F is only 
+
+locally smooth. Moreover, Theorem 3.9 has a crucial algorithmic implication: the convergence of the primal objective Φ( βt) strictly controls the convergence of both the dual sequence ζt and the dual objective Ψ( ζt). This relationship holds independently of the specific algorithm used to generate the primal sequence. Consequently, if an algorithm ensures that Φ( βt) converges to Φ ⋆ at a specific rate, the dual sequence and dual objective values inherit the same rate. 
+
+3.3 Linear Convergence via Gap-Based Restarts 
+
+To derive a unified analysis that applies to a wide range of first-order methods, we first formalize the properties of a generic solver. Rather than tailoring our analysis to the specific update rules of a single algorithm, we assume access to a solver that generates iterates within a compact region and provides a standard convergence guarantee. 
+
+Assumption 3.10. Let B ⊆ dom G be a compact set such that B⋆ ⊆ B . There exists a proximal first-order algorithm that generates a feasible primal sequence {βt}t≥0 ⊂ B and an associated dual sequence ζt := −∇ F (Xβ t). We assume that the algorithm relies on the proximal operator of G. Furthermore, the algorithm guarantees a convergence rate relative to the initialization β0
+
+characterized by a rate function r : N → R+, that is, Φ( βt) − Φ⋆ ≤ r(t) · dist 2(β0, B⋆) ∀t ≥ 1. (9) Assumption 3.10 is satisfied by a broad class of first-order methods, including standard PGD [Beck, 2017, Section 10.2], accelerated variants such as FISTA [Beck, 2017, Section 10.7], and parameter-free methods including AdProxGD [Malitsky and Mishchenko, 2024] and AC-FGM [Li and Lan, 2025]. We first observe that any algorithm satisfying this assumption automatically yields a convergence guarantee for the duality gap. By combining the algorithmic rate in (9) with the structural bounds established in Theorem 3.9, we derive the following duality gap. 
+
+Proposition 3.11. Under Assumptions 3.1–3.10, let αB, σ B, κ B > 0 be the geometric constants derived in Theorem 3.9. Then, the primal–dual iterates {(βt, ζt)}t≥1, satisfy the duality gap 
+
+Φ( βt) − Ψ( ζt) ≤
+
+ 2r(t)(1 + κB/σ B)
+
+αB
+
+  Φ( β0) − Ψ( ζ0). (10) The proof of Proposition 3.11 is provided in Appendix B.5. Proposition 3.11 establishes the duality gap shares the same convergence rate as r(t), which is sublinear for standard first-order methods. A notable exception is PGD with a fixed step-size, which automatically achieves a linear primal convergence rate under the quadratic growth condition [Zhou and So, 2017, Drusvyatskiy and Lewis, 2018]. This is consistent with Proposition 3.11 because it immediately implies a linear convergence rate for PGD on the duality gap. In contrast, accelerated methods like FISTA typically require restart schemes to prevent oscillations and unlock linear convergence for primal sequence [O’Donoghue and Candes, 2015, Fercoq and Qu, 2019]. Furthermore, recent adaptive methods [Malitsky and Mishchenko, 2024, Li and Lan, 2025] generally yield only sublinear rates, and their theoretical guarantees for the dual objective under quadratic growth remain largely unexplored. To ensure linear convergence (in the standard Q-linear sense) across this broader class of algorithms, we employ a restart strategy governed explicitly by the duality gap. The core idea is to run the algorithm only until the duality gap decreases by a fixed factor η > 1, and then restart the algorithm, treating the current iterate as the new initialization. Because the duality gap is a strict upper bound on the error, this ensures the error contracts geometrically at each restart epoch. 10 Theorem 3.12. Suppose the conditions of Proposition 3.11 hold and r (t) is monotonically decreasing. Let (βinit , ζinit ) be the initial primal–dual pair. For any target contraction factor 
+
+η > 1, define the restart interval tmax as 
+
+tmax := 
+
+
+
+r−1
+
+ αB
+
+2η(1 + κB/σ B)
+
+ 
+
+, (11) 
+
+where r−1 is the inverse of the rate function. If the algorithm is restarted every tmax iterations (resetting t = 0 and setting β0 to the current iterate), the sequence of duality gaps at the restart points converges linearly with 
+
+Φ( βs·tmax ) − Ψ( ζs·tmax ) ≤ η−s  Φ( βinit ) − Ψ( ζinit ) .
+
+The proof of Theorem 3.12 is provided in Appendix B.6. A crucial consequence of Theo-rem 3.12 is that the linear convergence of the duality gap necessitates the linear convergence of the primal and dual objective values, as well as their respective iterates. To see this, note that by weak duality (Ψ( ζ) ≤ Ψ⋆ = Φ ⋆), the duality gap serves as a strict upper bound for the primal optimality gap Φ  βs·tmax  − Φ⋆ ≤ Φ  βs·tmax  − Ψ  ζs·tmax  ≤ η−s  Φ( β0) − Ψ( ζ0) .
+
+This establishes the linear convergence of primal objective values. By Theorems 3.5 and 3.9, primal iterates {βt}, dual iterates {ζt}, and dual objective values {Ψ( ζt)} also converge linearly. We conclude this section by quantifying the specific iteration complexities for PGD, FISTA, and AC-FGM. For AC-FGM, the standard sublinear rate depends on user-specified parameters 
+
+c ∈ (1 , ∞) and ρ ∈ (0 , 1 − √6/3], where c is employed for the line-search procedure during the initialization. Additionally, L0 denotes an initial underestimate of the smoothness constant used by the algorithm. To simplify notation in the comparison below, we omit the subscript B from the geometric constants κ (dual decay), L (primal smoothness, with respect to F (X·)), α (primal growth), and σ (dual strong convexity). Table 1 summarizes the rate functions r(t) and the resulting complexities after applying our duality-gap-based restart scheme. Crucially, the restart scheme transforms the worst-case sublinear convergence of the accelerated methods (FISTA and AC-FGM) into a linear rate that scales with the square root of the condition number ( pκL/ασ ). This represents a significant theoretical improvement over the standard PGD linear rate, which scales linearly with the condition number. Table 1: Standard rate functions r(t) (when only the smoothness of F is assumed) and the corresponding complexity to reach ϵ-accuracy after applying the duality-gap-based restart scheme. Algorithm Rate Function r(t) Complexity with Restart PGD L
+
+2t O
+
+ κL ασ log 
+
+ 1
+
+ϵ
+
+ 
+
+FISTA 2L
+
+(t + 1) 2 O
+
+r κL ασ log 
+
+ 1
+
+ϵ
+
+!
+
+AC-FGM 15 cL 
+
+2t (t + 1) ρ (1 − ρ) O
+
+r κL ασ log 
+
+ 1
+
+ϵ
+
+
+
++ log c
+
+ LL0
+
+!
+
+3.4 Restart in Practice 
+
+Theorem 3.12 provides a theoretical guarantee based on the geometric constants σB, αB, and κB,as well as the specific rate function r(t). In practice, these parameters are often unknown or difficult to estimate. However, it is not required to know these constants to apply the restart 11 scheme. Because the duality gap is computable, we can monitor it at runtime and trigger a restart dynamically. Specifically, the practical implementation involves checking the condition Φ( βt) − Ψ( ζt) ≤
+
+η−1(Φ( β0) − Ψ( ζ0)) at each iteration. Theoretical analysis ensures that this condition will be met within at most tmax iterations, where tmax is defined as in (11) . To achieve an ϵ-accuracy for the primal–dual gap, the total number of restarts smax required is upper bounded by 
+
+smax ≤
+
+
+
+log η
+
+ Φ( βinit ) − Ψ( ζinit )
+
+ϵ
+
+ 
+
+,
+
+which is logarithmic in 1 /ϵ . Thus, the total number of iterations is upper bounded by 
+
+Ttotal ≤ smax · tmax ≤
+
+
+
+log η
+
+ Φ( βinit ) − Ψ( ζinit )
+
+ϵ
+
+ 
+
+·
+
+
+
+r−1
+
+ αB
+
+2η(1 + κB/σ B)
+
+ 
+
+.
+
+The following theorem gives the optimal restart parameter η under a polynomial rate model. 
+
+Theorem 3.13. Suppose the convergence rate behaves like r(t) ≈ C/t q for some q > 0 and 
+
+C > 0. Then, the constant-optimal choice of the restart parameter is η = eq.
+
+The proof of Theorem 3.13 is provided in Appendix B.7. In particular, q = 2 (typical for accelerated methods, where r(t) = Θ(1 /t 2)) yields η = e2. However, note that this optimal choice is derived from a worst-case scenario and may not match the best empirical choice of η. For example, it is possible to observe that η = e3 performs better than η = e2 in practice, for at least three reasons. First, the bound r(t) = Θ(1 /t 2) for accelerated methods is typically not tight: if the effective decrease within an epoch behaves like r(t) ≈ C/t q with some q > 2 on the problem instances of interest, then the same calculation above suggests a larger η (namely η = eq) is preferred. Second, our derivation treats each restart as “free” beyond the iteration budget tmax .In practice, restarting an accelerated method discards its momentum and introduces a transient “warm-up” period before the accelerated regime becomes effective. If we model this effect as an additional overhead of t0 iterations per restart (or, more generally, a restart-dependent constant in the bound), then larger η reduces the number of restarts and therefore pays the overhead fewer times. Third, our practical scheme triggers restarts based on the observed duality-gap decrease rather than the worst-case bound: if the gap often drops by a factor of η−1 much earlier than tmax , then increasing η can reduce the number of restarts substantially while increasing the typical epoch length only mildly. Taken together, these effects explain why η = e2 is best viewed as the optimal choice under an idealized polynomial-rate model, whereas larger values such as η = e3 can be preferable empirically. 
+
+## 4 Efficient Implementation for Sparse GLMs 
+
+The algorithmic framework in Section 3 guarantees linear convergence for generic composite problems, provided they satisfy Assumptions 3.1–3.8. In this section, we apply this framework to the perspective relaxation of sparse GLMs at each node N of the BnB tree. Recall from Section 2.4 that this problem takes the composite form with F (Xβ ) := f (Xβ , y)and G(β) := 2 λ2gN (β), where gN is the implicit regularizer defined as 
+
+gN (β) = inf 
+
+> z∈Rp
+
+
+
+12
+
+X
+
+> j∈[p]
+
+β2 
+
+> j
+
+/z j : (β, z) ∈ D 
+
+ .
+
+Here, the domain D, defined in (4) , encodes the branching constraints at node N by specifying which binary variables are fixed to 0 or 1, and which remain free. 12 To fully leverage the theoretical guarantees and practical performance of our framework, we address three critical aspects in the following subsections. First, we establish that gN possesses the necessary geometric properties. Second, we demonstrate that the proximal operator of gN
+
+can be evaluated efficiently, ensuring that the per-iteration computational cost remains low. Finally, we verify that our primal–dual framework can be applied by showing that standard GLM loss functions naturally satisfy the requisite smoothness and strict convexity assumptions. 
+
+4.1 Geometric Properties of the Implicit Regularizer 
+
+We begin by establishing the fundamental geometric properties of the implicit regularizer gN .First, we verify that gN is a valid convex regularizer with a bounded domain, which is a prerequisite for the compactness of the optimal solution set. 
+
+Lemma 4.1. The implicit function gN in (5) is proper, closed and convex, with a compact domain. 
+
+The proof of Lemma 4.1 is provided in Appendix B.8. The next lemma gives a closed-form expression for g∗, where the function TopSum k(·) denotes the sum of the top k largest elements, and HM (α) := (HM (α1) , . . . , H M (αp)) is the Huber loss function applied to each coordinate with 
+
+HM (αj ) := 
+
+( 12 α2 
+
+> j
+
+if |αj | ≤ MM |αj | − 12 M 2 if |αj | > M. (12) 
+
+Lemma 4.2. The Fenchel conjugate of gN is given by 
+
+g∗N (α) = X
+
+> j∈J 1
+
+HM (αj ) + TopSum k−|J 1|
+
+ HM
+
+ αJf
+
+ . (13) The proof of Lemma 4.2 is provided in Appendix B.9. The second term in (13) reveals that when we shift from the primal space to the dual space, the variational formulation of gN is transformed into an explicit expression. The closed-form expression in Lemma 4.2 reveals that 
+
+g∗N is constructed entirely from operations, namely finite sums, sorting, and quadratic splines, that preserve the PLQ structure. This observation is formalized in the following lemma. 
+
+Lemma 4.3. The functions gN and g∗N are both PLQ and firmly convex. 
+
+The proof of Lemma 4.3 is provided in Appendix B.10. This result confirms that the perspective regularizer satisfies the rigorous geometric requirements of our framework. See Figure 2 for a visual illustration of the PLQ structures of both gN and its conjugate g∗N . We will leverage this property in Proposition 4.6 within Section 4.3. 
+
+4.2 Efficient Evaluation of the Implicit Regularizer and its Proximal Operator 
+
+Having established the geometric regularity of the implicit regularizer, we now address its computational tractability. Our algorithmic framework requires two key operations: (i) evaluating the function value gN (β) in order to monitor the duality gap for restarts and (ii) computing its proximal operator in the proximal gradient method. We first address function evaluation. Note that directly solving the minimization problem in (5) via generic Second-Order Cone Programming (SOCP) solvers is computationally expensive and, due to the iterative nature of interior-point methods, yields only approximate solutions. In contrast, by exploiting the specific structure of the domain D, we derive a specialized algorithm that evaluates gN (β) exactly in a finite number of steps, with a worst-case computational complexity log-linear in p. The overall algorithm is presented in Algorithm 1. 13 1.5 1.0 0.5 0.0 0.5 1.0 1.5            
+
+> 1
+> 1.5
+> 1.0
+> 0.5
+> 0.0
+> 0.5
+> 1.0
+> 1.5
+> 2
+> 0.0
+> 0.1
+> 0.2
+> 0.3
+> 0.4
+> 0.5
+> g ( )
+> g()
+> 1.5 1.0 0.5 0.0 0.5 1.0 1.5
+> 1
+> 1.5
+> 1.0
+> 0.5
+> 0.0
+> 0.5
+> 1.0
+> 1.5
+> 2
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> g * ( )
+> g*()
+
+Figure 2: 3D plots of gN (left) and g∗N (right) at the root node ( p = 2, k = 1, M = 1). Left: red diamonds mark the boundary |β1| + |β2| = M of dom (gN ) (top at gN (β) = 12 M 2,bottom projection). Right: green squares mark the transition set max (|α1|, |α2|) = M (top at 
+
+g∗N (α) = 12 M 2, bottom projection); g∗N grows quadratically inside and linearly outside. 
+
+Algorithm 1: Compute gN (β) at node N with associated index sets J0, J1, Jf
+
+Data: vector β ∈ dom( gN ), cardinality parameter k ∈ [p]
+
+Result: gN (β) 
+
+> 1
+
+Set ¯k ← k − |J 1|, ¯p ← |J f | 
+
+> 2
+
+Set ¯β ← βJf , ω ← 0¯k, θ ← P
+
+> j∈[¯ p]
+
+| ¯βj | 
+
+> 3
+
+Sort ¯β such that | ¯β(1) | ≥ . . . ≥ | ¯β(¯k)| ≥ max 
+
+> j∈[¯k+1:¯ p]
+
+{| ¯βj |}  
+
+> 4
+
+for j ← 1 to ¯k do  
+
+> 5
+
+θ ← θ/ (¯k − j + 1)  
+
+> 6
+
+if θ ≥ | ¯β(j)| then ω[j:¯k] ← θ break  
+
+> 7
+
+else ωj ← | ¯β(j)| and θ ← θ − | ¯β(j)| 
+
+> 8
+
+return 12
+
+P 
+
+> j∈J 1
+
+β2 
+
+> j
+
++ 12
+
+P 
+
+> j∈[¯k]
+
+ω2
+
+> j
+
+Theorem 4.4. For any β ∈ dom( gN ), let ¯β := βJf , ¯p := |J f |, and ¯k := k − |J 1|. Then, 
+
+gN (β) = 12
+
+X
+
+> j∈J 1
+
+β2 
+
+> j
+
++ 12 min 
+
+> ω
+
+
+
+> ¯k
+
+X
+
+> j=1
+
+ω2
+
+> j
+
+ω ≥ 0, M ≥ ω1 ≥ · · · ≥ ω¯k ≥ 0,ω¯k+1 = · · · = ω¯p = 0 , ω ⪰m | ¯β|
+
+ .
+
+Here, ω ⪰m | ¯β| denotes that ω majorizes | ¯β|, i.e., 
+
+> ℓ
+
+X
+
+> j=1
+
+ωj ≥
+
+> ℓ
+
+X
+
+> j=1
+
+| ¯β(j)| ∀ℓ = 1 , . . . , ¯p − 1, and 
+
+> ¯p
+
+X
+
+> j=1
+
+ωj =
+
+> ¯p
+
+X
+
+> j=1
+
+| ¯β(j)|.
+
+Algorithm 1 computes a minimizer ω of the above problem and thus evaluates gN (β) exactly with a computational complexity of O(p + ¯ p log ¯k + ¯k).
+
+The proof of Theorem 4.4 is provided in Appendix B.11. The efficiency of Algorithm 1 stems from exploiting the equivalence between the majorization and convex hull representations. 14 Algorithm 2: Compute prox ρg ∗N (β) at node N with associated index sets J0, J1, Jf
+
+Data: vector β ∈ Rp, scalar ρ > 0, cardinality parameter k ∈ [p], box parameter M > 0
+
+Result: prox ρg ∗N (β) 
+
+> 1
+
+Set ¯k ← k − |J 1|, ¯p ← |J f | 
+
+> 2
+
+Set ¯β ← βJf , ρ ∈ R¯p 
+
+> +
+
+with ρj ← ρ if j ∈ { 1, 2, ..., ¯k} and ρj ← 0 otherwise.  
+
+> 3
+
+Sort ¯β with permutation π of [¯ p] such that | ¯βπ(1) | ≥ . . . ≥ | ¯βπ(¯ p)| ≥ 0 
+
+> 4
+
+for j ← 1 to ¯p do ˆαj ← prox ρj HM
+
+  ¯βπ(j)
+
+ 
+
+> 5
+
+W ← { [1 , 1] , [2 , 2] . . . , [¯ p, ¯p]}. 
+
+> 6
+
+while ∃[j1, j 2], [j2 + 1 , j 3] ∈ W s.t. ˆαj1 < ˆαj3 do  
+
+> 7
+
+W ← W \ { [j1, j 2]} \ { [j2 + 1 , j 3]} 
+
+> 8
+
+ρ ←
+
+Pj3 
+
+> j=j1
+
+ρj
+
+
+
+/ (j3 − j1 + 1)  
+
+> 9
+
+ξ ←
+
+Pj3
+
+> j=j1
+
+¯βπ(j)
+
+
+
+/ (j3 − j1 + 1)  
+
+> 10
+
+ˆα[j1:j3] ← prox ρH M
+
+ ξ 
+
+> 11
+
+W ← W ∪ { [j1, j 3]} 
+
+> 12
+
+Set α ∈ Rp with αJ0 = βJ0 , αJ1 = [prox ρH M (βj )] j∈J 1 , αJf = sgn( ¯β) ⊙ π−1( ˆ α) 
+
+> 13
+
+return α
+
+See Figure 3 for a visual illustration of this connection. Rather than solving a generic convex optimization problem, Algorithm 1 efficiently identifies a sparse vector ω that majorizes | ¯β|,reducing the evaluation of a potentially complex SOCP to a simple index search. 
+
+β1
+
+β2    
+
+> (2 ,0)
+> (0 ,2)
+> β= (1 .4,0.6)
+
+β1
+
+β2
+
+β3         
+
+> (1 .5,1.5,0)
+> (1 .5,0,1.5)
+> (0 ,1.5,1.5)
+> β= (0 .6,1.2,1.2)
+
+Figure 3: A vector ω majorizes β if and only if β ∈ conv ( perm (ω)). Left ( p = 2, k = 1): the hull is the segment between (2 , 0) and (0 , 2), containing β = (1 .4, 0.6). Right ( p = 3, 
+
+k = 2): the hull is the triangle with vertices (1 .5, 1.5, 0), (1 .5, 0, 1.5), and (0 , 1.5, 1.5), containing 
+
+β = (0 .6, 1.2, 1.2). Given β, Algorithm 1 constructs such a k-sparse vector ω.We now turn to the evaluation of the proximal operator. Calculating prox ρg N directly is challenging due to the implicit definition of gN . However, leveraging the explicit structure of the conjugate g∗N established in Lemma 4.2, we can efficiently evaluate the proximal operator of the conjugate and recover the desired solution via the extended Moreau decomposition. 
+
+Theorem 4.5. For any β ∈ Rp and ρ > 0, Algorithm 2 computes prox ρg ∗N (β) exactly with a computational complexity of O(p + ¯p log ¯ p), where ¯p = |J f | and ¯k = k − |J 1|. Moreover, Algorithm 2 can be used as a subroutine to compute prox ρg N (β) exactly via the extended Moreau decomposition 
+
+prox ρg N (β) = β − ρ prox ρ−1g∗N
+
+ ρ−1β. (14) 15 The proof of Theorem 4.5 is provided in Appendix B.12. The key idea is to reformulate prox ρg ∗N as a generalized isotonic regression problem, which minimizes a sum of Huber loss functions subject to isotonic constraints induced by the top- ¯k sum operator. This generalized isotonic regression problem is well studied in statistics and can be solved efficiently using the pool adjacent violators algorithm (PAVA) [Busing, 2022]. In Algorithm 2, PAVA is carried out in Lines 6–11. In particular, adjacent violators are identified in the while loop by using an efficient block up-and-down procedure, whose detailed implementation is provided in Algorithm 3 in the appendix. The computational results established in Theorems 4.4 and 4.5 directly satisfy the algorithmic requirements imposed by Assumption 3.10. Specifically, the efficient evaluation of the proximal operator enables the execution of standard proximal first-order methods with low per-iteration cost. Simultaneously, the exact computation of gN (β) allows for the precise monitoring of the duality gap, which is the essential for the linear convergence of our proposed restart scheme. 
+
+4.3 Convergence Guarantees for Standard GLMs 
+
+Having established the computational feasibility and efficiency of the algorithm, we now turn to the theoretical validity of the problem structure. To invoke the linear convergence guarantee of Theorem 3.12, we must verify that the perspective relaxation problem (6) satisfies the regularity conditions outlined in Assumptions 3.1–3.8. The following proposition confirms that these assumptions hold under standard and easily verifiable conditions on the loss function. 
+
+Proposition 4.6. Consider the primal objective Φ( β) = F (Xβ ) + G(β), where F (z) := f (z, y)
+
+with f : Rn × Rn → R being strictly convex, locally smooth, and firmly convex in z, and 
+
+G(β) := 2 λ2 gN (β) with λ2 > 0 and gN being defined in (5) . Then, Assumptions 3.1–3.8 hold. 
+
+The proof of Proposition 4.6 is provided in Appendix B.13. We conclude with a few key remarks regarding the applicability of these results. First, the regularity conditions established in Proposition 4.6 are satisfied by standard GLM loss functions, including least squares, logistic, and other common losses. We provide detailed verifications in the Appendix B.14. Second, regarding the restart scheme in Theorem 3.12, the analysis relies on a compact set B containing the iterates. For perspective relaxation problems, the domain of the regularizer gN is inherently compact thanks to Lemma 4.1. Therefore, we can simply define B := dom gN , ensuring that the geometric constants are well-defined globally. Finally, the exact evaluations of G and its proximal, due to Theorem 4.4 and Theorem 4.5, respectively, ensure that the proposed linear convergence framework is not only theoretically sound but also computationally highly efficient for large-scale BnB applications. 
+
+## 5 Experiments 
+
+In the previous sections, we developed a principled restart scheme and low-complexity subroutines to push the computational limits of first-order methods for computing safe lower bounds. In this section, we conduct extensive experiments on both synthetic and real-world datasets to evaluate their practical effectiveness. We benchmark our approach against existing methods and state-of-the-art solvers to address the following empirical questions. 
+
+⋄ Function and Proximal Evaluation Efficiency: How does the runtime of our specialized algorithms for evaluating gN and prox ρg N compare to generic SOCP solvers? 
+
+⋄ Lower Bound Computation Efficiency: How fast can our proposed first-order method solve the perspective relaxation (3) compared to state-of-the-art conic solvers? We also investigate two specific properties of our algorithmic framework. 16 • Convergence Rate: Does our method exhibit the linear convergence rate predicted by our theory when equipped with the gap-based restart scheme? 
+
+• Hardware Acceleration: Is our method GPU-friendly, and what magnitude of speedup can be achieved by leveraging GPU parallelism? 
+
+⋄ Optimality Certification: When integrated into a BnB framework, how much does our method accelerate the overall process of certifying global optimality compared to existing MIP solvers? We implemented all algorithms in Python. To ensure maximum efficiency, we implemented our specialized subroutines for evaluating gN and prox ρg N using Numba [Lam et al., 2015] for just-in-time compilation. For convex baselines, we compare against the following state-of-the-art commercial and open-source SOCP solvers: Gurobi [Gurobi Optimization, LLC, 2025], MOSEK [MOSEK ApS, 2025], SCS [O’Donoghue et al., 2023], and Clarabel [Goulart and Chen, 2024], using the cvxpy package [Diamond and Boyd, 2016] as the interface. For the optimality certification experiments with BnB framework, we compare directly against MIP solvers Gurobi and MOSEK. 
+
+5.1 How Fast Can We Evaluate gN (·) and prox ρg N (·)?0 20000 40000 60000 80000 100000                         
+
+> p
+> 10 4
+> 10 2
+> 10 0
+> 10 2
+> Solver Time Elapsed  Computation of g
+> 020000 40000 60000 80000 100000
+> p
+> 10 3
+> 10 1
+> 10 1
+> Solver Time Elapsed  Proximal Operator of g
+> 020000 40000 60000 80000 100000
+> p
+> 10 3
+> 10 1
+> 10 1
+> Solver Time Elapsed  Proximal Operator of g*
+> gurobi mosek scs clarabel ours
+
+Figure 4: Running time comparison of evaluating gN and the proximal operators of gN and g∗N ,where N is the root node. The baselines solve the corresponding SOCPs directly. We benchmark our subroutines for evaluating gN and its proximal operators against SOCP solvers that solve the corresponding SOCPs directly, where N is the root node. For proximal operators, we evaluate both prox ρg N (γ) and prox ρ−1g∗N
+
+ ρ−1γ. We report running times for each method. We repeat each setting 5 times (different random seeds) and report the mean and standard deviation (shown in error bars). We test different methods on synthetic datasets generated as follows: We sample the input vector γ ∼ N (0, Ip) in Rp, where Ip denotes the identity matrix of dimension p. We vary p ∈ { 20, . . . , 210 } × 10 2 and set k = 10, M = 1 .0, and 
+
+ρ = 1 .0. When benchmarking gN , we set β = prox ρg N (γ) by first calling Algorithm 2, ensuring 
+
+β ∈ dom gN as required by Algorithm 1. The results are shown in Figure 4, which highlights the superiority of our method. Compared with conventional SOCP solvers, our Algorithm 1 achieves three orders of magnitude speedup on evaluating gN , and Algorithm 2 together with equation (14) achieve two orders of magnitude speedup on evaluating the proximal operators. For instance, when p = 102400, baselines take from several seconds to minutes to evaluate the proximal operators, whereas our approach completes the same task in ≈ 10 −3 seconds for evaluating gN and ≈ 10 −2 seconds for evaluating the proximal operators, respectively. This speed advantage, combined with the exactness of our method, will contribute to significant overall speedups when solving the perspective relaxations. Recall that our method returns the exact values. This ensures that we can calculate the primal objective function Φ( β) exactly and apply the duality-gap-based restart scheme without any 17 approximation errors. Now that we can efficiently evaluate both the function value of gN and its proximal operator, we proceed to benchmarking how fast we can compute the lower bound. 
+
+5.2 How Fast Can We Calculate the Lower Bound? 
+
+We compare against the state-of-the-art SOCP solvers for solving the perspective relaxation of the original MINLP problem, when N is the root node. For our method, we use the FISTA method (with line search) equipped with our duality-gap-based restart scheme (with reduction factor η = e3) to solve Problem (3) , using our proposed algorithms to evaluate both function value of gN and its proximal operator. All methods are terminated upon achieving a primal-dual gap (of the BnB) tolerance of ϵ = 10 −6 or exceeding a runtime limit of 1800 seconds. Evaluations are performed on both linear and logistic regression tasks on synthetic datasets. For the detailed data generation process, please refer to Appendix C.1. For this experiment, we vary the feature dimension p ∈ { 1000 , 2000 , 4000 , 8000 , 16000 }. We control the sample size by using a parameter called n-to-p ratio, or sample to feature ratio. We control the feature correlation by using a parameter called ρ. We set the n-to-p ratio to be 1 .0, the feature correlation ρ to be 0 .5, the box constraint M to be 2, the number of nonzero coefficients (as well as the cardinality constraint) to be 10, and the ℓ2 regularization coefficient λ2 to be 1 .0. Again, we report both the mean and standard deviation of the running time, based on 5 repeated simulations with different random seeds. 2500 5000 7500 10000 12500 15000            
+
+> p
+> 10 1
+> 10 0
+> 10 1
+> 10 2
+> 10 3
+> Solver Time Elapsed
+> Linear Loss
+> 2500 5000 7500 10000 12500 15000
+> p
+> 10 1
+> 10 0
+> 10 1
+> 10 2
+> 10 3
+> Solver Time Elapsed
+> Logistic Loss
+> gurobi mosek scs clarabel ours
+
+Figure 5: Running time comparison of solving Problem (3) , the perspective relaxation at the root node. We set M = 2 .0, λ2 = 1 .0, and n-to-p ratio to be 1. Gurobi cannot solve the relaxation of the cardinality constrained logistic regression problem. The results, shown in Figure 5, demonstrate that our method is faster than the fastest conic solver (MOSEK) by over one order of magnitude. On the largest tested instances ( n = 16000 and p = 16000), our approach attains the target tolerance (10 −6) in under 100 seconds for both the regression and classification tasks, whereas most baselines fail to converge within the 1800-second time limit. We have also conducted additional perturbation studies, such as on the sample-to-feature ( n-to-p) ratio, box constraint M , and ℓ2 regularization coefficient λ2, which are provided in Appendix D.1. The results consistently demonstrate that our method has a significant computational advantage over existing SOCP solvers across a wide range of problem settings. There are two factors driving this speedup. First, both the function value and the proximal operator evaluations have low per-iteration computational costs, supported by both theory and empirical results in the previous section. Second, our restart scheme significantly improves the convergence rate of our proximal gradient method, which we computationally quantify next. 18 5.2.1 How Much Can Our Restart Scheme Accelerate Convergence? 
+
+We implemented our restart scheme on top of FISTA (both with fixed-step size and line search) [Beck, 2017] and ACFGM (adaptive step sizes) [Li and Lan, 2025]. For ACFGM, we implemented the algorithm as described in Corollary 2 of Li and Lan [2025], with α = 0 .1. We ran different methods on both the linear and logistic regression tasks, with the same parameters and data generation process as in the previous subsection. We restarted the accelerated methods whenever the duality gap reduces by a factor of η−1, where η = e. For comparison, we also ran the vanilla versions of these methods without the restart scheme, as well as the popular proximal gradient method and FISTA with heuristic restarts based on function values [O’Donoghue and Candes, 2015]. Figure 6 and Figure 7 illustrate the benefits of our duality-gap-based restart scheme. When the loss function F is smooth, it is well known that the accelerated proximal gradient methods achieve a sublinear convergence rate of O(1 /T 2), where T is the number of iterations, on the primal objective function value, which is confirmed by the results on the left plots of both figures. When we apply our restart scheme, we observe that all accelerated methods achieve a linear convergence rate on the primal objective function value, dual objective function value (middle plot), and duality gap (right plot), matching our theoretical analysis. Since the dual objective function value can be used as a safe lower bound, this marks, to the best of our knowledge, the first empirical demonstration of provable linear convergence for computing the safe lower bounds using a first-order method for this MINLP class. 0 100 200 300 400 500                      
+
+> Iteration
+> 10 9
+> 10 6
+> 10 3
+> 10 0
+> Optimality Gap
+> Iteration vs. Optimality Gap
+> (primal loss - optimal loss)/optimal loss
+> 0100 200 300 400 500
+> Iteration
+> 10 5
+> 10 3
+> 10 1
+> 10 1
+> Optimality Gap
+> Iteration vs. Optimality Gap
+> (optimal loss - dual loss)/optimal loss
+> 0100 200 300 400 500
+> Iteration
+> 10 5
+> 10 3
+> 10 1
+> 10 1
+> Optimality Gap
+> Iteration vs. Optimality Gap
+> (primal loss - dual loss)/optimal loss
+> PGD
+> FISTA
+> Heuristic Restart
+> FISTA
+> FISTA
+> Duality Restart
+> FISTA (w linesearch)
+> FISTA (w linesearch)
+> Duality Restart
+> ACFGM ( = 0.1)
+> ACFGM ( = 0.1)
+> Duality Restart
+
+Figure 6: Convergence speed comparison between accelerated methods (with and without restart), on solving the perspective relaxation in Problem 3 with the linear regression loss, n = 16000, 
+
+p = 16000, k = 10, ρ = 0 .5, λ2 = 1 .0, and M = 2 .0. As discussed in our theory section, our duality-gap-based restart scheme can yield linear convergence as long as η > 1. In D.2, we provide additional numerical results showing that the practical performance of our restart scheme can be improved by increasing η from e to e2
+
+or e3, in which case the duality-gap-based restart can match or outperform heuristic restart methods. To further illustrate that our restart scheme is not limited to perspective relaxations, we also apply it to accelerate proximal gradient methods when solving the LASSO problems (both ℓ1-ball constrained and ℓ1-regularized formulations); see Appendix D.3 for details. 
+
+5.2.2 How Much Can GPUs Accelerate Lower Bound Computation? 
+
+For fair comparison, all previous results were reported by running the experiments on CPUs. Here, we show the potential of GPUs to further accelerate lower-bound computations. Since the function value and proximal evaluations have low per-iteration complexity, matrix-vector multiplications dominate our proximal algorithm and can be accelerated on GPUs. We use 19 0 100 200 300 400 500                      
+
+> Iteration
+> 10 8
+> 10 5
+> 10 2
+> Optimality Gap
+> Iteration vs. Optimality Gap
+> (primal loss - optimal loss)/optimal loss
+> 0100 200 300 400 500
+> Iteration
+> 10 5
+> 10 3
+> 10 1
+> Optimality Gap
+> Iteration vs. Optimality Gap
+> (optimal loss - dual loss)/optimal loss
+> 0100 200 300 400 500
+> Iteration
+> 10 5
+> 10 3
+> 10 1
+> Optimality Gap
+> Iteration vs. Optimality Gap
+> (primal loss - dual loss)/optimal loss
+> PGD
+> FISTA
+> Heuristic Restart
+> FISTA
+> FISTA
+> Duality Restart
+> FISTA (w linesearch)
+> FISTA (w linesearch)
+> Duality Restart
+> ACFGM ( = 0.1)
+> ACFGM ( = 0.1)
+> Duality Restart
+
+Figure 7: Convergence speed comparison between accelerated methods (with and without restart), on solving the perspective relaxation in Problem 3 with the logistic regression loss, 
+
+n = 16000, p = 16000, k = 10, ρ = 0 .5, λ2 = 1 .0, and M = 2 .0. CuPy [Okuta et al., 2017] for GPU matrix-vector multiplications. At each iteration, we transfer 
+
+γ and β from GPU to CPU to evaluate prox ρg N (γ) and gN (β) with our Numba implementation, and then transfer the results back to GPU for matrix-vector multiplications. We rerun the experiments from the previous subsection to compare CPU-only runs with GPU-accelerated matrix-vector multiplications. Total running times are summarized in Tables 2 and 3. The GPU implementation reduces runtime by an additional order of magnitude on high-dimensional instances ( p ≥ 8000) for both linear and logistic regression. Table 2: GPU acceleration of our method on the linear regression task. Top and bottom rows correspond to the mean and standard deviation of running times (seconds). 
+
+p 1000 2000 4000 8000 16000 ours CPU 0.070 0.127 0.447 5.239 12.491 (0.001) (0.002) (0.075) (0.632) (1.914) ours GPU 0.296 0.282 0.266 0.444 0.858 (0.003) (0.002) (0.001) (0.002) (0.003) Table 3: GPU acceleration of our method on the logistic regression task. Top and bottom rows correspond to the mean and standard deviation of running times (seconds). 
+
+p 1000 2000 4000 8000 16000 ours CPU 0.069 0.124 0.629 4.566 12.075 (0.006) (0.002) (0.028) (0.129) (0.824) ours GPU 0.275 0.256 0.249 0.434 0.997 (0.013) (0.015) (0.013) (0.017) (0.029) 
+
+5.3 How Fast Can Our Lower Bound Computation Certify Optimality? 
+
+Finally, we demonstrate how our method’s ability to efficiently compute safe lower bounds enables efficient optimality certification for large-scale datasets. Note that this is just a first attempt to 20 embed what we have into a branch and bound framework. The goal is not to create a full-fledged MIP solver but to show the potential of using our method to compute the lower bounds to speed up the BnB process. Integrating our lower-bound computation into a vanilla BnB framework, we prioritize node pruning via lower bound calculations while intentionally omitting advanced MIP heuristics (e.g., cutting planes, presolve routines) to evaluate the impact of our method. We benchmark our approach against Gurobi and MOSEK, reporting runtime, optimality gaps, and the number of nodes explored. For Gurobi on logistic regression tasks, we use the outer approximation method to approximate the logistic loss and denote this as GurobiOA. This does not contradict Figure 5: for large-scale logistic relaxations, solving the root relaxation to optimality via pure cutting planes in Gurobi is computationally impractical. For both Gurobi and MOSEK, we provide them with the same incumbent solution obtained from our BnB framework at the root node to ensure a fair comparison. We test on both synthetic and real-world datasets, including the Santander Customer Transaction Prediction dataset [Piedra et al., 2019] for linear regression and the DOROTHEA drug discovery dataset [Asuncion and Newman, 2007] for logistic regression. For all methods, we set the optimality gap tolerance to be 10 −6, the maximum runtime to be 7200 seconds, and the maximum memory to be 100 GB. Detailed experimental configurations, including dataset descriptions, preprocessing, hyperparameter selection, and BnB implementation details, are provided in Appendix C.3. For the real-world datasets, we select ( λ2, k, M ) via a grid search with 5-fold cross validation using the beamsearch heuristic; see Appendix D.4.2. In the following, we elaborate on two key aspects of using our method to calculate the safe lower bounds in the BnB framework, including a dynamic termination strategy and a warmstart technique. Namely, we incorporate the dynamic termination strategy to avoid unnecessary proximal gradient iterations by branching or pruning nodes early. This bypasses the need for full convergence and high-precision lower bound computations. The detailed rules are as follows: 1. If the current primal loss of the perspective relaxation falls below the loss of the incumbent solution ( ˆβ), i.e. , Φ  βt ≤ f
+
+
+
+X ˆβ, y
+
+
+
++ λ2∥ ˆβ∥22, we terminate early and proceed to the next branching step since the lower bound will never be better than the incumbent solution’s loss to prune the current node. 2. If the current dual loss of the perspective relaxation exceeds the loss of the incumbent solution ( ˆβ), i.e. , Ψ  ζt ≥ f
+
+
+
+X ˆβ, y
+
+
+
++ λ2∥ ˆβ∥22, we stop the lower-bound computation and prune the node immediately, since no better solution exists in its subtree. In addition, we also use warmstarts to speed up the lower-bound computation. Specifically, we use the solution of the perspective relaxation problem at the parent node as the initial solution of the perspective relaxation problem at the current node. The results are reported in Tables 4–7. Our method outperforms both Gurobi and MOSEK in terms of runtime and optimality gap, often by significant margins. In particular, on larger instances where Gurobi and MOSEK struggle to close the optimality gap within the time limit, our method consistently reaches the 0% optimality gap. On instances where all methods achieve optimality, our method often runs one to two orders of magnitude faster. We attribute this superior performance to our method’s ability to compute safe lower bounds efficiently, which is crucial for effective pruning in the BnB framework. To support this claim, we report two additional metrics related to the BnB process: the number of nodes explored and the time spent computing lower bounds. On instances where both our method and MOSEK achieve the 0% optimality gap, our method explores comparable number of nodes but spends significantly less time computing the lower bounds, which contributes to the overall speedup. We provide additional results on the synthetic datasets with larger box constraints ( M = 3) in D.4. The results are consistent with those when M = 2 — our method outperforms Gurobi and MOSEK in both runtime and optimality gap, often by significant margins. 21 Table 4: BnB results on synthetic (linear) with k = 10, ρ = 0 .5, λ2 = 1 .0, M = 2 .0, n/p = 1 .0. Parentheses show lower-bound time. OOM = out of memory, TL = time > 7200s. ours gurobi mosek 
+
+p time(s) gap(%) # nodes time(s) gap(%) # nodes time(s) gap(%) # nodes 1000 9 (1) 0.00 105 146 0.00 237 112 0.00 113 2000 6 (1) 0.00 59 562 0.00 100 470 0.00 57 4000 12 (6) 0.00 31 3146 0.00 34 2909 0.00 31 8000 25 (18) 0.00 21 TL 100.00 1 TL 21.00 416000 72 (53) 0.00 21 TL 100.00 1 OOM OOM OOM Table 5: BnB results on synthetic (logistic) with k = 10, ρ = 0 .5, λ2 = 1 .0, M = 2 .0, n/p = 1 .0. Parentheses show lower-bound time. OOM = out of memory, TL = time > 7200s. ours gurobiOA mosek                                                       
+
+> ptime(s) gap(%) # nodes time(s) gap(%) # nodes time(s) gap(%) # nodes 1000 140 (7) 0.00 1121 TL 54.17 597933 386 0.00 1083 2000 110 (13) 0.00 595 TL 66.26 582581 1188 0.00 583 4000 126 (60) 0.00 219 TL 54.04 255320 2917 0.00 235 8000 180 (106) 0.00 131 TL 46.95 81405 OOM OOM OOM 16000 281 (187) 0.00 67 TL 35.04 21479 OOM OOM OOM
+
+Table 6: BnB results on Santander (linear), n = 4459, p = 4735, λ2 = 1 .0, M = 10. Parentheses show lower-bound time. OOM = out of memory, TL = time > 7200s. ours gurobi mosek                                                       
+
+> ktime(s) gap(%) # nodes time(s) gap(%) # nodes time(s) gap(%) # nodes 6345 (259) 0.00 1359 TL 100.00 1TL 0.33 437 7536 (395) 0.00 2125 TL 100.00 1TL 0.43 497 81206 (908) 0.00 4393 TL 100.00 1TL 0.36 393 93060 (2281) 0.00 10085 TL 100.00 1TL 0.49 303 10 TL (5213) 0.01 18775 TL 100.00 1TL 0.52 369
+
+Table 7: BnB results on Dorothea (logistic), n = 2300, p = 89989, λ2 = 1 .0, M = 10. Parentheses show lower-bound time. OOM = out of memory, TL = time > 7200s. ours gurobiOA mosek 
+
+k time(s) gap(%) # nodes time(s) gap(%) # nodes time(s) gap(%) # nodes 5 19 (15) 0.00 1 683 0.00 938 1075 0.00 010 66 (48) 0.00 23 2304 0.00 3118 OOM OOM OOM 15 116 (76) 0.00 33 3005 0.00 3209 OOM OOM OOM 20 223 (142) 0.00 61 TL 0.07 3680 OOM OOM OOM 25 629 (487) 0.00 167 TL 0.12 3635 OOM OOM OOM Lastly, we demonstrate GPU acceleration for the BnB framework. We keep the BnB imple-mentation unchanged, except for replacing the lower-bound routine with the GPU-accelerated version from the previous subsection. The total runtimes are summarized in Tables 8–11. For a fair comparison, CPU and GPU runs use the same machine (NVIDIA A100). As in the root-relaxation experiments, GPU acceleration reduces lower-bound runtime by up to one order of magnitude on high-dimensional instances (Table 10) for both linear and logistic tasks, which 22 further speeds up BnB certification. This does not always translate to an order-of-magnitude gain in total BnB time, since some work remains CPU-bound (e.g., feasible-solution search at each node); a fully GPU-native BnB implementation is beyond the scope of this work. For smaller instances, the GPU benefit is smaller due to CPU–GPU transfer overhead. Additional results on synthetic datasets with larger box constraints ( M = 3) are provided in D.4, and are consistent with those for M = 2. Table 8: BnB CPU vs GPU results for linear regression with k = 10, ρ = 0 .5, λ2 = 1 .0, M = 2 .0, 
+
+n/p = 1 .0. Parentheses show lower-bound time. ours CPU ours GPU 
+
+p time(s) gap(%) # nodes time(s) gap(%) # nodes 1000 8 (1) 0.00 105 10 (2) 0.00 105 2000 6 (1) 0.00 59 6 (1) 0.00 59 4000 4 (1) 0.00 31 4 (1) 0.00 31 8000 12 (7) 0.00 21 6 (1) 0.00 21 16000 31 (20) 0.00 21 15 (2) 0.00 21 Table 9: BnB CPU vs GPU results for logistic regression with k = 10, ρ = 0 .5, λ2 = 1 .0, 
+
+M = 2 .0, n/p = 1 .0. Parentheses show lower-bound time. ours CPU ours GPU                                     
+
+> ptime(s) gap(%) # nodes time(s) gap(%) # nodes 1000 132 (6) 0.00 1121 141 (20) 0.00 1123 2000 94 (7) 0.00 595 99 (11) 0.00 595 4000 64 (14) 0.00 219 55 (5) 0.00 219 8000 111 (45) 0.00 131 68 (5) 0.00 131 16000 160 (72) 0.00 67 88 (8) 0.00 67
+
+Table 10: BnB CPU vs GPU results on Santander (linear), n = 4459, p = 4735, λ2 = 1 .0, 
+
+M = 10. Parentheses show lower-bound time. ours CPU ours GPU                                     
+
+> ktime(s) gap(%) # nodes time(s) gap(%) # nodes 6169 (107) 0.00 1357 83 (23) 0.00 1363 7267 (166) 0.00 2149 145 (46) 0.00 2143 8600 (368) 0.00 4385 337 (111) 0.00 4387 91655 (1058) 0.00 10087 838 (267) 0.00 10121 10 5808 (3536) 0.00 34397 3135 (909) 0.00 34379
+
+## 6 Conclusion 
+
+We introduce a first-order proximal framework to solve the perspective relaxations of cardinality-constrained GLM problems. By exploiting the geometric structures of the primal and dual objective functions, we propose a new duality-gap-based restart scheme, broadly applicable beyond the specific perspective relaxation setting, to accelerate the algorithm to provably achieve the linear convergence rate, for both the primal and dual problems. This shows, for the first time, that getting a safe lower bound can be obtained by a linearly-convergent first-order method. Additionally, by leveraging the problem’s unique mathematical structure, we design 23 Table 11: BnB CPU vs GPU results on Dorothea (logistic), n = 2300, p = 89989, λ2 = 1 .0, 
+
+M = 10. Parentheses show lower-bound time. ours CPU ours GPU 
+
+k time(s) gap(%) # nodes time(s) gap(%) # nodes 5 12 (11) 0.00 1 3 (1) 0.00 110 52 (46) 0.00 23 9 (4) 0.00 23 15 82 (69) 0.00 33 21 (6) 0.00 33 20 167 (135) 0.00 61 37 (11) 0.00 63 25 466 (403) 0.00 167 84 (30) 0.00 165 customized subroutines to efficiently evaluate the function value and the proximal operator of the implicitly-defined regularizer gN ; this opens the door to GPU acceleration since the most computationally intensive operations become matrix-vector multiplications. Extensive empirical results demonstrate that our method outperforms state-of-the-art solvers by 1-2 orders of magnitude, establishing it as a practical, high-performance component for integration into next-generation MIP solvers. 
+
+## Acknowledgements 
+
+This work used the Delta system at the National Center for Supercomputing Applications through allocation CIS250029 from the Advanced Cyberinfrastructure Coordination Ecosystem: Services & Support (ACCESS) program, which is supported by National Science Foundation grants #2138259, #2138286, #2138307, #2137603, and #2138296. 
+
+## References 
+
+David Applegate, Mateo D´ ıaz, Oliver Hinder, Haihao Lu, Miles Lubin, Brendan O’Donoghue, and Warren Schudy. Practical large-scale linear programming using primal-dual hybrid gradient. In Advances in Neural Information Processing Systems , pages 20243–20257, 2021. Andreas Argyriou, Rina Foygel, and Nathan Srebro. Sparse prediction with the k-support norm. In Advances in Neural Information Processing Systems , pages 1457–1465, 2012. Arthur Asuncion and David Newman. The UCI Machine Learning Repository, 2007. Alper Atamturk and Andr´ es G´ omez. Safe screening rules for ℓ0-regression from perspective relaxations. In Proceedings of the 37th International Conference on Machine Learning , pages 421–430, 2020. Alper Atamt¨ urk and Andr´ es G´ omez. Supermodularity and valid inequalities for quadratic optimization with indicators. Mathematical Programming , 201(1–2):295–338, 2023. Alper Atamt¨ urk, Andr´ es G´ omez, and Shaoning Han. Sparse and smooth signal estimation: Convexification of ℓ0-formulations. Journal of Machine Learning Research , 22(52):1–43, 2021. Tiziano Bacci, Antonio Frangioni, Claudio Gentile, and Kostas Tavlaridis-Gyparakis. New mixed-integer nonlinear programming formulations for the unit commitment problems with ramping constraints. Operations Research , 72(5):2153–2167, 2024. Amir Beck. First-Order Methods in Optimization . SIAM, 2017. 24 Amir Beck and Marc Teboulle. A fast iterative shrinkage-thresholding algorithm for linear inverse problems. SIAM Journal on Imaging Sciences , 2(1):183–202, 2009. Amir Beck and Marc Teboulle. A fast dual proximal gradient algorithm for convex minimization and applications. Operations Research Letters , 42(1):1–6, 2014. Dimitris Bertsimas and Jack Dunn. Optimal classification trees. Machine Learning , 106(7): 1039–1082, 2017. Dimitris Bertsimas and Wes Gurnee. Learning sparse nonlinear dynamics via mixed-integer optimization. Nonlinear Dynamics , 111(7):6585–6604, 2023. Dimitris Bertsimas and Bart Van Parys. Sparse hierarchical regression with polynomials. Machine Learning , 109(5):973–997, 2020a. Dimitris Bertsimas and Bart Van Parys. Sparse high-dimensional regression: Exact scalable algorithms and phase transitions. The Annals of Statistics , 48(1):300–323, 2020b. Dimitris Bertsimas, Jean Pauphilet, and Bart Van Parys. Sparse regression: Scalable algorithms and empirical performance. Statistical Science , 35(4):555–578, 2020. Daniel Bienstock. Computational study of a family of mixed-integer quadratic programming problems. Mathematical Programming , 74(2):121–140, 1996. Frank MTA Busing. Monotone regression: A simple and fast O(n) PAVA implementation. 
+
+Journal of Statistical Software , 102(Code Snippet 1):1–25, 2022. Sebasti´ an Ceria and Jo˜ ao Soares. Convex programming for disjunctive convex optimization. 
+
+Mathematical Programming , 86(3):595–614, 1999. George HG Chen and R Tyrrell Rockafellar. Convergence rates in forward–backward splitting. 
+
+SIAM Journal on Optimization , 7(2):421–444, 1997. Patrick L Combettes and Val´ erie R Wajs. Signal recovery by proximal forward-backward splitting. 
+
+Multiscale Modeling & Simulation , 4(4):1168–1200, 2005. Cassio F Dantas, Emmanuel Soubies, and C´ edric F´ evotte. Expanding boundaries of gap safe screening. Journal of Machine Learning Research , 22(236):1–57, 2021. Sanjeeb Dash, Oktay G¨ unl¨ uk, and Dennis Wei. Boolean decision rules via column generation. In Advances in Neural Information Processing Systems , pages 4655–4665, 2018. Antonio De Rosa, Aida Khajavirad, and Yakun Wang. On the power of linear programming for K-means clustering. arXiv:2402.01061 , 2024. Antoine Dedieu, Hussein Hazimeh, and Rahul Mazumder. Learning sparse classifiers: Continuous and mixed integer optimization perspectives. Journal of Machine Learning Research , 22(135): 1–47, 2021. Steven Diamond and Stephen Boyd. CVXPY: A Python-Embedded modeling language for convex optimization. Journal of Machine Learning Research , 17(83):1–5, 2016. II Dikin. Iterative solution of problems of linear and quadratic programming. Doklady Akademii Nauk , 174(4):747–748, 1967. Dmitriy Drusvyatskiy and Adrian S Lewis. Error bounds, quadratic growth, and linear conver-gence of proximal methods. Mathematics of Operations Research , 43(3):919–948, 2018. 25 Olivier Fercoq and Zheng Qu. Adaptive restart of accelerated gradient methods under local quadratic growth condition. IMA Journal of Numerical Analysis , 39(4):2069–2095, 2019. Olivier Fercoq, Alexandre Gramfort, and Joseph Salmon. Mind the duality gap: safer rules for the Lasso. In Proceedings of the 32nd International Conference on Machine Learning , pages 333–342, 2015. Rafal Goebel and Ralph Tyrell Rockafellar. Local strong convexity and local lipschitz continuity of the gradient of convex functions. Journal of Convex Analysis , 15(2):263–270, 2008. Andr´ es G´ omez. Outlier detection in time series via mixed-integer conic quadratic optimization. 
+
+SIAM Journal on Optimization , 31(3):1897–1925, 2021. Andr´ es G´ omez and Jos´ e Neto. Outlier detection in regression: Conic quadratic formulations. 
+
+INFORMS Journal on Computing (Forthcoming) , 2025. Paul J. Goulart and Yuwen Chen. Clarabel: An interior-point solver for conic programs with quadratic objectives. arxiv:2405.12762 , 2024. Oktay G¨ unl¨ uk and Jeff Linderoth. Perspective reformulations of mixed integer nonlinear programs with indicator variables. Mathematical Programming , 124(1–2):183–205, 2010. Gurobi Optimization, LLC. Gurobi Optimizer Reference Manual, 2025. Th´ eo Guyard, C´ edric Herzet, Cl´ ement Elvira, and Ayse-Nur Arslan. A new branch-and-bound pruning framework for ℓ0-regularized problems. In Proceedings of the 41st International Conference on Machine Learning , pages 48077–48096, 2024. Qiushi Han, Zhenwei Lin, Hanwen Liu, Caihua Chen, Qi Deng, Dongdong Ge, and Yinyu Ye. Accelerating low-rank factorization-based semidefinite programming algorithms on GPU. 
+
+arxiv:2407.15049 , 2024. Shaoning Han and Andr´ es G´ omez. Compact extended formulations for low-rank functions with indicator variables. Mathematics of Operations Research , 50(3):1992–2016, 2025. Hussein Hazimeh and Rahul Mazumder. Fast best subset selection: Coordinate descent and local combinatorial optimization algorithms. Operations Research , 68(5):1517–1537, 2020. Hussein Hazimeh, Rahul Mazumder, and Ali Saab. Sparse regression at scale: Branch-and-bound rooted in first-order optimization. Mathematical Programming , 196(1):347–388, 2022. Jean-Baptiste Hiriart-Urruty and Claude Lemar´ echal. Fundamentals of Convex Analysis .Springer, 2004. Xiyang Hu, Cynthia Rudin, and Margo Seltzer. Optimal sparse decision trees. In Advances in Neural Information Processing Systems , pages 7267–7275, 2019. Hamed Karimi, Julie Nutini, and Mark Schmidt. Linear convergence of gradient and proximal-gradient methods under the Polyak-Lojasiewicz condition. In Joint European conference on machine learning and knowledge discovery in databases , pages 795–811, 2016. James E Kelley, Jr. The cutting-plane method for solving convex programs. Journal of the Society for Industrial and Applied Mathematics , 8(4):703–712, 1960. Jinhak Kim, Mohit Tawarmalani, and Jean-Philippe P Richard. Convexification of permutation-invariant sets and an application to sparse principal component analysis. Mathematics of Operations Research , 47(4):2547–2584, 2022. 26 Simge Kucukyavuz, Ali Shojaie, Hasan Manzour, Linchuan Wei, and Hao-Hsiang Wu. Consistent second-order conic integer programming for learning Bayesian Networks. Journal of Machine Learning Research , 24(322):1–38, 2023. Siu Kwan Lam, Antoine Pitrou, and Stanley Seibert. Numba: a LLVM-based Python JIT compiler. In Hal Finkel, editor, Workshop on the LLVM Compiler Infrastructure in HPC ,pages 7:1–7:6, 2015. Tianjiao Li and Guanghui Lan. A simple uniformly optimal method without line search for convex optimization. Mathematical Programming (Forthcoming) , 2025. Wu Li. Error bounds for piecewise convex quadratic programs and applications. SIAM Journal on Control and Optimization , 33(5):1510–1529, 1995. Jiachang Liu, Chudi Zhong, Boxuan Li, Margo Seltzer, and Cynthia Rudin. Fasterrisk: Fast and accurate interpretable risk scores. In Advances in Neural Information Processing Systems ,pages 17760–17773, 2022a. Jiachang Liu, Chudi Zhong, Margo Seltzer, and Cynthia Rudin. Fast sparse classification for generalized linear and additive models. In International Conference on Artificial Intelligence and Statistics , pages 9304–9333, 2022b. Jiachang Liu, Sam Rosen, Chudi Zhong, and Cynthia Rudin. OKRidge: Scalable optimal k-sparse ridge regression. In Advances in Neural Information Processing Systems , pages 41076–41258, 2023. Jiachang Liu, Rui Zhang, and Cynthia Rudin. FastSurvival: Hidden computational blessings in training cox proportional hazards models. In Advances in Neural Information Processing Systems , pages 87712–87765, 2024. Jiachang Liu, Soroosh Shafiee, and Andrea Lodi. Scalable first-order method for certifying optimal k-sparse GLMs. In Proceedings of the 42nd International Conference on Machine Learning , pages 39455–39481, 2025. Andrea Lodi and Jasone Ram´ ırez-Ayerbe. One-for-many counterfactual explanations by column generation. arXiv:2402.09473 , 2024. Haihao Lu and Jinwen Yang. A practical and optimal first-order method for large-scale convex quadratic programming. arxiv:2311.07710 , 2025. Haihao Lu, Jinwen Yang, Haodong Hu, Qi Huangfu, Jinsong Liu, Tianhao Liu, Yinyu Ye, Chuwen Zhang, and Dongdong Ge. cuPDLP-C: A strengthened implementation of cuPDLP for linear programming by C language. arxiv:2312.14832 , 2024. Zhi-Quan Luo and Paul Tseng. Error bounds and convergence analysis of feasible descent methods: a general approach. Annals of Operations Research , 46–47(1):157–178, 1993. Yura Malitsky and Konstantin Mishchenko. Adaptive proximal gradient method for convex optimization. In Advances in Neural Information Processing Systems , pages 100670–100697, 2024. Hasan Manzour, Simge K¨ u¸ c¨ ukyavuz, Hao-Hsiang Wu, and Ali Shojaie. Integer programming for learning directed acyclic graphs from continuous data. INFORMS Journal on Optimization , 3 (1):46–73, 2021. MOSEK ApS. The MOSEK optimization toolbox for MATLAB manual. Version 11.0.4 , 2025. 27 Yurii Nesterov and Arkadii Nemirovskii. Interior-Point Polynomial Algorithms in Convex Programming . SIAM, 1994. Yurii E. Nesterov. A method of solving a convex programming problem with convergence rate 
+
+O(1 /k 2). Dokl. Akad. Nauk SSSR , 269(3):543–547, 1983. Brendan O’Donoghue and Emmanuel Candes. Adaptive restart for accelerated gradient schemes. 
+
+Foundations of Computational Mathematics , 15(3):715–732, 2015. Brendan O’Donoghue, Eric Chu, Neal Parikh, and Stephen Boyd. SCS: Splitting conic solver, version 3.2.4, 2023. Ryosuke Okuta, Yuya Unno, Daisuke Nishino, Shohei Hido, and Crissman Loomis. CuPy: A NumPy-compatible library for NVIDIA GPU calculations. In Workshop on Machine Learning Systems at Advances in Neural Information Processing Systems , 2017. Mercedes Piedra, Sohier Dane, and Soraya Jimenez. Santander customer transaction prediction. 
+
+https://kaggle.com/competitions/santander-customer-transaction-prediction ,2019. Kaggle competition. James Renegar. A Mathematical View of Interior-Point Methods in Convex Optimization . SIAM, 2001. R. Tyrrell Rockafellar. Convex Analysis . Princeton University Press, 1970. R Tyrrell Rockafellar and Roger J-B Wets. Variational Analysis . Springer, 2009. Vincent Roulet and Alexandre d’Aspremont. Sharpness, restart and acceleration. In Advances in Neural Information Processing Systems , pages 1119–1129, 2017. A Schrijver. Theory of Linear and Integer Programming . John Wiley & Sons, 1998. Soroosh Shafiee and Fatma Kılın¸ c-Karzan. Constrained optimization of rank-one functions with indicator variables. Mathematical Programming , 208(1–2):533–579, 2024. Andreas M Tillmann, Daniel Bienstock, Andrea Lodi, and Alexandra Schwartz. Cardinality minimization, constraints, and regularization: a survey. SIAM Review , 66(3):403–477, 2024. Paul Tseng. On accelerated proximal gradient methods for convex-concave optimization. Tech-nical report, Department of Mathematics, University of Washington, 2008. Berk Ustun and Cynthia Rudin. Supersparse linear integer models for optimized medical scoring systems. Machine Learning , 102(3):349–391, 2016. Berk Ustun and Cynthia Rudin. Learning optimized risk scores. Journal of Machine Learning Research , 20(150):1–75, 2019. Linchuan Wei, Andr´ es G´ omez, and Simge K¨ u¸ c¨ ukyavuz. On the convexification of constrained quadratic optimization problems with indicator variables. In Integer Programming and Combinatorial Optimization , pages 433–447, 2020. Linchuan Wei, Andr´ es G´ omez, and Simge K¨ u¸ c¨ ukyavuz. Ideal formulations for constrained convex optimization problems with indicator variables. Mathematical Programming , 192(1):57–88, 2022. Linchuan Wei, Alper Atamt¨ urk, Andr´ es G´ omez, and Simge K¨ u¸ c¨ ukyavuz. On the convex hull of convex quadratic optimization problems with indicators. Mathematical Programming , 204 (1–2):703–737, 2024. 28 Laurence A Wolsey. Integer Programming . John Wiley & Sons, 2020. Weijun Xie and Xinwei Deng. Scalable algorithms for the sparse ridge regression. SIAM Journal on Optimization , 30(4):3359–3386, 2020. Rui Zhang, Rui Xin, Margo Seltzer, and Cynthia Rudin. Optimal sparse regression trees. In 
+
+The AAAI Conference on Artificial Intelligence , pages 11270–11279, 2023. Zirui Zhou and Anthony Man-Cho So. A unified approach to error bounds for structured convex optimization problems. Mathematical Programming , 165(2):689–728, 2017. 29 Appendix Table of Contents 
+
+A Additional Algorithm 31 B Proofs 31 
+
+B.1 Error Bound for Subgradient Maps of Fenchel Conjugates (Lemma 3.6) . . . . . 31 B.2 Local Quadratic Upper Bound for Fenchel Conjugates (Lemma 3.7) . . . . . . . 32 B.3 Primal Quadratic Growth and Dual Quadratic Decay Conditions (Theorem 3.5) 33 B.4 Primal-Dual Relations (Theorem 3.9) . . . . . . . . . . . . . . . . . . . . . . . . . 34 B.5 Geometric Decay of Duality Gap (Proposition 3.11) . . . . . . . . . . . . . . . . 35 B.6 Linear Convergence Under Gap-Based Restart (Theorem 3.12) . . . . . . . . . . 36 B.7 (Theoretical) Optimal Choice of Restart Parameter (Theorem 3.13) . . . . . . . . 36 B.8 Convex Analysis Properties at a BnB Node (Lemma 4.1) . . . . . . . . . . . . . 37 B.9 Fenchel-Conjugate Representation at a BnB Node (Lemma 4.2) . . . . . . . . . . 38 B.10 PLQ and Firm-Convex Structure at a BnB Node (Lemma 4.3) . . . . . . . . . . 38 B.11 Correctness of the Compute-g-Value Algorithm (Theorem 4.4) . . . . . . . . . . . 39 B.12 Correctness of the Evaluate-Prox Algorithm (Theorem 4.5) . . . . . . . . . . . . 41 B.13 GLM Regularity Conditions for the Framework (Proposition 4.6) . . . . . . . . . 42 B.14 Verifications for Common GLM Loss Functions . . . . . . . . . . . . . . . . . . . 43 
+
+C Experimental Setup Details 45 
+
+C.1 Setup for Solving the Perspective Relaxation . . . . . . . . . . . . . . . . . . . . 45 C.2 Setup for Demonstrating Restart Scheme Generality on LASSO Problems . . . . 46 C.3 Setup for Certifying Optimality . . . . . . . . . . . . . . . . . . . . . . . . . . . . 46 C.4 Computing Platforms . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 46 
+
+D Additional Experimental Results 47 
+
+D.1 Solving the Perspective Relaxation . . . . . . . . . . . . . . . . . . . . . . . . . . 47 D.2 Shrink Factor in Duality-based Restart Scheme . . . . . . . . . . . . . . . . . . . 50 D.3 Can Our Restart Scheme Benefit Other Problems Beyond Perspective Relaxations? 51 D.4 Certifying Optimality . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 53 30 A Additional Algorithm 
+
+A key component of the PAVA algorithm is the ability to merge adjacent blocks and update the solution rapidly. For the sake of completeness, Algorithm 3 presents the efficient up and down block algorithm used to perform this merging operation in the Algorithm 2. 
+
+Algorithm 3: Efficient Up and Down Block Algorithm for Lines 5-10 in Algorithm 2 
+
+Data: vector μ ∈ Rp, nonnegative weights ρ ∈ Rp
+
+> +
+
+, vector ˆ α with ˆ αj = prox ρj HM (|μj |)for j ∈ [p], cardinality k ∈ N, and box constraint M > 0. 
+
+Result: vector ˆ α. 
+
+> 1
+
+Initialize b = 1, P1 = ρ1, S1 = |μ1|, Nb = 1, α1, r1 = 1  
+
+> 2
+
+αprev = ˆ α1, j = 2  
+
+> 3
+
+while j ≤ p do  
+
+> 4
+
+b = b + 1  
+
+> 5
+
+Pb = ρj , Sb = |μj |, Nb = 1, α = ˆ αj 
+
+> 6
+
+if α > α prev then  
+
+> 7
+
+b = b − 1 
+
+> 8
+
+Pb = Pb + ρj , Sb = Sb + |μj |, Nb = Nb + 1, α = prox PbNb HM
+
+( Sb 
+
+> Nb
+
+) 
+
+> 9
+
+while j < n and α ≤ ˆαj do  
+
+> 10
+
+j = j + 1  
+
+> 11
+
+Pb = Pb + ρj , Sb = Sb + |μj |, Nb = Nb + 1, α = prox PbNb HM
+
+( Sb 
+
+> Nb
+
+) 
+
+> 12
+
+while b > 1 and αb−1 < α do  
+
+> 13
+
+b = b − 1 
+
+> 14
+
+Pb = Pb + Pb+1 , Sb = Sb + Sb+1 , Nb = Nb + Nb+1 , α = prox PbNb HM
+
+( Sb 
+
+> Nb
+
+) 
+
+> 15
+
+αb = α, rb = j 
+
+> 16
+
+αprev = α, j = j + 1  
+
+> 17
+
+for l = 1 , ..., b do  
+
+> 18
+
+ˆα[rl−1+1: rl] = αl 
+
+> 19
+
+return ˆν
+
+## B Proofs 
+
+This section provides complete proofs of the main theoretical results presented in the paper. For convenience, we restate each result before presenting its proof. 
+
+B.1 Error Bound for Subgradient Maps of Fenchel Conjugates (Lemma 3.6) 
+
+Lemma 3.6. Let h be a proper, closed, convex function such that there are no lines along which h
+
+is finite and affine. If h is firmly convex relative to some ν ∈ int (dom (h∗)), then for any compact set U ⊂ int(dom( h∗)) with ν ∈ U , there exists a constant αU > 0 such that dist ( ∂h ∗ (μ) , ∂h ∗ (ν)) ≤ 2
+
+αU
+
+∥μ − ν∥2, ∀μ ∈ U .
+
+Proof. Proof Since there are no lines along which h is finite and affine, the domain of h∗ has nonempty interior [Rockafellar, 1970, Corollary 13.4.2]. Define the tilted function of h relative to ν as hν (γ) := h (γ) − ν⊤γ. Since h is proper, closed, and convex, its conjugate h∗ is also proper, closed, and convex [Rockafellar, 1970, Theorem 12.2]. Moreover, as U ⊂ int (dom (h∗)), 31 [Rockafellar, 1970, Theorem 24.7] implies that ∂h ∗(U) is nonempty and compact. Since h is firmly convex relative to ν, it follows that for the compact set ∂h ∗(U) there exists a constant 
+
+αU > 0 such that, for any γ ∈ ∂h ∗(U), the function hν satisfies the quadratic growth condition 
+
+hν (γ) ≥ inf ( hν ) + αU
+
+2 dist 2  γ, (∂h ν )−1(0).
+
+By [Drusvyatskiy and Lewis, 2018, Theorem 3.3], the above quadratic growth condition implies the subdifferential error bound inequality dist  γ, (∂h ν )−1 (0)  ≤ 2
+
+αU
+
+dist ( 0, ∂h ν (γ)) .
+
+To simplify the inequality, first observe that the subdifferential of the tilted function satisfies 
+
+∂h ν (γ) = ∂h (γ) − ν, which implies dist (0, ∂h ν (γ)) = dist (ν, ∂h (γ)). Second, by [Rockafellar, 1970, Corollary 23.5.1], the identity ( ∂h ν )−1 = ∂h ∗ 
+
+> ν
+
+holds. Furthermore, since the conjugate of the tilted function satisfies h∗ 
+
+> ν
+
+(·) = h∗(· + ν),we have (∂h ν )−1 (0) = ∂h ∗ 
+
+> ν
+
+(0) = ∂h ∗(ν). Substituting these two relations into the error bound yields dist ( γ, ∂h ∗ (ν)) ≤ 2
+
+αU
+
+dist ( ν, ∂h (γ)) , ∀γ ∈ ∂h ∗(U). (B.1) Given some μ ∈ U , let us pick some β ∈ ∂h ∗ (μ). Then, we have dist ( ∂h ∗ (μ) , ∂h ∗ (ν)) ≤ dist ( β, ∂h ∗ (ν)) ≤ 2
+
+αU
+
+dist( ν, ∂h (β)) ≤ 2
+
+αU
+
+dist( ν, μ),
+
+where the first inequality follows from β ∈ ∂h ∗ (μ), the second inequality follows from β ∈
+
+∂h ∗(U) and inequality B.1, and the last inequality holds because β ∈ ∂h ∗ (μ) gives us μ ∈
+
+∂h (β) [Rockafellar, 1970, Corollary 23.5.1]. The proof concludes using dist ( ν, μ) = ∥ν − μ∥2.
+
+B.2 Local Quadratic Upper Bound for Fenchel Conjugates (Lemma 3.7) 
+
+Lemma 3.7. Let h be a proper, closed, convex function such that there are no lines along which h
+
+is finite and affine. If h is firmly convex relative to some ν ∈ int (dom (h∗)), then for any compact set U ⊂ int (dom (h∗)) with ν ∈ U , there exists a constant αU > 0 and a vector s ∈ ∂h ∗(ν) such that 
+
+h∗(μ) ≤ h∗(ν) + s⊤ (μ − ν) + αU
+
+2 ∥μ − ν∥2, ∀μ ∈ U .
+
+Proof. Proof Recall from the proof of Lemma 3.6 that h∗ is proper, closed, and convex, and that dom (h∗) is convex with nonempty interior. Since the interior of a convex set is itself convex [Rockafellar, 1970, Theorem 6.2], int (dom (h∗)) is convex. Let K denote the convex hull of U. Since U is compact and contained in the convex set int (dom (h∗)), it follows that K is compact [Rockafellar, 1970, Theorem 17.2] and satisfies K ⊂ int(dom( h∗)). Since ν ∈ U , for any fixed μ ∈ U , the entire line segment connecting ν to μ belongs to 
+
+K. By the integral form of the mean-value theorem for convex functions [Hiriart-Urruty and Lemar´ echal, 2004, Theorem 2.3.4], we have 
+
+h∗ (μ) − h∗ (ν) = 
+
+Z 10
+
+s⊤ 
+
+> t
+
+(μ − ν) d t
+
+for any selection of subgradients st ∈ ∂h ∗ (ν + t (μ − ν)) . Note that since h∗ is proper and convex, it is differentiable almost everywhere in the interior of its domain [Rockafellar, 1970, Theorem 25.5]. Thus, st is unique for almost all t ∈ [0 , 1], ensuring the path is measurable and the integral is well-defined. 32 We now construct a companion path rt to bound this integral. For each t ∈ [0 , 1], let 
+
+rt := proj ∂h ∗(ν)(st) be the projection of st onto the compact convex set ∂h ∗(ν). Since the subgradient mapping is bounded on the compact set K [Rockafellar, 1970, Theorem 24.7], st is bounded. Furthermore, because the projection map is continuous and st is measurable, rt is both bounded and measurable. Consequently, the integral s0 := R 10 rtdt is well-defined. Using the mean-value theorem equality, we write: 
+
+h∗ (μ) − h∗ (ν) = 
+
+Z 10
+
+(st − rt + rt)⊤ (μ − ν) d t
+
+≤
+
+Z 10
+
+∥st − rt∥2 · ∥ μ − ν∥2 dt
+
+
+
++ ( μ − ν)⊤ s0, (B.2) where the inequality follows from the Cauchy-Schwarz inequality. By the definition of the projection, ∥st − rt∥2 = dist (st, ∂h ∗(ν)). Since K is convex and compact, and st ∈ ∂h ∗(ν + t(μ − ν)) with ν + t(μ − ν) ∈ K , Lemma 3.6 implies that there exists a constant αK > 0 such that 
+
+∥st − rt∥2 = dist ( st, ∂h ∗ (ν)) ≤ 2
+
+αK
+
+∥ν + t (μ − ν) − ν∥2 = 2
+
+αK
+
+t∥μ − ν∥2
+
+for every t ∈ [0 , 1]. Therefore, we can bound the first integral term as follows 
+
+Z 10
+
+∥st − rt∥2 · ∥ μ − ν∥2 dt ≤
+
+Z 10
+
+2tαK
+
+∥μ − ν∥22 dt = 1
+
+αK
+
+∥μ − ν∥22.
+
+It remains to show that s0 ∈ ∂h ∗(ν). For the sake of contradiction, suppose s0 /∈ ∂h ∗(ν). Since ∂h ∗(ν) is non-empty, compact and convex, by the Separating Hyperplane Theorem [Rock-afellar, 1970, Theorem 11.4], there exists a vector a that strictly separates s0 from ∂h ∗(ν), that is, 
+
+a⊤s0 > sup 
+
+> s∈∂h ∗(ν)
+
+a⊤s.
+
+However, because rt ∈ ∂h ∗(ν) for all t ∈ [0 , 1], we also have a⊤rt ≤ sup s∈∂h ∗(ν) a⊤s. Integrating this inequality over t ∈ [0 , 1] yields 
+
+a⊤s0 =
+
+Z 10
+
+a⊤rtdt ≤ sup 
+
+> s∈∂h ∗(ν)
+
+a⊤s,
+
+which leads to a contradiction. Thus, it must follow that s0 ∈ ∂h ∗(ν). Plugging these results for the two integral terms back into (B.2), we have 
+
+h∗ (μ) − h∗ (ν) ≤ 1
+
+αK
+
+∥μ − ν∥22 + s⊤ 
+
+> 0
+
+(μ − ν) .
+
+We complete the proof by defining αU := 2 
+
+> αK
+
+and s := s0.
+
+B.3 Primal Quadratic Growth and Dual Quadratic Decay Conditions (Theo-rem 3.5) 
+
+Theorem 3.5. Under Assumptions 3.1–3.4, let ζ⋆ denote the unique dual optimal solution. For any compact sets B ⊂ Rp and Z ⊂ Rn satisfying ζ⋆ ∈ Z , −Z ⊂ int ( dom (F ∗)) and 
+
+X⊤Z ⊂ int(dom( G∗)), there exist constants αB, κ Z > 0 such that Φ( β) ≥ Φ⋆ + αB
+
+2 dist 2(β, B⋆), ∀β ∈ B , and − Ψ( ζ) ≤ − Ψ⋆ + κZ
+
+2 ∥ζ − ζ⋆∥2, ∀ζ ∈ Z .
+
+33 Proof. Proof of Theorem 3.5 Under Assumptions 3.1 and 3.2, Lemma 3.3 guarantees the existence and uniqueness of the dual solution ζ⋆. We divide the proof into two parts. The first inequality is a direct consequence of the error bound result in [Drusvyatskiy and Lewis, 2018]. In particular, the structural requirements of [Drusvyatskiy and Lewis, 2018, Corollary 4.3] are satisfied by Assumption 3.4 (ii) and Assumption 3.4 (iii). Furthermore, Assumption 3.4 (i) guarantees that the optimal solution set B⋆ is compact. This compactness ensures that the growth constant αB is strictly positive and uniform over the compact set B.This concludes the proof of the first claim. We next derive the second inequality by applying Lemma 3.7 to the dual objective components. First, consider F ∗. Set h = F and ν = −ζ⋆. Assumption 3.4 (iv) ensures −ζ⋆ ∈ int ( dom (F ∗)), which satisfies the conditions of Lemma 3.7. Additionally, Assumption 3.4 (ii) provides the firm convexity. Thus, there exist s1 ∈ ∂F ∗(−ζ⋆) and α1 > 0 such that for all ζ ∈ Z :
+
+F ∗(−ζ) ≤ F ∗(−ζ⋆) + s⊤ 
+
+> 1
+
+(−ζ + ζ⋆) + α1
+
+2 ∥ζ − ζ⋆∥22. (B.3) Next, consider G∗. Set h = G and ν = X⊤ζ⋆. By Assumption 3.4 (iv), we have X⊤ζ⋆ ∈
+
+int ( dom (G∗)). Applying Lemma 3.7 again, there exist s2 ∈ ∂G ∗(X⊤ζ⋆) and α2 > 0 such that for all ζ ∈ Z :
+
+G∗(X⊤ζ) ≤ G∗(X⊤ζ⋆) + s⊤
+
+> 2
+
+
+
+X⊤ζ − X⊤ζ⋆
+
++ α2
+
+2 ∥X⊤ζ − X⊤ζ⋆∥22
+
+≤ G∗(X⊤ζ⋆) + ( Xs 2)⊤ (ζ − ζ⋆) + α2∥X∥22
+
+2 ∥ζ − ζ⋆∥22. (B.4) Combining (B.3) and (B.4) with the definition −Ψ( ζ) = F ∗(−ζ) + G∗(X⊤ζ), we obtain 
+
+−Ψ( ζ) ≤ − Ψ⋆ + ( −s1 + Xs 2)⊤ (ζ − ζ⋆) + α1 + α2∥X∥22
+
+2 ∥ζ − ζ⋆∥22.
+
+We claim that −s1 + Xs 2 = 0. Let d := −s1 + Xs 2. Since Assumption 3.2 guarantees that int (dom (Ψ)) is nonempty and ζ⋆ is an optimal solution, for a sufficiently small step size t > 0, the point ζt := ζ⋆ − td remains feasible. Substituting ζt into the inequality yields 
+
+−Ψ( ζt) ≤ − Ψ⋆ − t∥d∥22 + O(t2).
+
+If d̸ = 0, for small enough t, we would have −Ψ( ζt) < −Ψ⋆. However, Ψ ⋆ is the optimal value, so Ψ (ζt) ≤ Ψ⋆, which is a contradiction. Thus, we must have −s1 + Xs 2 = 0. Consequently, by setting κZ := α1 + α2∥X∥22, we conclude the second claim. 
+
+B.4 Primal-Dual Relations (Theorem 3.9) 
+
+Theorem 3.9. Under Assumptions 3.1–3.8, let B⋆ denote the set of primal optimal solutions and ζ⋆ denote the unique dual optimal solution. Let B ⊆ dom (G) be a compact set such that 
+
+B⋆ ⊆ B . Define the corresponding dual image set Z := {−∇ F (Xβ ) | β ∈ B} , and assume that the interior conditions −Z ⊂ int ( dom (F ∗)) and X⊤Z ⊂ int (dom (G∗)) hold. Then, there exist constants σB, κ B > 0 such that for any primal vector β ∈ B and its induced dual vector 
+
+ζ := −∇ F (Xβ ), we have 
+
+σB
+
+2 ∥ζ − ζ⋆∥22 ≤ Φ( β) − Φ⋆ and Ψ( ζ⋆) − Ψ( ζ) ≤ κB
+
+σB
+
+ Φ( β) − Φ⋆.
+
+Proof. Proof of Theorem 3.9 We first establish the first inequality relating the dual distance to the primal gap. By definition, ζ = −∇ F (Xβ ). By Assumption 3.8, the function F ∗ is essentially smooth [Rockafellar, 1970, Theorem 26.3]. Thus, using the assumption −Z ⊂ int ( dom (F ∗)), the 34 function F ∗ is differentiable at −ζ. Applying the Fenchel identity [Rockafellar, 1970, Theorem 23.5], we have 
+
+−ζ = ∇F (Xβ ) ⇐⇒ ∇F ∗(−ζ) = Xβ .
+
+Since F is locally smooth (Assumption 3.1), its conjugate F ∗ is locally strongly convex [Goebel and Rockafellar, 2008, Theorem 4.1]. Specifically, applying the definition of strong convexity on the compact set −Z to the points −ζ⋆ and −ζ, there exists a constant σB > 0 such that 
+
+F ∗(−ζ⋆) ≥ F ∗(−ζ) + ∇F ∗(−ζ)⊤ (ζ − ζ⋆) + σB
+
+2 ∥ζ − ζ⋆∥22.
+
+Substituting ∇F ∗(−ζ) = Xβ and rearranging terms, we obtain 
+
+σB
+
+2 ∥ζ − ζ⋆∥22 ≤ F ∗(−ζ⋆) − F ∗(−ζ) − (ζ⋆ − ζ)⊤Xβ . (B.5) Now, consider the primal optimality gap Φ( β) − Φ⋆. Using the identities Φ( β) = F (Xβ ) + G(β)and Φ ⋆ = −F ∗(−ζ⋆) − G∗(X⊤ζ⋆), we have Φ( β) − Φ⋆ = F (Xβ ) + F ∗(−ζ⋆) + G(β) + G∗(X⊤ζ⋆)=
+
+h
+
+F ∗(−ζ⋆) − F ∗(−ζ) − ζ⊤Xβ 
+
+i
+
++ G(β) + G∗(X⊤ζ⋆),
+
+where the equality holds as ζ = −∇ F (Xβ ), so the Fenchel inequality is tight, and we have 
+
+F (Xβ ) = −F ∗(−ζ) − ζ⊤Xβ . Adding and subtracting ( ζ⋆)⊤Xβ to match the form in (B.5) yields Φ( β) − Φ⋆ =
+
+h
+
+F ∗(−ζ⋆) − F ∗(−ζ) − (ζ⋆ − ζ)⊤Xβ 
+
+i
+
++
+
+h
+
+G(β) + G∗(X⊤ζ⋆) − (ζ⋆)⊤Xβ 
+
+i
+
+≥ σB
+
+2 ∥ζ − ζ⋆∥22,
+
+where the inequality holds due to (B.5) and the Fenchel’s inequality applied to G and the pair (β, X⊤ζ⋆). This proves the first claim. For the second inequality, we apply Theorem 3.5. Since ζ ∈ Z and the assumptions of Theorem 3.5 are satisfied, there exists a constant κB > 0 such that Ψ( ζ⋆) − Ψ( ζ) ≤ κB
+
+2 ∥ζ − ζ⋆∥22.
+
+Combining this with the first inequality yields the desired result. The structural relationship established in Theorem 3.9 suggests that the duality gap Φ( βt) −
+
+Ψ( ζt) serves as a robust proxy for the distance to optimality. We now leverage this property to design a generic restart scheme to achieve linear convergence. 
+
+B.5 Geometric Decay of Duality Gap (Proposition 3.11) 
+
+Proposition 3.11. Under Assumptions 3.1–3.10, let αB, σ B, κ B > 0 be the geometric constants derived in Theorem 3.9. Then, the primal–dual iterates {(βt, ζt)}t≥1 satisfy the duality gap Φ( βt) − Ψ( ζt) ≤
+
+ 2r(t)(1 + κB/σ B)
+
+αB
+
+  Φ( β0) − Ψ( ζ0).
+
+Proof. Proof of Proposition 3.11 From Theorem 3.9, we have the inequality Ψ( ζ⋆) − Ψ( ζt) ≤ 
+
+> κB
+> σB
+
+(Φ( βt) − Φ⋆). Adding Φ( βt) − Φ⋆ to both sides, since strong duality holds, we bound the total duality gap Φ( βt) − Ψ( ζt) ≤
+
+
+
+1 + κB
+
+σB
+
+  Φ( βt) − Φ⋆ .
+
+35 Substituting the algorithmic rate assumption from (9) into this inequality yields Φ( βt) − Ψ( ζt) ≤ r(t)
+
+
+
+1 + κB
+
+σB
+
+
+
+dist 2(β0, B⋆) ≤
+
+ 2r(t)(1 + κB/σ B)
+
+αB
+
+
+
+(Φ( β0) − Φ⋆),
+
+where the second inequality follows from Theorem 3.5. The proof concludes by noting that, by weak duality, we have Φ( β0) − Φ⋆ ≤ Φ( β0) − Ψ( ζ0). 
+
+B.6 Linear Convergence Under Gap-Based Restart (Theorem 3.12) 
+
+Theorem 3.12. Suppose the conditions of Proposition 3.11 hold and r (t) is monotonically decreasing. Let ( βinit , ζinit ) be the initial primal–dual pair. For any target contraction factor 
+
+η > 1, define the restart interval tmax as 
+
+tmax := 
+
+
+
+r−1
+
+ αB
+
+2η(1 + κB/σ B)
+
+ 
+
+,
+
+where r−1 is the inverse of the rate function. If the algorithm is restarted every tmax iterations (resetting t = 0 and setting β0 to the current iterate), the sequence of duality gaps at the restart points converges linearly with Φ( βs·tmax ) − Ψ( ζs·tmax ) ≤ η−s  Φ( βinit ) − Ψ( ζinit ) .
+
+Proof. Proof of Theorem 3.12 Consider the first restart epoch, starting at t = 0 and ending at 
+
+t = tmax . By invoking Proposition 3.11, the duality gap at iteration tmax satisfies Φ( βtmax ) − Ψ( ζtmax ) ≤
+
+ 2r(tmax )(1 + κB/σ B)
+
+αB
+
+  Φ( βinit ) − Ψ( ζinit ) .
+
+We now analyze the contraction factor. By the definition of the restart interval tmax , we have 
+
+tmax ≥ r−1
+
+ αB
+
+2η(1 + κB/σ B)
+
+
+
+.
+
+Since r(·) is a monotonically decreasing function, applying r to both sides reverses the inequality: 
+
+r(tmax ) ≤ αB
+
+2η(1 + κB/σ B) .
+
+Substituting this upper bound for r(tmax ) back into the duality gap inequality, the geometric constants cancel out and we obtain Φ( βtmax ) − Ψ( ζtmax ) ≤
+
+ 2(1 + κB/σ B)
+
+αB
+
+· αB
+
+2η(1 + κB/σ B)
+
+  Φ( βinit ) − Ψ( ζinit )
+
+= η−1  Φ( βinit ) − Ψ( ζinit ) .
+
+This establishes that the duality gap contracts by a factor of at least η−1 after one full restart epoch. Since the algorithm is re-initialized at the end of each epoch (setting the new β0 to the current iterate), this contraction applies recursively. Therefore, after s restarts (spanning s · tmax 
+
+total iterations), we obtain the bound in the theorem statement. This completes the proof. 
+
+B.7 (Theoretical) Optimal Choice of Restart Parameter (Theorem 3.13) 
+
+Theorem 3.13. Suppose the convergence rate behaves like r(t) ≈ C/t q for some q > 0 and C > 0. Then, the constant-optimal choice of the restart parameter is η = eq.36 Proof. Proof Given the tolerance level ϵ > 0 for the primal-dual gap and some restart decrease factor η > 1, if we ignore the ceiling operation, the number of iterations is approximately 
+
+Tmax ≈ log η
+
+ Φ( βinit ) − Ψ( ζinit )
+
+ϵ
+
+
+
+· r−1
+
+ αB
+
+2η(1 + κB/σ B)
+
+
+
+Under the assumption that r(t) ≈ C/t q, we have 
+
+Tmax ≈ log η
+
+ Φ( βinit ) − Ψ( ζinit )
+
+ϵ
+
+
+
+·
+
+ 2Cη (1 + κB/σ B)
+
+αB
+
+1/q 
+
+.
+
+Ignoring the terms that do not depend on η, the iteration complexity is 
+
+Tmax ∝ log η
+
+ 1
+
+ϵ
+
+
+
+η1/q = log 
+
+ 1
+
+ϵ
+
+ η1/q 
+
+log η .
+
+Taking the derivative of η1/q / log η with respect to η and setting it to zero, we have 
+
+ddη 
+
+η1/q 
+
+log η
+
+!
+
+=
+
+η1/q −1
+
+ 1 
+
+> q
+
+log η − 1
+
+
+
+(log η)2 = 0 ⇐⇒ log η = q ⇐⇒ η = eq.
+
+The second derivative of η1/q / log η is 
+
+d2
+
+dη 2
+
+η1/q 
+
+log η
+
+!
+
+= η1/q −2
+
+(log η)3
+
+ 1 − qq2 (log η)2 + q − 2
+
+q log η + 2 
+
+
+
+, (η > 1, q > 0) .
+
+Evaluating at η = eq (so that log η = q), we obtain 
+
+d2
+
+dη 2
+
+η1/q 
+
+log η
+
+!
+
+> η=eq
+
+= (eq)1/q −2
+
+q3
+
+ 1 − qq2 q2 + q − 2
+
+q q + 2 
+
+
+
+= e1−2q
+
+q3 > 0.
+
+Therefore, η = eq yields a local minimum of η1/q / log η and is the only one, so it is the global minimum for η > 1 and the optimal choice for the restart decrease factor. 
+
+B.8 Convex Analysis Properties at a BnB Node (Lemma 4.1) 
+
+Lemma 4.1. The implicit function gN in (5) is proper, closed and convex, with a compact domain. 
+
+Proof. Proof Define the function H : Rp × Rp → R as 
+
+H(β, z) = 12
+
+X
+
+> j∈[p]
+
+β2 
+
+> j
+
+/z j + δD(β, z).
+
+First, observe that each term β2 
+
+> j
+
+/z j is the perspective of a convex quadratic function and is therefore proper, closed, and convex [Shafiee and Kılın¸ c-Karzan, 2024, Lemma 1 & 2]. Second, since the domain D is a nonempty bounded polyhedron, the indicator function δD is also proper, closed, and convex. Consequently, as H is the sum of proper, closed, and convex functions, it retains these properties [Rockafellar, 1970, Theorem 9.3]. The function gN is defined as the partial minimization of H with respect to z. Since the domain D is bounded, the domain of the recession function of H consists solely of the zero vector. Thus, the recession condition of Rockafellar [1970, Theorem 9.2] is satisfied, implying that gN is proper, closed, and convex. Finally, the domain of gN corresponds to the projection of the compact set D onto the β-coordinates. Since the projection is a linear map and D is compact polyhedron, dom (gN ) is a compact polyhedron [Rockafellar, 1970, Theorem 19.3]. 37 B.9 Fenchel-Conjugate Representation at a BnB Node (Lemma 4.2) 
+
+Lemma 4.2. The Fenchel conjugate of gN is given by 
+
+g∗N (α) = X
+
+> j∈J 1
+
+HM (αj ) + TopSum k−|J 1|
+
+ HM
+
+ αJf
+
+ .
+
+Proof. Proof of Lemma 4.2 Recall that the Huber loss function admits the variational form 
+
+HM (α) = sup 
+
+> β∈R
+
+αβ − β2/2 : |β| ≤ M .
+
+By the definition of the Fenchel conjugate, we have 
+
+g∗N (α) = sup 
+
+> (β,z)∈D
+
+α⊤β − 12
+
+X
+
+> j∈[p]
+
+β2
+
+> j
+
+zj
+
+.
+
+Using the definition of the domain D, we can decompose the supremum over the partition 
+
+J0, J1, Jf .
+
+g∗N (α) = sup 
+
+X
+
+> j∈J 0
+
+αj βj − β2
+
+> j
+
+2zj
+
+: zj = βj = 0 , ∀j ∈ J 0
+
+
+
++ sup 
+
+X
+
+> j∈J 1
+
+αj βj − β2
+
+> j
+
+2zj
+
+: zj = 1 , |βj | ≤ M, ∀j ∈ J 1
+
+
+
++ sup 
+
+X
+
+> j∈J f
+
+αj βj − β2
+
+> j
+
+2zj
+
+: X
+
+> j∈J f
+
+zj ≤ k − |J 1|, z j ∈ [0 , 1] , |βj | ≤ M z j , ∀j ∈ J f
+
+ .
+
+The first term trivially amounts to zero. By the variational form of the Huber loss, the second term sums to P 
+
+> j∈J 1
+
+HM (αj ). For the third term, optimizing over βj for a fixed zj yields sup  
+
+> |βj|≤ M z j
+
+(
+
+αj βj − β2
+
+> j
+
+2zj
+
+)
+
+= zj sup   
+
+> |βj/z j|≤ M
+
+(
+
+αj
+
+βj
+
+zj
+
+− 12
+
+ βj
+
+zj
+
+2)
+
+= zj HM (αj ).
+
+Substituting this back, the third supremum becomes the following linear program over zJf
+
+sup 
+
+X
+
+> j∈J f
+
+zj HM (αj ) : X
+
+> j∈J f
+
+zj ≤ k − |J 1|, z j ∈ [0 , 1] , ∀j ∈ J f
+
+ = TopSum k−|J 1|
+
+ HM
+
+ αJf
+
+ ,
+
+(B.6) where the last equality follows from the fact that the optimal strategy is to assign zj = 1 to the indices corresponding to the largest values of the non-negative weights HM (αj ). Summing the three parts completes the proof. 
+
+B.10 PLQ and Firm-Convex Structure at a BnB Node (Lemma 4.3) 
+
+Lemma 4.3. The functions gN and g∗N are both PLQ and firmly convex. 
+
+Proof. Proof We first show that g∗N is PLQ. Recall that g∗N (α) = h1(α) + h2(α), with h1(α) := P 
+
+> j∈J 1
+
+HM (αj ) and h2(α) := TopSum ¯k
+
+ HM (αJf ). The Huber function HM is PLQ by definition. Since the class of convex PLQ functions is closed under addition [Rockafellar and 38 Wets, 2009, Exercise 10.22], h1 is PLQ. For the second term, let ¯p = |J f | and ¯k = k − |J 1|. We partition the subspace R¯p associated with αJf into  ¯p
+
+> ¯k
+
+ sorting regions indexed by l
+
+Dl := {α ∈ Rp | | αi| ≥ | αj |, ∀i ∈ I l, ∀j ∈ J f \ I l} .
+
+Within each region Dl, the TopSum operator fixes its selection to the set Il. We further subdivide each Dl based on the thresholds of the Huber function. Define the intervals: 
+
+I1 := ( M, +∞), I2 := [0 , M ], I3 := [ −M, 0) , I4 := ( −∞ , −M ].
+
+We partition Dl into 4 ¯p polyhedral cells Dl, m, indexed by a vector m ∈ { 1, 2, 3, 4}¯p, such that for each j ∈ J f , αj ∈ Imj . The union of these sets satisfies S
+
+> l
+
+S 
+
+> m
+
+Dl, m = Rp = dom( g∗N ). On any specific cell Dl, m, the function h2 reduces to a fixed sum of Huber terms over the set Il. Specifically, depending on whether the interval index mj corresponds to the quadratic region ( |αj | ≤ M ) or the linear region ( |αj | > M ), the function takes the form: 
+
+h2(α) = X
+
+> j∈I l∩Q m
+
+12 α2 
+
+> j
+
++ X
+
+> j∈I l∩L m
+
+
+
+M |αj | − 12 M 2
+
+
+
+,
+
+where Qm and Lm are the sets of indices mapped to quadratic and linear intervals, respectively. Since this expression consists purely of linear and quadratic terms, h2 is PLQ. As the sum of PLQ functions is PLQ [Rockafellar and Wets, 2009, Exercise 10.22], g∗N is PLQ. We next prove that gN is PLQ. By Lemma 4.1, gN is proper, closed, and convex, and hence 
+
+g∗N is proper, closed, and convex with gN = ( g∗N )∗ [Rockafellar, 1970, Theorem 12.2]. Since the Fenchel conjugate of a proper, closed, and convex PLQ function is also PLQ [Rockafellar and Wets, 2009, Theorem 11.14(b)], it follows that gN is PLQ. Finally, we establish the firm convexity of gN and g∗N . Since both functions are convex PLQ, their tilted counterparts, defined as hν (·) := h(·) − ν⊤(·), remain trivially convex PLQ for any vector ν ∈ Rp. It is well-established that proper, closed, and convex PLQ functions satisfy the quadratic growth condition on any compact set [Li, 1995, Theorem 2.7]. Consequently, both 
+
+gN and g∗N satisfy the definition of firm convexity relative to any vector ν. This completes the proof. 
+
+B.11 Correctness of the Compute-g-Value Algorithm (Theorem 4.4) 
+
+Theorem 4.4. For any β ∈ dom( gN ), let ¯β := βJf , ¯ p := |J f |, and ¯k := k − |J 1|. Then 
+
+gN (β) = 12
+
+X
+
+> j∈J 1
+
+β2 
+
+> j
+
++ 12 min 
+
+> ω
+
+
+
+> ¯k
+
+X
+
+> j=1
+
+ω2
+
+> j
+
+ω ≥ 0, M ≥ ω1 ≥ · · · ≥ ω¯k ≥ 0,ω¯k+1 = · · · = ω¯p = 0 , ω ⪰m | ¯β|
+
+ .
+
+Here, ω ⪰m | ¯β| denotes that ω majorizes | ¯β|, i.e. ,
+
+> ℓ
+
+X
+
+> j=1
+
+ωj ≥
+
+> ℓ
+
+X
+
+> j=1
+
+| ¯β(j)| ∀ℓ = 1 , . . . , ¯p − 1, and 
+
+> ¯p
+
+X
+
+> j=1
+
+ωj =
+
+> ¯p
+
+X
+
+> j=1
+
+| ¯β(j)|.
+
+Algorithm 1 computes a minimizer ω of the above problem and thus evaluates gN (β) exactly with a computational complexity of O(p + ¯ p log ¯k + ¯k). 
+
+Proof. Proof of Theorem 4.4 We first simplify the evaluation of gN (β) by decomposing the problem based on the partition J0, J1, Jf defined by node N . Using the definitions of the domain D and the function gN , the optimization problem in (5) separates as follows 
+
+gN (β) = 12
+
+X
+
+> j∈J 0
+
+β2
+
+> j
+
+0 + 12
+
+X
+
+> j∈J 1
+
+β2 
+
+> j
+
++ 12 min  
+
+> zJf∈R¯p
+
+X
+
+> j∈J f
+
+β2
+
+> j
+
+zj
+
+:
+
+zj ∈ [0 , 1] , ∀j ∈ J f ,
+
+|βj | ≤ M z j , ∀j ∈ J f ,P 
+
+> j∈J f
+
+zj ≤ ¯k, 
+
+ ,
+
+39 where ¯k := k − |J 1| and ¯p := |J f |. Note that the first term is finite if and only if βj = 0 for all j ∈ J 0 (in which case it is zero). The second term is constant given β. Therefore, the core difficulty lies in the third term. For notational simplicity, we reformulate the third term (ignoring  
+
+> 12
+
+) as min 
+
+> ¯z∈R¯p
+
+X
+
+> j∈[¯ p]
+
+¯β2
+
+> j
+
+¯zj
+
+: ¯z ∈ [0 , 1] ¯p, 1⊤ ¯z ≤ ¯k, 
+
+| ¯βj | ≤ M ¯zj , ∀j ∈ [¯ p],
+
+ , (B.7) where ¯β := βJf and ¯z := zJf . Since the objective and constraints depend on ¯β only through the magnitudes | ¯βj | and are permutation-invariant, we sort the magnitudes of the free variables such that | ¯β(1) | ≥ | ¯β(2) | ≥ · · · ≥ | ¯β(¯ p)|. This expression is equivalent to the variational characterization of half the squared ¯k-support norm [Argyriou et al., 2012, Kim et al., 2022]. We now avoid working directly with ¯z and instead derive an evaluation procedure solely based on ¯β through a majorization-based convex-hull representation. Consider the following three sets: 
+
+• S1 :=   t, ¯β ∥ ¯β∥22 ≤ t, ∥ ¯β∥∞ ≤ M, ∥ ¯β∥0 ≤ ¯k ,
+
+• S2 := 
+
+n t, ¯β ∃ ¯z ∈ [0 , 1] ¯p s.t. P 
+
+> j∈[¯ p]
+
+¯β2 
+
+> j
+
+/¯zj ≤ t, 1⊤ ¯z ≤ ¯k, | ¯βj | ≤ M ¯zj ∀j ∈ [¯ p]
+
+o
+
+,
+
+• S3 := 
+
+ t, ¯β ∃ω ∈ R¯p s.t. ω ≥ 0, P 
+
+> j∈[¯ p]
+
+ω2 
+
+> j
+
+≤ t, M ≥ ω1 ≥ · · · ≥ ω¯k ≥ 0,ω¯k+1 = · · · = ω¯p = 0 , ω ⪰m | ¯β|
+
+
+
+,
+
+where | ¯β| denotes the elementwise absolute value, and ω ⪰m | ¯β| denotes that ω majorizes | ¯β|,
+
+i.e. , ℓX
+
+> j=1
+
+ωj ≥
+
+> ℓ
+
+X
+
+> j=1
+
+| ¯β(j)| ∀ℓ = 1 , . . . , ¯p − 1, and 
+
+> ¯p
+
+X
+
+> j=1
+
+ωj =
+
+> ¯p
+
+X
+
+> j=1
+
+| ¯β(j)|.
+
+If S2 had binary constraints ¯z ∈ { 0, 1}¯p, then it would coincide with S1. Relaxing ¯zj ∈ { 0, 1}
+
+to ¯zj ∈ [0 , 1] yields the (closed) convex hull, so S2 is the closed convex hull of S1 [Shafiee and Kılın¸ c-Karzan, 2024]. Moreover, since S1 is sign- and permutation-invariant, Kim et al. [2022, Theorem 4] show that S3 is also the closed convex hull of S1. Therefore, S2 = S3, and the optimal value of (B.7) can be written as min t  t, ¯β ∈ S 2 = min t  t, ¯β ∈ S 3
+
+= min 
+
+> ω
+
+
+
+> ¯k
+
+X
+
+> j=1
+
+ω2
+
+> j
+
+ω ≥ 0, M ≥ ω1 ≥ · · · ≥ ω¯k ≥ 0,ω¯k+1 = · · · = ω¯p = 0 , ω ⪰m | ¯β|
+
+ . (B.8) We next show that Algorithm 1 constructs the minimizer in (B.8) . Let θ := P¯pj=1 | ¯β(j)|
+
+denote the total sum. Since ω ⪰m | ¯β|, we must have ω1 ≥ | ¯β(1) |. In addition, the equality of total sums and the ordering ω1 ≥ · · · ≥ ω¯k imply ¯k ω 1 ≥ P¯kj=1 ωj = θ, hence ω1 ≥ θ/ ¯k.Therefore, ω1 ≥ max  | ¯β(1) |, θ/ ¯k. If θ/ ¯k ≥ | ¯β(1) |, the choice ω1 = · · · = ω¯k = θ/ ¯k minimizes 
+
+P¯kj=1 ω2 
+
+> j
+
+among all vectors with fixed sum θ (by convexity of x 7 → x2). Otherwise, the minimizer must satisfy ω1 = | ¯β(1) |, and we repeat the same argument on the remaining coordinates with updated remaining sum θ ← θ − | ¯β(1) |. This yields the iterative “peeling” rule implemented in Algorithm 1: in iteration j, compute the candidate average θ := θ/ ( ¯k − j + 1); if θ ≥ | ¯β(j)|
+
+then set ωj = · · · = ω¯k = θ and stop; otherwise set ωj = | ¯β(j)| and update θ ← θ − | ¯β(j)|. The returned objective value equals the optimal value of (B.8), and hence of (B.7). Finally, the construction above also yields the familiar closed-form expression as in Kim et al. [2022, Proposition 6]. Let κ ∈ { 0, . . . , ¯k − 1} denote the number of “peeled” coordinates, i.e., 40 the number of indices for which the algorithm sets ωj = | ¯β(j)|. Then ω1 = | ¯β(1) |, . . . , ω κ = | ¯β(κ)|
+
+and ωκ+1 = · · · = ω¯k = 1¯k−κ
+
+P¯pj=κ+1 | ¯β(j)|. Substituting into (B.8) gives 
+
+> κ
+
+X
+
+> j=1
+
+¯β2(j) + 1¯k − κ
+
+
+
+> ¯p
+
+X
+
+> j=κ+1
+
+| ¯β(j)|
+
+
+
+> 2
+
+,
+
+where κ is the unique integer satisfying 
+
+| ¯β(κ)| > 1¯k − κ
+
+> ¯p
+
+X
+
+> j=κ+1
+
+| ¯β(j)| ≥ | ¯β(κ+1) |.
+
+In the original ¯z-formulation (B.7) , the same splitting index κ corresponds to the number of coordinates for which the constraint ¯zj ≤ 1 is active ( ¯z⋆ 
+
+> (j)
+
+= 1), while for j > κ the remaining budget is distributed proportionally as ¯ z⋆ 
+
+> (j)
+
+∝ | ¯β(j)|.The computational cost of the algorithm is dominated by operations on the free variables Jf .Extracting ¯β takes O( ¯p) time. The sorting step typically requires O( ¯p log ¯ p); however, since the optimal solution effectively depends only on the top ¯k components and the residual sum, this can be optimized to O(¯ p log ¯k) using a partial sort. The subsequent linear scan to determine κ
+
+and the final summation perform at most O( ¯k) operations. Including the O(p) time to handle the fixed indices, the total complexity is O(p + ¯ p log ¯k + ¯k). This completes the proof. 
+
+B.12 Correctness of the Evaluate-Prox Algorithm (Theorem 4.5) 
+
+Theorem 4.5. For any β ∈ Rp and ρ > 0, Algorithm 2 computes prox ρg ∗N (β) exactly with a computational complexity of O(p + ¯p log ¯ p), where ¯p = |J f | and ¯k = k − |J 1|. Moreover, Algorithm 2 can be used as a subroutine to compute prox ρg N (β) exactly via the extended Moreau decomposition prox ρg N (β) = β − ρ prox ρ−1g∗N
+
+ ρ−1β.
+
+Proof. Proof of Theorem 4.5 The primal update (14) follows directly from the Extended Moreau Decomposition [Beck, 2017, Theorem 6.45]. We thus focus on evaluating prox ρg ∗N .Recall from Lemma 4.2 that g∗N decomposes separably over the index sets J0, J1, and Jf .Consequently, the proximal optimization problem decomposes across these index sets. Let 
+
+α⋆ := prox ρg ∗N (β) = arg min 
+
+> α∈Rp
+
+12 ∥α − β∥22 + ρg ∗N (α).
+
+Using the separable form of g∗N , the objective can be written as 12 ∥α − β∥22 + ρg ∗N (α) = 12 ∥αJ0 − βJ0 ∥22 + 12 ∥αJ1 − βJ1 ∥22 + ρ X
+
+> j∈J 1
+
+HM (αj )+ 12 ∥αJf − βJf ∥22 + ρ TopSum ¯k
+
+ HM (αJf ),
+
+where ¯k = k − |J 1|. The first two subproblems are trivially solved by α⋆ 
+
+> J0
+
+= βJ0 and α⋆ 
+
+> J1
+
+=[prox ρH M (βj )] j∈J 1 , the standard proximal operator of the Huber loss for every j ∈ J 1.The core difficulty lies in solving the last optimization problem. For notational simplicity, let ¯β = βJf and ¯ α = αJf . We aim to solve the reformulated problem min 
+
+> ¯α∈R¯p
+
+12 ∥ ¯α − ¯β∥22 + ρ TopSum ¯k
+
+ HM ( ¯ α).
+
+41 We simplify the problem using two structural properties of the optimal solution ¯α⋆. First, since the Huber loss is an even function, we have sgn ( ¯α⋆) = sgn ( ¯β). Second, if | ¯βi| ≥ | ¯βj |, then 
+
+|¯α⋆i | ≥ | ¯α⋆j |. For the sake of contradiction, suppose the opposite were true |¯α⋆i | < |¯α⋆j |. Then we could swap α⋆i and α⋆j to further decrease the loss function, which contradict with the fact that the solution ¯ α⋆ is already optimal. Using these properties and the definition of TopSum ¯k operator, we can reformulate the above minimization problem as a generalized isotonic regression problem on the magnitudes | ¯α| as follows min 
+
+> ν∈R¯p
+> +
+> ¯p
+
+X
+
+> j=1
+
+12 (νj − | ¯βπ(j)|)2 + ρj HM (νj ) s.t. ν1 ≥ ν2 ≥ · · · ≥ ν¯p ≥ 0, (B.9) where ¯βπ(j) denotes the j-th largest element of | ¯β| in magnitude, and the weights are defined as 
+
+ρj = ρ for j ≤ ¯k and ρj = 0 for j > ¯k. If ν⋆ solves (B.9) , we can recover ¯α⋆ via ¯α⋆ = sign ( ¯β)⊙ν⋆.The optimization problem (B.9) minimizes a sum of convex functions under a total order constraint. After sorting, it can be solved exactly in linear time using the PAVA algorithm presented in [Busing, 2022]. Algorithm 2 implements this procedure. Lines 6–11 perform the PAVA steps, iteratively merging adjacent blocks that violate the monotonicity constraint 
+
+νj ≥ νj+1 . Since sorting takes O( ¯p log ¯ p) and the PAVA scan takes O( ¯p), the total complexity is dominated by the sort. This completes the proof. 
+
+B.13 GLM Regularity Conditions for the Framework (Proposition 4.6) 
+
+Proposition 4.6. Consider the primal objective Φ( β) = F (Xβ ) + G(β), where F (z) := f (z, y)with f : Rn × Rn → R being strictly convex, locally smooth, and firmly convex in z, and 
+
+G(β) := 2 λ2 gN (β) with λ2 > 0 and gN being defined in (5). Then, Assumptions 3.1–3.8 hold. 
+
+Proof. Proof of Proposition 4.6 Since f (·, y) is strictly convex in its first argument z, there are no lines along which F is finite and affine. Additionally, since f is real-valued, convex, and locally smooth, F is trivially proper, closed and convex. Moreover, Lemma 4.1 establishes that 
+
+gN , or equivalently G, is proper, closed, and convex with a compact domain. Since dom (G) is compact, there are no lines along which G is finite and affine. Thus, Assumptions 3.1 and 3.8 are satisfied. Since F is locally smooth and real-valued, it is differentiable everywhere and int (dom (F )) = 
+
+Rn. The domain of G is defined by box and cardinality constraints, which form a nonempty polyhedron with nonempty relative interior. Thus, rint ( dom (Φ)) is nonempty, guaranteeing the existence of a Slater point βs. For the dual, since dom (G) is compact, its conjugate G∗ is real-valued and finite everywhere, implying int (dom (G∗)) = Rp. Since there are no lines along which F is finite and affine, int (dom (F ∗)) is nonempty [Rockafellar, 1970, Corollary 13.4.2]. Hence, the intersection of the interiors is nonempty, guaranteeing the existence of a Slater point 
+
+ζs. Thus, Assumption 3.2 is satisfied. The optimal primal solution set B⋆ is a closed subset of dom (G). Since dom (G) is compact thanks to Lemma 4.1, B⋆ is compact. Since dom (F ) = Rn, the inclusion XB⋆ ⊂ int ( dom (F )) holds trivially. This verifies Assumption 3.4 (i). Additionally, F is firmly convex by the assump-tion of the lemma. G is also firmly convex thanks to Lemma 4.3. This verifies Assumption 3.4 (ii). Since G∗ is PLQ thanks to Lemma 4.3, its subdifferential is a polyhedral set. By Assump-tion 3.8, F is strictly convex. Since F is locally smooth and real-valued, it is differentiable everywhere and dom( ∂F ) = Rn, so F is essentially strictly convex. Therefore, F ∗ is essentially smooth [Rockafellar, 1970, Theorem 26.3]. Since F ∗ is essentially smooth, [Rockafellar, 1970, Theorem 26.1] implies dom (∂F ∗) = int (dom (F ∗)). The KKT condition Xβ ⋆ ∈ ∂F ∗(−ζ⋆) then yields −ζ⋆ ∈ int ( dom (F ∗)). Since dom (G∗) = Rp, X⊤ζ⋆ ∈ int (dom (G∗)) holds trivially. This verifies Assumption 3.4 (iv). Moreover, −ζ⋆ ∈ int (dom (F ∗)) implies ∂F ∗(−ζ⋆) = {∇ F ∗(−ζ⋆)}
+
+42 by [Rockafellar, 1970, Theorem 26.1], which is a polyhedral set. This verifies Assumption 3.4 (iii) and concludes the proof. 
+
+B.14 Verifications for Common GLM Loss Functions 
+
+This appendix verifies that several standard GLM loss functions satisfy the regularity conditions assumed in Proposition 4.6, namely that F is strictly convex, locally smooth, and firmly convex. Throughout, we use z = Xβ ∈ Rn to denote the prediction vector and write the loss as 
+
+F (z) := f (z, y). For multinomial logistic regression, we treat z as the stacked vector of class scores after fixing a reference class, as detailed in Lemma B.5. 
+
+Lemma B.1 (Linear regression (least squares)) . Let y ∈ Rn and define the least squares loss 
+
+F (z) := 12 ∥z − y∥22, z ∈ Rn.
+
+Then, F is strictly convex, globally smooth, and firmly convex. Proof. Proof The function F is twice continuously differentiable with 
+
+∇F (z) = z − y, ∇2F (z) = I for all z ∈ Rn.
+
+Hence F is 1-strongly convex and 1-smooth on Rn, which implies strict convexity and local smoothness. Moreover, for any ν ∈ Rn, the tilted function Fν (z) := F (z) − ν⊤z has the same Hessian ∇2Fν ≡ I, and is therefore 1-strongly convex. Strong convexity implies the quadratic growth condition, so F is firmly convex in the sense of Section 3. 
+
+Lemma B.2 (Logistic regression) . Let y ∈ {− 1, 1}n and define the logistic loss 
+
+F (z) := 
+
+> n
+
+X
+
+> i=1
+
+log(1 + exp( −yizi)) , z ∈ Rn.
+
+Then, F is strictly convex, globally smooth, and firmly convex. Proof. Proof The function F is twice continuously differentiable with gradient and Hessian given componentwise by 
+
+ ∇F (z) 
+
+> i
+
+= − yi
+
+1 + exp( yizi) , ∇2F (z) = diag 
+
+ exp( yizi)(1 + exp( yizi)) 2
+
+ni=1 
+
+
+
+.
+
+For all finite z, we have ∇2F (z) ≻ 0, and hence F is strictly convex on Rn.To show global smoothness, note that since ∥∇ 2F (z)∥2 equals the largest diagonal entry and 0 < exp( yizi)(1 + exp( yizi)) 2 ≤ 14 for all z ∈ Rn.
+
+Thus, we have sup z∈Rn ∥∇ 2F (z)∥2 ≤ 1/4, which implies that F is globally smooth. For firm convexity, note that the Hessian is continuous and positive definite everywhere. Hence, by compactness, the minimum eigenvalue over B satisfies 
+
+mB := inf  
+
+> z∈B
+
+λmin 
+
+ ∇2F (z) > 0.
+
+Therefore, F is mB-strongly convex on B. For any ν ∈ Rn, the tilted function Fν (z) = F (z)−ν⊤z
+
+has the same Hessian and is also mB-strongly convex on B, which implies the quadratic growth condition on B. Thus, F is firmly convex. 43 Lemma B.3 (Poisson regression) . Let y ∈ Rn with yi ∈ { 0, 1, 2, . . . } for all i ∈ [n], and define the Poisson loss 
+
+F (z) := 
+
+> n
+
+X
+
+> i=1
+
+(exp( zi) − yizi) , z ∈ Rn.
+
+Then, F is strictly convex, locally smooth, and firmly convex. Proof. Proof The function F is twice continuously differentiable with 
+
+ ∇F (z) 
+
+> i
+
+= exp( zi) − yi, ∇2F (z) = diag( {exp( zi)}ni=1 ) .
+
+Since exp( zi) > 0 for all zi ∈ R, we have ∇2F (z) ≻ 0 for all z, and F is strictly convex on Rn.Let B ⊂ Rn be compact and define 
+
+z := min  
+
+> z∈B
+
+min  
+
+> i∈[n]
+
+zi, z := max  
+
+> z∈B
+
+max  
+
+> i∈[n]
+
+zi,
+
+which are finite by compactness. Then, for all z ∈ B ,
+
+ez I ⪯ ∇ 2F (z) ⪯ ez I.
+
+The upper bound implies that ∇F is Lipschitz on B (local smoothness), and the lower bound implies that F is ez -strongly convex on B. As in Lemma B.2, strong convexity of the tilted functions on arbitrary compact sets yields the quadratic growth condition, and thus F is firmly convex. 
+
+Lemma B.4 (Gamma (exponential) regression) . Let y ∈ Rn with yi > 0 for all i ∈ [n], and define the Gamma (exponential) regression loss 
+
+F (z) := 
+
+> n
+
+X
+
+> i=1
+
+(yi exp( −zi) + zi) , z ∈ Rn.
+
+Then, F is strictly convex, locally smooth, and firmly convex. Proof. Proof The function F is twice continuously differentiable with 
+
+ ∇F (z) 
+
+> i
+
+= −yi exp( −zi) + 1 , ∇2F (z) = diag( {yi exp( −zi)}ni=1 ) .
+
+Since yi > 0 and exp (−zi) > 0 for all zi ∈ R, we have ∇2F (z) ≻ 0 for all z, and thus F is strictly convex on Rn.Let B ⊂ Rn be compact and define 
+
+z := min  
+
+> z∈B
+
+min  
+
+> i∈[n]
+
+zi, z := max  
+
+> z∈B
+
+max  
+
+> i∈[n]
+
+zi,
+
+which are finite by compactness. Then, for all z ∈ B ,diag 
+
+yie−z ni=1 
+
+
+
+⪯ ∇ 2F (z) ⪯ diag   yie−z ni=1 
+
+ .
+
+The upper bound implies that ∇F is Lipschitz on B (local smoothness), and the lower bound implies that F is strongly convex on B. As in Lemma B.2, strong convexity of the tilted functions on arbitrary compact sets yields the quadratic growth condition, and thus F is firmly convex. 44 Lemma B.5 (Multinomial logistic regression) . Fix an integer K ≥ 2, assume that the coefficient vector for class K is zero. For each i ∈ [n], let yi ∈ { 0, 1}K−1 satisfy 1⊤yi ≤ 1. Define 
+
+zi ∈ RK−1 and consider the multinomial logistic regression loss 
+
+F (z) := 
+
+> n
+
+X
+
+> i=1
+
+
+
+log 
+
+
+
+1 + 1⊤ exp( zi)
+
+
+
+− y⊤ 
+
+> i
+
+zi
+
+
+
+,
+
+where z := ( z1, . . . , zn) ∈ Rn(K−1) stacks the row vectors zi. Then F is strictly convex, locally smooth, and firmly convex with respect to z.Proof. Proof For each i ∈ [n], define 
+
+pi := exp( zi)1 + 1⊤ exp( zi) ∈ RK−1, pi0 := 11 + 1⊤ exp( zi) ∈ (0 , 1) ,
+
+so that pi0 + 1⊤pi = 1 and all entries are strictly positive. Then F is twice continuously differentiable and its Hessian is block-diagonal, with the i-th block given by 
+
+∇2 
+
+> zi
+
+F (z) = diag  pi
+
+ − pip⊤ 
+
+> i
+
+,
+
+For any nonzero v ∈ RK−1, we have 
+
+v⊤∇2 
+
+> zi
+
+F (z) v =
+
+> K−1
+
+X
+
+> l=1
+
+pil v2 
+
+> l
+
+−
+
+ K−1X
+
+> l=1
+
+pil vl
+
+2
+
+,
+
+which is the variance of a random variable taking the value vl with probability pil and 0 with probability pi0 > 0. This variance is strictly positive whenever v̸ = 0, so each block is positive definite and therefore ∇2F (z) ≻ 0 for all z. Hence F is strictly convex. Let B be any compact subset of the z-space. Since ∇2F is continuous, ∥∇ 2F (z)∥2 is bounded above on B, implying that ∇F is Lipschitz on B (local smoothness). Moreover, since ∇2F (z) ≻ 0
+
+for all z and B is compact, there exists mB > 0 such that ∇2F (z) ⪰ mBI for all z ∈ B , so F is strongly convex on B. As in Lemma B.2, strong convexity of the tilted functions on arbitrary compact sets yields the quadratic growth condition, and thus F is firmly convex. 
+
+## C Experimental Setup Details 
+
+C.1 Setup for Solving the Perspective Relaxation 
+
+We generate our synthetic datasets in the following procedure. First, we sample each feature vector xi ∈ Rp from a Gaussian distribution, xi ∼ N (0, Σ), where the covariance matrix has entries Σ jl = σ|j−l|. The variable σ ∈ (0 , 1) controls the features correlation: if we increase σ,feature columns in the design matrix X become more correlated. Throughout the experimental section, we set σ = 0 .5. Next, we create the sparse coefficient vector β∗ with k equally spaced nonzero entries, where β∗ 
+
+> j
+
+= 1 if j mod (p/k ) = 0 and β∗ 
+
+> j
+
+= 0 otherwise. After these two steps, we build the prediction vector y. If our loss function is squared error loss (regression task), we set yi = xTi β∗ + ϵi, where ϵi is a Gaussian random noise with ϵi ∼ N (0 , ∥Xβ ∗∥ 
+
+> SNR
+
+), and SNR stands for the signal-to-noise ratio. In all our experiments, we choose SNR = 5. If our loss function is logistic loss (classification task), we set yi ∼ Bern (xTi β∗ + ϵi), where Bern (P ) is a Bernoulli random variable with P(yi = 1) = P and P(yi = −1) = 1 − P .45 C.2 Setup for Demonstrating Restart Scheme Generality on LASSO Problems 
+
+To demonstrate that our restart scheme is applicable beyond perspective relaxations, we consider two LASSO-type composite problems: min  
+
+> β∈Rp
+
+f (Xβ , y) + λ1∥β∥1 (ℓ1-regularized) ,
+
+min  
+
+> β∈Rp
+
+f (Xβ , y) + δ∥β∥1≤C (β) (ℓ1-ball constrained) ,
+
+where δ∥β∥1≤C (β) is the indicator function of the ℓ1-norm ball with radius C. We use the same synthetic data generation procedure as in Appendix C.1 and fix n = p = 16000, k = 10, and σ = 0 .5, with coefficient magnitude β∗ 
+
+> j
+
+∈ { 0, 1} and random seed 0. In the ℓ1-regularized experiments we set λ1 = 1 .0, and in the ℓ1-ball constrained experiments we set C = 10 .0. 
+
+C.3 Setup for Certifying Optimality 
+
+Datasets and Preprocessing We run on both synthetic and real-world datasets. For the synthetic datasets, we use the same data generation process as in the previous subsec-tion for solving the perspective relaxation, with n-to-p ratio equal to 1 .0, number of nonzero coefficients k = 10, and the feature correlation parameter σ = 0 .5. We vary the feature di-mension p ∈ { 1000 , 2000 , 4000 , 8000 , 16000 }. For the real-world datasets, we use the dataset Santander Customer Transaction Prediction dataset [Piedra et al., 2019] for linear regression and DOROTHEA Asuncion and Newman [2007] for logistic regression. The Santander dataset has 4459 samples and orginally has 4992 features. After pruning redundant features, we have 4735 features. The DOROTHEA dataset has 1950 samples and 100000 features. After pruning redundant features, we have 91598 features. For both the Santander and DOROTHEA dataset, we center each feature to have mean 0 and norm equal to 1. 
+
+Choice of Hyperparameters On the synthetic datasets, we set the box constraint M = 2, the ℓ2 regularization coefficient λ2 = 1 .0, and the cardinality constraint k = 10. On the real-world datasets, we perform 5-fold cross-validation (without the box-constraint) to select the optimal hyperparameters for λ2 and the range of k values. For both datasets, the best λ2 from cross-validation is 1 .0. The best k from cross-validation is around 10 for Santander and around 5 for DOROTHEA. When we run BnB with the box-constraint, we set the box constraint M to be around twice the largest magnitude of β obtained from the cross-validation. Based on these cross-validation results, we set M = 10. For Santander, we test k ∈ { 5, 6, 7, 8, 9, 10 }, and for DOROTHEA, we test k ∈ { 5, 10 , 15 , 20 , 25 }.
+
+Branch and Bound For our method, we implement a customized branch-and-bound (BnB) framework based on the codebase in Liu et al. [2023]. We use the same heuristics for finding feasible solutions and branching as in Liu et al. [2023]. To obtain a high-quality feasible solution at each node, we run beamsearch with beam width 5. For branching, we use the best beamsearch solution at each node and, among its nonzero coefficients, branch on the variable that would induce the largest loss increase if set to 0. This prioritizes important variables early in BnB. The key difference is that we use our proximal gradient method to compute safe lower bounds at each node for pruning. For our proximal method, we use FISTA with line search and restart factor η = e3, which gave the best empirical performance. 
+
+C.4 Computing Platforms 
+
+When investigating how much GPU can accelerate our computation, we ran the experiments with both CPU and GPU implementations on the Nvidia A100s. For everything else, we ran the 46 experiments with the CPU implementation on AMD Milan with CPU speed 2.45 Ghz and 8 cores. 
+
+## D Additional Experimental Results 
+
+D.1 Solving the Perspective Relaxation 
+
+We provide perturbation studies on solving the perspective relaxation by varying the box constraint M , the ℓ2 regularization coefficient λ2, and the sample-to-feature ( n-to-p) ratio. Unless otherwise noted, settings match Figure 5 ( M = 2 .0, λ2 = 1 .0, n-to-p ratio = 1). Figure D.1 and Figure D.2 tighten and loosen the box constraint to M = 1 .2 and M = 5 .0, respectively. Figure D.3 and Figure D.4 vary the ℓ2 penalty to λ2 = 0 .1 and λ2 = 10. Figure D.5 and Figure D.6 adjust the n-to-p ratio to 10 .0 and 0 .1 while keeping M = 2 .0 and λ2 = 1 .0. 2500 5000 7500 10000 12500 15000  
+
+> p
+> 10 1
+> 10 0
+> 10 1
+> 10 2
+> 10 3
+> Solver Time Elapsed
+
+Linear Loss       
+
+> 2500 5000 7500 10000 12500 15000
+> p
+> 10 1
+> 10 0
+> 10 1
+> 10 2
+> 10 3
+> Solver Time Elapsed
+
+Logistic Loss     
+
+> gurobi mosek scs clarabel ours
+
+Figure D.1: Running time comparison of solving Problem 3 when the box constraint is tightened to M = 1 .2. 2500 5000 7500 10000 12500 15000  
+
+> p
+> 10 1
+> 10 0
+> 10 1
+> 10 2
+> 10 3
+> Solver Time Elapsed
+
+Linear Loss       
+
+> 2500 5000 7500 10000 12500 15000
+> p
+> 10 1
+> 10 0
+> 10 1
+> 10 2
+> 10 3
+> Solver Time Elapsed
+
+Logistic Loss     
+
+> gurobi mosek scs clarabel ours
+
+Figure D.2: Running time comparison of solving Problem 3 when the box constraint is relaxed to M = 5 .0. 47 2500 5000 7500 10000 12500 15000 
+
+p
+
+10 1
+
+10 0
+
+10 1
+
+10 2
+
+10 3
+
+> Solver Time Elapsed
+
+Linear Loss 
+
+2500 5000 7500 10000 12500 15000 
+
+p
+
+10 1
+
+10 0
+
+10 1
+
+10 2
+
+10 3
+
+> Solver Time Elapsed
+
+Logistic Loss 
+
+gurobi mosek scs clarabel ours Figure D.3: Running time comparison of solving Problem 3 with the ℓ2 regularization reduced to λ2 = 0 .1. 2500 5000 7500 10000 12500 15000 
+
+p
+
+10 1
+
+10 0
+
+10 1
+
+10 2
+
+10 3
+
+> Solver Time Elapsed
+
+Linear Loss 
+
+2500 5000 7500 10000 12500 15000 
+
+p
+
+10 1
+
+10 0
+
+10 1
+
+10 2
+
+10 3
+
+> Solver Time Elapsed
+
+Logistic Loss 
+
+gurobi mosek scs clarabel ours 
+
+Figure D.4: Running time comparison of solving Problem 3 with the ℓ2 regularization increased to λ2 = 10. 48 2500 5000 7500 10000 12500 15000 
+
+p
+
+10 2
+
+10 1
+
+10 0
+
+10 1
+
+10 2
+
+10 3
+
+> Solver Time Elapsed
+
+Linear Loss 
+
+2500 5000 7500 10000 12500 15000 
+
+p
+
+10 2
+
+10 1
+
+10 0
+
+10 1
+
+10 2
+
+10 3
+
+> Solver Time Elapsed
+
+Logistic Loss 
+
+gurobi mosek scs clarabel ours Figure D.5: Running time comparison of solving Problem 3 when the n-to-p ratio is increased to 10 .0. 2500 5000 7500 10000 12500 15000 
+
+p
+
+10 1
+
+10 0
+
+10 1
+
+10 2
+
+10 3
+
+> Solver Time Elapsed
+
+Linear Loss 
+
+2500 5000 7500 10000 12500 15000 
+
+p
+
+10 1
+
+10 0
+
+10 1
+
+10 2
+
+10 3
+
+> Solver Time Elapsed
+
+Logistic Loss 
+
+gurobi mosek scs clarabel ours 
+
+Figure D.6: Running time comparison of solving Problem 3 when the n-to-p ratio is decreased to 0 .1. 49 D.2 Shrink Factor in Duality-based Restart Scheme 
+
+In the main paper, we noted that the duality-based restart scheme can work with any decrease factor η > 1, but the choice of η affects practical running speed. We compare η ∈ { e, e 2, e 3}
+
+to illustrate this effect. The results are shown in Figure D.7 and Figure D.8. We are able to improve the practical speeds of all methods by changing η from e to e2 and e3, which matches the theoretical prediction in Theorem 3.13 and discussion at the end of Section 3.3. 0 100 200 300 
+
+Iteration 
+
+10 5
+
+10 3
+
+10 1
+
+> Optimality Gap
+
+Iteration vs. Optimality Gap 
+
+(primal loss - optimal loss)/optimal loss 
+
+0 100 200 300 
+
+Iteration 
+
+10 5
+
+10 3
+
+10 1
+
+10 1
+
+> Optimality Gap
+
+Iteration vs. Optimality Gap 
+
+(optimal loss - dual loss)/optimal loss 
+
+0 100 200 300 
+
+Iteration 
+
+10 5
+
+10 3
+
+10 1
+
+10 1
+
+> Optimality Gap
+
+Iteration vs. Optimality Gap 
+
+(primal loss - dual loss)/optimal loss 
+
+FISTA 
+
+Duality Restart ( e1)
+
+FISTA 
+
+Duality Restart ( e2)
+
+FISTA 
+
+Duality Restart ( e3)
+
+FISTA (w linesearch) 
+
+Duality Restart ( e1)
+
+FISTA (w linesearch) 
+
+Duality Restart ( e2)
+
+FISTA (w linesearch) 
+
+Duality Restart ( e3)
+
+ACFGM ( = 0.1) 
+
+Duality Restart ( e1)
+
+ACFGM ( = 0.1) 
+
+Duality Restart ( e2)
+
+ACFGM ( = 0.1) 
+
+Duality Restart ( e3)
+
+Figure D.7: Convergence speed comparison of FISTA methods (with and without line search) and ACFGM (with duality-gap-based restarted ) for η = e, η = e2, and η = e3 on solving the perspective relaxation in Problem 3 with the linear regression loss, n = 16000, p = 16000, k = 10, 
+
+ρ = 0 .5, λ2 = 1 .0, and M = 2 .0. 0 100 200 300 400 
+
+Iteration 
+
+10 5
+
+10 3
+
+10 1
+
+> Optimality Gap
+
+Iteration vs. Optimality Gap 
+
+(primal loss - optimal loss)/optimal loss 
+
+0 100 200 300 400 
+
+Iteration 
+
+10 5
+
+10 3
+
+10 1
+
+> Optimality Gap
+
+Iteration vs. Optimality Gap 
+
+(optimal loss - dual loss)/optimal loss 
+
+0 100 200 300 400 
+
+Iteration 
+
+10 5
+
+10 3
+
+10 1
+
+> Optimality Gap
+
+Iteration vs. Optimality Gap 
+
+(primal loss - dual loss)/optimal loss 
+
+FISTA 
+
+Duality Restart ( e1)
+
+FISTA 
+
+Duality Restart ( e2)
+
+FISTA 
+
+Duality Restart ( e3)
+
+FISTA (w linesearch) 
+
+Duality Restart ( e1)
+
+FISTA (w linesearch) 
+
+Duality Restart ( e2)
+
+FISTA (w linesearch) 
+
+Duality Restart ( e3)
+
+ACFGM ( = 0.1) 
+
+Duality Restart ( e1)
+
+ACFGM ( = 0.1) 
+
+Duality Restart ( e2)
+
+ACFGM ( = 0.1) 
+
+Duality Restart ( e3)
+
+Figure D.8: Convergence speed comparison of FISTA methods (with and without line search) and ACFGM (with duality-gap-based restarted ) for η = e, η = e2, and η = e3 on solving the perspective relaxation in Problem 3 with the logistic regression loss, n = 16000, p = 16000, 
+
+k = 10, ρ = 0 .5, λ2 = 1 .0, and M = 2 .0. 50 D.3 Can Our Restart Scheme Benefit Other Problems Beyond Perspective Relaxations? 
+
+To demonstrate the broader applicability of our duality-gap-based restart scheme beyond perspective relaxations, we apply it to accelerate proximal gradient methods for solving LASSO problems. We report results for both an ℓ1-ball constrained formulation, where G(β) := 
+
+δ∥β∥1≤C (β), and an ℓ1-regularized formulation, where G(β) := λ1∥β∥1. See Appendix C.2 for the experimental setup and parameter choices. The results are shown in Figure D.9–Figure D.12. Like in the main paper for solving the perspective relaxation, we observe that our restart scheme accelerates both FISTA and ACFGM to achieve linear convergence rates. 0 100 200 300 400 500                      
+
+> Iteration
+> 10 8
+> 10 5
+> 10 2
+> Optimality Gap
+> Iteration vs. Optimality Gap
+> (primal loss - optimal loss)/optimal loss
+> 0100 200 300 400 500
+> Iteration
+> 10 5
+> 10 3
+> 10 1
+> Optimality Gap
+> Iteration vs. Optimality Gap
+> (optimal loss - dual loss)/optimal loss
+> 0100 200 300 400 500
+> Iteration
+> 10 5
+> 10 3
+> 10 1
+> Optimality Gap
+> Iteration vs. Optimality Gap
+> (primal loss - dual loss)/optimal loss
+> PGD
+> FISTA
+> Heuristic Restart
+> FISTA
+> FISTA
+> Duality Restart
+> FISTA (w linesearch)
+> FISTA (w linesearch)
+> Duality Restart
+> ACFGM ( = 0.1)
+> ACFGM ( = 0.1)
+> Duality Restart
+
+Figure D.9: Convergence speed comparison between accelerated methods (with and without restart), on solving the ℓ1-ball constrained problem with the least squares loss. 0 100 200 300 400 500                        
+
+> Iteration
+> 10 9
+> 10 7
+> 10 5
+> 10 3
+> 10 1
+> Optimality Gap
+> Iteration vs. Optimality Gap
+> (primal loss - optimal loss)/optimal loss
+> 0100 200 300 400 500
+> Iteration
+> 10 6
+> 10 4
+> 10 2
+> 10 0
+> Optimality Gap
+> Iteration vs. Optimality Gap
+> (optimal loss - dual loss)/optimal loss
+> 0100 200 300 400 500
+> Iteration
+> 10 5
+> 10 3
+> 10 1
+> Optimality Gap
+> Iteration vs. Optimality Gap
+> (primal loss - dual loss)/optimal loss
+> PGD
+> FISTA
+> Heuristic Restart
+> FISTA
+> FISTA
+> Duality Restart
+> FISTA (w linesearch)
+> FISTA (w linesearch)
+> Duality Restart
+> ACFGM ( = 0.1)
+> ACFGM ( = 0.1)
+> Duality Restart
+
+Figure D.10: Convergence speed comparison between accelerated methods (with and without restart), on solving the ℓ1-ball constrained problem with the logistic regression loss. 
+
+Dual feasibility for ℓ1-regularized problems. For the ℓ1-regularized formulation, the Fenchel conjugate of the regularization term G(β) = λ1∥β∥1 is G∗(u) = δ∥u∥∞≤λ1 (u), and hence the dual objective is finite only when ∥X⊤ζ∥∞ ≤ λ1. Thus, the dual sequence ζt := −∇ F  Xβ t
+
+can be infeasible, in which case evaluating the dual objective is not meaningful. Following standard practice in the LASSO literature, we enforce dual feasibility via a simple scaling (radial projection) step, bζ := ζ · min 
+
+n
+
+1, λ1
+
+∥X⊤ζ∥∞
+
+o
+
+, which guarantees ∥X⊤ bζ∥∞ ≤ λ1 and yields a valid (though potentially loose) dual lower bound for computing a duality gap [Fercoq et al., 2015, 51 Dantas et al., 2021]. As a result, when applying our gap-based restart scheme to ℓ1-regularized problems, the gap used for restarting should be viewed as an inexact certificate; nevertheless, it still provides an effective restart signal in practice, leading to the linear-convergence behavior observed below. 0 1000 2000 3000 4000 5000 
+
+Iteration 
+
+10 5
+
+10 3
+
+10 1
+
+10 1
+
+> Optimality Gap
+
+Iteration vs. Optimality Gap 
+
+(primal loss - optimal loss)/optimal loss 
+
+0 1000 2000 3000 4000 5000 
+
+Iteration 
+
+10 4
+
+10 2
+
+10 0
+
+> Optimality Gap
+
+Iteration vs. Optimality Gap 
+
+(optimal loss - dual loss)/optimal loss 
+
+0 1000 2000 3000 4000 5000 
+
+Iteration 
+
+10 4
+
+10 2
+
+10 0
+
+10 2
+
+> Optimality Gap
+
+Iteration vs. Optimality Gap 
+
+(primal loss - dual loss)/optimal loss 
+
+PGD 
+
+FISTA 
+
+Heuristic Restart 
+
+FISTA 
+
+FISTA 
+
+Duality Restart 
+
+FISTA (w linesearch) 
+
+FISTA (w linesearch) 
+
+Duality Restart 
+
+ACFGM ( = 0.1) 
+
+ACFGM ( = 0.1) 
+
+Duality Restart 
+
+Figure D.11: Convergence speed comparison between accelerated methods (with and without restart), on solving the ℓ1-regularized problem with the least squares loss. 0 1000 2000 3000 4000 5000 
+
+Iteration 
+
+10 5
+
+10 3
+
+10 1
+
+10 1
+
+> Optimality Gap
+
+Iteration vs. Optimality Gap 
+
+(primal loss - optimal loss)/optimal loss 
+
+0 1000 2000 3000 4000 5000 
+
+Iteration 
+
+10 5
+
+10 3
+
+10 1
+
+> Optimality Gap
+
+Iteration vs. Optimality Gap 
+
+(optimal loss - dual loss)/optimal loss 
+
+0 1000 2000 3000 4000 5000 
+
+Iteration 
+
+10 5
+
+10 3
+
+10 1
+
+10 1
+
+> Optimality Gap
+
+Iteration vs. Optimality Gap 
+
+(primal loss - dual loss)/optimal loss 
+
+PGD 
+
+FISTA 
+
+Heuristic Restart 
+
+FISTA 
+
+FISTA 
+
+Duality Restart 
+
+FISTA (w linesearch) 
+
+FISTA (w linesearch) 
+
+Duality Restart 
+
+ACFGM ( = 0.1) 
+
+ACFGM ( = 0.1) 
+
+Duality Restart 
+
+Figure D.12: Convergence speed comparison between accelerated methods (with and without restart), on solving the ℓ1-regularized problem with the logistic regression loss. 52 D.4 Certifying Optimality 
+
+D.4.1 Synthetic Results with M = 3 We report additional branch-and-bound results on the synthetic datasets with a larger box constraint M = 3 .0: CPU baselines in Tables D.1–D.2 and CPU vs GPU comparisons in Tables D.3–D.4. Table D.1: BnB results on synthetic (linear) with k = 10, ρ = 0 .5, λ2 = 1 .0, M = 3 .0, n/p = 1 .0. Parentheses show lower-bound time. OOM = out of memory, TL = time > 7200s. ours gurobi mosek                                                       
+
+> ptime(s) gap(%) # nodes time(s) gap(%) # nodes time(s) gap(%) # nodes 1000 31 (3) 0.00 355 227 0.00 653 208 0.00 361 2000 16 (2) 0.00 161 2091 0.00 1544 758 0.00 171 4000 27 (15) 0.00 77 4574 0.00 97 3612 0.00 73 8000 63 (45) 0.00 49 TL 100.00 1TL 33.57 416000 151 (115) 0.00 33 TL 100.00 1OOM OOM OOM
+
+Table D.2: BnB results on synthetic (logistic) with k = 10, ρ = 0 .5, λ2 = 1 .0, M = 3 .0, n/p = 1 .0. Parentheses show lower-bound time. OOM = out of memory, TL = time > 7200s. ours gurobiOA mosek                                                       
+
+> ptime(s) gap(%) # nodes time(s) gap(%) # nodes time(s) gap(%) # nodes 1000 771 (37) 0.00 6049 TL 67.29 417432 1871 0.00 5847 2000 630 (81) 0.00 3451 TL 87.29 443958 7031 0.00 3427 4000 384 (168) 0.00 855 TL 82.12 269137 TL 13.97 569 8000 666 (404) 0.00 459 TL 69.86 93806 OOM OOM OOM 16000 1031 (677) 0.00 207 TL 56.55 35414 OOM OOM OOM
+
+Table D.3: BnB CPU vs GPU results for linear regression with k = 10, ρ = 0 .5, λ2 = 1 .0, 
+
+M = 3 .0, n/p = 1 .0. Parentheses show lower-bound time. ours CPU ours GPU 
+
+p time(s) gap(%) # nodes time(s) gap(%) # nodes 1000 29 (2) 0.00 355 36 (9) 0.00 355 2000 15 (2) 0.00 161 18 (4) 0.00 161 4000 12 (4) 0.00 77 9 (2) 0.00 77 8000 44 (30) 0.00 49 15 (2) 0.00 49 16000 78 (53) 0.00 33 26 (4) 0.00 33 
+
+D.4.2 Cross Validation to Select λ2, k, and M for Real-world Datasets 
+
+To select the hyperparameters ( λ2, k, M ) for the real-world datasets, we conduct a 5-fold cross-validation study. For both SantanderBank and DOROTHEA, we evaluate λ2 ∈ { 0.01 , 0.1, 1.0, 2.0, 3.0, 10 .0}
+
+and k ∈ { 2, 3, . . . , 30 }; during this grid-search step, we fix M = 100 so that the box constraint is effectively inactive and does not influence model selection. For each ( λ2, k ) pair, we compute a heuristic solution on each training fold using the beamsearch method of Liu et al. [2023] and report performance on both training and validation folds (squared error for linear regression; log-loss, accuracy, and AUC for logistic regression) as a function of λ2 and k; see Figure D.13 53 Table D.4: BnB CPU vs GPU results for logistic regression with k = 10, ρ = 0 .5, λ2 = 1 .0, 
+
+M = 3 .0, n/p = 1 .0. Parentheses show lower-bound time. ours CPU ours GPU                                     
+
+> ptime(s) gap(%) # nodes time(s) gap(%) # nodes 1000 689 (38) 0.00 6049 758 (108) 0.00 6049 2000 536 (39) 0.00 3451 556 (65) 0.00 3451 4000 251 (62) 0.00 855 203 (21) 0.00 855 8000 412 (176) 0.00 459 246 (18) 0.00 459 16000 533 (276) 0.00 207 282 (23) 0.00 207
+
+(SantanderBank) and Figures D.14–D.16 (DOROTHEA). Based on these results, we select (λ2, k ) = (1 .0, 10) for SantanderBank and ( λ2, k ) = (1 .0, 6) for DOROTHEA; under these set-tings, the maximum absolute coefficient values in the beamsearch solutions are 4 .96 and 4 .95, respectively, so we set M = 10 .0 in the experiments to ensure the box constraint does not affect solution quality. 54 0 10 20 30 
+
+Support Size 
+
+0.7 
+
+0.8 
+
+0.9 
+
+> Squared Error
+
+Train Squared Error ( 2=0.01) 
+
+0 10 20 30 
+
+Support Size 
+
+0.9 
+
+1.0 
+
+1.1 
+
+> Squared Error
+
+Test Squared Error ( 2=0.01) 
+
+0 10 20 30 
+
+Support Size 
+
+0.7 
+
+0.8 
+
+0.9 
+
+> Squared Error
+
+Train Squared Error ( 2=0.1) 
+
+0 10 20 30 
+
+Support Size 
+
+0.8 
+
+0.9 
+
+1.0 
+
+> Squared Error
+
+Test Squared Error ( 2=0.1) 
+
+0 10 20 30 
+
+Support Size 
+
+0.8 
+
+0.9 
+
+> Squared Error
+
+Train Squared Error ( 2=1.0) 
+
+0 10 20 30 
+
+Support Size 
+
+0.8 
+
+0.9 
+
+1.0 
+
+> Squared Error
+
+Test Squared Error ( 2=1.0) 
+
+0 10 20 30 
+
+Support Size 
+
+0.8 
+
+0.9 
+
+> Squared Error
+
+Train Squared Error ( 2=2.0) 
+
+0 10 20 30 
+
+Support Size 
+
+0.8 
+
+0.9 
+
+1.0 
+
+> Squared Error
+
+Test Squared Error ( 2=2.0) 
+
+0 10 20 30 
+
+Support Size 
+
+0.85 
+
+0.90 
+
+0.95 
+
+> Squared Error
+
+Train Squared Error ( 2=3.0) 
+
+0 10 20 30 
+
+Support Size 
+
+0.8 
+
+0.9 
+
+1.0 
+
+> Squared Error
+
+Test Squared Error ( 2=3.0) 
+
+0 10 20 30 
+
+Support Size 
+
+0.90 
+
+0.95 
+
+1.00 
+
+> Squared Error
+
+Train Squared Error ( 2=10.0) 
+
+0 10 20 30 
+
+Support Size 
+
+0.9 
+
+1.0 
+
+> Squared Error
+
+Test Squared Error ( 2=10.0) Figure D.13: Beamsearch cross-validation results on the SantanderBank dataset with λ2 ∈{0.01 , 0.1, 1.0, 2.0, 3.0, 10 .0}.0 10 20 30 
+
+Support Size 
+
+0.3 
+
+0.4 
+
+0.5 
+
+> Logistic Loss
+
+Train Logistic Loss ( 2=0.01) 
+
+0 10 20 30 
+
+Support Size 
+
+0.75 
+
+1.00 
+
+1.25 
+
+1.50 
+
+> Logistic Loss
+
+Test Logistic Loss ( 2=0.01) 
+
+0 10 20 30 
+
+Support Size 
+
+0.425 
+
+0.450 
+
+0.475 
+
+0.500 
+
+0.525 
+
+> Logistic Loss
+
+Train Logistic Loss ( 2=0.1) 
+
+0 10 20 30 
+
+Support Size 
+
+0.575 
+
+0.600 
+
+0.625 
+
+0.650 
+
+0.675 
+
+> Logistic Loss
+
+Test Logistic Loss ( 2=0.1) 
+
+0 10 20 30 
+
+Support Size 
+
+0.80 
+
+0.85 
+
+0.90 
+
+0.95 
+
+> Accuracy
+
+Train Accuracy ( 2=0.01) 
+
+0 10 20 30 
+
+Support Size 
+
+0.75 
+
+0.80 
+
+0.85 
+
+0.90 
+
+0.95 
+
+> Accuracy
+
+Test Accuracy ( 2=0.01) 
+
+0 10 20 30 
+
+Support Size 
+
+0.775 
+
+0.800 
+
+0.825 
+
+0.850 
+
+> Accuracy
+
+Train Accuracy ( 2=0.1) 
+
+0 10 20 30 
+
+Support Size 
+
+0.80 
+
+0.85 
+
+0.90 
+
+0.95 
+
+> Accuracy
+
+Test Accuracy ( 2=0.1) 
+
+0 10 20 30 
+
+Support Size 
+
+0.80 
+
+0.85 
+
+0.90 
+
+0.95 
+
+> AUC
+
+Train AUC ( 2=0.01) 
+
+0 10 20 30 
+
+Support Size 
+
+0.75 
+
+0.80 
+
+> AUC
+
+Test AUC ( 2=0.01) 
+
+0 10 20 30 
+
+Support Size 
+
+0.775 
+
+0.800 
+
+0.825 
+
+0.850 
+
+> AUC
+
+Train AUC ( 2=0.1) 
+
+0 10 20 30 
+
+Support Size 
+
+0.75 
+
+0.80 
+
+0.85 
+
+> AUC
+
+Test AUC ( 2=0.1) 
+
+Figure D.14: Beamsearch cross-validation results on the DOROTHEA dataset with λ2 ∈{0.01 , 0.1}.55 0 10 20 30 
+
+Support Size 
+
+0.500 
+
+0.525 
+
+0.550 
+
+0.575 
+
+0.600 
+
+> Logistic Loss
+
+Train Logistic Loss ( 2=1.0) 
+
+0 10 20 30 
+
+Support Size 
+
+0.62 
+
+0.64 
+
+0.66 
+
+> Logistic Loss
+
+Test Logistic Loss ( 2=1.0) 
+
+0 10 20 30 
+
+Support Size 
+
+0.50 
+
+0.55 
+
+0.60 
+
+> Logistic Loss
+
+Train Logistic Loss ( 2=2.0) 
+
+0 10 20 30 
+
+Support Size 
+
+0.62 
+
+0.64 
+
+0.66 
+
+> Logistic Loss
+
+Test Logistic Loss ( 2=2.0) 
+
+0 10 20 30 
+
+Support Size 
+
+0.80 
+
+0.85 
+
+> Accuracy
+
+Train Accuracy ( 2=1.0) 
+
+0 10 20 30 
+
+Support Size 
+
+0.92 
+
+0.93 
+
+0.94 
+
+0.95 
+
+> Accuracy
+
+Test Accuracy ( 2=1.0) 
+
+0 10 20 30 
+
+Support Size 
+
+0.80 
+
+0.85 
+
+0.90 
+
+> Accuracy
+
+Train Accuracy ( 2=2.0) 
+
+0 10 20 30 
+
+Support Size 
+
+0.92 
+
+0.93 
+
+0.94 
+
+0.95 
+
+> Accuracy
+
+Test Accuracy ( 2=2.0) 
+
+0 10 20 30 
+
+Support Size 
+
+0.80 
+
+0.85 
+
+0.90 
+
+> AUC
+
+Train AUC ( 2=1.0) 
+
+0 10 20 30 
+
+Support Size 
+
+0.70 
+
+0.75 
+
+0.80 
+
+0.85 
+
+0.90 
+
+> AUC
+
+Test AUC ( 2=1.0) 
+
+0 10 20 30 
+
+Support Size 
+
+0.80 
+
+0.85 
+
+0.90 
+
+> AUC
+
+Train AUC ( 2=2.0) 
+
+0 10 20 30 
+
+Support Size 
+
+0.7 
+
+0.8 
+
+0.9 
+
+> AUC
+
+Test AUC ( 2=2.0) Figure D.15: Beamsearch cross-validation results on the DOROTHEA dataset with λ2 ∈{1.0, 2.0}.0 10 20 30 
+
+Support Size 
+
+0.55 
+
+0.60 
+
+> Logistic Loss
+
+Train Logistic Loss ( 2=3.0) 
+
+0 10 20 30 
+
+Support Size 
+
+0.62 
+
+0.64 
+
+0.66 
+
+0.68 
+
+> Logistic Loss
+
+Test Logistic Loss ( 2=3.0) 
+
+0 10 20 30 
+
+Support Size 
+
+0.55 
+
+0.60 
+
+0.65 
+
+> Logistic Loss
+
+Train Logistic Loss ( 2=10.0) 
+
+0 10 20 30 
+
+Support Size 
+
+0.64 
+
+0.66 
+
+0.68 
+
+> Logistic Loss
+
+Test Logistic Loss ( 2=10.0) 
+
+0 10 20 30 
+
+Support Size 
+
+0.80 
+
+0.85 
+
+0.90 
+
+> Accuracy
+
+Train Accuracy ( 2=3.0) 
+
+0 10 20 30 
+
+Support Size 
+
+0.92 
+
+0.93 
+
+0.94 
+
+0.95 
+
+> Accuracy
+
+Test Accuracy ( 2=3.0) 
+
+0 10 20 30 
+
+Support Size 
+
+0.80 
+
+0.85 
+
+0.90 
+
+> Accuracy
+
+Train Accuracy ( 2=10.0) 
+
+0 10 20 30 
+
+Support Size 
+
+0.92 
+
+0.93 
+
+0.94 
+
+0.95 
+
+> Accuracy
+
+Test Accuracy ( 2=10.0) 
+
+0 10 20 30 
+
+Support Size 
+
+0.80 
+
+0.85 
+
+0.90 
+
+> AUC
+
+Train AUC ( 2=3.0) 
+
+0 10 20 30 
+
+Support Size 
+
+0.7 
+
+0.8 
+
+0.9 
+
+> AUC
+
+Test AUC ( 2=3.0) 
+
+0 10 20 30 
+
+Support Size 
+
+0.80 
+
+0.85 
+
+0.90 
+
+> AUC
+
+Train AUC ( 2=10.0) 
+
+0 10 20 30 
+
+Support Size 
+
+0.7 
+
+0.8 
+
+0.9 
+
+> AUC
+
+Test AUC ( 2=10.0) 
+
+Figure D.16: Beamsearch cross-validation results on the DOROTHEA dataset with λ2 ∈{3.0, 10 .0}.56

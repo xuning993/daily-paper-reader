@@ -1,0 +1,755 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-03-10T19:31:23.590488+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 14,
+    "deep_cap": 6,
+    "deep_selected": 9,
+    "quick_candidates": 30,
+    "quick_skim_target": 11,
+    "quick_selected": 11
+  },
+  "deep_dive": [
+    {
+      "id": "2603.01667v1",
+      "title": "Chain-of-Context Learning: Dynamic Constraint Understanding for Multi-Task VRPs",
+      "abstract": "Multi-task Vehicle Routing Problems (VRPs) aim to minimize routing costs while satisfying diverse constraints. Existing solvers typically adopt a unified reinforcement learning (RL) framework to learn generalizable patterns across tasks. However, they often overlook the constraint and node dynamics during the decision process, making the model fail to accurately react to the current context. To address this limitation, we propose Chain-of-Context Learning (CCL), a novel framework that progressively captures the evolving context to guide fine-grained node adaptation. Specifically, CCL constructs step-wise contextual information via a Relevance-Guided Context Reformulation (RGCR) module, which adaptively prioritizes salient constraints. This context then guides node updates through a Trajectory-Shared Node Re-embedding (TSNR) module, which aggregates shared node features from all trajectories' contexts and uses them to update inputs for the next step. By modeling evolving preferences of the RL agent, CCL captures step-by-step dependencies in sequential decision-making. We evaluate CCL on 48 diverse VRP variants, including 16 in-distribution and 32 out-of-distribution (with unseen constraints) tasks. Experimental results show that CCL performs favorably against the state-of-the-art baselines, achieving the best performance on all in-distribution tasks and the majority of out-of-distribution tasks.",
+      "authors": [
+        "Shuangchun Gui",
+        "Suyu Liu",
+        "Xuehe Wang",
+        "Zhiguang Cao"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-03-02T09:57:15+00:00",
+      "link": "https://arxiv.org/pdf/2603.01667v1",
+      "tags": [
+        "keyword:ML CO",
+        "query:ML CO"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "reinforcement learning for multi-task VRPs",
+      "llm_evidence_cn": "用于多任务车辆路径问题的强化学习",
+      "llm_evidence": "用于多任务车辆路径问题的强化学习",
+      "canonical_evidence": "用于多任务车辆路径问题的强化学习",
+      "llm_tldr_en": "Proposes a reinforcement learning framework for multi-task VRPs using dynamic constraint understanding.",
+      "llm_tldr_cn": "提出了一种利用动态约束理解解决多任务车辆路径问题的强化学习框架。",
+      "llm_tldr": "提出了一种利用动态约束理解解决多任务车辆路径问题的强化学习框架。",
+      "llm_tags": [
+        "query:ml-co"
+      ],
+      "matched_query_tag": "query:ml-co",
+      "matched_query_text": "reinforcement learning for combinatorial optimization",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2603.02846v1",
+      "title": "Learning Memory-Enhanced Improvement Heuristics for Flexible Job Shop Scheduling",
+      "abstract": "The rise of smart manufacturing under Industry 4.0 introduces mass customization and dynamic production, demanding more advanced and flexible scheduling techniques. The flexible job-shop scheduling problem (FJSP) has attracted significant attention due to its complex constraints and strong alignment with real-world production scenarios. Current deep reinforcement learning (DRL)-based approaches to FJSP predominantly employ constructive methods. While effective, they often fall short of reaching (near-)optimal solutions. In contrast, improvement-based methods iteratively explore the neighborhood of initial solutions and are more effective in approaching optimality. However, the flexible machine allocation in FJSP poses significant challenges to the application of this framework, including accurate state representation, effective policy learning, and efficient search strategies. To address these challenges, this paper proposes a Memory-enhanced Improvement Search framework with heterogeneous graph representation--MIStar. It employs a novel heterogeneous disjunctive graph that explicitly models the operation sequences on machines to accurately represent scheduling solutions. Moreover, a memoryenhanced heterogeneous graph neural network (MHGNN) is designed for feature extraction, leveraging historical trajectories to enhance the decision-making capability of the policy network. Finally, a parallel greedy search strategy is adopted to explore the solution space, enabling superior solutions with fewer iterations. Extensive experiments on synthetic data and public benchmarks demonstrate that MIStar significantly outperforms both traditional handcrafted improvement heuristics and state-of-the-art DRL-based constructive methods.",
+      "authors": [
+        "Jiaqi Wang",
+        "Zhiguang Cao",
+        "Peng Zhao",
+        "Rui Cao",
+        "Yubin Xiao",
+        "Yuan Jiang",
+        "You Zhou"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "published": "2026-03-03T10:43:01+00:00",
+      "link": "https://arxiv.org/pdf/2603.02846v1",
+      "tags": [
+        "keyword:ML CO",
+        "query:ML CO"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "Deep reinforcement learning for flexible job shop scheduling",
+      "llm_evidence_cn": "深度强化学习用于柔性作业车间调度",
+      "llm_evidence": "深度强化学习用于柔性作业车间调度",
+      "canonical_evidence": "深度强化学习用于柔性作业车间调度",
+      "llm_tldr_en": "Develops a DRL-based improvement heuristic for the flexible job shop scheduling combinatorial problem.",
+      "llm_tldr_cn": "为柔性作业车间调度这一组合优化问题开发了基于深度强化学习的改进启发式算法。",
+      "llm_tldr": "为柔性作业车间调度这一组合优化问题开发了基于深度强化学习的改进启发式算法。",
+      "llm_tags": [
+        "query:ml-co"
+      ],
+      "matched_query_tag": "query:ml-co",
+      "matched_query_text": "reinforcement learning for combinatorial optimization",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2603.07020v1",
+      "title": "RESCHED: Rethinking Flexible Job Shop Scheduling from a Transformer-based Architecture with Simplified States",
+      "abstract": "Neural approaches to the Flexible Job Shop Scheduling Problem (FJSP), particularly those based on deep reinforcement learning (DRL), have gained growing attention in recent years. However, existing methods rely on complex feature-engineered state representations (i.e., often requiring more than 20 handcrafted features) and graph-biased neural architectures. To reduce modeling complexity and advance a more generalizable framework for FJSP, we introduce \\textsc{ReSched}, a minimalist DRL framework that rethinks both the scheduling formulation and model design. First, by revisiting the Markov Decision Process (MDP) formulation of FJSP, we condense the state space to just four essential features, eliminating historical dependencies through a subproblem-based perspective. Second, we employ Transformer blocks with dot-product attention, augmented by three lightweight but effective architectural modifications tailored to scheduling tasks. Extensive experiments show that \\textsc{ReSched} outperforms classical dispatching rules and state-of-the-art DRL methods on FJSP. Moreover, \\textsc{ReSched} also generalizes well to the Job Shop Scheduling Problem (JSSP) and the Flexible Flow Shop Scheduling Problem (FFSP), achieving competitive performance against neural baselines specifically designed for these variants.",
+      "authors": [
+        "Xiangjie Xiao",
+        "Cong Zhang",
+        "Wen Song",
+        "Zhiguang Cao"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "published": "2026-03-07T03:36:17+00:00",
+      "link": "https://arxiv.org/pdf/2603.07020v1",
+      "tags": [
+        "keyword:ML CO",
+        "query:ML CO"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "Deep reinforcement learning for Flexible Job Shop Scheduling Problem",
+      "llm_evidence_cn": "深度强化学习解决柔性作业车间调度问题",
+      "llm_evidence": "深度强化学习解决柔性作业车间调度问题",
+      "canonical_evidence": "深度强化学习解决柔性作业车间调度问题",
+      "llm_tldr_en": "Introduces a minimalist DRL framework for the Flexible Job Shop Scheduling combinatorial problem.",
+      "llm_tldr_cn": "为柔性作业车间调度这一组合优化问题引入了一个极简的深度强化学习框架。",
+      "llm_tldr": "为柔性作业车间调度这一组合优化问题引入了一个极简的深度强化学习框架。",
+      "llm_tags": [
+        "query:ml-co"
+      ],
+      "matched_query_tag": "query:ml-co",
+      "matched_query_text": "reinforcement learning for combinatorial optimization",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2603.07176v1",
+      "title": "Learning to Rank the Initial Branching Order of SAT Solvers",
+      "abstract": "Finding good branching orders is key to solving SAT problems efficiently, but finding such branching orders is a difficult problem. Using a learning based approach to predict a good branching order before solving, therefore, has potential. In this paper, we investigate predicting branching orders using graph neural networks as a preprocessing step to conflict-driven clause learning (CDCL) SAT solvers. We show that there are significant gains to be made in existing CDCL SAT solvers by providing a good initial branching. Further, we provide three labeling methods to find such initial branching orders in a tractable way. Finally, we train a graph neural network to predict these branching orders and show through our evaluations that a GNN-initialized ordering yields significant speedups on random 3-CNF and pseudo-industrial benchmarks, with generalization capabilities to instances much larger than the training set. However, we also find that the predictions fail at speeding up more difficult and industrial instances. We attribute this to the solver's dynamic heuristics, which rapidly overwrite the provided initialization, and to the complexity of these instances, making GNN prediction hard.",
+      "authors": [
+        "Arvid Eriksson",
+        "Gabriel Poesia",
+        "Roman Bresson",
+        "Karl Henrik Johansson",
+        "David Broman"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.LO"
+      ],
+      "published": "2026-03-07T12:35:36+00:00",
+      "link": "https://arxiv.org/pdf/2603.07176v1",
+      "tags": [
+        "keyword:ML CO",
+        "query:ML CO"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "GNNs to predict branching orders in SAT solvers",
+      "llm_evidence_cn": "使用GNN预测SAT求解器中的分支顺序",
+      "llm_evidence": "使用GNN预测SAT求解器中的分支顺序",
+      "canonical_evidence": "使用GNN预测SAT求解器中的分支顺序",
+      "llm_tldr_en": "Trains GNNs to predict initial branching orders to improve the efficiency of CDCL SAT solvers.",
+      "llm_tldr_cn": "训练GNN预测初始分支顺序，以提高CDCL SAT求解器的效率。",
+      "llm_tldr": "训练GNN预测初始分支顺序，以提高CDCL SAT求解器的效率。",
+      "llm_tags": [
+        "query:ml-co"
+      ],
+      "matched_query_tag": "query:ml-co",
+      "matched_query_text": "learning to branch in branch and bound algorithms",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2603.07568v1",
+      "title": "Constraints Matrix Diffusion based Generative Neural Solver for Vehicle Routing Problems",
+      "abstract": "Over the past decade, neural network solvers powered by generative artificial intelligence have garnered significant attention in the domain of vehicle routing problems (VRPs), owing to their exceptional computational efficiency and superior reasoning capabilities. In particular, autoregressive solvers integrated with reinforcement learning have emerged as a prominent trend. However, much of the existing work emphasizes large-scale generalization of neural approaches while neglecting the limited robustness of attention-based methods across heterogeneous distributions of problem parameters. Their improvements over heuristic search remain largely restricted to hand-curated, fixed-distribution benchmarks. Furthermore, these architectures tend to degrade significantly when node representations are highly similar or when tasks involve long decision horizons. To address the aforementioned limitations, we propose a novel fusion neural network framework that employs a discrete noise graph diffusion model to learn the underlying constraints of vehicle routing problems and generate a constraint assignment matrix. This matrix is subsequently integrated adaptively into the feature representation learning and decision process of the autoregressive solver, serving as a graph structure mask that facilitates the formation of solutions characterized by both global vision and local feature integration. To the best of our knowledge, this work represents the first comprehensive experimental investigation of neural network model solvers across a 378-combinatorial space spanning four distinct dimensions within the CVRPlib public dataset. Extensive experimental evaluations demonstrate that our proposed fusion model effectively captures and leverages problem constraints, achieving state-of-the-art performance across multiple benchmark datasets.",
+      "authors": [
+        "Zhenwei Wang",
+        "Tiehua Zhang",
+        "Ning Xue",
+        "Ender Ozcan",
+        "Ling Wang",
+        "Ruibin Bai"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-03-08T10:03:34+00:00",
+      "link": "https://arxiv.org/pdf/2603.07568v1",
+      "tags": [
+        "keyword:ML CO",
+        "query:ML CO"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "Generative neural solver for vehicle routing problems",
+      "llm_evidence_cn": "车辆路径问题的生成式神经求解器",
+      "llm_evidence": "车辆路径问题的生成式神经求解器",
+      "canonical_evidence": "车辆路径问题的生成式神经求解器",
+      "llm_tldr_en": "Introduces a diffusion-based generative neural solver for solving vehicle routing problems efficiently.",
+      "llm_tldr_cn": "提出一种基于扩散模型的生成式神经求解器，用于高效解决车辆路径问题。",
+      "llm_tldr": "提出一种基于扩散模型的生成式神经求解器，用于高效解决车辆路径问题。",
+      "llm_tags": [
+        "query:ml-co"
+      ],
+      "matched_query_tag": "query:ml-co",
+      "matched_query_text": "end to end learning for combinatorial optimization",
+      "matched_requirement_id": "req-10",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2603.07800v1",
+      "title": "Preference-Conditioned Reinforcement Learning for Space-Time Efficient Online 3D Bin Packing",
+      "abstract": "Robotic bin packing is widely deployed in warehouse automation, with current systems achieving robust performance through heuristic and learning-based strategies. These systems must balance compact placement with rapid execution, where selecting alternative items or reorienting them can improve space utilization but introduce additional time. We propose a selection-based formulation that explicitly reasons over this trade-off: at each step, the robot evaluates multiple candidate actions, weighing expected packing benefit against estimated operational time. This enables time-aware strategies that selectively accept increased operational time when it yields meaningful spatial improvements. Our method, STEP (Space-Time Efficient Packing), uses a preference-conditioned, Transformer-based reinforcement learning policy, and allows generalization across candidate set sizes and integration with standard placement modules. It achieves a 44% reduction in operational time without compromising packing density. Additional material is available at https://step-packing.github.io.",
+      "authors": [
+        "Nikita Sarawgi",
+        "Omey M. Manyar",
+        "Fan Wang",
+        "Thinh H. Nguyen",
+        "Daniel Seita",
+        "Satyandra K. Gupta"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO"
+      ],
+      "published": "2026-03-08T20:55:15+00:00",
+      "link": "https://arxiv.org/pdf/2603.07800v1",
+      "tags": [
+        "keyword:ML CO",
+        "query:ML CO"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "reinforcement learning for 3D bin packing optimization",
+      "llm_evidence_cn": "强化学习用于3D装箱优化",
+      "llm_evidence": "强化学习用于3D装箱优化",
+      "canonical_evidence": "强化学习用于3D装箱优化",
+      "llm_tldr_en": "Proposes a preference-conditioned RL method for space-time efficient online 3D bin packing.",
+      "llm_tldr_cn": "提出一种偏好调节的强化学习方法，用于时空高效的在线3D装箱。",
+      "llm_tldr": "提出一种偏好调节的强化学习方法，用于时空高效的在线3D装箱。",
+      "llm_tags": [
+        "query:ml-co"
+      ],
+      "matched_query_tag": "query:ml-co",
+      "matched_query_text": "reinforcement learning for combinatorial optimization",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2603.03230v1",
+      "title": "SynthCharge: An Electric Vehicle Routing Instance Generator with Feasibility Screening to Enable Learning-Based Optimization and Benchmarking",
+      "abstract": "The electric vehicle routing problem with time windows (EVRPTW) extends the classical VRPTW by introducing battery capacity constraints and charging station decisions. Existing benchmark datasets are often static and lack verifiable feasibility, which restricts reproducible evaluation of learning-based routing models. We introduce SynthCharge, a parametric generator that produces diverse, feasibility-screened EVRPTW instances across varying spatiotemporal configurations and scalable customer counts. While SynthCharge can currently generate large-scale instances of up to 500 customers, we focus our experiments on sizes ranging from 5 to 100 customers. Unlike static benchmark suites, SynthCharge integrates instance geometry with adaptive energy capacity scaling and range-aware charging station placement. To guarantee structural validity, the generator systematically filters out unsolvable instances through a fast feasibility screening process. Ultimately, SynthCharge provides the dynamic benchmarking infrastructure needed to systematically evaluate the robustness of emerging neural routing and data-driven approaches.",
+      "authors": [
+        "Mertcan Daysalilar",
+        "Fuat Uyguroglu",
+        "Gabriel Nicolosi",
+        "Adam Meyers"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "published": "2026-03-03T18:23:38+00:00",
+      "link": "https://arxiv.org/pdf/2603.03230v1",
+      "tags": [
+        "keyword:ML CO",
+        "query:ML CO"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Instance generator for learning-based routing optimization",
+      "llm_evidence_cn": "用于基于学习的路径优化实例生成器",
+      "llm_evidence": "用于基于学习的路径优化实例生成器",
+      "canonical_evidence": "用于基于学习的路径优化实例生成器",
+      "llm_tldr_en": "Introduces a generator for EV routing problems to enable benchmarking of learning-based optimization models.",
+      "llm_tldr_cn": "引入电动汽车路径规划实例生成器，支持基于学习的优化模型基准测试。",
+      "llm_tldr": "引入电动汽车路径规划实例生成器，支持基于学习的优化模型基准测试。",
+      "llm_tags": [
+        "query:ml-co:composite"
+      ],
+      "matched_query_tag": "query:ml-co:composite",
+      "matched_query_text": "Papers central to 查找机器学习解决组合优化相关的论文, especially work that connects or combines: machine learning for combinatorial optimization; reinforcement learning for combinatorial optimization; graph neural networks for combinatorial optimization; machine learning approaches for traveling salesman problem; machine learning for integer linear programming; learning to branch in branch and bound algorithms; meta-learning for combinatorial optimization; survey of machine learning for combinatorial optimization; deep learning methods for solving NP hard problems; end to end learning for combinatorial optimization.",
+      "matched_requirement_id": "req-composite-ml-co",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2603.06996v1",
+      "title": "Large Language Model-Driven Full-Component Evolution of Adaptive Large Neighborhood Search",
+      "abstract": "Adaptive Large Neighborhood Search (ALNS) is a prominent metaheuristic and a widely adopted approach for production and logistics optimization. However, it has long relied on hand-crafted components built on expert experience, which makes development slow and costly to adapt to new problems. This paper proposes a closed-loop, large-language-model-driven evolutionary framework that decouples ALNS and automatically rebuilds all of its components. We break ALNS into seven key modules: destroy, repair, operator selection, weight update, initial solution construction, acceptance rule, and destroy-rate control, and evolve each module through a dedicated task. By incorporating the MAP-Elites mechanism, the framework maintains a multi-dimensional elite archive to simultaneously drive the evolution of solution quality and strategic diversity. On TSPLIB benchmarks, the evolved algorithms consistently outperform optimized classic ALNS baselines under both fixed-iteration and fixed-time limits. The gains are especially clear on large-scale instances, where the average optimality gap drops from 3.18% to 0.74%. Code analysis also uncovers several counterintuitive yet meaningful design patterns that emerged naturally during evolution, offering practical and theoretical insights for future ALNS design. Finally, comparisons across multiple language models highlight clear differences in their ability to support evolutionary algorithm design, helping guide model selection for real-world engineering use.",
+      "authors": [
+        "Shaohua Yu",
+        "Tianyu Chen",
+        "Linyan Liu"
+      ],
+      "primary_category": "cs.NE",
+      "categories": [
+        "cs.NE"
+      ],
+      "published": "2026-03-07T02:41:14+00:00",
+      "link": "https://arxiv.org/pdf/2603.06996v1",
+      "tags": [
+        "keyword:ML CO",
+        "query:ML CO"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "LLM-driven evolution of Adaptive Large Neighborhood Search",
+      "llm_evidence_cn": "大模型驱动的自适应大邻域搜索演化",
+      "llm_evidence": "大模型驱动的自适应大邻域搜索演化",
+      "canonical_evidence": "大模型驱动的自适应大邻域搜索演化",
+      "llm_tldr_en": "Automates the design of ALNS components using LLMs to optimize production and logistics problems.",
+      "llm_tldr_cn": "利用大模型自动设计ALNS组件，以优化生产和物流问题。",
+      "llm_tldr": "利用大模型自动设计ALNS组件，以优化生产和物流问题。",
+      "llm_tags": [
+        "query:ml-co:composite"
+      ],
+      "matched_query_tag": "query:ml-co:composite",
+      "matched_query_text": "Papers central to 查找机器学习解决组合优化相关的论文, especially work that connects or combines: machine learning for combinatorial optimization; reinforcement learning for combinatorial optimization; graph neural networks for combinatorial optimization; machine learning approaches for traveling salesman problem; machine learning for integer linear programming; learning to branch in branch and bound algorithms; meta-learning for combinatorial optimization; survey of machine learning for combinatorial optimization; deep learning methods for solving NP hard problems; end to end learning for combinatorial optimization.",
+      "matched_requirement_id": "req-composite-ml-co",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2603.07733v1",
+      "title": "Large Language Model for Discrete Optimization Problems: Evaluation and Step-by-step Reasoning",
+      "abstract": "This work investigated the capabilities of different models, including the Llama-3 series of models and CHATGPT, with different forms of expression in solving discrete optimization problems by testing natural language datasets. In contrast to formal datasets with a limited scope of parameters, our dataset included a variety of problem types in discrete optimization problems and featured a wide range of parameter magnitudes, including instances with large parameter sets, integrated with augmented data. It aimed to (1) provide an overview of LLMs' ability in large-scale problems, (2) offer suggestions to those who want to solve discrete optimization problems automatically, and (3) regard the performance as a benchmark for future research. These datasets included original, expanded and augmented datasets. Among these three datasets, the original and augmented ones aimed for evaluation while the expanded one may help finetune a new model. In the experiment, comparisons were made between strong and week models, CoT methods and No-CoT methods on various datasets. The result showed that stronger model performed better reasonably. Contrary to general agreement, it also showed that CoT technique was not always effective regarding the capability of models and disordered datasets improved performance of models on easy to-understand problems, even though they were sometimes with high variance, a manifestation of instability. Therefore, for those who seek to enhance the automatic resolution of discrete optimization problems, it is recommended to consult the results, including the line charts presented in the Appendix, as well as the conclusions drawn in this study for relevant suggestions.",
+      "authors": [
+        "Tianhao Qian",
+        "Guilin Qi",
+        "Z. Y. Wu",
+        "Ran Gu",
+        "Xuanyi Liu",
+        "Canchen Lyu"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.CL",
+        "math.OC"
+      ],
+      "published": "2026-03-08T17:02:44+00:00",
+      "link": "https://arxiv.org/pdf/2603.07733v1",
+      "tags": [
+        "keyword:ML CO",
+        "query:ML CO"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "LLMs for solving discrete optimization problems",
+      "llm_evidence_cn": "大语言模型解决离散优化问题",
+      "llm_evidence": "大语言模型解决离散优化问题",
+      "canonical_evidence": "大语言模型解决离散优化问题",
+      "llm_tldr_en": "Evaluates LLMs like Llama-3 and ChatGPT on their ability to solve various discrete optimization problems.",
+      "llm_tldr_cn": "评估Llama-3和ChatGPT等大模型在解决各种离散优化问题上的能力。",
+      "llm_tldr": "评估Llama-3和ChatGPT等大模型在解决各种离散优化问题上的能力。",
+      "llm_tags": [
+        "query:ml-co"
+      ],
+      "matched_query_tag": "query:ml-co",
+      "matched_query_text": "machine learning for combinatorial optimization",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2603.01733v1",
+      "title": "LOTUS: A Warm-Start Framework for Powering Dual Decomposition in Large-Scale Two-Stage Stochastic Programs",
+      "abstract": "Solving large two-stage stochastic mixed-integer programs is computationally challenging. We propose LOTUS, a subset-based warm-start framework that enhances Dual Decomposition under fixed time budgets. By initializing the dual search with informed multipliers, LOTUS accelerates primal convergence and partially alleviates the impact of weak LP relaxations. Through an extensive computational study on production planning instances, we show that, within two hours, LOTUS yields significantly better primal solutions in 45.83% of cases, while being outperformed by Dual Decomposition in only 4.17%.",
+      "authors": [
+        "Emma Cornielje",
+        "Berend Markhorst",
+        "Alessandro Zocca",
+        "Rob van der Mei"
+      ],
+      "primary_category": "math.OC",
+      "categories": [
+        "math.OC"
+      ],
+      "published": "2026-03-02T10:59:34+00:00",
+      "link": "https://arxiv.org/pdf/2603.01733v1",
+      "tags": [
+        "keyword:ML CO",
+        "query:ML CO"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "warm-start framework for large-scale stochastic mixed-integer programs",
+      "llm_evidence_cn": "大规模随机混合整数规划的预热启动框架",
+      "llm_evidence": "大规模随机混合整数规划的预热启动框架",
+      "canonical_evidence": "大规模随机混合整数规划的预热启动框架",
+      "llm_tldr_en": "Enhances dual decomposition for stochastic programs using a subset-based warm-start framework.",
+      "llm_tldr_cn": "使用基于子集的预热启动框架增强随机规划的双重分解。",
+      "llm_tldr": "使用基于子集的预热启动框架增强随机规划的双重分解。",
+      "llm_tags": [
+        "query:ml-co"
+      ],
+      "matched_query_tag": "query:ml-co",
+      "matched_query_text": "machine learning for integer linear programming",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2603.01388v1",
+      "title": "Invariant-Stratified Propagation for Expressive Graph Neural Networks",
+      "abstract": "Graph Neural Networks (GNNs) face fundamental limitations in expressivity and capturing structural heterogeneity. Standard message-passing architectures are constrained by the 1-dimensional Weisfeiler-Leman (1-WL) test, unable to distinguish graphs beyond degree sequences, and aggregate information uniformly from neighbors, failing to capture how nodes occupy different structural positions within higher-order patterns. While methods exist to achieve higher expressivity, they incur prohibitive computational costs and lack unified frameworks for flexibly encoding diverse structural properties. To address these limitations, we introduce Invariant-Stratified Propagation (ISP), a framework comprising both a novel WL variant (ISP-WL) and its efficient neural network implementation (ISPGNN). ISP stratifies nodes according to graph invariants, processing them in hierarchical strata that reveal structural distinctions invisible to 1-WL. Through hierarchical structural heterogeneity encoding, ISP quantifies differences in nodes' structural positions within higher-order patterns, distinguishing interactions where participants occupy different roles from those with uniform participation. We provide formal theoretical analysis establishing enhanced expressivity beyond 1-WL, convergence guarantees, and inherent resistance to oversmoothing. Extensive experiments across graph classification, node classification, and influence estimation demonstrate consistent improvements over standard architectures and state-of-the-art expressive baselines.",
+      "authors": [
+        "Asela Hevapathige",
+        "Ahad N. Zehmakan",
+        "Asiri Wijesinghe",
+        "Saman Halgamuge"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "stat.ML"
+      ],
+      "published": "2026-03-02T02:34:40+00:00",
+      "link": "https://arxiv.org/pdf/2603.01388v1",
+      "tags": [
+        "keyword:ML CO",
+        "query:ML CO"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "expressive graph neural network architectures",
+      "llm_evidence_cn": "高表达能力的图神经网络架构",
+      "llm_evidence": "高表达能力的图神经网络架构",
+      "canonical_evidence": "高表达能力的图神经网络架构",
+      "llm_tldr_en": "Introduces a new GNN framework to improve expressivity and capture structural heterogeneity in graphs.",
+      "llm_tldr_cn": "引入了一种新的GNN框架，以提高图的表达能力并捕捉结构异质性。",
+      "llm_tldr": "引入了一种新的GNN框架，以提高图的表达能力并捕捉结构异质性。",
+      "llm_tags": [
+        "query:ml-co"
+      ],
+      "matched_query_tag": "query:ml-co",
+      "matched_query_text": "graph neural networks for combinatorial optimization",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2603.01306v1",
+      "title": "GPU-friendly and Linearly Convergent First-order Methods for Certifying Optimal $k$-sparse GLMs",
+      "abstract": "We investigate the problem of certifying optimality for sparse generalized linear models (GLMs), where sparsity is enforced through a cardinality constraint. While Branch-and-Bound (BnB) frameworks can certify optimality using perspective relaxations, existing methods for solving these relaxations are computationally intensive, limiting their scalability. To address this challenge, we reformulate the relaxations as composite optimization problems and develop a unified proximal framework that is both linearly convergent and computationally efficient. Under specific geometric regularity conditions, our analysis links primal quadratic growth to dual quadratic decay, yielding error bounds that make the Fenchel duality gap a sharp proxy for progress towards the solution set. This leads to a duality gap-based restart scheme that upgrades a broad class of sublinear proximal methods to provably linearly convergent methods, and applies beyond the sparse GLM setting. For the implicit perspective regularizer, we further derive specialized routines to evaluate the regularizer and its proximal operator exactly in log-linear time, avoiding costly generic conic solvers. The resulting iterations are dominated by matrix--vector multiplications, which enables GPU acceleration. Experiments on synthetic and real-world datasets show orders-of-magnitude faster dual-bound computations and substantially improved BnB scalability on large instances.",
+      "authors": [
+        "Jiachang Liu",
+        "Andrea Lodi",
+        "Soroosh Shafiee"
+      ],
+      "primary_category": "math.OC",
+      "categories": [
+        "math.OC",
+        "cs.LG"
+      ],
+      "published": "2026-03-01T22:26:09+00:00",
+      "link": "https://arxiv.org/pdf/2603.01306v1",
+      "tags": [
+        "keyword:ML CO",
+        "query:ML CO"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "optimizing sparse GLMs using branch-and-bound and proximal frameworks",
+      "llm_evidence_cn": "利用分支定界和近端框架优化稀疏广义线性模型",
+      "llm_evidence": "利用分支定界和近端框架优化稀疏广义线性模型",
+      "canonical_evidence": "利用分支定界和近端框架优化稀疏广义线性模型",
+      "llm_tldr_en": "Develops efficient first-order methods to certify optimality for sparse GLMs.",
+      "llm_tldr_cn": "开发了高效的一阶方法，用于证明稀疏广义线性模型的最优性。",
+      "llm_tldr": "开发了高效的一阶方法，用于证明稀疏广义线性模型的最优性。",
+      "llm_tags": [
+        "query:ml-co"
+      ],
+      "matched_query_tag": "query:ml-co",
+      "matched_query_text": "machine learning for integer linear programming",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2603.02119v1",
+      "title": "Pencil Puzzle Bench: A Benchmark for Multi-Step Verifiable Reasoning",
+      "abstract": "We introduce Pencil Puzzle Bench, a framework for evaluating large language model reasoning through pencil puzzles, a family of constraint-satisfaction problems closely related to NP-complete problems, with deterministic, step-level verification. From a database of 62,231 puzzles across 94 varieties with verified unique solutions, we select a benchmark of 300 puzzles spanning 20 varieties and evaluate 51 models from 11 providers in two modes: direct ask (single-shot) and agentic (multi-turn with iterative verification). A key differentiator of our benchmark is that every intermediate board state can be checked against variety-specific constraints, localizing errors to the exact rule violated, providing the infrastructure for dense, per-move reward signals for process supervision and reinforcement learning.   Our evaluation reveals two distinct axes of capability: (1) reasoning effort scaling, where GPT-5.2 improves 81x from no reasoning to maximum effort; and (2) agentic iteration, where Claude Opus 4.6 rises from 0.3% to 30.0% through iterative checking, while GPT-5.2@xhigh improves from 20.2% to 56.0%. Agentic attempts span a median of 29 turns over 17 minutes, with the longest exceeding 1,221 turns and 14.3 hours - a demanding test of long-context utilization, not just reasoning.",
+      "authors": [
+        "Justin Waugh"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.GT",
+        "cs.LG"
+      ],
+      "published": "2026-03-02T17:40:54+00:00",
+      "link": "https://arxiv.org/pdf/2603.02119v1",
+      "tags": [
+        "keyword:ML CO",
+        "query:ML CO"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "Benchmark for NP-complete constraint-satisfaction problems",
+      "llm_evidence_cn": "NP完全约束满足问题的基准测试",
+      "llm_evidence": "NP完全约束满足问题的基准测试",
+      "canonical_evidence": "NP完全约束满足问题的基准测试",
+      "llm_tldr_en": "A benchmark for evaluating LLM reasoning on pencil puzzles, which are NP-complete constraint-satisfaction problems.",
+      "llm_tldr_cn": "一个评估大模型在NP完全约束满足问题（填字游戏）上推理能力的基准框架。",
+      "llm_tldr": "一个评估大模型在NP完全约束满足问题（填字游戏）上推理能力的基准框架。",
+      "llm_tags": [
+        "query:ml-co"
+      ],
+      "matched_query_tag": "query:ml-co",
+      "matched_query_text": "deep learning methods for solving NP hard problems",
+      "matched_requirement_id": "req-9",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2603.02958v1",
+      "title": "Layer-wise QUBO-Based Training of CNN Classifiers for Quantum Annealing",
+      "abstract": "Variational quantum circuits for image classification suffer from barren plateaus, while quantum kernel methods scale quadratically with dataset size. We propose an iterative framework based on Quadratic Unconstrained Binary Optimization (QUBO) for training the classifier head of convolutional neural networks (CNNs) via quantum annealing, entirely avoiding gradient-based circuit optimization. Following the Extreme Learning Machine paradigm, convolutional filters are randomly initialized and frozen, and only the fully connected layer is optimized. At each iteration, a convex quadratic surrogate derived from the feature Gram matrix replaces the non-quadratic cross-entropy loss, yielding an iteration-stable curvature proxy. A per-output decomposition splits the $C$-class problem into $C$ independent QUBOs, each with $(d+1)K$ binary variables, where $d$ is the feature dimension and $K$ is the bit precision, so that problem size depends on the image resolution and bit precision, not on the number of training samples. We evaluate the method on six image-classification benchmarks (sklearn digits, MNIST, Fashion-MNIST, CIFAR-10, EMNIST, KMNIST). A precision study shows that accuracy improves monotonically with bit resolution, with 10 bits representing a practical minimum for effective optimization; the 15-bit formulation remains within the qubit and coupler limits of current D-Wave Advantage hardware. The 20-bit formulation matches or exceeds classical stochastic gradient descent on MNIST, Fashion-MNIST, and EMNIST, while remaining competitive on CIFAR-10 and KMNIST. All experiments use simulated annealing, establishing a baseline for direct deployment on quantum annealing hardware.",
+      "authors": [
+        "Mostafa Atallah",
+        "Rebekah Herrman"
+      ],
+      "primary_category": "quant-ph",
+      "categories": [
+        "quant-ph",
+        "cs.AI"
+      ],
+      "published": "2026-03-03T13:10:36+00:00",
+      "link": "https://arxiv.org/pdf/2603.02958v1",
+      "tags": [
+        "keyword:ML CO",
+        "query:ML CO"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "QUBO-based training for neural networks",
+      "llm_evidence_cn": "基于QUBO的神经网络训练",
+      "llm_evidence": "基于QUBO的神经网络训练",
+      "canonical_evidence": "基于QUBO的神经网络训练",
+      "llm_tldr_en": "Uses Quadratic Unconstrained Binary Optimization to train CNNs via quantum annealing.",
+      "llm_tldr_cn": "利用二次无约束二进制优化（QUBO）通过量子退火技术训练卷积神经网络。",
+      "llm_tldr": "利用二次无约束二进制优化（QUBO）通过量子退火技术训练卷积神经网络。",
+      "llm_tags": [
+        "query:ml-co"
+      ],
+      "matched_query_tag": "query:ml-co",
+      "matched_query_text": "machine learning for combinatorial optimization",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2603.01748v1",
+      "title": "Discrete World Models via Regularization",
+      "abstract": "World models aim to capture the states and dynamics of an environment in a compact latent space. Moreover, using Boolean state representations is particularly useful for search heuristics and symbolic reasoning and planning. Existing approaches keep latents informative via decoder-based reconstruction, or instead via contrastive or reward signals. In this work, we introduce Discrete World Models via Regularization (DWMR): a reconstruction-free and contrastive-free method for unsupervised Boolean world-model learning. In particular, we introduce a novel world-modeling loss that couples latent prediction with specialized regularizers. Such regularizers maximize the entropy and independence of the representation bits through variance, correlation, and coskewness penalties, while simultaneously enforcing a locality prior for sparse action changes. To enable effective optimization, we also introduce a novel training scheme improving robustness to discrete roll-outs. Experiments on two benchmarks with underlying combinatorial structure show that DWMR learns more accurate representations and transitions than reconstruction-based alternatives. Finally, DWMR can also be paired with an auxiliary reconstruction decoder, and this combination yields additional gains.",
+      "authors": [
+        "Davide Bizzaro",
+        "Luciano Serafini"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "published": "2026-03-02T11:17:38+00:00",
+      "link": "https://arxiv.org/pdf/2603.01748v1",
+      "tags": [
+        "keyword:ML CO",
+        "query:ML CO"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Boolean state representations for search heuristics and planning",
+      "llm_evidence_cn": "用于搜索启发式和规划的布尔状态表示",
+      "llm_evidence": "用于搜索启发式和规划的布尔状态表示",
+      "canonical_evidence": "用于搜索启发式和规划的布尔状态表示",
+      "llm_tldr_en": "Introduces Discrete World Models using Boolean latents to support search and symbolic reasoning.",
+      "llm_tldr_cn": "引入了使用布尔潜变量的离散世界模型，以支持搜索和符号推理。",
+      "llm_tldr": "引入了使用布尔潜变量的离散世界模型，以支持搜索和符号推理。",
+      "llm_tags": [
+        "query:ml-co"
+      ],
+      "matched_query_tag": "query:ml-co",
+      "matched_query_text": "learning to search in combinatorial optimization",
+      "matched_requirement_id": "req-12",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2603.03686v1",
+      "title": "AI4S-SDS: A Neuro-Symbolic Solvent Design System via Sparse MCTS and Differentiable Physics Alignment",
+      "abstract": "Automated design of chemical formulations is a cornerstone of materials science, yet it requires navigating a high-dimensional combinatorial space involving discrete compositional choices and continuous geometric constraints. Existing Large Language Model (LLM) agents face significant challenges in this setting, including context window limitations during long-horizon reasoning and path-dependent exploration that may lead to mode collapse. To address these issues, we introduce AI4S-SDS, a closed-loop neuro-symbolic framework that integrates multi-agent collaboration with a tailored Monte Carlo Tree Search (MCTS) engine. We propose a Sparse State Storage mechanism with Dynamic Path Reconstruction, which decouples reasoning history from context length and enables arbitrarily deep exploration under fixed token budgets. To reduce local convergence and improve coverage, we implement a Global--Local Search Strategy: a memory-driven planning module adaptively reconfigures the search root based on historical feedback, while a Sibling-Aware Expansion mechanism promotes orthogonal exploration at the node level. Furthermore, we bridge symbolic reasoning and physical feasibility through a Differentiable Physics Engine, employing a hybrid normalized loss with sparsity-inducing regularization to optimize continuous mixing ratios under thermodynamic constraints. Empirical results show that AI4S-SDS achieves full validity under the adopted HSP-based physical constraints and substantially improves exploration diversity compared to baseline agents. In preliminary lithography experiments, the framework identifies a novel photoresist developer formulation that demonstrates competitive or superior performance relative to a commercial benchmark, highlighting the potential of diversity-driven neuro-symbolic search for scientific discovery.",
+      "authors": [
+        "Jiangyu Chen"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-03-04T03:30:17+00:00",
+      "link": "https://arxiv.org/pdf/2603.03686v1",
+      "tags": [
+        "keyword:ML CO",
+        "query:ML CO"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "Neuro-symbolic framework with MCTS for high-dimensional combinatorial space",
+      "llm_evidence_cn": "结合蒙特卡洛树搜索的神经符号框架，用于高维组合空间",
+      "llm_evidence": "结合蒙特卡洛树搜索的神经符号框架，用于高维组合空间",
+      "canonical_evidence": "结合蒙特卡洛树搜索的神经符号框架，用于高维组合空间",
+      "llm_tldr_en": "Introduces a neuro-symbolic system using MCTS to navigate complex combinatorial spaces in chemical design.",
+      "llm_tldr_cn": "引入一种使用MCTS的神经符号系统，用于解决化学设计中的复杂组合空间导航问题。",
+      "llm_tldr": "引入一种使用MCTS的神经符号系统，用于解决化学设计中的复杂组合空间导航问题。",
+      "llm_tags": [
+        "query:ml-co"
+      ],
+      "matched_query_tag": "query:ml-co",
+      "matched_query_text": "learning to search in combinatorial optimization",
+      "matched_requirement_id": "req-12",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2603.02989v1",
+      "title": "CASSR: Continuous A-Star Search through Reachability for real time footstep planning",
+      "abstract": "Footstep planning involves a challenging combinatorial search. Traditional A* approaches require discretising reachability constraints, while Mixed-Integer Programming (MIP) supports continuous formulations but quickly becomes intractable, especially when rotations are included. We present CASSR, a novel framework that recursively propagates convex, continuous formulations of a robot's kinematic constraints within an A* search. Combined with a new cost-to-go heuristic based on the EPA algorithm, CASSR efficiently plans contact sequences of up to 30 footsteps in under 125 ms. Experiments on biped locomotion tasks demonstrate that CASSR outperforms traditional discretised A* by up to a factor of 100, while also surpassing a commercial MIP solver. These results show that CASSR enables fast, reliable, and real-time footstep planning for biped robots.",
+      "authors": [
+        "Jiayi Wang",
+        "Steve Tonneau"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO"
+      ],
+      "published": "2026-03-03T13:41:49+00:00",
+      "link": "https://arxiv.org/pdf/2603.02989v1",
+      "tags": [
+        "keyword:ML CO",
+        "query:ML CO"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "improving A-star search for combinatorial footstep planning",
+      "llm_evidence_cn": "改进用于组合足迹规划的A*搜索算法",
+      "llm_evidence": "改进用于组合足迹规划的A*搜索算法",
+      "canonical_evidence": "改进用于组合足迹规划的A*搜索算法",
+      "llm_tldr_en": "Presents CASSR, a framework that improves A* search efficiency for combinatorial footstep planning.",
+      "llm_tldr_cn": "提出CASSR框架，通过连续公式化显著提升组合足迹规划中的A*搜索效率。",
+      "llm_tldr": "提出CASSR框架，通过连续公式化显著提升组合足迹规划中的A*搜索效率。",
+      "llm_tags": [
+        "query:ml-co"
+      ],
+      "matched_query_tag": "query:ml-co",
+      "matched_query_text": "learning to search in combinatorial optimization",
+      "matched_requirement_id": "req-12",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2603.02208v1",
+      "title": "Reasoning Core: A Scalable Procedural Data Generation Suite for Symbolic Pre-training and Post-Training",
+      "abstract": "Training on verifiable symbolic data is a promising way to expand the reasoning frontier of language models beyond what standard pre-training corpora provide. Yet existing procedural generators often rely on fixed puzzles or templates and do not deliver the distributional breadth needed at scale. We introduce Reasoning Core, a scalable suite that procedurally generates verifiable symbolic reasoning data across core formal domains: PDDL planning over randomized domains, first-order logic with equality, context-free grammar parsing and generation, causal reasoning over random Bayesian networks, and systems of equations. Each task is paired with an external solver for rigorous verification and admits continuous difficulty control for curriculum design. Examples can optionally include solver-derived reasoning traces, enabling supervised training from the earliest pre-training stages, and the same interface provides verifiable reward functions for reinforcement learning. Our experiments show that mixing Reasoning Core data into pre-training improves downstream reasoning while preserving, or slightly improving, language modeling quality. Zero-shot evaluations confirm these tasks challenge frontier models such as GPT-5. The code and data are publicly available under the MIT license.",
+      "authors": [
+        "Valentin Lacombe",
+        "Valentin Quesnel",
+        "Damien Sileo"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL"
+      ],
+      "published": "2026-03-02T18:59:29+00:00",
+      "link": "https://arxiv.org/pdf/2603.02208v1",
+      "tags": [
+        "keyword:ML CO",
+        "query:ML CO"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "data generation for symbolic reasoning and planning tasks",
+      "llm_evidence_cn": "符号推理和规划任务的数据生成",
+      "llm_evidence": "符号推理和规划任务的数据生成",
+      "canonical_evidence": "符号推理和规划任务的数据生成",
+      "llm_tldr_en": "A suite for generating verifiable symbolic data to train reasoning models.",
+      "llm_tldr_cn": "一套用于生成可验证符号数据以训练推理模型的工具套件。",
+      "llm_tldr": "一套用于生成可验证符号数据以训练推理模型的工具套件。",
+      "llm_tags": [
+        "query:ml-co:composite"
+      ],
+      "matched_query_tag": "query:ml-co:composite",
+      "matched_query_text": "Papers central to 查找机器学习解决组合优化相关的论文, especially work that connects or combines: machine learning for combinatorial optimization; reinforcement learning for combinatorial optimization; graph neural networks for combinatorial optimization; machine learning approaches for traveling salesman problem; machine learning for integer linear programming; learning to branch in branch and bound algorithms; meta-learning for combinatorial optimization; survey of machine learning for combinatorial optimization; deep learning methods for solving NP hard problems; end to end learning for combinatorial optimization.",
+      "matched_requirement_id": "req-composite-ml-co",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2603.05495v1",
+      "title": "Cheap Thrills: Effective Amortized Optimization Using Inexpensive Labels",
+      "abstract": "To scale the solution of optimization and simulation problems, prior work has explored machine-learning surrogates that inexpensively map problem parameters to corresponding solutions. Commonly used approaches, including supervised and self-supervised learning with either soft or hard feasibility enforcement, face inherent challenges such as reliance on expensive, high-quality labels or difficult optimization landscapes. To address their trade-offs, we propose a novel framework that first collects \"cheap\" imperfect labels, then performs supervised pretraining, and finally refines the model through self-supervised learning to improve overall performance. Our theoretical analysis and merit-based criterion show that labeled data need only place the model within a basin of attraction, confirming that only modest numbers of inexact labels and training epochs are required. We empirically validate our simple three-stage strategy across challenging domains, including nonconvex constrained optimization, power-grid operation, and stiff dynamical systems, and show that it yields faster convergence; improved accuracy, feasibility, and optimality; and up to 59x reductions in total offline cost.",
+      "authors": [
+        "Khai Nguyen",
+        "Petros Ellinas",
+        "Anvita Bhagavathula",
+        "Priya Donti"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "math.OC"
+      ],
+      "published": "2026-03-05T18:58:39+00:00",
+      "link": "https://arxiv.org/pdf/2603.05495v1",
+      "tags": [
+        "keyword:ML CO",
+        "query:ML CO"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "machine learning surrogates for optimization problems",
+      "llm_evidence_cn": "优化问题的机器学习代理模型",
+      "llm_evidence": "优化问题的机器学习代理模型",
+      "canonical_evidence": "优化问题的机器学习代理模型",
+      "llm_tldr_en": "Proposes a framework using cheap labels and self-supervised learning to scale optimization solutions.",
+      "llm_tldr_cn": "提出了一种利用廉价标签和自监督学习来扩展优化问题求解的框架。",
+      "llm_tldr": "提出了一种利用廉价标签和自监督学习来扩展优化问题求解的框架。",
+      "llm_tags": [
+        "query:ml-co"
+      ],
+      "matched_query_tag": "query:ml-co",
+      "matched_query_text": "machine learning for combinatorial optimization",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2603.02989v2",
+      "title": "CASSR: Continuous A-Star Search through Reachability for real time footstep planning",
+      "abstract": "Footstep planning involves a challenging combinatorial search. Traditional A* approaches require discretising reachability constraints, while Mixed-Integer Programming (MIP) supports continuous formulations but quickly becomes intractable, especially when rotations are included. We present CASSR, a novel framework that recursively propagates convex, continuous formulations of a robot's kinematic constraints within an A* search. Combined with a new cost-to-go heuristic based on the EPA algorithm, CASSR efficiently plans contact sequences of up to 30 footsteps in under 125 ms. Experiments on biped locomotion tasks demonstrate that CASSR outperforms traditional discretised A* by up to a factor of 100, while also surpassing a commercial MIP solver. These results show that CASSR enables fast, reliable, and real-time footstep planning for biped robots.",
+      "authors": [
+        "Jiayi Wang",
+        "Steve Tonneau"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO"
+      ],
+      "published": "2026-03-03T13:41:49+00:00",
+      "link": "https://arxiv.org/pdf/2603.02989v2",
+      "tags": [
+        "keyword:ML CO",
+        "query:ML CO"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "Combinatorial search in footstep planning",
+      "llm_evidence_cn": "足迹规划中的组合搜索",
+      "llm_evidence": "足迹规划中的组合搜索",
+      "canonical_evidence": "足迹规划中的组合搜索",
+      "llm_tldr_en": "Integrates continuous reachability constraints into A* search for efficient combinatorial footstep planning.",
+      "llm_tldr_cn": "将连续可达性约束集成到A*搜索中，以实现高效的足迹规划组合搜索。",
+      "llm_tldr": "将连续可达性约束集成到A*搜索中，以实现高效的足迹规划组合搜索。",
+      "llm_tags": [
+        "query:ml-co"
+      ],
+      "matched_query_tag": "query:ml-co",
+      "matched_query_text": "learning to search in combinatorial optimization",
+      "matched_requirement_id": "req-12",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    }
+  ]
+}

@@ -1,0 +1,1111 @@
+Title: Layer-wise QUBO-Based Training of CNN Classifiers for Quantum Annealing
+
+URL Source: https://arxiv.org/pdf/2603.02958v1
+
+Published Time: Wed, 04 Mar 2026 02:23:19 GMT
+
+Number of Pages: 28
+
+Markdown Content:
+# Layer-wise QUBO-Based Training of CNN Classifiers for Quantum Annealing 
+
+Mostafa Atallah 0009-0004-8187-6932 1,2* 
+
+and Rebekah Herrman 0000-0001-6944-4206 1
+
+1Department of Industrial and Systems Engineering, University of Tennessee - Knoxville, Knoxville, 37996, TN, USA. 
+
+2Department of Physics, Faculty of Science, Cairo University, Giza, 12613, Egypt. *Corresponding author(s). E-mail(s): matalla3@vols.utk.edu; 
+
+Abstract 
+
+Variational quantum circuits for image classification suffer from barren plateaus, while quantum kernel methods scale quadratically with dataset size. We propose an iterative framework based on Quadratic Unconstrained Binary Optimization (QUBO) for training the classifier head of convolutional neural networks (CNNs) via quantum annealing, entirely avoiding gradient-based circuit optimization. Following the Extreme Learning Machine paradigm, convolutional filters are ran-domly initialized and frozen, and only the fully connected layer is optimized. At each iteration, a convex quadratic surrogate derived from the feature Gram matrix replaces the non-quadratic cross-entropy loss, yielding an iteration-stable curvature proxy. A per-output decomposition splits the C-class problem into C
+
+independent QUBOs, each with (d+1) K binary variables, where d is the feature dimension and K is the bit precision, so that problem size depends on the image resolution and bit precision, not on the number of training samples. We evalu-ate the method on six image-classification benchmarks (sklearn digits, MNIST, Fashion-MNIST, CIFAR-10, EMNIST, KMNIST). A precision study shows that accuracy improves monotonically with bit resolution, with 10 bits representing a practical minimum for effective optimization; the 15-bit formulation remains within the qubit and coupler limits of current D-Wave Advantage hardware. The 20-bit formulation matches or exceeds classical stochastic gradient descent on MNIST, Fashion-MNIST, and EMNIST, while remaining competitive on CIFAR-10 and KMNIST. All experiments use simulated annealing, establishing a baseline for direct deployment on quantum annealing hardware. 
+
+1          
+
+> arXiv:2603.02958v1 [quant-ph] 3 Mar 2026 Keywords: Convolutional neural networks ·Extreme learning machine ·
+> Image classification ·Quadratic surrogate ·QUBO ·Simulated/quantum annealing
+
+# 1 Introduction 
+
+Quantum machine learning (QML) seeks to exploit quantum computation for machine learning tasks [1–3]. Among the most widely studied applications is image classifi-cation, where quantum approaches have been applied through variational quantum classifiers (VQCs) [4, 5], quantum neural networks [6, 7], and quantum kernel meth-ods [8]. VQC-based methods suffer from barren plateaus , i.e., exponentially vanishing gradients that make optimization intractable as the number of qubits grows [9, 10]. Quantum kernel methods employ parameterized feature-map circuits [11] and face scalability issues since kernel matrix computation requires O(N 2) circuit evaluations for N training samples [12]. These limitations motivate alternative paradigms that avoid both gradient-based circuit optimization and quadratic data scaling. Quadratic unconstrained binary optimization (QUBO) problems map directly to Ising Hamiltonians, the native energy functions of quantum annealers, via a simple linear transformation ( si = 2 bi − 1 converts binary to spin variables) [13]. Date et al. [14] and Glover et al. [15] showed that convex machine learning problems such as linear regression and support vector machines (SVMs) can be cast as QUBOs and solved in a single annealing call. Unlike VQCs, which require estimating gradients of a parameterized quantum circuit, quantum annealing is entirely gradient-free. It encodes the optimization problem in an energy landscape and finds low-energy states through quantum tunneling and thermal fluctuations, so barren plateaus do not arise. Quantum annealing can also escape local minima via tunneling, whereas classical gradient descent may become trapped [16]. However, neural network losses are non-convex with multiple local minima [17], and the SVM formulation produces an N ×N QUBO matrix that scales with the number of training samples, which is prohibitive for large image-classification datasets. Subi˜ nas et al. [18] proposed an exact QUBO formulation for post-training neural network quantization, encoding rounding decisions as binary variables. Their approach requires pre-trained floating-point weights and one binary variable per weight, making qubit requirements scale with network size. This work is motivated by the Extreme Learning Machine (ELM) paradigm [19, 20]. Freezing the convolutional filters is essential for our QUBO formulation: because the feature extractor is fixed, the feature matrix X and the Gram matrix G = 1 
+
+> N
+
+XT X are computed once and remain constant across all iterations, decoupling feature extraction (performed classically) from classifier optimization (performed via QUBO). If the con-volutional filters were trainable, every weight update would change X and invalidate 
+
+G, requiring the QUBO to be reconstructed at each step and coupling the layers in a non-quadratic optimization. In this work, we freeze randomly initialized convolutional filters and develop a Gram-matrix quadratic surrogate for fully-connected (FC) layer 2update optimization using softmax residuals and symmetric signed encoding. A layer-wise decomposition splits a C-class classifier into C independent per-output QUBOs, each with ( d + 1) × K logical binary variables, where d is the feature dimension and 
+
+K is the bit precision. Notably, this does not depend on the size of the training data, unlike previous approaches. We present an empirical study of bit-precision sensitivity for iterative QUBO training, establishing a minimum precision threshold for effective optimization, and validate the method on six image-classification benchmarks. On the 
+
+sklearn digits dataset (8 × 8 images, C = 10 classes), our method achieves up to 81.5% test accuracy with 20-bit precision, compared to 79.8% for a classical base-line trained under the same frozen-feature setting. Performance improves consistently with precision: 5-bit updates are too coarse (33% test accuracy), while 10-bit and above produce competitive results. We further validate generalization on five addi-tional benchmarks (MNIST, Fashion-MNIST, CIFAR-10, EMNIST, KMNIST), where QUBO 20-bit matches or exceeds the classical baseline on MNIST (+3%), Fashion-MNIST (+1.3%), and EMNIST ( ±0%), while remaining competitive on CIFAR-10 and KMNIST despite the representation bottleneck imposed by 8 × 8 downsampling. Our main contributions are: 1. An iterative Gram-matrix QUBO surrogate that replaces the non-quadratic cross-entropy loss with a convex quadratic amenable to quantum annealing, enabling neural network training from random initialization. 2. A per-output decomposition that reduces QUBO size from ( d+1) CK to C inde-pendent problems of ( d+1) K variables each, scaling with the model rather than the dataset. 3. An empirical precision-sensitivity study identifying a minimum viable bit precision (K ≥ 10) for effective QUBO-based training. 4. A multi-dataset benchmark on six image-classification tasks validating the method under a frozen-feature setting. The remainder of this paper is organized as follows. Section 1.1 reviews quan-tum approaches to image classification. Section 2 develops the QUBO formulation, including the quadratic surrogate, Gram-matrix curvature proxy, and binary encod-ing. Section 3 introduces the layer-wise per-output decomposition and presents the training algorithm. Section 4 reports experimental results on six benchmark datasets, and Section 5 discusses implications and future directions. 
+
+1.1 Related Work 
+
+Quantum image classification has been explored through three main paradigms: varia-tional approaches (variational quantum classifiers (VQCs) and quantum convolutional neural networks (QCNNs)) [4, 6, 7], which optimize parameterized quantum circuits via classical gradient loops; non-variational approaches (quantum reservoirs [21] and random-circuit methods [22]), which use fixed quantum dynamics as feature extrac-tors without gradient optimization; and quantum annealing [23, 24], which encodes optimization problems directly in hardware energy landscapes. Each paradigm has distinct strengths and weaknesses. Variational methods offer flexible expressibility but 3face barren plateaus at scale, non-variational methods avoid gradient issues but sacri-fice circuit trainability, and annealing is gradient-free, exploiting quantum tunneling to escape local minima that trap classical optimizers [16], but is restricted to problems that can be expressed in QUBO (or equivalently Ising) form, which requires reformu-lating continuous optimization objectives as quadratic functions of binary variables. We organize the literature accordingly. Among VQC-based methods for multiclass classification, reported accuracies vary widely depending on the quantum circuit architecture, number of qubits, and degree of classical preprocessing. At the high end of accuracy, hybrid approaches that use classical convolutional neural networks (CNNs) for feature extraction before a small quantum classifier achieve strong results; however, these methods still require gradient-based optimization of the quantum circuit parameters. For example, Senokosov et al. [25] achieve 99.21% on MNIST (28 × 28, 10-class) using parallel 5-qubit VQCs, and Ng et al. [26] achieve 94.3% on MNIST (10 × 10, 10-class) with a 6-qubit VQC that encodes images via Hue-Saturation-Value (HSV) color-channel decomposition, which splits each pixel into three perceptually meaningful channels that are independently encoded into qubit rotations. Ensemble approaches such as QUILT [27] reach ∼85% on MNIST (28 × 28, 10-class) using an ensemble of structurally distinct 5-qubit VQCs on IBM hardware. Pure quantum architectures without classical feature extraction achieve lower accuracy: an 8-qubit quantum convolutional neural network (QCNN) with amplitude encoding reaches 57% on MNIST (16 ×16, 10-class) [28], outperforming a classical CNN of comparable size but remaining far below hybrid methods. Riaz et al. [29] employed strongly entangled 4-qubit layers, achieving 93.8% on MNIST (28 × 28, 10-class) but only 36% on CIFAR-10 (32 × 32, 10-class). The accuracy gap is not due to the entanglement strategy itself but rather to the increased complexity of CIFAR-10: the classification task remains object recognition in both cases, yet CIFAR-10 images contain three color channels and more complex visual patterns than grayscale handwritten digits, which current few-qubit quantum models struggle to represent. Several VQC-based works report strong results on binary (two-class) tasks, which reduce a C-class problem to  C
+
+> 2
+
+ pairwise one-vs-one classifiers, simplifying each subproblem at the cost of requiring many separate circuits. Liu et al. [30] achieved 100% on MNIST (28 ×28, 2-class) and 85.55% on CIFAR-10 (32 ×32, 2-class) with a 4-qubit VQC. Sun et al. [31] reported 99.79% on MNIST and Fashion-MNIST (28 ×28, 2-class) with a scalable QCNN. Hur et al. [32] proposed an 8-qubit QCNN achieving up to 99% on MNIST (28 ×28, 2-class). Grant et al. [5] trained hierarchical VQCs on 8 qubits, achieving 99.9% on MNIST digits 0-vs-1 (28 × 28, 2-class). Mari et al. [33] reached 96.7% on an ImageNet subset (224 ×224, 2-class) via quantum transfer learning. Wilson et al. [34] used quantum random feature maps on a Rigetti QPU, achieving 98.6% on MNIST (28 × 28, 2-class, digits 3-vs-5). While these works report strong binary accuracy, they do not address full multiclass classification. A common limitation across all VQC approaches is the reliance on classical gradient-based optimization of circuit parameters, which becomes intractable as qubit counts grow due to barren plateaus [9]. Non-variational quantum approaches sidestep gradient optimization of quantum circuits entirely. Henderson et al. [22] introduced quanvolutional neural networks that preprocess MNIST (28 ×28, 10-class) images with random 9-qubit quantum circuits as 4convolutional filters, followed by a classical neural network for classification, reaching 
+
+∼99% accuracy. Kornjaˇ ca et al. [21] demonstrated quantum reservoir computing on QuEra’s Aquila neutral-atom processor, using Rydberg atom dynamics as a fixed nonlinear feature map followed by a classical linear classifier, achieving 93.5% accuracy on MNIST (28 ×28, 2-class) with a 9-qubit chain and scaling to 108 qubits on a 3-class task. In these methods, the quantum circuit is fixed (not trained), so barren plateaus do not arise; however, the quantum component serves only as a feature extractor, with all classification performed by the classical model. On the quantum annealing side, several works have applied D-Wave hardware to image classification tasks. Nguyen and Kenyon [23] used D-Wave 2X for sparse coding on MNIST (12 × 12, 10-class), achieving 95.68% accuracy with a linear SVM on the sparse features. Benedetti et al. [35] trained a Boltzmann machine on D-Wave 2X, classifying 7 × 6 OptDigits images (4-class) at 90% accuracy. Boyda et al. [36] applied QBoost on D-Wave 2X for binary tree-cover detection in aerial imagery, reaching 91.7%. Koshka and Novotny [37] embedded a restricted Boltzmann machine (RBM) on D-Wave 2000Q for binary classification of 8 ×8 bar patterns, with D-Wave replacing classical sampling for inference. Caldeira et al. [38] trained RBMs on D-Wave 2000Q for binary galaxy morphology classification, finding quantum annealing competitive with classical methods on small datasets. Sleeman et al. [39] combined a convolutional autoencoder with a quantum RBM on D-Wave 2000Q, achieving 72% on MNIST (28 × 28, 10-class). Asaoka and Kudo [40] formulated matrix factorization as a QUBO on D-Wave 2000Q for MNIST classification, reaching ∼70% accuracy. These annealing approaches are limited to specific model classes (RBMs, sparse coding, boosting) and do not address direct neural network weight optimization. While some achieve high accuracy on their respective tasks, these specialized formulations do not generalize to training arbitrary neural network architectures, limiting their applicability to more complex classification problems. A common hybrid strategy across these works is to extract features classically (e.g., using a pretrained CNN such as ResNet) and then train a variational quantum circuit as the classifier head. Mari et al. [33] formalized this as quantum transfer learning: a classical CNN reduces the input to a low-dimensional feature vector, which is angle-encoded into qubits (one rotation per feature). A parameterized variational circuit processes these qubits, and for a C-class problem, the Pauli-Z expectation values of 
+
+C output qubits are passed through a classical softmax to produce class probabilities. The circuit parameters are optimized via gradient-based methods (e.g., the parameter-shift rule). While this shares our approach’s separation of classical feature extraction from quantum classification, these hybrid VQC methods still rely on gradient-based optimization of the quantum circuit parameters and therefore remain susceptible to barren plateaus as the number of qubits grows [9]. Multi-class classification further compounds this issue: for C classes, at least C output qubits are needed, and circuit depth must increase to create sufficient entanglement, exacerbating barren plateau severity. In principle, the classical feature extractor used in such hybrid approaches could also serve as the front end of a QUBO-based classifier: the QUBO formulation is agnostic to the source of the features and depends only on the feature dimension d.5However, pretrained networks such as ResNet-18 produce d = 512 features, yielding per-class QUBOs with 513 K binary variables, far exceeding the ∼5,000 qubit capacity of current D-Wave Advantage hardware even at moderate bit precision. Our use of a minimal convolutional architecture ( d = 18, giving 19 K variables per class) is there-fore a deliberate design choice that keeps the QUBO within hardware limits, rather than a simplification that could be trivially replaced by a deeper feature extractor. Conversely, if hybrid VQC methods such as by Mari et al. [33] adopted frozen random convolutional filters instead of pretrained ResNet features, they would operate on the same low-quality feature space as our method, but would still require gradient-based optimization of the variational circuit parameters (retaining susceptibility to barren plateaus) and would need at least C output qubits with increasing circuit depth for multi-class classification. Under identical frozen-feature conditions, our QUBO-based approach avoids both limitations: optimization is gradient-free, and multi-class scaling requires only C independent fixed-size QUBOs. Our approach occupies a distinct niche: following the ELM paradigm, convolu-tional layers are randomly initialized and frozen, and we use QUBO-based iterative optimization to train only the fully connected (FC) classifier layer from random ini-tialization on 8 × 8 images, achieving 81.3% on MNIST with 380 logical qubits per QUBO (20-bit precision). Like hybrid VQC methods, features are extracted classically, but instead of training a variational circuit via gradients, our formulation encodes the weight-update optimization as a QUBO solved via annealing, entirely gradient-free and immune to barren plateaus. Multi-class classification scales naturally: each of the 
+
+C classes yields an independent QUBO of fixed size ( d+1) K, solvable in parallel with-out increasing circuit depth or qubit count per problem. Images are downsampled to 8 × 8 to keep the QUBO size within the qubit and coupler limits of current D-Wave hardware. The lower accuracy relative to 28 × 28 methods reflects this downsampling rather than optimizer limitations, as our QUBO training matches or exceeds a classi-cal baseline under identical frozen-feature conditions. In contrast to most prior works, which report only accuracy, we also evaluate precision, recall, F1, Cohen’s Kappa, and MCC in Section 4.2 to provide a more complete assessment. 
+
+# 2 QUBO Formulation for CNN Training 
+
+We formulate CNN training for C-class classification as a regularized empirical risk minimization problem. Given a training set {(xn, yn)}Nn=1 where xn is an input image and yn ∈ {0, 1}C is a one-hot label vector, we seek network parameters 
+
+θ = {W(l), b(l)}Ll=1 that minimize the regularized cross-entropy loss, f (θ), min  
+
+> θ
+
+f (θ) = λ
+
+2 ∥θ∥22 + 1
+
+N
+
+> N
+
+X
+
+> n=1
+
+ℓn(θ) (1) where ∥θ∥22 = P 
+
+> i
+
+θ2 
+
+> i
+
+is the squared L2 norm over all parameters, N is the number of training samples, the per-sample loss is ℓn(θ) = − PCc=1 yn,c log(ˆ yn,c ) with ˆ yn,c being the predicted probability for class c, and λ > 0 is the L2 regularization coefficient (a penalty on squared weight magnitudes that discourages overfitting by keeping weights 6small). We use λ = 0 .001 throughout this work. In our iterative QUBO framework, 
+
+λ controls the magnitude of each weight update: smaller values allow larger steps per iteration, enabling faster convergence, while larger values constrain updates and slow progress. The value λ = 0 .001 is a standard choice in neural network training that balances convergence speed with regularization, and we found it to work well across all benchmarks without further tuning. This formulation violates both QUBO requirements. First, cross-entropy with softmax normalization is highly nonlinear: the loss involves log(exp( ·)/ P exp( ·)) com-positions that cannot be expressed as a quadratic in the parameters. Second, the loss landscape has multiple local minima, so unlike convex problems where a single QUBO solve finds the global optimum, neural network training requires iterative descent from random initialization. Additionally, the exact Hessian of cross-entropy loss depends on current predictions, changing at every iteration, which would require reformulat-ing the QUBO at each step. We resolve these obstacles by optimizing discrete weight 
+
+updates rather than absolute parameters, replacing the non-quadratic loss with a convex quadratic surrogate, and using iteration to navigate the non-convex landscape. 
+
+2.1 Quadratic Surrogate for Iterative Updates 
+
+At each iteration, we seek a weight update θt+1 = θt + u. Rather than optimizing 
+
+f (θt + u) directly, we approximate the loss landscape as a second-order Taylor expan-sion around the current weights, which is locally quadratic, and construct a quadratic surrogate. This approach is well-established in classical optimization [41–43] but has not been applied in the context of quantum machine learning: 
+
+q(u) = 12 uT Gu + gT u (2) where G ∈ Rd×d is a positive semidefinite curvature matrix (an approximation to the Hessian that captures how the loss surface curves near the current weights), g ∈
+
+Rd is the gradient at the current iterate, d is the feature dimension, and N is the number of training samples. Both G and g are computed from the training data (see Sections 2.2 and 2.3). The matrix G is positive semidefinite by construction, as shown in Section 2.2. Newton’s method uses the exact Hessian for G, while quasi-Newton methods (BFGS [42], L-BFGS [44]) use approximations. The key insight is that this surrogate is quadratic in u, making it directly suitable for QUBO formulation after binary encoding. Computing G and g requires O(N d 2) and O(N d ) operations respectively (one pass over the training data), comparable to computing gradients for stochastic gradient descent (SGD) [45]. As shown later, our approach will be able to avoid scaling dependence on N .
+
+2.2 The Gram Matrix as Curvature Proxy 
+
+For softmax cross-entropy, the Gauss–Newton matrix provides a curvature approxima-tion that is guaranteed positive semidefinite, unlike the full Hessian which may have negative eigenvalues in non-convex regions [42]. This matrix is H = 1 
+
+> N
+
+XT RX , where 
+
+X ∈ RN ×d is the feature matrix and R is a probability-dependent weighting matrix 7that changes at every iteration. Since R depends on the current predictions, using H
+
+directly would require recomputing the curvature matrix at every iteration. Inspired by the classical Gram matrix approach used in kernel methods and least-squares optimization [46], we replace H with the unweighted Gram matrix 
+
+G = 1
+
+N XT X. (3) This matrix is positive semidefinite ( G ⪰ 0) by construction: for any vector v,
+
+vT Gv = 1
+
+N vT XT Xv = 1
+
+N ∥Xv ∥22 ≥ 0, (4) since a squared norm is always non-negative. This is a purely algebraic property of any matrix of the form AT A and does not require any differentiability assumption on the original loss function. The surrogate q(u) = 12 uT Gu + gT u is a quadratic polynomial in u, so it is infinitely differentiable with Hessian ∇2q = G ⪰ 0. By the second-order convexity condition, a twice-differentiable function is convex if and only if its Hessian is positive semidefinite everywhere [42]; therefore, q(u) is convex regardless of the loss landscape. The Gram matrix is also iteration-stable, as it depends only on features 
+
+X, not on current predictions, and remains constant across iterations when features are frozen. Each entry Gij = 1
+
+> N
+
+PNn=1 xni xnj measures the empirical correlation between features i and j. Since convolutional features are generally non-orthogonal (neighboring spatial locations and related filters produce correlated activations), most off-diagonal entries Gij are non-zero, making G a dense matrix. This density propa-gates to the QUBO matrix Q (Section 2.4), yielding a fully connected optimization problem. Quantum annealers such as D-Wave Advantage have sparse qubit connec-tivity (the Pegasus graph), so embedding a fully connected QUBO requires chains of physical qubits to represent each logical variable, consuming additional qubits and reducing the effective problem size that the hardware can accommodate (see Section 5). Our Gram matrix G = 1 
+
+> N
+
+XT X can be understood as a prediction-independent approximation of the Fisher information matrix [47], which captures the geometry of the feature space while dropping the output-dependent weighting R. Each QUBO solve thus finds the optimal update with respect to this approximate geometry, making our approach an annealing-based analogue of natural gradient optimization [48]. The weighting matrix R = diag( πn(1 − πn)), where πn ∈ [0 , 1] is the predicted softmax probability for sample n, changes every iteration as predictions evolve. Omit-ting R sacrifices curvature accuracy but gains iteration stability: we precompute G
+
+once and reuse it, avoiding O(N d 2) recomputation per iteration. Since πn ∈ [0 , 1], the product πn(1 − πn) is maximized at πn = 0 .5 where it equals 0 .25, so R acts as a bounded reweighting with entries in [0 , 0.25]. As predictions approach class certainty (πn → 0 or πn → 1), R entries shrink toward zero, making the unweighted Gram matrix a reasonable curvature proxy up to constant scaling. Empirically, this approx-imation works well because the iterative training corrects for curvature inaccuracies over multiple steps. Both G and H are dense ( d + 1) × (d + 1) matrices with the same 8sparsity pattern, so substituting G for H does not increase the QUBO graph density or minor-embedding overhead. An alternative would be to use a diagonal curvature matrix G =diag( G11 , . . . , G (d+1)( d+1) ), implying a separable QUBO where each parameter can be optimized independently 
+
+Q = PT diag( G)P = block-diag  G11 pp T , . . . , G (d+1)( d+1) pp T  . (5) While separability simplifies the optimization, it ignores feature correlations that inform how parameters should change together. To capture parameter interactions and expose precision sensitivity, we use the full (dense) Gram matrix. 
+
+2.3 Gradient from Softmax Residuals 
+
+The gradient g is the standard calculus derivative of the cross-entropy loss with respect to the weights. For a linear softmax classifier, this derivative has a well-known closed-form expression in terms of the prediction residuals [46, 49]. Let L = 1
+
+> N
+
+P 
+
+> n
+
+ℓn denote the average cross-entropy loss, which requires one forward pass through the network to compute. Then 
+
+g = ∂L
+
+∂θ = 1
+
+N XT (π − y) = − 1
+
+N XT r (6) where π = softmax( Xθ) ∈ [0 , 1] N is the vector of predicted class probabilities (the n-th entry πn is the same per-sample predicted probability used in the weighting matrix 
+
+R above), y are the one-hot targets, and r = y − π is the softmax residual. Including L2 regularization on the weights (but not biases), the surrogate becomes 
+
+qλ(u) = 12 uT Gλu + gTλ u (7) where Gλ = G + λ · diag([1 , . . . , 1, 0]) excludes bias from regularization, and gλ =
+
+g + λ[θweights ; 0] adds the regularization gradient (here λ is the same regularization coefficient as in Equation (1)). Each individual surrogate is convex in u for fixed Gλ ⪰
+
+0; however, the composition of repeated updates under a nonlinear softmax makes the overall training procedure non-convex. The quadratic surrogate approximates the local loss landscape at each step, while iteration handles the global non-convexity: after each update, the gradient g is recomputed at the new weights, so successive surrogates explore different regions of the loss surface, analogous to how gradient descent navigates non-convex landscapes through repeated local steps. 
+
+2.4 Binary Encoding 
+
+Quantum annealers optimize unconstrained binary quadratic functions, so we dis-cretize continuous updates using symmetric signed encoding [14]. We define a precision vector p = [ p0, . . . , p K−1]T ∈ RK with powers-of-2 encoding 
+
+pk = δmax 
+
+2K − 1 · 2k, k = 0 , . . . , K − 1 (8) 9where δmax > 0 is the maximum update magnitude, K is the bit precision, and k
+
+is a summation index running over the K bit positions. The update vector u from Section 2.1 is encoded component-wise: for each parameter index j ∈ { 1, . . . , d +1 },the j-th component uj is represented by a binary sub-vector bj ∈ { 0, 1}K , where bj,k 
+
+denotes the k-th bit of the j-th parameter’s encoding, 
+
+uj =
+
+> K−1
+
+X
+
+> k=0
+
+pk(2 bj,k − 1) = pT (2 bj − 1). (9) The (2 b − 1) mapping centers updates around zero, with range [ −δmax , +δmax ]. The resolution is p0 = δmax /(2 K − 1), and all parameters share the same precision vector. We set δmax = 0 .5 throughout this work. This value was chosen empirically to allow meaningful weight changes per iteration while preventing instability from oversized updates. We conducted preliminary experiments with δmax ∈ { 0.1, 0.25 , 0.5, 1.0} and found δmax = 0 .5 to balance convergence speed with stability across datasets. For example, when δmax = 0 .5, K = 5 gives resolution ≈ 0.016, while K = 20 yields resolution ≈ 4.8 × 10 −7. This encoding does not guarantee that uj = 0 is exactly representable for all K; the closest value to zero has magnitude ϵ(K) = p0 =
+
+δmax /(2 K − 1). For K = 10 and δmax = 0 .5, ϵ ≈ 4.9 × 10 −4; for K = 20, ϵ ≈ 4.8 × 10 −7.These errors are negligible compared to typical weight magnitudes ( ∼ 0.1–1 .0). 
+
+2.5 QUBO Matrix Construction 
+
+Substituting the binary encoding into the quadratic surrogate qλ(u) from Equation (7) yields the QUBO. With u = 2 Pb − δmax 1d+1 where 1d+1 ∈ Rd+1 is the all-ones vector and P = Id+1 ⊗ pT ∈ R(d+1) ×(d+1) K is a block-diagonal matrix formed by the Kronecker product of the ( d+1)-dimensional identity matrix with the precision vector, the QUBO energy (up to constant terms that do not affect the minimizer) is 
+
+E(b) = bT Qb + qT b (10) where the quadratic and linear coefficients are 
+
+Q = 4 PT GλP (11) 
+
+q = 4 PT (g − Gλδmax 1d+1 ). (12) The factor of 4 arises from the 2 Pb term in the encoding. This constant scaling does not change which binary vector b∗ minimizes the QUBO; only the energy value at that minimum is scaled. The quadratic terms, Q, capture feature correlations from the Gram matrix, deter-mining how parameters should change together. The linear terms, q, encode the gradient direction (the direction of steepest descent in the loss landscape), indicat-ing which binary configurations reduce the loss. Before solving, we normalize QUBO coefficients by dividing by the maximum absolute coefficient. This does not change 10 the theoretical minimizer since QUBO minimization depends only on relative mag-nitudes. Empirically, normalization improves solver stability by ensuring consistent annealing temperature schedules across iterations [50]. Without normalization, coef-ficient magnitudes vary widely across iterations, requiring per-iteration temperature tuning. 
+
+# 3 Layer-Wise and Per-Class Decomposition 
+
+A multi-class classifier does not require a single monolithic QUBO. Let d denote the feature dimension, C the number of classes, and K the bit precision. A full fully connected (FC) layer QUBO would have ( d + 1) × C × K binary variables, which is potentially too large for current quantum hardware. By decomposing the classifier head across output neurons, we obtain C smaller dense QUBOs of size ( d+1) ×K each. This decomposition sacrifices cross-class curvature information, since the softmax couples all outputs. This is potentially relevant for datasets with correlated classes such as Fashion-MNIST, where visually similar categories (e.g., Shirt, T-shirt, Pullover, Coat) share feature representations, or CIFAR-10, where automobile and truck share similar visual features. However, the decomposition preserves within-class feature correlations via the shared Gram matrix. The total parameter count remains unchanged; only the optimization is decomposed. Empirically, accuracy is not significantly affected because iterative training corrects for approximation errors over multiple steps. 
+
+3.1 Problem Setup 
+
+Consider a CNN with a frozen feature extractor (i.e., convolutional layers whose weights are randomly initialized and held fixed, as in the ELM paradigm) followed by a fully connected classification layer. The FC layer weights are initialized randomly and serve as the initial state for optimization. No special data encoding is required as the QUBO is constructed from classical features and for quantum annealing deploy-ment, each binary variable maps to a spin variable via si = 2 bi − 1, with the annealer preparing the corresponding Ising Hamiltonian. Let N denote the number of training samples, d the dimension of flattened CNN features (after pooling), C the number of output classes, and K the bit precision (binary variables per continuous parame-ter). The FC layer has weight matrix W ∈ Rd×C and bias vector b ∈ RC , totaling 
+
+P = ( d + 1) × C parameters when including biases. We augment the feature matrix to jointly optimize weights and biases within a single QUBO formulation. This standard technique [46] absorbs the bias into the weight vector, eliminating the need for separate bias handling. Let X ∈ RN ×d be the flattened CNN features. The augmented feature matrix appends a column of ones (so that multiplying by the augmented weight vector [ w; b] produces Xw +b1N , effectively incorporating the bias). The subscript N on 1N indicates an N -dimensional vector of ones (one entry per training sample) 
+
+Xaug = [ X, 1N ] ∈ RN ×(d+1) . (13) 11 The augmented weight vector for class c combines the c-th column of W and the 
+
+c-th entry of b: waug  
+
+> c
+
+= [ wc; bc] ∈ Rd+1 , and the full augmented weight matrix is 
+
+Waug = [ waug 1 , . . . , waug  
+
+> C
+
+] ∈ R(d+1) ×C .
+
+3.2 Per-Output Decomposition 
+
+We decompose the global optimization into C independent per-output subprob-lems, one QUBO for each output neuron’s weights and bias. The Gram matrix 
+
+G = 1 
+
+> N
+
+XT
+
+> aug
+
+Xaug ∈ R(d+1) ×(d+1) is shared across all C problems. Although soft-max couples outputs across classes (changing one class’s weights affects all predicted probabilities), we treat per-class updates independently within each iteration. This corresponds to a block-coordinate update over the columns of Waug where each block (column c) is optimized using the shared curvature proxy Gλ while holding the remaining blocks fixed, yielding a block-diagonal approximation in class space. This approximation works well empirically because subsequent iterations correct for any suboptimality, and the shared Gram matrix preserves within-class feature geometry. Section 2 derived the surrogate for a single output; here we instantiate it for each class c independently. For output class c ∈ { 1, . . . , C }, the per-class softmax residual specializes Equation (6) to a single output column 
+
+rc = yc − πc ∈ RN (target minus prediction) (14) where yc ∈ { 0, 1}N is the one-hot target vector and πc is the predicted probability for class c. Applying the quadratic surrogate from Section 2.1 to this per-class residual yields the per-output optimization problem min  
+
+> uaug
+> c∈Rd+1
+
+12 (uaug  
+
+> c
+
+)T Gλuaug  
+
+> c
+
++ gTc uaug  
+
+> c
+
+(15) where Gλ = G + λ · diag(1 , . . . , 1
+
+| {z }
+
+> d
+
+, 0) applies L2 regularization to weights but not bias, and the gradient is 
+
+gc = − 1
+
+N XT
+
+> aug
+
+rc + λ[wc; 0] ∈ Rd+1 . (16) For symmetric signed encoding uaug  
+
+> c
+
+= 2 Pbc − δmax 1d+1 where P = Id+1 ⊗ pT ∈
+
+R(d+1) ×(d+1) K , the QUBO energy is 
+
+E(bc) = bTc Qcbc + qTc bc + 12 δ2max 1Td+1 Gλ1d+1 − δmax gTc 1d+1 (17) where 
+
+Qc = 4 PT GλP ∈ R(d+1) K×(d+1) K (18) 
+
+qc = 4 PT (gc − Gλδmax 1d+1 ) ∈ R(d+1) K . (19) Note that Qc is identical across all classes (since it depends only on the shared Gram matrix), while qc differs per class through the class-specific gradient gc. The constant 12 terms do not affect the binary minimizer and are dropped during optimization. This yields C independent dense QUBOs, each with ( d + 1) × K binary variables. Each per-output QUBO has (d+1) K·(( d+1) K−1) 2 quadratic terms. The Gram matrix G = 
+
+> 1
+> N
+
+XT
+
+> aug
+
+Xaug is dense, creating O(( d + 1) 2K2) non-zero entries. Since the convolutional features are frozen, G is computed once and reused across all iterations, shared among all C per-output QUBOs. After solving each QUBO, the proposed update is applied with step size α = 1 (full update). All QUBO solutions are applied unconditionally without acceptance tests, relying on the quality of the surrogate to produce beneficial updates on average. The feature dimension d is fully determined by the convolutional architecture. For an input image of size H × W processed by a single convolutional layer with kernel size k × k (stride 1, no padding) followed by s × s max pooling, the pooled spatial dimensions are hpool = ⌊(H − k + 1) /s ⌋ and wpool = ⌊(W − k + 1) /s ⌋, giving 
+
+d = hpool × wpool × nfilters . (20) Because the QUBO matrix has size ( d+1) K × (d+1) K, every architectural choice (number of filters, kernel size, and pooling stride) directly controls the number of binary variables and quadratic couplers. For example, with the architecture used in our experiments (8 × 8 input, 3 × 3 kernel, 2 × 2 pooling, 2 filters), d = 3 × 3 × 2 = 18, and each per-class QUBO has 19 K binary variables. Doubling the filter count to 4 would increase d to 36 and the QUBO size to 37 K, roughly quadrupling the number of quadratic terms. Note that feature extraction is performed entirely on classical hardware. The frozen convolutional layers execute a standard forward pass (convolution, ReLU, pooling) to produce the feature matrix X. The quantum annealer (or simulated annealer) is invoked only for solving the QUBO that optimizes the FC layer weights. While the fil-ter values (i.e., the specific learned patterns such as edge or texture detectors) influence the quality of the extracted features and therefore the entries of the Gram matrix G,they do not affect the QUBO structure or size; only the architectural hyperparame-ters (kernel size, number of filters, pooling stride) determine d and hence the QUBO dimensions. 
+
+3.3 Algorithm 
+
+The training procedure operates in four phases per iteration, as shown in Algorithm 1. Following the Extreme Learning Machine paradigm [20], convolutional features are randomly initialized and frozen and only the FC layer is optimized, either via gradient descent [48] (classical baseline) or QUBO formulation (proposed method). After ReLU activation and max pooling, features are flattened and augmented with a bias column 
+
+Xaug = [ X, 1N ] ∈ RN ×(d+1) , where d = hpool × wpool × nfilters . The Gram matrix 
+
+G = 1 
+
+> N
+
+XT
+
+> aug
+
+Xaug is computed once and shared across all per-output QUBOs and iterations. At each iteration, softmax probabilities are computed, and for each output class c, an independent QUBO is formulated from the residual rc = yc − πc and solved via simulated annealing (or quantum annealing). The binary solution decodes 13 Extract CNN Features X       
+
+> Compute Gram Matrix G
+> Compute Softmax Π
+> Build QUBO for class c
+> Solve via Annealing
+> Update Weights
+> c= 1 . . . C t= 1 . . . T
+
+Fig. 1 : Training pipeline matching Algorithm 1. Green blocks: one-time initialization (frozen CNN features and Gram matrix). Gray blocks: iterative phases 1 and 3. Cyan blocks: Phase 2 inner loop over C classes. Outer loop repeats T iterations. to a continuous weight update that is applied directly. Figure 1 illustrates the training pipeline, and Algorithm 1 presents the complete procedure. 
+
+# 4 Experimental Results 
+
+This section presents experimental results in two parts: 1) detailed analysis on the scikit-learn digits dataset [51] (Section 4.1), which demonstrates conver-gence behavior and sample predictions, 2) followed by a multi-dataset benchmark (Section 4.2) that validates generalization across five standard image classification tasks. All QUBO instances are solved using the D-Wave Ocean SDK [52] with the simulated annealing sampler. All experiments use simulated annealing (SA), a clas-sical optimization algorithm [50], rather than actual quantum hardware. SA mimics thermal annealing by probabilistically accepting worse solutions at high temperatures and gradually cooling to converge. While SA can effectively solve QUBO problems, it does not exhibit quantum effects. Our results establish baseline solution quality that quantum hardware would need to match or exceed. Figure 2 illustrates the CNN architecture used across all experiments. 14 8×8 Grayscale Image       
+
+> Conv 3 ×3, 2 filters
+> ReLU
+> MaxPool 2 ×2
+> Flatten ( d= 18 )
+> Augment ( d+ 1 = 19 )
+> FC Layer ( 19 →10 )
+> Softmax →Class
+> Frozen (random init)
+> Trained via QUBO
+
+Fig. 2 : CNN architecture used in all experiments. Convolutional layers are randomly initialized and frozen; only the fully connected (FC) classifier head is trained via iterative QUBO solves. 
+
+Table 1 : Experimental Settings ( sklearn Digits Dataset) 
+
+Parameter Value 
+
+Dataset sklearn digits (8 ×8 images) Training samples 1000 Test samples 540 Number of classes 10 CNN architecture 1 conv layer (3 × 3 kernel), 2 × 2 pooling, FC output CNN filters 2Total parameters 210 Bit precisions 5, 10, 15, 20 Iterations 1000 Delta range [−0.5, 0.5] Regularization ( λ) 0.001 SA num reads 1 (scaled with bits) SA num sweeps 1000 SA β range (0 .01 , 3) 
+
+15 Algorithm 1 Layer-wise Gram Matrix QUBO Training 
+
+Require: Training data {(xn, yn)}Nn=1 , C classes 
+
+Require: Frozen conv Wconv , FC weights Wfc ∈ Rd×C , biases bfc ∈ RC
+
+Require: λ, precision p ∈ RK , max update δmax , iterations T
+
+Ensure: Trained FC layer parameters  
+
+> 1:
+
+Initialize Wfc , bfc randomly  
+
+> 2:
+
+Waug ← [Wfc ; bT
+
+> fc
+
+] ▷ Augmented weights  
+
+> 3:
+
+X ← CNN features( Wconv , {xn}) ▷ Frozen features  
+
+> 4:
+
+Xaug ← [X, 1N ] ▷ Bias augmentation  
+
+> 5:
+
+G ← 1 
+
+> N
+
+XT
+
+> aug
+
+Xaug ▷ Gram matrix  
+
+> 6:
+
+for t = 1 to T do  
+
+> 7:
+
+Π ← softmax( Xaug Waug ) 
+
+> 8:
+
+for c = 1 to C do  
+
+> 9:
+
+rc ← yc − πc ▷ Residual  
+
+> 10:
+
+gc ← − 1 
+
+> N
+
+XT
+
+> aug
+
+rc + λ[wc; 0] ▷ Gradient  
+
+> 11:
+
+Qc ← 4PT GλP ▷ QUBO quadratic  
+
+> 12:
+
+qc ← 4PT (gc − Gλδmax 1d+1 ) ▷ QUBO linear  
+
+> 13:
+
+b∗ 
+
+> c
+
+← Anneal( Qc, qc) ▷ Solve  
+
+> 14:
+
+uc ← 2Pb∗ 
+
+> c
+
+− δmax 1d+1 ▷ Decode  
+
+> 15:
+
+end for  
+
+> 16:
+
+Waug ← Waug + Uaug  
+
+> 17:
+
+end for  
+
+> 18:
+
+return (Wfc , bfc )
+
+4.1 sklearn Digits Dataset 
+
+The SA solver has two key parameters that control the exploration-exploitation trade-off. num sweeps controls how long each SA run explores: each sweep performs one update attempt per binary variable. num reads controls how many independent SA runs are performed from different random initializations. With iterative QUBO train-ing, we use num reads = 1 because each iteration builds on the previous weights, providing natural error correction over time. Table 1 summarizes the experimental settings for the sklearn digits dataset. The QUBO dimensions depend on feature dimension d, number of classes C, and bit precision K. For each per-output QUBO, the number of logical variables is n =(d + 1) × K, and the number of quadratic terms is n(n−1) 2 . For our setup with d = 18 and C = 10 classes, Table 2 shows the QUBO sizes for each bit precision. Since we solve C independent QUBOs sequentially, hardware feasibility is deter-mined by the largest single per-output QUBO, which is 380 qubits for 20-bit precision with d = 18. All configurations remain well within D-Wave Advantage’s 5,640 physical qubit limit. The test accuracy increases monotonically with bit precision, culminating in 81.5% for 20-bit precision, as shown in Table 3, which is greater than the classi-cal FC baseline 79.8% accuracy. However it is important to note that training time is longer than classical training time. 16 Table 2 : Per-Output QUBO Size by Bit Precision for all datasets ( d = 18, one of C = 10 independent QUBOs) 
+
+K (bits) Logical Vars n = ( d+1) K Quadratic Terms n(n−1) 2
+
+5 95 4,465 10 190 17,955 15 285 40,470 20 380 72,010 
+
+Table 3 : Layer-wise Gram QUBO Results on sklearn Digits (1000 iterations) 
+
+Method Train Acc Test Acc Time (s) Final Loss 
+
+Classical FC (SGD) 82.2% 79.8% 22.7 0.872 QUBO 5-bit 33.9% 33% 225.6 2.704 QUBO 10-bit 77.7% 77.4% 767.3 0.758 QUBO 15-bit 83.9% 80% 2605.4 0.677 QUBO 20-bit 84.9% 81.5% 9712.6 0.671 
+
+QUBO methods exhibit stepwise convergence with fluctuations, since updates are applied unconditionally and some iterations increase the loss before subsequent itera-tions correct them. The 20-bit configuration converges fastest among QUBO methods, exceeding classical accuracy by iteration 500 (81.2% vs 79.8%), as shown in Fig. 3. Both 15-bit and 20-bit achieve lower final loss (0.677, 0.671) than classical (0.872), indicating that the QUBO surrogate with sufficient precision can find better solu-tions than SGD in this frozen-feature setting. The 5-bit configuration fails to converge meaningfully, with loss remaining high ( >2.7) throughout training. 0 200 400 600 800 1000 
+
+> Iteration
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> Training Accuracy
+> Classical
+> QUBO 5b (950 qubits)
+> QUBO 10b (1900 qubits)
+> QUBO 15b (2850 qubits)
+> QUBO 20b (3800 qubits)
+
+(a) Training Accuracy 0 200 400 600 800 1000  
+
+> Iteration
+> 1
+> 2
+> 3
+> 4
+> 5
+> 6
+> Cross-Entropy Loss
+> Classical
+> QUBO 5b (950 qubits)
+> QUBO 10b (1900 qubits)
+> QUBO 15b (2850 qubits)
+> QUBO 20b (3800 qubits)
+
+(b) Training Loss 
+
+Fig. 3 : Convergence curves for Classical FC (SGD) and QUBO methods with different bit precisions over 1000 iterations. 17 Digits 0, 2, 3, and 4 are correctly classified by all models, while Digit 8 is misclas-sified by all models, and the remaining digits show mixed results, as seen in Fig. 4 and Table 4. The universal failure on Digit 8 suggests that the 8 × 8 representation, rather than the optimizer, is the bottleneck: at this resolution, Digit 8 loses the distinguishing loop structure that separates it from visually similar digits. 0
+
+Image 
+
+0 1 2 3 4 5 6 7 8 9
+
+0.0 
+
+0.5 
+
+1.0 
+
+0
+
+Classical 
+
+0 1 2 3 4 5 6 7 8 9
+
+0.0 
+
+0.5 
+
+1.0 
+
+0
+
+QUBO 5b 
+
+0 1 2 3 4 5 6 7 8 9
+
+0.0 
+
+0.5 
+
+1.0 
+
+0
+
+QUBO 10b 
+
+0 1 2 3 4 5 6 7 8 9
+
+0.0 
+
+0.5 
+
+1.0 
+
+0
+
+QUBO 15b 
+
+0 1 2 3 4 5 6 7 8 9
+
+0.0 
+
+0.5 
+
+1.0 
+
+0
+
+QUBO 20b 
+
+> 1
+
+0 1 2 3 4 5 6 7 8 9
+
+0.0 
+
+0.5 
+
+1.0 
+
+1
+
+0 1 2 3 4 5 6 7 8 9
+
+0.0 
+
+0.5 
+
+1.0 
+
+4
+
+0 1 2 3 4 5 6 7 8 9
+
+0.0 
+
+0.5 
+
+1.0 
+
+3
+
+0 1 2 3 4 5 6 7 8 9
+
+0.0 
+
+0.5 
+
+1.0 
+
+1
+
+0 1 2 3 4 5 6 7 8 9
+
+0.0 
+
+0.5 
+
+1.0 
+
+1
+
+> 2
+
+0 1 2 3 4 5 6 7 8 9
+
+0.0 
+
+0.5 
+
+1.0 
+
+2
+
+0 1 2 3 4 5 6 7 8 9
+
+0.0 
+
+0.5 
+
+1.0 
+
+2
+
+0 1 2 3 4 5 6 7 8 9
+
+0.0 
+
+0.5 
+
+1.0 
+
+2
+
+0 1 2 3 4 5 6 7 8 9
+
+0.0 
+
+0.5 
+
+1.0 
+
+2
+
+0 1 2 3 4 5 6 7 8 9
+
+0.0 
+
+0.5 
+
+1.0 
+
+2
+
+> 3
+
+0 1 2 3 4 5 6 7 8 9
+
+0.0 
+
+0.5 
+
+1.0 
+
+3
+
+0 1 2 3 4 5 6 7 8 9
+
+0.0 
+
+0.5 
+
+1.0 
+
+3
+
+0 1 2 3 4 5 6 7 8 9
+
+0.0 
+
+0.5 
+
+1.0 
+
+3
+
+0 1 2 3 4 5 6 7 8 9
+
+0.0 
+
+0.5 
+
+1.0 
+
+3
+
+0 1 2 3 4 5 6 7 8 9
+
+0.0 
+
+0.5 
+
+1.0 
+
+3
+
+> 4
+
+0 1 2 3 4 5 6 7 8 9
+
+0.0 
+
+0.5 
+
+1.0 
+
+4
+
+0 1 2 3 4 5 6 7 8 9
+
+0.0 
+
+0.5 
+
+1.0 
+
+4
+
+0 1 2 3 4 5 6 7 8 9
+
+0.0 
+
+0.5 
+
+1.0 
+
+4
+
+0 1 2 3 4 5 6 7 8 9
+
+0.0 
+
+0.5 
+
+1.0 
+
+4
+
+0 1 2 3 4 5 6 7 8 9
+
+0.0 
+
+0.5 
+
+1.0 
+
+4
+
+> 5
+
+0 1 2 3 4 5 6 7 8 9
+
+0.0 
+
+0.5 
+
+1.0 
+
+5
+
+0 1 2 3 4 5 6 7 8 9
+
+0.0 
+
+0.5 
+
+1.0 
+
+8
+
+0 1 2 3 4 5 6 7 8 9
+
+0.0 
+
+0.5 
+
+1.0 
+
+5
+
+0 1 2 3 4 5 6 7 8 9
+
+0.0 
+
+0.5 
+
+1.0 
+
+5
+
+0 1 2 3 4 5 6 7 8 9
+
+0.0 
+
+0.5 
+
+1.0 
+
+5
+
+> 6
+
+0 1 2 3 4 5 6 7 8 9
+
+0.0 
+
+0.5 
+
+1.0 
+
+4
+
+0 1 2 3 4 5 6 7 8 9
+
+0.0 
+
+0.5 
+
+1.0 
+
+6
+
+0 1 2 3 4 5 6 7 8 9
+
+0.0 
+
+0.5 
+
+1.0 
+
+4
+
+0 1 2 3 4 5 6 7 8 9
+
+0.0 
+
+0.5 
+
+1.0 
+
+4
+
+0 1 2 3 4 5 6 7 8 9
+
+0.0 
+
+0.5 
+
+1.0 
+
+4
+
+> 7
+
+0 1 2 3 4 5 6 7 8 9
+
+0.0 
+
+0.5 
+
+1.0 
+
+7
+
+0 1 2 3 4 5 6 7 8 9
+
+0.0 
+
+0.5 
+
+1.0 
+
+6
+
+0 1 2 3 4 5 6 7 8 9
+
+0.0 
+
+0.5 
+
+1.0 
+
+4
+
+0 1 2 3 4 5 6 7 8 9
+
+0.0 
+
+0.5 
+
+1.0 
+
+7
+
+0 1 2 3 4 5 6 7 8 9
+
+0.0 
+
+0.5 
+
+1.0 
+
+7
+
+> 8
+
+0 1 2 3 4 5 6 7 8 9
+
+0.0 
+
+0.5 
+
+1.0 
+
+5
+
+0 1 2 3 4 5 6 7 8 9
+
+0.0 
+
+0.5 
+
+1.0 
+
+1
+
+0 1 2 3 4 5 6 7 8 9
+
+0.0 
+
+0.5 
+
+1.0 
+
+3
+
+0 1 2 3 4 5 6 7 8 9
+
+0.0 
+
+0.5 
+
+1.0 
+
+5
+
+0 1 2 3 4 5 6 7 8 9
+
+0.0 
+
+0.5 
+
+1.0 
+
+5
+
+> 9
+
+0 1 2 3 4 5 6 7 8 9
+
+0.0 
+
+0.5 
+
+1.0 
+
+9
+
+0 1 2 3 4 5 6 7 8 9
+
+0.0 
+
+0.5 
+
+1.0 
+
+9
+
+0 1 2 3 4 5 6 7 8 9
+
+0.0 
+
+0.5 
+
+1.0 
+
+1
+
+0 1 2 3 4 5 6 7 8 9
+
+0.0 
+
+0.5 
+
+1.0 
+
+9
+
+0 1 2 3 4 5 6 7 8 9
+
+0.0 
+
+0.5 
+
+1.0 
+
+9
+
+Fig. 4 : Sample predictions from Classical FC (SGD) and QUBO models with different bit precisions. Each row shows predictions for one test digit, with columns showing probability distributions from each model. 18 Table 4 : Sample Prediction Analysis: Probability of Correct Class. T = correct prediction (True), F = incorrect prediction (False). 
+
+True Digit Classical 5-bit 10-bit 15-bit 20-bit Result 
+
+0 91.6% (T) 83.4% (T) 98.1% (T) 96% (T) 96.7% (T) All correct 1 29.8% (T) 1.8% (F) 34.6% (F) 41.6% (T) 55.3% (T) Mixed 2 61.6% (T) 43.8% (T) 58.3% (T) 79.7% (T) 78.9% (T) All correct 3 66.3% (T) 80.4% (T) 49.9% (T) 86.2% (T) 77.7% (T) All correct 4 68.3% (T) 98.1% (T) 84.2% (T) 80.3% (T) 85.3% (T) All correct 5 48% (T) 44.2% (F) 66.2% (T) 67.3% (T) 64.2% (T) Mixed 6 9.6% (F) 54.6% (T) 62.9% (F) 48.9% (F) 50.6% (F) Mixed 7 47.6% (T) 85.5% (F) 52.9% (F) 53.1% (T) 40% (T) Mixed 8 32.3% (F) 67.6% (F) 22.5% (F) 31.3% (F) 32.8% (F) All wrong 9 55.6% (T) 35.7% (T) 38.9% (F) 57% (T) 56% (T) Mixed 
+
+4.2 Multi-Dataset Benchmark 
+
+To validate generalization beyond the sklearn digits dataset, we evaluate on five stan-dard image classification benchmarks: MNIST, Fashion-MNIST, CIFAR-10, EMNIST (letters A–J), and KMNIST. All datasets are downsampled to 8 ×8 grayscale images. We report mean ± standard deviation across 5 random seeds. For each dataset, we subsample 1000 training and 500 test samples with approximately uniform class cov-erage (100 and 50 samples per class respectively for C = 10). The frozen convolutional filters are reinitialized per seed to capture realistic random-feature variability. Table 5 summarizes the benchmark configuration. 
+
+Table 5 : Benchmark Experimental Settings                           
+
+> Parameter Value
+> Datasets MNIST, Fashion-MNIST, CIFAR-10, EMNIST, KMNIST Image resolution 8×8 grayscale Training samples 1000 Test samples 500 Number of classes 10 Random seeds 5 (42, 43, 44, 45, 46) CNN architecture 1 conv layer (3 ×3 kernel), 2 ×2 pooling, FC output CNN filters 2Iterations 1000 Bit precisions 5, 10, 15, 20 Delta range [−0.5,0.5] Regularization ( λ)0.001 SA num sweeps 100 SA num reads 1SA βrange (0 .01 ,3)
+
+The benchmark experiments use num sweeps = 100 (vs. 1000 in Section 4.1), reduc-ing per-QUBO solve time by approximately 10 ×. This choice reflects a trade-off: with 5 seeds × 5 methods × 5 datasets = 125 training runs, computational cost becomes 19 significant. Empirically, the reduced sweep count still produces competitive results because iterative training provides natural error correction, as occasional suboptimal SA solutions are corrected by subsequent iterations. While the precision study in Section 4.1 focused on accuracy and loss to isolate the effect of bit precision, the multi-dataset benchmark uses six complementary metrics to provide a more comprehensive evaluation across diverse datasets. For multiclass classification with C classes, metrics are computed in a one-vs-rest (OvR) manner and macro-averaged across classes. Let TP c, TN c, FP c, FN c denote the true positives, true negatives, false positives, and false negatives for class c. Table 6 summarizes the metrics. 
+
+Table 6 : Evaluation Metrics Summary. For all metrics, higher values indicate better performance. The Chance Level column shows the expected value for a random classifier with C = 10 equiprobable classes.                             
+
+> Metric Formula Range Chance Level ( C=10 )
+> Accuracy TP+TN TP+TN+FP+FN [0 ,1] 10% Precision TP TP+FP [0 ,1] 10% Recall TP TP+FN [0 ,1] 10% F1 Score 2·Prec ·Rec Prec+Rec [0 ,1] 10% Cohen’s κpo−pe
+> 1−pe[−1,1] 0% MCC TP ·TN −FP ·FN √(TP+FP)(TP+FN)(TN+FP)(TN+FN) [−1,1] 0%
+
+Accuracy measures the fraction of samples correctly classified. Precision measures the fraction of predicted positives that are true positives, while recall measures the frac-tion of actual positives correctly identified. Both are macro-averaged across classes. F1 is the harmonic mean of precision and recall, penalizing extreme imbalance. Cohen’s Kappa [53] measures agreement beyond chance, where po is observed agreement and 
+
+pe is expected agreement under random assignment. κ < 0.2 indicates slight agree-ment, 0 .4–0 .6 moderate, and > 0.8 near-perfect. The Matthews Correlation Coefficient (MCC) [54] is a correlation coefficient between observed and predicted classifications, robust to class imbalance. Accuracy alone can be misleading for imbalanced data. Kappa and MCC correct for chance agreement, while precision, recall, and F1 [55] reveal class-specific behavior. Table 7 presents a comparison across all five datasets (mean ± std over 5 seeds). QUBO 20-bit achieves the strongest results on MNIST (+3.1% test accuracy over classical) and Fashion-MNIST (+1.3%), with improvements that exceed one standard deviation. On EMNIST, QUBO 20-bit matches the classical baseline ( ±0%). CIFAR-10 and KMNIST show slightly lower QUBO accuracy, which we attribute to the difficulty of these datasets at 8 × 8 resolution combined with only two convolutional filters. Table 8 presents per-class recall (sensitivity) for all datasets, computed from confu-sion matrices. Recall for class c measures the fraction of true class c samples correctly 20 Table 7 : Consolidated Benchmark Results (%, mean ± std over 5 seeds). Best per dataset in bold.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
+
+> Dataset Method Train Acc Test Acc Precision Recall F1 Kappa MCC
+> MNIST Classical 81 .6±0.578 .2±1.978 .7±1.578 .1±1.777 .8±1.875 .8±1.875 .9±1.8QUBO 5b 37 .2±3.936 .5±4.235 .9±3.936 .4±3.735 .5±3.629 .5±4.129 .6±4.1QUBO 10b 76 .5±1.874 .4±2.974 .7±2.474 .2±2.874 ±2.771 .6±2.971 .6±2.9QUBO 15b 83 .7±0.580 .1±1.980 .3±1.780 ±1.779 .8±1.977 .9±1.878 ±1.8QUBO 20b 84 ±181 .3±1.481 .6±1.281 .1±1.280 .9±1.379 .2±1.479 .3±1.4
+> Fashion Classical 54 .5±0.952 .1±1.152 .6±2.351 .8±0.450 ±146 .7±147 .1±1QUBO 5b 33 .1±2.632 .6±2.332 .1±2.732 .5±2.331 .4±2.625 .1±2.325 .2±2.3QUBO 10b 52 ±1.646 .6±1.946 .7±1.646 .4±1.545 .2±1.440 .6±1.940 .9±1.9QUBO 15b 56 .6±1.553 .1±1.452 .7±1.252 .8±1.151 .5±1.647 .8±1.448 .1±1.2QUBO 20b 56 .8±1.253 .4±1.752 .9±1.153 .3±0.852 .1±1.348 .2±1.648 .4±1.5
+> CIFAR-10 Classical 23 .5±121 .6±2.121 .2±2.421 .6±1.619 ±2.512 .8±1.913 .2±1.8
+> QUBO 5b 14 .8±1.414 .4±2.914 .4±3.114 .4±2.613 .5±2.34.9±2.95±3QUBO 10b 22 .7±1.319 .7±3.119 .3±3.419 .6±2.518 .3±3.210 .7±2.910 .9±2.9QUBO 15b 24 .2±121 .4±220 .9±2.421 .3±1.619 .3±2.212 .7±1.912 .9±1.9QUBO 20b 24 .9±1.221 .4±1.421 .6±2.621 .3±119 .4±1.612 .6±1.212 .9±1.1EMNIST Classical 52 .2±1.747 .3±1.246 .5±1.546 .7±0.945 .4±0.841 .3±1.241 .5±1.2QUBO 5b 19 .4±5.519 .2±6.619 .4±5.919 .2±5.918 .9±5.810 .2±6.610 .2±6.6QUBO 10b 43 .3±1.139 .4±1.338 .9±0.738 .9±0.938 .1±0.532 .5±1.232 .7±1.3QUBO 15b 51 .4±246 .7±2.845 .6±2.346 ±2.345 ±2.340 .6±2.740 .8±2.7QUBO 20b 52 .8±1.947 .3±2.346 .5±1.946 .8±1.845 .6±1.641 .4±2.341 .6±2.3
+> KMNIST Classical 49 .8±1.644 .7±2.643 .4±244 .2±2.342 .6±2.238 .5±2.638 .7±2.6
+> QUBO 5b 19 .6±118 .4±1.718 .7±2.218 .3±1.418 .1±1.59.3±1.79.4±1.7QUBO 10b 41 .1±1.335 .6±335 .2±2.135 .1±2.434 .5±2.428 .4±2.928 .6±2.9QUBO 15b 48 .1±1.443 ±2.941 .8±2.542 .4±2.541 .3±2.636 .6±2.936 .7±2.9QUBO 20b 49 .6±1.143 .4±2.742 ±2.142 .8±2.141 .6±237 ±2.637 .2±2.6
+
+identified: Recall c = TP c/(TP c + FN c). We report recall rather than one-vs-rest accu-racy because OvR accuracy is dominated by true negatives in balanced multiclass settings. Values are mean ± std (%) over 5 seeds. The QUBO problem sizes are identical across datasets since all use the same CNN architecture (Table 2). Table 9 reports execution times (mean ± std over 5 seeds). Full class label mappings for each dataset are provided in the code repository. 1
+
+The QUBOs are fully dense (density = 1) due to the Gram matrix structure. Each iteration solves C independent QUBOs, and T iterations yield C × T total QUBO solves. For our experiments with C = 10 and T = 1000, this gives 10,000 QUBO solves per training run. All configurations remain within D-Wave Advantage’s 5,640 phys-ical qubit limit, though dense connectivity requires embedding overhead. Execution time scales approximately as O(( d+1) 2K2) due to the fully dense QUBO structure, consistent with the observed ∼15 × increase from 5-bit to 20-bit. Across 5 random seeds, QUBO 20b achieves higher test accuracy than classical on 5/5 seeds for MNIST, 4/5 for Fashion-MNIST, 3/5 for EMNIST, 2/5 for CIFAR-10, and 1/5 for KMNIST. On MNIST and Fashion-MNIST, the improvements exceed one standard deviation and are statistically significant under a one-sided paired t-test ( p < 0.05), indicating consistent gains beyond random seed variation. Notably, the 15-bit formulation (285 variables, 40,470 couplers) is the highest precision that fits within the 40,484 physi-cal couplers of the current D-Wave Advantage Pegasus topology, making it the most practical configuration for near-term quantum hardware deployment. 
+
+> 1
+
+https://github.com/Mostafa-Atallah2020/qml-qubo 
+
+21 Table 8 : Per-Class Recall Across All Datasets (%, mean ± std over 5 seeds). All datasets have C = 10 classes: MNIST/Fashion/CIFAR-10 use digits/items/objects 0–9; EMNIST uses letters A–J; KMNIST uses 10 hiragana characters. 
+
+Dataset Method 0 1 2 3 4 5 6 7 8 9
+
+MNIST Classical 98 ±1 71 ±7 91 ±4 80 ±6 88 ±3 65 ±7 88 ±1 73 ±5 49 ±6 78 ±5QUBO 5b 51 ±26 22 ±11 31 ±20 37 ±14 38 ±10 33 ±11 48 ±16 47 ±13 22 ±14 35 ±20 QUBO 10b 95 ±5 61 ±3 75 ±12 75 ±3 85 ±3 68 ±5 90 ±2 71 ±5 50 ±7 73 ±9QUBO 15b 98 ±1 77 ±7 92 ±4 83 ±3 87 ±5 70 ±6 88 ±2 73 ±5 57 ±8 74 ±7QUBO 20b 98 ±2 78 ±7 92 ±3 84 ±4 88 ±3 73 ±4 90 ±2 76 ±5 53 ±8 78 ±4Fashion Classical 64 ±6 71 ±12 36 ±12 49 ±15 27 ±15 70 ±10 20 ±8 64 ±20 53 ±11 64 ±12 QUBO 5b 31 ±6 64 ±7 20 ±6 28 ±12 16 ±6 40 ±16 18 ±8 45 ±14 24 ±11 37 ±8QUBO 10b 54 ±7 55 ±16 28 ±7 49 ±12 29 ±12 60 ±14 20 ±10 58 ±20 46 ±13 65 ±6QUBO 15b 64 ±5 67 ±16 42 ±11 50 ±16 28 ±10 66 ±11 22 ±6 65 ±18 56 ±8 69 ±9QUBO 20b 63 ±7 72 ±12 42 ±5 47 ±11 27 ±8 66 ±12 24 ±8 67 ±15 58 ±8 66 ±7CIFAR-10 Classical 32 ±7 21 ±16 13 ±8 8±8 36 ±20 8±7 13 ±11 36 ±11 27 ±5 21 ±10 QUBO 5b 16 ±4 14 ±5 25 ±15 9±4 15 ±14 7±4 9±5 17 ±7 21 ±5 11 ±5QUBO 10b 30 ±4 15 ±4 11 ±9 11 ±8 34 ±20 9±4 16 ±9 20 ±9 26 ±6 23 ±9QUBO 15b 28 ±7 19 ±9 13 ±12 9±5 35 ±20 10 ±7 19 ±13 30 ±9 30 ±8 20 ±8QUBO 20b 29 ±6 18 ±8 19 ±11 10 ±7 34 ±20 9±6 15 ±11 31 ±11 26 ±5 24 ±9EMNIST Classical 36 ±6 43 ±8 67 ±5 36 ±8 26 ±7 74 ±4 24 ±4 38 ±14 68 ±5 54 ±6QUBO 5b 12 ±7 27 ±8 23 ±13 15 ±10 14 ±8 29 ±14 17 ±9 17 ±11 22 ±20 17 ±6QUBO 10b 23 ±5 34 ±10 56 ±11 32 ±12 26 ±7 55 ±6 21 ±4 35 ±9 59 ±10 47 ±8QUBO 15b 33 ±10 44 ±9 64 ±6 31 ±9 33 ±5 67 ±8 26 ±3 39 ±12 68 ±8 55 ±8QUBO 20b 37 ±3 42 ±8 67 ±9 33 ±7 27 ±7 71 ±7 27 ±4 39 ±13 74 ±6 52 ±5KMNIST Classical 73 ±5 33 ±8 13 ±5 66 ±7 32 ±6 56 ±8 51 ±6 39 ±11 31 ±11 48 ±9QUBO 5b 26 ±9 18 ±5 12 ±3 21 ±11 18 ±8 18 ±9 29 ±11 14 ±9 12 ±3 15 ±3QUBO 10b 54 ±9 29 ±7 17 ±10 54 ±7 28 ±5 49 ±16 30 ±10 31 ±9 22 ±6 38 ±11 QUBO 15b 71 ±4 32 ±8 17 ±6 62 ±7 29 ±6 56 ±8 47 ±10 36 ±9 31 ±9 43 ±10 QUBO 20b 68 ±8 33 ±9 15 ±5 65 ±8 30 ±9 55 ±9 46 ±8 40 ±10 29 ±9 46 ±8
+
+Table 9 : Execution Time by Dataset and Bit Precision (seconds, mean ± std over 5 seeds) 
+
+Dataset 5-bit 10-bit 15-bit 20-bit 
+
+MNIST 160 ± 5 448 ± 48 1, 063 ± 127 2, 449 ± 229 Fashion 157 ± 9 464 ± 50 1, 128 ± 127 2, 433 ± 241 CIFAR-10 157 ± 8 466 ± 49 1, 118 ± 119 2, 351 ± 192 EMNIST 157 ± 7 464 ± 49 1, 125 ± 121 2, 370 ± 199 KMNIST 148 ± 17 438 ± 55 1, 014 ± 122 2, 424 ± 234 
+
+# 5 Discussion and Conclusion 
+
+We presented a layer-wise Gram-matrix QUBO formulation for iterative training of CNN classifier heads that addresses three fundamental challenges in applying QUBOs to neural network training: 1) the non-quadratic cross-entropy loss is replaced by a convex quadratic surrogate (Equation (7)), 2) the non-convex loss landscape is navi-gated through iterative updates rather than one-shot optimization, and 3) the problem size is reduced through per-output decomposition into C independent QUBOs of (d + 1) K variables each. Across six datasets and six evaluation metrics, QUBO 20-bit matches or exceeds classical SGD on MNIST (+3.1% accuracy, +3.4% Kappa), Fashion-MNIST (+1.3%, +1.5%), and EMNIST ( ±0%), while remaining competitive on CIFAR-10 ( −0.2%) and KMNIST ( −1.3%). A minimum bit precision of K ≥ 10 is 22 required for effective optimization: the 5-bit configuration fails across all datasets (14– 37% accuracy), while 10 bits and above produce competitive results. This threshold is consistent across all six datasets, confirming it is a property of the QUBO formu-lation rather than the data. The training trajectory converges monotonically in the aggregate: although individual iterations may temporarily increase the loss (approx-imately 43–46% of updates increase the loss, computed as the fraction of iterations where the loss after the QUBO update exceeds the loss before it), the overall accuracy improves consistently for K ≥ 10, with standard deviations of 1–3% across seeds indi-cating stable optimization. All QUBO updates are applied unconditionally with step size α = 1 (full update). We tested α ∈ { 0.25 , 0.5, 1.0} in preliminary experiments and found that α = 1 provided the fastest convergence without instability, since the quadratic surrogate already constrains update magnitudes via δmax and the iterative procedure naturally corrects occasional harmful updates. The formulation has several implications and limitations. Each per-output QUBO with d = 18 and K = 20 has 380 logical variables, within D-Wave Advantage’s 5,640-qubit capacity, but the dense connectivity (72,010 couplers) exceeds the 40,484 physical couplers in the Pegasus topology [56]. Preliminary minor-embedding estimates on the Pegasus topology suggest chain lengths of ∼19–25 qubits per logical variable for a fully-connected K380 graph, consuming roughly 7,000–9,500 physical qubits. The recently released D-Wave Advantage2 (Zephyr topology, degree 20) offers higher per-qubit connectivity but still cannot embed K380 . Practical QPU deployment would require reduced bit precision (e.g., K = 5 gives K95 , embeddable on current hard-ware), sparser QUBO approximations, or next-generation hardware. QUBO training is 100–400 × slower than classical SGD using simulated annealing. Implementing quan-tum annealing on quantum hardware may offer speedups through quantum tunneling on rugged energy landscapes [16, 57], though this remains a question for future work. All experiments use frozen, randomly initialized convolutional features following the Extreme Learning Machine paradigm [19, 20], training only the FC classifier head. On CIFAR-10, QUBO 20-bit achieves 21.4% versus 21.6% for the classical baseline (near parity), indicating that the low absolute accuracy reflects the 8 × 8 downsampling bot-tleneck rather than optimizer failure. The per-output decomposition ignores softmax coupling across classes, and all results use simulated annealing rather than quantum hardware. Several directions could extend this work. Validating the formulation on quantum annealing hardware would establish whether QPU solutions match or exceed SA qual-ity. Adaptive bit precision, starting with low K for coarse exploration and increasing 
+
+K as training converges, could reduce total QUBO solve time while maintaining final accuracy. Extending the Gram-matrix surrogate to convolutional layers would enable end-to-end QUBO-based training, though the parameter coupling structure of convo-lutional filters differs from fully-connected layers. Finally, incorporating line search, acceptance thresholds, or trust-region constraints could improve the fraction of bene-ficial updates (currently 54–57% of iterations reduce the loss, the complement of the 43–46% that temporarily increase it as noted above). 23 Acknowledgments 
+
+M. Atallah acknowledges support from the 2025 SandboxAQ Research Excellence Scholarship. M. Atallah and R. Herrman acknowledge University of Tennessee Knoxville AI Tennessee seed funding. The funder played no role in study design, data collection, analysis and interpretation of data, or the writing of this manuscript. 
+
+# Competing interests 
+
+All authors declare no financial or non-financial competing interests. 
+
+# Code and Data Availability 
+
+The code and data for this research can be found at https://github.com/ Mostafa-Atallah2020/qml-qubo. 
+
+# References 
+
+[1] Biamonte, J., Wittek, P., Pancotti, N., Rebentrost, P., Wiebe, N., Lloyd, S.: Quantum machine learning. Nature 549 (7671), 195–202 (2017) [2] Schuld, M., Sinayskiy, I., Petruccione, F.: An introduction to quantum machine learning. Contemporary Physics 56 (2), 172–185 (2015) [3] Cerezo, M., Verdon, G., Huang, H.-Y., Cincio, L., Coles, P.J.: Challenges and opportunities in quantum machine learning. Nature computational science 2(9), 567–576 (2022) [4] Schuld, M., Bocharov, A., Svore, K.M., Wiebe, N.: Circuit-centric quantum classifiers. Physical Review A 101 (3), 032308 (2020) [5] Grant, E., Benedetti, M., Cao, S., Hallam, A., Lockhart, J., Stojevic, V., Green, A.G., Severini, S.: Hierarchical quantum classifiers. npj Quantum Information 
+
+4(1), 65 (2018) [6] Farhi, E., Neven, H.: Classification with quantum neural networks on near term processors. arXiv preprint arXiv:1802.06002 (2018) [7] Cong, I., Choi, S., Lukin, M.D.: Quantum convolutional neural networks. Nature Physics 15 (12), 1273–1278 (2019) [8] Singh, G., Kaur, M., Singh, M., Kumar, Y.: Implementation of quantum support vector machine algorithm using a benchmarking dataset. Indian Journal of Pure & Applied Physics (IJPAP) 60 (5) (2022) 24 [9] McClean, J.R., Boixo, S., Smelyanskiy, V.N., Babbush, R., Neven, H.: Barren plateaus in quantum neural network training landscapes. Nature communications 
+
+9(1), 4812 (2018) [10] Cerezo, M., Sone, A., Volkoff, T., Cincio, L., Coles, P.J.: Cost function dependent barren plateaus in shallow parametrized quantum circuits. Nature communica-tions 12 (1), 1791 (2021) [11] Havl´ ıˇ cek, V., C´ orcoles, A.D., Temme, K., Harrow, A.W., Kandala, A., Chow, J.M., Gambetta, J.M.: Supervised learning with quantum-enhanced feature spaces. Nature 567 (7747), 209–212 (2019) [12] K¨ ubler, J., Buchholz, S., Sch¨ olkopf, B.: The inductive bias of quantum kernels. Advances in Neural Information Processing Systems 34 , 12661–12673 (2021) [13] Lucas, A.: Ising formulations of many np problems. Frontiers in physics 2, 5 (2014) [14] Date, P., Arthur, D., Pusey-Nazzaro, L.: Qubo formulations for training machine learning models. Scientific reports 11 (1), 10029 (2021) [15] Glover, F., Kochenberger, G., Du, Y.: A tutorial on formulating and using qubo models. arXiv preprint arXiv:1811.11538 (2018) [16] Kadowaki, T., Nishimori, H.: Quantum annealing in the transverse ising model. Physical Review E 58 (5), 5355 (1998) [17] Li, H., Xu, Z., Taylor, G., Studer, C., Goldstein, T.: Visualizing the loss landscape of neural nets. Advances in neural information processing systems 31 (2018) [18] Subi˜ nas, S.M., Gonz´ alez, M.L., G´ omez, J.R., Ali, A.M., Mart´ ın, J.M., Her-nando, M.F., Garc´ ıa-Vico, ´A.M.: Optimization of the quantization of dense neural networks from an exact qubo formulation. arXiv preprint arXiv:2510.16075 (2025) [19] Huang, G.-B., Zhu, Q.-Y., Siew, C.-K.: Extreme learning machine: theory and applications. Neurocomputing 70 (1-3), 489–501 (2006) [20] Park, Y., Yang, H.S.: Convolutional neural network based on an extreme learning machine for image classification. Neurocomputing 339 , 66–76 (2019) [21] Kornjaˇ ca, M., Hu, H.-Y., Zhao, C., Wurtz, J., Weinberg, P., Hamdan, M., Zhdanov, A., Cantu, S.H., Zhou, H., Bravo, R.A., et al.: Large-scale quan-tum reservoir learning with an analog quantum computer. arXiv preprint arXiv:2407.02553 (2024) [22] Henderson, M., Shakya, S., Pradhan, S., Cook, T.: Quanvolutional neural net-works: powering image recognition with quantum circuits. Quantum Machine 25 Intelligence 2(1), 2 (2020) [23] Nguyen, N.T., Kenyon, G.T.: Image classification using quantum inference on the d-wave 2x. In: 2018 IEEE International Conference on Rebooting Computing (ICRC), pp. 1–7 (2018). IEEE [24] Schuman, D., S¨ unkel, L., Altmann, P., Stein, J., Roch, C., Gabor, T., Linnhoff-Popien, C.: Towards transfer learning for large-scale image classification using annealing-based quantum boltzmann machines. In: 2023 IEEE International Con-ference on Quantum Computing and Engineering (QCE), vol. 2, pp. 42–47 (2023). IEEE [25] Senokosov, A., Sedykh, A., Sagingalieva, A., Kyriacou, B., Melnikov, A.: Quan-tum machine learning for image classification. Machine Learning: Science and Technology 5(1), 015040 (2024) [26] Ng, K.-H., Song, T., Liu, Z.: Hybrid quantum-classical convolutional neu-ral networks for image classification in multiple color spaces. arXiv preprint arXiv:2406.02229 (2024) [27] Silver, D., Patel, T., Tiwari, D.: Quilt: Effective multi-class classification on quan-tum computers using an ensemble of diverse quantum classifiers. In: Proceedings of the AAAI Conference on Artificial Intelligence, vol. 36, pp. 8324–8332 (2022) [28] Mordacci, M., Ferrari, D., Amoretti, M.: Multi-class quantum convolutional neu-ral networks. In: Proceedings of the 2024 Workshop on Quantum Search and Information Retrieval, pp. 9–16 (2024) [29] Riaz, F., Abdulla, S., Suzuki, H., Ganguly, S., Deo, R.C., Hopkins, S.: Accurate image multi-class classification neural network model with quantum entanglement approach. Sensors 23 (5), 2753 (2023) [30] Liu, A., Wen, C., Wang, J.: Lean classical-quantum hybrid neural network model for image classification. Advanced Quantum Technologies, 2400703 (2025) [31] Sun, Y., Li, D., Xiang, Q., Yuan, Y., Hu, Z., Hua, X., Jiang, Y., Zhu, Y., Fu, Y.: Scalable quantum convolutional neural network for image classification. Physica A: Statistical Mechanics and its Applications 657 , 130226 (2025) [32] Hur, T., Kim, L., Park, D.K.: Quantum convolutional neural network for classical data classification. Quantum Machine Intelligence 4(1), 3 (2022) [33] Mari, A., Bromley, T.R., Izaac, J., Schuld, M., Killoran, N.: Transfer learning in hybrid classical-quantum neural networks. Quantum 4, 340 (2020) [34] Wilson, C., Otterbach, J., Tezak, N., Smith, R., Polloreno, A., Karalekas, P.J., 26 Heidel, S., Alam, M.S., Crooks, G., Silva, M.: Quantum kitchen sinks: An algo-rithm for machine learning on near-term quantum computers. arXiv preprint arXiv:1806.08321 (2018) [35] Benedetti, M., Realpe-G´ omez, J., Biswas, R., Perdomo-Ortiz, A.: Quantum-assisted learning of hardware-embedded probabilistic graphical models. Physical Review X 7(4), 041052 (2017) [36] Boyda, E., Basu, S., Ganguly, S., Michaelis, A., Mukhopadhyay, S., Nemani, R.R.: Deploying a quantum annealing processor to detect tree cover in aerial imagery of California. PLOS ONE 12 (2), 0172505 (2017) [37] Koshka, Y., Novotny, M.A.: Comparison of use of a 2000 qubit d-wave quantum annealer and mcmc for sampling, image reconstruction, and classification. IEEE Transactions on Emerging Topics in Computational Intelligence 5(1), 119–129 (2018) [38] Caldeira, J., Job, J., Adachi, S.H., Nord, B., Perdue, G.N.: Restricted boltzmann machines for galaxy morphology classification with a quantum annealer. arXiv preprint arXiv:1911.06259 (2019) [39] Sleeman, J., Dorband, J., Halem, M.: A hybrid quantum enabled rbm advan-tage: convolutional autoencoders for quantum image compression and generative learning. In: Quantum Information Science, Sensing, and Computation XII, vol. 11391, pp. 23–38 (2020). SPIE [40] Asaoka, H., Kudo, K.: Nonnegative/binary matrix factorization for image classi-fication using quantum annealing. Scientific Reports 13 (1), 16527 (2023) [41] Lin, C.-J.: Optimization Problems for Neural Networks. Lecture notes, National Taiwan University. Available at: https://www.csie.ntu.edu.tw/ ∼cjlin/courses/ optdl2020/slides/optimization.pdf (2020) [42] Nocedal, J.: Numerical optimization. Springer Ser. Oper. Res. Financ. Eng./Springer (2006) [43] Bottou, L., Curtis, F.E., Nocedal, J.: Optimization methods for large-scale machine learning. SIAM review 60 (2), 223–311 (2018) [44] Liu, D.C., Nocedal, J.: On the limited memory BFGS method for large scale optimization. Mathematical Programming 45 (1–3), 503–528 (1989) [45] Robbins, H., Monro, S.: A stochastic approximation method. The annals of mathematical statistics, 400–407 (1951) [46] Bishop, C.M.: Pattern Recognition and Machine Learning. Springer, New York (2006) 27 [47] Amari, S.-I.: Natural gradient works efficiently in learning. Neural computation 
+
+10 (2), 251–276 (1998) [48] Ruder, S.: An overview of gradient descent optimization algorithms. arXiv preprint arXiv:1609.04747 (2016) [49] Goodfellow, I., Bengio, Y., Courville, A.: Deep Learning. MIT Press, Cambridge, MA (2016) [50] Kirkpatrick, S., Gelatt Jr, C.D., Vecchi, M.P.: Optimization by simulated annealing. science 220 (4598), 671–680 (1983) [51] Pedregosa, F., Varoquaux, G., Gramfort, A., Michel, V., Thirion, B., Grisel, O., Blondel, M., Prettenhofer, P., Weiss, R., Dubourg, V., Vanderplas, J., Passos, A., Cournapeau, D., Brucher, M., Perrot, M., Duchesnay, ´E.: Scikit-learn: Machine learning in Python. Journal of Machine Learning Research 12 , 2825–2830 (2011) [52] D-Wave Systems Inc.: D-Wave Ocean Software Development Kit. https://docs. ocean.dwavesys.com/. Version 6.x (2023) [53] Cohen, J.: A coefficient of agreement for nominal scales. Educational and psychological measurement 20 (1), 37–46 (1960) [54] Matthews, B.W.: Comparison of the predicted and observed secondary structure of t4 phage lysozyme. Biochimica et Biophysica Acta (BBA)-Protein Structure 
+
+405 (2), 442–451 (1975) [55] Van Rijsbergen, C.: Information retrieval: theory and practice. In: Proceedings of the Joint IBM/University of Newcastle upon Tyne Seminar on Data Base Systems, vol. 79, pp. 1–14 (1979) [56] D-Wave Systems Inc.: D-wave system documentation: Pegasus topology. Tech-nical report, D-Wave Systems Inc. (2020). Available at: https://docs.dwavesys. com/docs/latest/c gs 4.html [57] Farhi, E., Goldstone, J., Gutmann, S., Lapan, J., Lundgren, A., Preda, D.: A quantum adiabatic evolution algorithm applied to random instances of an np-complete problem. Science 292 (5516), 472–475 (2001) 28

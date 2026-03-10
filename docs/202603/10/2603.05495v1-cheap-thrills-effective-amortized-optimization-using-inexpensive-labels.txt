@@ -1,0 +1,1203 @@
+Title: Cheap Thrills: Effective Amortized Optimization Using Inexpensive Labels
+
+URL Source: https://arxiv.org/pdf/2603.05495v1
+
+Published Time: Fri, 06 Mar 2026 02:29:21 GMT
+
+Number of Pages: 22
+
+Markdown Content:
+# Cheap Thrills: Effective Amortized Optimization Using Inexpensive Labels 
+
+Khai Nguyen 1 Petros Ellinas 2 Anvita Bhagavathula 1 Priya Donti 1
+
+## Abstract 
+
+To scale the solution of optimization and simula-tion problems, prior work has explored machine-learning surrogates that inexpensively map prob-lem parameters to corresponding solutions. Com-monly used approaches, including supervised and self-supervised learning with either soft or hard feasibility enforcement, face inherent challenges such as reliance on expensive, high-quality labels or difficult optimization landscapes. To address their trade-offs, we propose a novel framework that first collects “cheap” imperfect labels, then performs supervised pretraining, and finally re-fines the model through self-supervised learning to improve overall performance. Our theoretical analysis and merit-based criterion show that la-beled data need only place the model within a basin of attraction, confirming that only modest numbers of inexact labels and training epochs are required. We empirically validate our simple three-stage strategy across challenging domains, including nonconvex constrained optimization, power-grid operation, and stiff dynamical sys-tems, and show that it yields faster convergence; improved accuracy, feasibility, and optimality; and up to 59 × reductions in total offline cost. 
+
+## 1. Introduction 
+
+Optimization and simulation are the computational engines behind scientific discovery, engineering design, and opera-tional decision-making. However, classical iterative solvers are often too slow for real-time, high-stakes applications such as power-grid operations, vehicle routing, resource al-location in data centers, and fluid dynamics simulations. To address this, amortized optimization (also known as neural surrogates or learning to optimize ) has emerged as a pow-erful paradigm, training machine learning (ML) models to    
+
+> 1Department of Electrical Engineering and Computer Sci-ence, Massachusetts Institute of Technology 2Department of Wind and Energy Systems, Technical University of Denmark. Cor-respondence to: Khai Nguyen <khain@mit.edu >, Priya Donti
+> <donti@mit.edu >.
+> Preprint. March 6, 2026.
+
+predict solutions directly from problem parameters, thereby replacing or accelerating expensive iterative solves with fast forward inference (Amos et al., 2023). Common approaches to training such surrogate models face a fundamental dilemma. Supervised learning (SL) pro-vides stable convergence by regressing onto ground-truth solutions, but generating high-fidelity labels at scale is of-ten expensive for complex systems (e.g., large-scale com-binatorial optimization and high-order PDE simulations). This requires repeatedly solving the original problem across many instances, creating a chicken-and-egg problem: solv-ing the task is required to avoid solving it. In contrast, self-supervised learning (SSL) eliminates the need for la-beled data by directly minimizing the task specification (the objective and constraint violations). Although SSL is ap-pealing due to its scalability and alignment with the task, the resulting optimization landscapes for constrained non-convex problems are highly rugged, especially when hard constraints are imposed (Nguyen & Donti, 2025). With-out a suitable initialization, vanilla SSL methods frequently converge to undesirable local minima. Similar challenges have been mentioned in nonconvex optimization (Xu et al., 2020), physics-informed ML (Krishnapriyan et al., 2021), and reinforcement learning (M¨ uller & Mont´ ufar, 2024). To address these challenges, we seek to develop an amor-tized optimization framework that successfully navigates the tradeoff between SL and SSL methods. Our approach is mo-tivated by a simple but theoretically grounded observation: 
+
+to solve nonconvex optimization problems, a model need only be initialized within the basin of attraction of a desir-able solution . While SSL is necessary to obtain high-quality, task-aligned predictions, its success critically depends on initialization. To tackle this, we leverage straightforward SL to provide a warm start, without relying on expensive, high-quality data; instead, we use cheap, imperfect labels from approximate solution methods (e.g., iterative solvers with re-laxed tolerances or limited iterations, coarse discretizations, or simplified models). We extensively demonstrate our ap-proach through theoretical analysis and empirical evaluation across challenging optimization and simulation tasks. Our contributions are as follows: • We propose a simple but effective three-stage frame-work for amortized optimization: (1) collecting cheap, 1
+
+> arXiv:2603.05495v1 [cs.LG] 5 Mar 2026
+
+Effective Amortized Optimization Using Inexpensive Labels Cheap Label Generation              
+
+> Generate dataset ˆD
+> of cheap imperfect labels (x, ˆy)
+> Stage 1
+> Supervised Pretraining
+> Pretrain πθon
+> ˆDvia LSL and stop with M(θ)
+> Stage 2
+> Self-Supervised Training
+> Minimize LSSL
+> (soft/hard constraints) with warm-start
+> Stage 3
+> relaxed formulation
+> low resolution
+> loose tolerance
+> cheap dataset ˆD
+> pretrained weight θ
+> final weight θ∗
+
+Figure 1. Overview of our approach. We propose a simple but effective three-stage amortized optimization framework, (1) collecting cheap imperfect labels from approximate procedures, (2) pretraining a supervised warm-start, and (3) training with self-supervision, that reduces offline cost by up to 59 × while consistently improving accuracy, optimality, and feasibility over existing baselines. 
+
+inexact labels, (2) pretraining a supervised warm start, and (3) training with self-supervision (Figure 1). • Our theoretical analysis (supported by empirical re-sults) and merit-based criterion show that modest num-bers of cheap labels and supervised pretraining epochs are sufficient to place the model within a favorable basin of attraction to facilitate the final SSL stage. • We empirically demonstrate offline time benefits and consistent improvements over SL and SSL baselines, under soft and hard constraint enforcement, across challenging domains including nonconvex optimiza-tion, optimal power flow, and stiff dynamical systems. 
+
+## 2. Problem Formulation 
+
+We study families of continuous constrained optimization problems of the form 
+
+min  
+
+> y∈Rn
+
+f (y; x) s.t. g(y; x) ≤ 0, h (y; x) = 0 , (1) where y ∈ Rn denotes the decision variables and x ∈ Rd
+
+represents problem parameters. The function f : Rn ×
+
+Rd → R defines the objective, while g : Rn × Rd → Rnineq 
+
+and h : Rn × Rd → Rneq specify inequality and equality constraints, respectively. As the optimal solution set varies with the parameters x,this family of problems induces an implicit mapping from parameters to solutions. Amortized optimization seeks to approximate this mapping using a learned model. Let πθ :
+
+Rd → Rn denote a model parameterized by θ ∈ Rnθ . The learning problem can then be written as 
+
+min 
+
+> θ∈Rnθ
+
+Ex∼D 
+
+f (πθ (x); x)
+
+s.t. g(πθ (x); x) ≤ 0, h (πθ (x); x) = 0 , ∀x ∼ D ,
+
+(2) where D denotes an unknown distribution over problem parameters and training is performed using a finite dataset sampled from this distribution. The objective is to choose θ
+
+to minimize the expected task cost while ensuring that the predicted solutions satisfy all constraints and generalize to unseen parameter instances. 
+
+Remark 2.1 (Exact Formulation) . The constrained optimiza-tion problem in (1) can be equivalently written as 
+
+min  
+
+> y
+
+f (y; x) + IF (y), (3) where IF denotes the indicator function of the feasible set 
+
+F, equal to zero for y ∈ F and +∞ otherwise. Accordingly, the learning problem can be expressed as 
+
+min  
+
+> θ
+
+L(θ) = Ex∼D 
+
+f (πθ (x), x ) + IF (πθ (x)) . (4) A continuous approximation of (4) is given by the quadratic penalty ( merit ) formulation 
+
+M(θ) = Ex
+
+f (πθ (x), x ) + ρ ∥c(πθ (x), x )∥2 , (5) where c(y, x ) :=  max( g(y; x), 0) , h (y; x) denotes the stacked constraint residuals and ρ > 0 is a penalty param-eter. Under standard constraint qualifications and exact penalty conditions, minimizing M recovers solutions of the original constrained problem (4) as ρ → ∞ (Bertsekas, 2014; Nocedal & Wright, 2006). Directly optimizing L with the indicator IF (4) , or M
+
+with a very large ρ (5) , is highly challenging due to non-smoothness and ill-conditioning. Hence, commonly used ML approaches replace these objectives with data-driven losses or smooth, softened approximations (e.g., penalty, barrier, or augmented Lagrangian formulations), whose min-imizers converge to those of the original problem at the limit (see C.1). The accuracy of these approximations depends critically on ρ, both during label generation (through solver tolerances that determine solution quality) and during model training (where it acts as a hyperparameter). 
+
+Supervised Learning. In data-driven approaches, a para-metric model is trained to approximate the solution map by regressing onto labels produced by a numerical solver. Specifically, the parameters θ are learned by minimizing 
+
+LSL (θ) = E(x, ˆy)
+
+∥πθ (x) − ˆy∥2+
+
+ρ∥c(πθ (x), x )∥2 + R(πθ (x)) , (6) 2Effective Amortized Optimization Using Inexpensive Labels      
+
+> Figure 2. Loss (left) and merit (right) landscapes along two weight directions from our experiments. The surrogate loss facili-tates SSL (7) , while the task-faithful but ill-conditioned merit (5) exhibits sharp ridges and multiple basins, explaining the potential failure of vanilla SSL when trained directly on the merit.
+
+where ˆy ≈ y⋆(x) denotes a solution, and R(·) denotes op-tional regularization. Despite the strong dependence on data, this approach provides stable, low-variance supervision and yields reliable initializations for downstream optimization, making it a common choice in learning-based optimization and control (Amos et al., 2023; Piloto et al., 2024). 
+
+Self-Supervised Learning. Alternatively, label generation can be avoided by training the amortized model directly on the task specification: 
+
+LSSL (θ) = E(x, ˆy)
+
+f (πθ (x), x )+ 
+
+ρ∥c(πθ (x), x )∥2 + R(πθ (x)) , (7) typically using a smaller or adaptive ρ compared to (5) . This task-based formulation decouples training cost from solver complexity and has been widely explored in differentiable optimization and physics-informed learning (Gould et al., 2016; Agrawal et al., 2019; Amos & Kolter, 2017). 
+
+Failure Modes and Objective Mismatch. Both SL and SSL rely on surrogate objectives to improve numerical con-ditioning and facilitate training of over-parameterized net-works. However, SL depends critically on the availability and quality of labeled data, which can be expensive to ob-tain. For SSL, as softened approximations approach the indicator function, the resulting objectives become increas-ingly ill-conditioned or non-smooth, posing challenges for gradient-based learning. Introducing additional regulariza-tion or relaxing constraints may ease optimization but can lead to objective mismatch. As shown in Figure 2 and Fig-ure B.2, such surrogate losses often induce more favorable landscapes but may no longer coincide with the true task specification (4) , which is itself difficult to optimize, espe-cially under hard constraints. 
+
+## 3. Self-Supervision from Supervised Warm-Starting via Cheap Labels 
+
+The chicken-and-egg problem of SL and the fragility of pure SSL motivate a simple strategy that combines the strengths of both. As in Figure 1, we propose a three-stage pipeline: 
+
+Stage 1: Cheap Label Generation. We begin by construct-ing a dataset ˆD = {(x, ˆy)}Ni=1 of inexpensive labels using an approximate procedure ˆS (e.g., a numerical solver, sam-pler, or simulator). This procedure leverages approximation techniques such as relaxed solver tolerances, limited iter-ations, coarse discretizations, or simplified and linearized formulations. These imperfect labels potentially preserve the coarse topology of the solution manifold while ˆS re-duces offline label-generation cost by orders of magnitude. 
+
+Stage 2: Supervised Pretraining. We pretrain a vanilla network πθ on ˆD using standard SL with LSL in (6) . The role of this stage is not to achieve high-precision optimality, but rather to provide a favorable initialization by placing the model outputs within the basin of attraction of a desir-able target. Due to the smoothness and stability of the SL objective, this phase converges rapidly. Importantly, we monitor pretraining using the merit criterion M(θ), termi-nating early to avoid overfitting to cheap label bias. 
+
+Stage 3: Self-Supervised Training from Warm-Start. 
+
+Starting from the pretrained parameters, we then apply SSL to minimize LSSL in (7) , using either soft or hard constraint enforcement. Because the warm-start initialization already lies within a favorable basin of attraction, SSL is substan-tially more stable, tolerates larger learning rates, and con-verges more reliably. This leads to faster convergence and better final performance compared to cold-started SSL. Overall, our pipeline offers a simple yet effective framework for amortized optimization, substantially reducing offline cost while preserving the scalability and task fidelity of SSL. It requires minimal changes to existing pipelines, pro-viding a practical drop-in solution for learning surrogate models in challenging optimization and simulation settings, as supported by our theoretical and empirical analyses. 
+
+## 4. Theoretical Analysis 
+
+We analyze how the quality of the SL warm start determines whether subsequent SSL converges to the desirable solution 
+
+y⋆. We define success not as immediate optimality, but as topological placement : the pre-trained model must lie within the basin of attraction B(y⋆) of the desirable solution, from which SSL reliably converges. Accordingly, we char-acterize basin admissibility , i.e., the ability of supervised pre-training to place the model within B(y⋆), in terms of label quality (Section 4.1) and label quantity (Section 4.2). 
+
+Setup. Let (Y, ∥·∥ ) be a normed vector space. We model the basin of attraction of the SSL refinement dynamics around 
+
+y⋆ as B(y⋆) := {y ∈ Y : ∥y − y⋆∥ < m θ }, where mθ > 0
+
+is an unknown basin radius. Membership in B(y⋆) guaran-tees reliable SSL convergence to y⋆. Let also x ∼ D be an 3Effective Amortized Optimization Using Inexpensive Labels 
+
+input data point, and let ˆy(x) be the cheap label associated with this data point. 
+
+4.1. How Bad Can Labels Be? 
+
+First, we must define the relationship between the “cheap” labels ˆy(x) and the target basin of attraction B(y⋆(x)) , ask-ing to what degree the cheap solutions can deviate from the ground truth while remaining admissible. 
+
+Definition 4.1 (Error Decomposition) . Let y⋆(x) be the unknown ground truth solution and ˆy(x) be the available proxy target (the “cheap” label). The total error of the model 
+
+πθK (x) after K warm-start epochs is bounded by the sum of two distinct error sources. By the triangle inequality: 
+
+∥πθK (x) − y⋆(x)∥
+
+| {z }
+
+> Total Error
+
+≤ ∥ πθK (x) − ˆy(x)∥
+
+| {z } 
+
+> Fitting Error εx(K)
+
++ ∥ˆy(x) − y⋆(x)∥
+
+| {z }
+
+> Label Bias δproxy (x)
+
+.
+
+(8) We therefore define the dataset ∆proxy = Ex∼D [δproxy (x)] ,and ε(K) = Ex∼D [εx(K)] 
+
+Theorem 4.2 (Basin Admissibility under Supervised Warm-Starting) . Supervised warm-starting exhibits two regimes: 
+
+(i) Globally admissible proxy. If ∆proxy < m θ , then there exists K such that ε(K) < m θ − ∆proxy and thus πθK ∈B(y⋆). Thus, convergence to ˆy yields supervised warm-starting outputs within the basin of attraction. 
+
+(ii) Transiently admissible proxy. If ∆proxy ≥ mθ , then ˆy / ∈B(y⋆). Basin membership, if achieved, can only occur at epochs K satisfying ∆proxy −mθ < ε (K) < ∆proxy +mθ . In particular, any epoch with ε(K) ≤ ∆proxy − mθ , including convergence to ˆy, yields πθK /∈ B (y⋆).
+
+In regime (i), supervised training can be carried out to con-vergence, i.e., ε(k) → 0, without degrading proximity to y⋆.In contrast, regime (ii) is more challenging: identifying an epoch K satisfying ∆proxy − mθ < ε (K) < ∆proxy + mθ
+
+is nontrivial, since the corresponding condition depends on the unobservable distance to y⋆. We therefore analyze the supervised training trajectory (i.e., the path traced by the model’s predictions as training progresses) to determine whether the model approaches y⋆ within distance mθ at any intermediate epoch, as shown in Figure A.1. 
+
+Definition 4.3 (Traversability and Effective Target) . For a given ML hypothesis class πθ , let γx : [0 , 1] → Y be a func-tion mapping from the fraction t ∈ [0 , 1] of model training that has been completed to the model output πθt (x) at that point in training (under model parameters θt). Therefore, 
+
+γx(0) = πθ0 (x), and lim t→1 γx(t) = ˆ y(x). We define the Effective Target ˜y(x) as the closest point along this trajec-tory to the ground truth: 
+
+˜y(x) := arg min  
+
+> z∈γx([0 ,1])
+
+∥z − y⋆(x)∥.
+
+The misalignment distance is defined as d⊥(x) := ∥˜y(x) −
+
+y⋆(x)∥. Therefore a proxy dataset is said to be traversable 
+
+if there exists t ∈ [0 , 1] such that Ex∼D [d⊥(x)] < m θ .In summary, numerical accuracy alone does not determine SSL success; rather, success depends on whether supervised pre-training places the model within the basin of attraction 
+
+B(y⋆). Accordingly, cheap labels may exhibit substantial bias ( ∆proxy ) and perform poorly under pointwise metrics such as MSE, yet remain admissible if the supervised train-ing trajectory intersects B(y⋆) (i.e., d⊥ < m θ ). This result motivates a merit-guided early stopping strat-egy. In the transiently admissible regime, convergence to the proxy is incompatible with basin membership, and su-pervised training must be halted at an intermediate epoch. Therefore, to identify an approximate effective target ˜y (Def-inition 4.3), we monitor a merit function, (5) , on a valida-tion set. This allows us to do an early stop when the merit function on the validation set starts increasing, even if the training error is still reducing. 
+
+4.2. How Many Labels Are Needed? 
+
+The required label quantity is governed by the effective dimension of the solution manifold. While the ambient data space is high-dimensional, solution maps x 7 → y⋆(x)
+
+are typically Lipschitz continuous (Dontchev & Rockafel-lar, 2009) and concentrate on lower-dimensional structures (Bennouna et al., 2025). We require the training set to cover this manifold at a resolution dictated strictly by the basin margin mθ , rather than the final target precision. 
+
+Assumption 4.4 (Manifold Concentration) . Let X ⊆ Rd
+
+be the compact set of problem inputs. The set of optimal solutions Y⋆ = {y⋆(x) | x ∈ X } lies on a manifold of intrinsic dimension deff ≪ dim( y), and the solution map 
+
+x 7 → y⋆(x) is L-Lipschitz on X (Dontchev & Rockafellar, 2009; Bennouna et al., 2025). 
+
+Proposition 4.5 (Geometric Scaling) . Under Assump-tion 4.4, obtaining a warm-start πθ such that ∥πθ − y⋆∥ <mθ with high probability requires a sample size N that scales as the covering number of the manifold: 
+
+Nwarm ≳
+
+ L · diam( X )
+
+mθ
+
+deff 
+
+.
+
+Standard SL requires manifold coverage at the target reso-lution ε, leading to a sample complexity scaling as Nsup ∝
+
+(L/ε )deff . In contrast, our framework targets the coarser basin radius mθ ≫ ε during supervised warm-starting and relies on subsequent SSL to achieve ε-level accuracy. As a result, the required number of labels is reduced by a factor of (mθ /ε )deff , yielding an exponential data reduction rela-tive to fully supervised baselines. Consequently, the sample 4Effective Amortized Optimization Using Inexpensive Labels 
+
+complexity depends only on the coarse geometry of the solu-tion manifold (Proposition 4.5), requiring just enough data to reliably warm-start the SSL procedure. 
+
+## 5. Empirical Analysis 
+
+5.1. Methods Evaluated Baseline Soft Constraint Methods. We include a 
+
+> Supervised
+
+model trained using high-quality solver-generated labels with regularization as in (6) . This base-line represents an upper bound on performance achiev-able with expensive offline supervision. We further con-sider SSL methods that enforce constraints via penalty terms in the objective, including fixed quadratic Penalty 
+
+and Adaptive Penalty schemes in (7) (Fioretto et al., 2021). These approaches optimize a relaxed merit objective and do not guarantee exact feasibility. 
+
+Baseline Hard Constraint Methods. We evaluate state-of-the-art SSL methods including DC3 (Donti et al., 2021) and FSNet (Nguyen & Donti, 2025), which impose hard constraints through architecture-aware parameterizations or differentiable optimization layers. 
+
+Our Three-Stage Method. Following Section 3, we pre-train a single warm-start using a small number of cheap labels to bootstrap the aforementioned SSL methods. 
+
+5.2. Evaluation Metrics 
+
+We report average and worst-case objective values (or opti-mization gaps relative to a numerical solver), and ℓ1 norms of equality and inequality constraint violations. When nec-essary, we use a continuous scalar merit function (5) , with a large penalty parameter ρ serving as a numerical indicator of feasibility (e.g. ρ = 10 5 for float32 ). Batched timing evaluations for all learning-based methods are evaluated on a single NVIDIA L40S or H200 GPU, while sequential timing evaluations for all methods (including the numerical solver) are run on Intel Xeon Platinum 8462Y+ CPUs. 
+
+5.3. Benchmark Problems Synthetic Constrained Optimization. We first evaluate our method on a challenging parametric optimization prob-lem (Nguyen & Donti, 2025): a nonsmooth nonconvex second-order cone program. The problem comprises 100 decision variables subject to 50 equality and 50 inequality constraints. For data collection, we correspond the solution quality for each instance with its maximum CPU solve time or, equivalently, the maximum number of solver iterations (see Section D.1 and Table B.3). Result comparisons over 2,000 hold-out test instances across methods are reported in Table 1, with training dynamics shown in Figure 5 and loss and merit landscape visualizations in Figures 2 and 6. We further conduct empirical analysis on the effect of label quality (Figure 7) and label quantity (Figure 8). 
+
+Optimal Power Flow. We consider a practical problem of AC optimal power flow (ACOPF), a nonconvex and NP-hard problem in electric power systems that aims to schedule power generation at minimum cost while satisfying net-work and device constraints. We adopt the formulation and dataset from (Klamkin et al., 2025). For the IEEE 118-bus ACOPF problem, there are 343 decision variables, 236 equality constraints, and 824 inequality constraints. We ac-quire 10,000 labels by solving a cheap relaxed formulation, namely DCOPF. Results over 2,000 hold-out test instances are reported in Figure 3; additional details of the formulation and data generation process are provided in Section D.1. 
+
+Physics-Informed Learning. We learn a neural operator for a stiff four-state dynamical system, framed as amortized constrained optimization: a single operator maps an initial condition and timestep to the system state by minimizing mass-weighted physics residuals via automatic differentia-tion. We compare (i) our approach using inexpensive lin-earized data from the system Jacobian to (ii) a (vanilla) physics-only SSL baseline with random initialization; both use identical losses, adaptive collocation, time-horizon cur-ricula, and second-order polishing. Performance is assessed via multi-seed basin-of-attraction studies measuring conver-gence reliability and trajectory error against high-accuracy numerical integration (see Figure 4 and Section D.3). 
+
+5.4. Result Discussions 
+
+Across all benchmarks, we observe consistent and substan-tial performance gains from employing our framework. We summarize the main findings and connect them to the theo-retical framework developed in Section 4. Additional results and discussions are provided in Section B and Section C. 
+
+Our training framework yields faster convergence and better solutions, consistently outperforming vanilla base-lines across all evaluated problem settings. For constrained optimization tasks (Table 1, Figure 3), it achieves improved average and worst-case performance in both optimality and feasibility. In dynamics learning (Figure 4), our approach leads to lower error to the ground-truth solution and more stable temporal trajectories, implying higher predictive accu-racy and physical generalization. Figure 5 provides further insight into training dynamics. Our approach converges to high-quality solutions in roughly half the training epochs of cold-started methods. In contrast, vanilla SSL progresses slowly or becomes trapped at suboptimal plateaus. Finally, Figure 6 visualizes the underlying merit landscape. When initialized randomly, SSL encounters sharp barriers and con-verges to solutions with higher merit. By contrast, our model begins within a favorable basin of attraction, enabling stable descent toward lower-merit (higher-quality) solutions. 5Effective Amortized Optimization Using Inexpensive Labels 
+
+Table 1. Performance comparison on a synthetic constrained optimization benchmark. Results are averaged over four random seeds and evaluated on 2,000 hold-out test instances. Our variants that use cheap-label supervision (highlighted) consistently achieve lower objective values and improved feasibility, with reduced output variance compared to learning-based baselines. Compared to the solver, our methods solve 2,000 instances over 40 ,000 × faster on batched GPU inference, and over 100 × faster under sequential CPU execution.               
+
+> Method Mean Objective ↓Equality Violation ↓Inequality Violation ↓Solution Time (s) ↓
+> Mean Max Mean Max Batched GPU Sequential CPU
+> Solver
+> -2.40 (±0.00 )0.00 (±0.00 )0.00 (±0.00 )3.40e-09 (±0.00 )5.90e-08 (±0.00 )–8033.60 (±0.00 )
+> Supervised w/ high-quality data
+> -6.16 (±0.06 )1.07e+01 (±3.92e-02 )1.85e+01 (±6.12e-01 )7.16e+01 (±8.22e-01 )1.99e+02 (±4.76e+00 )0.0003 (±0.0000 )0.9479 (±0.0351 )
+> Supervised w/ cheap data
+> 22.49 (±1.24 )1.90e+00 (±4.44e-02 )2.72e+00 (±8.38e-02 )1.23e-01 (±9.51e-02 )2.41e+00 (±1.54e+00 )0.0003 (±0.0000 )0.9479 (±0.0351 )
+> Penalty
+> -0.06 (±1.26 )9.63e-01 (±5.65e-02 )1.54e+00 (±2.06e-01 )2.72e-02 (±9.68e-03 )6.11e-01 (±1.02e-01 )0.0003 (±0.0000 )0.9479 (±0.0351 )
+> Our Penalty
+> -3.29 (±0.06 )9.56e-01 (±3.69e-02 )1.52e+00 (±5.25e-02 )2.28e-02 (±6.06e-03 )5.89e-01 (±6.59e-02 )0.0003 (±0.0000 )0.9479 (±0.0351 )
+> Adaptive Penalty
+> 18.23 (±2.90 )7.43e-01 (±1.14e-02 )1.06e+00 (±1.73e-02 )4.05e-04 (±8.98e-05 )8.25e-02 (±1.84e-02 )0.0003 (±0.0000 )0.9479 (±0.0351 )
+> Our Adaptive Penalty
+> 9.79 (±0.19 )8.39e-01 (±2.83e-02 )1.18e+00 (±4.26e-02 )4.06e-04 (±9.92e-05 )9.28e-02 (±1.69e-02 )0.0003 (±0.0000 )0.9479 (±0.0351 )
+> DC3
+> 5.19 (±3.07 )0.00 (±0.00 )0.00 (±0.00 )1.71e-03 (±1.07e-03 )2.21e-01 (±1.23e-01 )0.0960 (±0.0000 )32.0881 (±0.0280 )
+> Our DC3
+> -1.58 (±0.05 )0.00 (±0.00 )0.00 (±0.00 )9.24e-04 (±2.69e-04 )1.17e-01 (±3.25e-02 )0.0959 (±0.0000 )31.9210 (±0.0588 )
+> FSNet
+> -0.73 (±1.42 )5.85e-05 (±2.42e-05 )1.93e-03 (±1.16e-03 )7.89e-07 (±5.03e-07 )1.31e-04 (±1.62e-04 )0.1970 (±0.0001 )80.0849 (±0.2201 )
+> Our FSNet
+> -3.28 (±0.14 )4.06e-05 (±8.54e-06 )1.67e-03 (±8.96e-05 )5.01e-07 (±5.91e-08 )6.25e-05 (±1.50e-05 )0.2014 (±0.0015 )71.9913 (±0.4975 )
+
+Figure 3. Amortized optimization of power grid operation. Our approach of using cheap DCOPF labels to warm-start SSL consis-tently reduces average optimality gaps and constraint violations, while remaining competitive in worst-case ACOPF problems. The gains are especially pronounced for hard-constraint methods. 
+
+Figure 4. Physics-informed learning of stiff dynamical equa-tions. Left and center: aggregate solution error (MSE and MAE) relative to ground truth. Right: temporal evolution of the MSE for the fastest state variable ( E). Our method that warm-starts SSL with cheap labels reduces errors and stabilizes trajectories. 
+
+Figure 5. Average merit over training epochs for pretraining, vanilla SSL and our method. The merit follows a U-shaped trajectory whose minimum defines the start of SSL. Compared to vanilla SSL, which plateaus at higher merit, our approach yields faster convergence and a better final solution. 
+
+Figure 6. Merit landscapes along linear interpolation between initial ( α = 0 ) and final ( α = 1 ) weights for vanilla (left) and our (right) strategies. Vanilla training encounters a rugged land-scape with sharp barriers, while warm-starting yields a smoother, near-monotonic descent toward a better optimum, showing that cheap-label warm starts place the model in a more favorable basin. Visualization methods from (Li et al., 2018). 
+
+6Effective Amortized Optimization Using Inexpensive Labels    
+
+> Figure 7. Average and worst-case merit of our method across compute budgets of warm-start label (increasing label quali-ties). 10 ∗corresponds to best-quality labels from a solver. Perfor-mance remains statistically indistinguishable across label quality levels, indicating that higher-accuracy labels provide marginal ad-ditional benefit within our framework.
+
+Merit is an informative signal for monitoring and eval-uating amortized models. For evaluating amortized opti-mization models, the merit function in (5) provides a contin-uous scalar metric that more faithfully reflects task perfor-mance than the training loss, while also offering a more con-cise alternative to reporting optimality and feasibility sep-arately, which may evolve in complex and non-monotonic ways. During SL pretraining, the surrogate loss decreases monotonically, whereas the merit exhibits a characteristic U-shaped trajectory (Figure B.2). This is consistent with the transiently admissible regime described in Theorem 4.2(ii). While the loss decreases as the model memorizes the biased labels ˆy, an increasing merit suggests that the model has begun to move farther from the basin of attraction B(y⋆).Leveraging the merit to select the warm-start checkpoint therefore amounts to identifying an effective target ˜y (Defi-nition 4.3) along the SL trajectory, leading to both faster con-vergence and improved final solutions after SSL (Figure 5). This restates our intuition: the objective of SL pretraining is basin entry, rather than accurate fitting to imperfect labels. 
+
+Extremely cheap labels are sufficient to unlock self-supervised training. A key empirical finding is that warm-start labels need not be accurate to be effective. Sweeping solver quality in Figure 7 and Table B.3 shows that be-yond a modest threshold, increasing label accuracy yields negligible improvement in final SSL performance. Similar trends appear in ACOPF, where DCOPF labels, obtained from a substantially relaxed formulation, improve feasibility and optimality (Figure 3 and Table B.4), and in physics-informed learning, where linearized dynamics provide effec-tive warm-starts (Figure 4). These results strongly support our merit-based termination and basin-entry perspective: the initialization does not need high-quality data to approach a desirable basin; from that SSL reliably converges regardless. 
+
+Only a small number of labels is needed to capture the basin structure. Our framework does not require large datasets. As in Figure 8, performance improves rapidly until a certain number of labels and then saturates, indicating that the coarse topology of the solution manifold is captured     
+
+> Figure 8. Average and worst-case merit of our method across numbers of cheap labels (increasing label quantities). Average merit decreases rapidly with few labels and then plateaus, indicat-ing that coarse basin structure is early captured. Increasing label quantity includes harder instances, slightly increasing worst-case merit and reflecting improved coverage rather than overfitting.
+> Figure 9. Offline time budget in synthetic optimization. Pure SL is dominated by expensive label generation, while penalty-based SSL avoids labels but requires longer training. Our method uses a small number of cheap labels, substantially reducing labeling cost and accelerating SSL convergence, achieving comparable or better solution quality with orders-of-magnitude lower total offline time.
+
+early. As additional labels are added, the dataset increas-ingly includes previously unseen hard instances, leading to lower merit but potentially more robust performance. In the synthetic optimization benchmark, we observe significant solution improvements with as few as 800 inaccurate labels (Table 1). This resonates with the Geometric Scaling derived in Theorem 4.5: the critical number of labels is governed by the intrinsic dimension of the solution manifold deff and the basin margin mθ , rather than the ambient problem dimen-sion. Having some labels is indeed helpful; Table B.1 shows that bootstrapping the hard-constraint SSL method without labels (i.e., using soft-constraint model) results in worse average optimality and feasibility than our framework. 
+
+Our strategy reduces total offline cost despite additional stages. Although our approach introduces three training stages, it achieves competitive, or lower, total offline cost while attaining strong model performance. As shown in Figure 9 and Table B.2, our warm-start strategy consistently reduces the total cost of hard-constraint methods ( FSNet ), yielding up to a 1.7× reduction in offline cost when SSL is the dominant bottleneck. For soft-constraint methods, while our approach incurs additional cost relative to vanilla 
+
+> Penalty
+
+, it reduces total offline time by up to 59 × compared to the fully supervised baseline, where high-quality label generation dominates. These savings arise because inex-7Effective Amortized Optimization Using Inexpensive Labels 
+
+pensive labels substantially reduce both label-generation overhead and subsequent training time, demonstrating that our framework is not only effective but also computationally efficient across problem settings. Moreover, in scenarios where imperfect measurements or historical data are already available, our framework can skip data generation and still effectively reduce training cost. Finally, our method in-herits the advantages of amortized optimization baselines, achieving orders-of-magnitude speedups in solution time at inference compared to classical solvers on GPU and CPU. 
+
+## 6. Related Work 
+
+Amortized Optimization. Amortized optimization trains ML models to map problem parameters directly to opti-mization solutions, replacing repeated iterative solves with fast forward inference (Amos et al., 2023). Neural surro-gates have achieved competitive optimality and feasibility while delivering orders-of-magnitude speedups in challeng-ing nonconvex settings (Nguyen & Donti, 2025). Most ap-proaches rely on SL, regressing onto solutions produced by classical solvers, which yields stable training but incurs sub-stantial offline labeling cost (Piloto et al., 2024; Lovett et al., 2024). To reduce dependence on labeled data, recent work adopts self-supervised, objective-driven training via implicit differentiation or differentiable optimization layers (Gould et al., 2016; Agrawal et al., 2019). Constraint handling ranges from soft penalties to hard enforcement through pro-jection or implicit layers with feasibility guarantees (Amos & Kolter, 2017; Tordesillas et al., 2023; Min et al., 2024; Liang et al., 2024). While self-supervised approaches avoid expensive labels, they are often sensitive to initialization and conditioning in constrained, nonconvex problems. Our work bridges these paradigms by using cheap-label supervi-sion to warm-start SSL, improving stability and constraint satisfaction without requiring high-fidelity labels. 
+
+Physics-Informed Machine Learning. Physics-informed ML incorporates structural knowledge of governing dy-namics to build surrogate solvers for differential equations. Physics-informed neural networks (PINNs) minimize PDE residuals at collocation points (Raissi et al., 2019), while neural operators such as the Fourier Neural Operator (FNO) learn resolution-invariant solution mappings (Li et al., 2021). However, the use of soft PDE-based regularization within loss functions leads to ill-conditioned optimization prob-lems that exhibit challenging loss landscapes (Krishnapriyan et al., 2021). Many physical systems admit multi-fidelity solutions, motivating approaches that learn corrections from low- to high-fidelity solvers (Um et al., 2021; Li et al., 2023). In contrast, we leverage approximations from lin-earized dynamics as structured pretraining signals. These approximations guide models toward physically plausible regions of the solution space prior to the final SSL stage. 
+
+Behavior Cloning and Reinforcement Learning. Behav-ior cloning (BC) formulates policy learning as supervised learning from expert demonstrations but is brittle under noisy data and distribution shift. Common remedies fine-tune learned policies through online interaction with experts (Ross et al., 2011). Reinforcement learning (RL) instead uses rewards as a self-supervised signal to search for opti-mal policies, but typically requires careful reward shaping and large amounts of interaction data to be effective. Hy-brid approaches combine BC and RL into a single offline objective by leveraging demonstration data and sparse re-wards (Lu et al., 2023). Relatedly, several works success-fully bootstrap RL from policies pretrained via BC (Silver et al., 2016; Rajeswaran et al., 2018) to reduce sample com-plexity. This two-stage pipeline is also reflective of how modern large models are trained, where generalized pretrain-ing provides a strong initialization that is finetuned through objective-driven or preference-based optimization (Ouyang et al., 2022; Lu et al., 2025). Inspired by these insights, our approach operates in the setting of amortized constrained optimization and studies how cheap labels can be used to warm-start and help SSL reach better minima faster. 
+
+## 7. Conclusion 
+
+We present a simple yet principled framework for amor-tized optimization that effectively bridges the complemen-tary strengths of supervised and self-supervised learning. Our key observation is that, for challenging nonconvex con-strained problems, successful learning does not require high-fidelity supervision, but rather an initialization within a fa-vorable basin of attraction. Leveraging this insight, we propose a three-stage pipeline that uses a modest amount of inexpensive, imperfect labels to warm-start self-supervised training. Through theoretical analysis and extensive ex-periments across synthetic optimization, power-grid opera-tion, and physics-based simulation, we demonstrate that this cheap warm-start strategy substantially improves training stability, convergence speed, and final task performance, while dramatically reducing offline computational cost. Our results highlight the importance of the merit-based criterion for both training and evaluation, and show that cheap labels can be used effectively to guide learning without overfitting to their bias. Overall, our framework is simple, modular, and compatible with existing amortized optimization methods, making it easy to adopt in practice. We hope this work en-courages a shift away from purely cold-start self-supervision or expensive full-fidelity supervision, toward hybrid strate-gies that explicitly exploit problem structure, approximation hierarchies, and basin-entry effects in learning-based op-timization. An important direction for future work is to develop adaptive strategies that dynamically trade off la-bel acquisition and self-supervised training, particularly in online and distribution-shifted settings. 8Effective Amortized Optimization Using Inexpensive Labels 
+
+## Impact Statement 
+
+This paper presents work whose goal is to advance ML methods for optimization-first procedures. The proposed techniques improve the stability and efficiency of amortized optimization using limited, inexpensive supervision and are methodological in nature. We do not anticipate direct negative societal impacts arising from this work; potential downstream consequences depend on how such methods are applied in practice, noting that optimization is employed across a wide range of applications. 
+
+## References 
+
+Agrawal, A., Amos, B., Barratt, S., Boyd, S., Diamond, S., and Kolter, J. Z. Differentiable convex optimization lay-ers. Advances in neural information processing systems ,32, 2019. Ahn, H., Hyeon, J., Shin, H., and Moon, T. Revisiting warm-start training: No generalization loss under stan-dard training schemes. In AI That Keeps Up: NeurIPS 2025 Workshop on Continual and Compatible Foundation Model Updates , 2025. Amos, B. and Kolter, J. Z. Optnet: Differentiable opti-mization as a layer in neural networks. In International conference on machine learning , pp. 136–145. PMLR, 2017. Amos, B. et al. Tutorial on amortized optimization. Founda-tions and Trends® in Machine Learning , 16(5):592–732, 2023. Ash, J. and Adams, R. P. On warm-starting neural network training. Advances in neural information processing sys-tems , 33:3884–3894, 2020. Bennouna, O., Bennouna, A., Amin, S., and Ozdaglar, A. What data enables optimal decisions? an exact characterization for linear optimization, 2025. URL 
+
+https://arxiv.org/abs/2505.21692 .Bertsekas, D. P. Constrained optimization and Lagrange multiplier methods . Academic press, 2014. Boyd, S. and Vandenberghe, L. Convex optimization . Cam-bridge university press, 2004. Dontchev, A. L. and Rockafellar, R. T. Implicit functions and solution mappings . Springer, 2009. Donti, P. L., Rolnick, D., and Kolter, J. Z. DC3: A learn-ing method for optimization with hard constraints. In 
+
+International Conference on Learning Representations ,2021. URL https://openreview.net/forum? id=V1ZHVxJ6dSS .Fioretto, F., Van Hentenryck, P., Mak, T. W., Tran, C., Baldo, F., and Lombardi, M. Lagrangian duality for constrained deep learning. In Machine learning and knowledge dis-covery in databases. applied data science and demo track: European conference, ECML pKDD 2020, Ghent, Bel-gium, September 14–18, 2020, proceedings, part v , pp. 118–135. Springer, 2021. Gould, S., Fernando, B., Cherian, A., Anderson, P., Cruz, R. S., and Guo, E. On differentiating parameterized argmin and argmax problems with application to bi-level optimization. arXiv preprint arXiv:1607.05447 , 2016. Klamkin, M., Tanneau, M., and Van Hentenryck, P. Pglearn– an open-source learning toolkit for optimal power flow. 
+
+arXiv preprint arXiv:2505.22825 , 2025. Krishnapriyan, A., Gholami, A., Zhe, S., Kirby, R., and Mahoney, M. W. Characterizing possible failure modes in physics-informed neural networks. Advances in neural information processing systems , 34:26548–26560, 2021. Li, H., Xu, Z., Taylor, G., Studer, C., and Goldstein, T. Visualizing the loss landscape of neural nets. Advances in neural information processing systems , 31, 2018. Li, Z., Kovachki, N., Azizzadenesheli, K., Liu, B., Bhat-tacharya, K., Stuart, A., and Anandkumar, A. Fourier neural operator for parametric partial differential equa-tions, 2021. URL https://arxiv.org/abs/ 2010.08895 .Li, Z., Zheng, H., Kovachki, N., Jin, D., Chen, H., Liu, B., Azizzadenesheli, K., and Anandkumar, A. Physics-informed neural operator for learning partial differential equations, 2023. URL https://arxiv.org/abs/ 2111.03794 .Liang, E., Chen, M., and Low, S. H. Homeomorphic pro-jection to ensure neural-network solution feasibility for constrained optimization. Journal of Machine Learning Research , 25(329):1–55, 2024. Lovett, S., Zgubic, M., Liguori, S., Madjiheurem, S., Tom-linson, H., Elster, S., Apps, C., Witherspoon, S., and Piloto, L. Opfdata: Large-scale datasets for ac optimal power flow with topological perturbations, 2024. URL 
+
+https://arxiv.org/abs/2406.07234 .Lu, W., Luu, R. K., and Buehler, M. J. Fine-tuning large language models for domain adaptation: exploration of training strategies, scaling, model merging and synergis-tic capabilities. Npj Comput. Mater. , 11(1), March 2025. Lu, Y., Fu, J., Tucker, G., Pan, X., Bronstein, E., Roelofs, R., Sapp, B., White, B., Faust, A., Whiteson, S., et al. Imitation is not enough: Robustifying imitation with rein-forcement learning for challenging driving scenarios. In 9Effective Amortized Optimization Using Inexpensive Labels 
+
+2023 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS) , pp. 7553–7560. IEEE, 2023. Min, Y., Sonar, A., and Azizan, N. Hard-constrained neural networks with universal approximation guarantees. arXiv preprint arXiv:2410.10807 , 2024. M ¨uller, J. and Mont ´ufar, G. Geometry and convergence of natural policy gradient methods. Information Geometry ,7(Suppl 1):485–523, 2024. Nguyen, H. T. and Donti, P. L. FSNet: Feasibility-seeking neural network for constrained optimization with guaran-tees. In The Thirty-ninth Annual Conference on Neural Information Processing Systems , 2025. URL https: //openreview.net/forum?id=oum1txoy1D .Nocedal, J. and Wright, S. J. Numerical optimization .Springer, 2006. Ouyang, L., Wu, J., Jiang, X., Almeida, D., Wainwright, C. L., Mishkin, P., Zhang, C., Agarwal, S., Slama, K., Ray, A., Schulman, J., Hilton, J., Kelton, F., Miller, L., Simens, M., Askell, A., Welinder, P., Christiano, P., Leike, J., and Lowe, R. Training language models to follow instructions with human feedback, 2022. URL https: //arxiv.org/abs/2203.02155 .Piloto, L., Liguori, S., Madjiheurem, S., Zgubic, M., Lovett, S., Tomlinson, H., Elster, S., Apps, C., and Witherspoon, S. Canos: A fast and scalable neural ac-opf solver robust to n-1 perturbations, 2024. URL https://arxiv. org/abs/2403.17660 .Raissi, M., Perdikaris, P., and Karniadakis, G. Physics-informed neural networks: A deep learning frame-work for solving forward and inverse problems involv-ing nonlinear partial differential equations. Journal of Computational Physics , 378:686–707, 2019. ISSN 0021-9991. doi: https://doi.org/10.1016/j.jcp.2018.10. 045. URL https://www.sciencedirect.com/ science/article/pii/S0021999118307125 .Rajeswaran, A., Kumar, V., Gupta, A., Vezzani, G., Schul-man, J., Todorov, E., and Levine, S. Learning complex dexterous manipulation with deep reinforcement learning and demonstrations. Robotics: Science and Systems XIV ,2018. Ross, S., Gordon, G., and Bagnell, D. A reduction of imita-tion learning and structured prediction to no-regret online learning. In Proceedings of the fourteenth international conference on artificial intelligence and statistics , pp. 627–635. JMLR Workshop and Conference Proceedings, 2011. Sambharya, R., Hall, G., Amos, B., and Stellato, B. Learn-ing to warm-start fixed-point optimization algorithms. 
+
+Journal of Machine Learning Research , 25(166):1–46, 2024. Silver, D., Huang, A., Maddison, C. J., Guez, A., Sifre, L., Van Den Driessche, G., Schrittwieser, J., Antonoglou, I., Panneershelvam, V., Lanctot, M., et al. Mastering the game of go with deep neural networks and tree search. 
+
+nature , 529(7587):484–489, 2016. Tordesillas, J., How, J. P., and Hutter, M. Rayen: Imposition of hard convex constraints on neural networks. arXiv preprint arXiv:2307.08336 , 2023. Um, K., Brand, R., Yun, Fei, Holl, P., and Thuerey, N. Solver-in-the-loop: Learning from differentiable physics to interact with iterative pde-solvers, 2021. URL https: //arxiv.org/abs/2007.00016 .Vershynin, R. High-dimensional probability: An introduc-tion with applications in data science . Cambridge univer-sity press, 2018. Xu, P., Roosta, F., and Mahoney, M. W. Second-order opti-mization for non-convex machine learning: An empirical study. In Proceedings of the 2020 SIAM International Conference on Data Mining , pp. 199–207. SIAM, 2020. 10 Effective Amortized Optimization Using Inexpensive Labels 
+
+## A. Additional Theoretical Results Case I: Globally Admissible        
+
+> Bias is small ( δproxy < m θ). Convergence is safe.
+> mθ
+> πθ0
+> y⋆
+> ˆy
+> δproxy
+> Case II: Transiently Admissible
+> Bias is large ( δproxy ≥mθ). Must stop early.
+> πθ0
+> y⋆ˆy
+> mθ
+> overfitting
+> high bias δproxy
+
+Figure A.1. Geometric interpretation of supervised warm-starting. Left: Globally admissible proxy ( δproxy < m θ ), where convergence to the proxy preserves basin membership. Right: Transiently admissible proxy ( δproxy ≥ mθ ), where basin entry is temporary and continued fitting leads to exit. 
+
+A.1. Proof of Theorem 4.2 Theorem 4.2 (Basin Admissibility under Supervised Warm-starting). Supervised warm-starting exhibits two regimes: 
+
+(i) Globally admissible proxy. If ∆proxy < m θ , then there exists K such that ε(K) < m θ − ∆proxy and thus πθK ∈ B (y⋆).Thus, convergence to ˆy yields supervised warm-starting outputs within the basin of attraction. 
+
+(ii) Transiently admissible proxy. If ∆proxy ≥ mθ , then ˆy / ∈ B (y⋆). Basin membership, if achieved, can only occur at epochs K satisfying ∆proxy − mθ < ε (K) < ∆proxy + mθ . In particular, any epoch with ε(K) ≤ ∆proxy − mθ , including convergence to ˆy, yields πθK /∈ B (y⋆).Proof. We analyze basin membership by bounding the distance between the supervised warm-start model πθk and the ground-truth solution y⋆ using standard norm inequalities. 
+
+Part (i): Globally admissible proxy (sufficient condition). For any epoch K, the triangle inequality gives 
+
+∥πθK − y⋆∥ ≤ ∥ πθK − ˆy∥ + ∥ˆy − y⋆∥ = ε(K) + ∆ proxy .
+
+By definition, the basin of attraction is 
+
+B(y⋆) := {y ∈ Y : ∥y − y⋆∥ < m θ }.
+
+Therefore, a sufficient condition for πθK to lie inside the basin is 
+
+ε(K) + ∆ proxy < m θ ,
+
+which is equivalent to 
+
+ε(K) < m θ − ∆proxy .
+
+When ∆proxy < m θ , the right-hand side is strictly positive, and since ε(K) decreases monotonically during supervised training, such an epoch K must eventually exist. Hence, the warm-start enters the basin and remains admissible under continued training. 
+
+Part (ii): Transiently admissible proxy (necessary condition). We now consider the case where the proxy lies outside the basin, i.e., ∆proxy ≥ mθ . By the reverse triangle inequality, for any epoch k,
+
+∥πθk − y⋆∥ ≥ ∥ˆy − y⋆∥ − ∥ πθk − ˆy∥ = |∆proxy − ε(k)|.
+
+11 Effective Amortized Optimization Using Inexpensive Labels 
+
+If at some epoch k the fitting error satisfies 
+
+ε(k) ≤ ∆proxy − mθ ,
+
+then 
+
+∥πθk − y⋆∥ ≥ mθ ,
+
+which implies πθk /∈ B (y⋆). Thus, whenever the proxy is inadmissible, any epoch with sufficiently small fitting error necessarily lies outside the basin. Finally, if supervised training is continued until convergence so that ε(k) → 0, then 
+
+∥πθk − y⋆∥ → ∆proxy ≥ mθ ,
+
+and the model converges to a point strictly outside the basin. Hence, when the proxy is inadmissible, basin entry, if it occurs at all, can only be transient, and convergence to the proxy guarantees exit. This establishes the two regimes stated in the theorem. The geometric distinction between the globally admissible and transiently admissible regimes is illustrated in Fig. A.1. 
+
+A.2. Proof of Proposition 4.5 Proposition 4.5 (Geometric Scaling). Under Assumption 4.4, obtaining a warm-start πθ such that ∥πθ − y⋆∥ < m θ with high probability requires a sample size 
+
+Nwarm ≳
+
+ L · diam( X )
+
+mθ
+
+deff 
+
+.
+
+Proof. Let N (S, ϵ ) denote the covering number of a set S at scale ϵ. To ensure that the warm-start prediction πθ falls within the basin B(y⋆) (a ball of radius mθ ) for any valid input, the model’s output range must form a cover of the target manifold 
+
+Y⋆ with effective radius mθ .Since we cannot sample the output manifold directly, we control this via the input training set. Under Assumption 4.4, the solution map x 7 → y⋆(x) is L-Lipschitz. Assuming the model πθ preserves this regularity, the training set must form a cover of the input manifold X at a scale r = mθ /L to guarantee the desired output resolution. Specifically, mapping a ball of radius r in X results in a set contained within a ball of radius L · r = mθ in Y.Using standard bounds for the metric entropy of a compact set of intrinsic dimension deff (Vershynin, 2018), the covering number is bounded as: 
+
+N
+
+
+
+X , mθ
+
+L
+
+
+
+≥ C
+
+ diam (X )
+
+mθ /L 
+
+deff 
+
+where C > 0 is a constant depending only on the geometry and packing density of the manifold. Simplifying the fraction yields the geometric scaling law: 
+
+Nwarm ≥ C
+
+ L · diam (X )
+
+mθ
+
+deff 
+
+.
+
+Note that this represents a fundamental lower bound; any additional error in fitting the training set (i.e., the model πθ not perfectly interpolating the training data) would effectively shrink the available basin margin mθ , necessitating an even denser cover to ensure successful warm-starting. 
+
+## B. Additional Experimental Results 
+
+B.1. Merit-Based Termination of Supervised Pretraining 
+
+Figure B.2 and Figure B.3 describe the effects of merit-based termination on supervised pretraining. 12 Effective Amortized Optimization Using Inexpensive Labels            
+
+> Figure B.2. Supervised pretraining dynamics of merit and loss across training epochs in the synthetic task. The solid curve (left axis) reports the merit value, which exhibits a U-shaped trajectory over training, while the dashed curve (right axis) shows the supervised loss monotonically decreasing. This illustrates the objective mismatch of data-driven training and the importance of our merit-based criterion.
+> Figure B.3. Analysis of pre-training strategy and computational efficiency for physics-informed learning. (a) Impact of warm-starting duration (left & center): The learning curves (left) show the evolution of validation MSE, where the vertical lines mark the transition from warm-starting to self-supervised learning. The optimal cutoff at 5,000 steps (green) leads to deeper convergence. The comparative bar chart (center) highlights that this optimal duration yields the lowest final error ( ≈1.69 ×10 −6). (b) Label generation runtime (right): Our cheap labeling strategy achieves an ∼100 ×speedup compared to ground-truth generation.
+
+B.2. Comparison with Different Variants 
+
+Table B.1 compares several strategies for FSNet under a fixed cheap-label budget (800 labels, 0.5s CPU time per instance). We first consider two hybrid baselines that interleave supervised and self-supervised signals within a single training phase.   
+
+> Hybrid FSNet w/ cheap labels
+
+optimizes a composite loss at every iteration, combining cheap-label regression with objective and penalty terms. In contrast, Semi-Supervised FSNet w/ cheap labels separates these signals across data instances: labeled samples are trained using supervised losses, while unlabeled samples use self-supervised objective-and-penalty losses. We also evaluate two no-label warm-start variants that rely entirely on self-supervision during pretraining, which can be viewed as curricula over SSL objectives: FSNet w/ no-label warm-start [1] pretrains with feasibility terms only 
+
+LSSL (θ) = E(x, ˆy)
+
+ρ∥c(πθ (x), x )∥2 + R(πθ (x)) , (9) while FSNet w/ no-label warm-start [2] pretrains with both objective and feasibility terms (7) . Then we fine-tune each warm-start with FSNet .In contrast, FSNet w/ cheap-label warm-start (ours) cleanly separates the roles of data-driven supervised pretraining and self-supervised optimization. This stage separation yields the best overall trade-off in Table B.1, achieving the lowest mean and worst-case objective values while maintaining strong feasibility. These results reinforce our central message: cheap labels are most effective when used for basin entry, after which SSL can reliably refine solutions. We conclude that: (1) Mixing supervised and self-supervised objectives within a single training stage can introduce conflicting optimization signals, especially when labels are inaccurate. (2) Pure SSL (including no-label warm-starts or curricula) lacks access to the structured information encoded in even imperfect datasets. (3) no-label warm-start [2] encodes a similar optimization landscape as SSL, potentially leading to similar local minima. Nevertheless, this observation suggests an interesting direction for future work: designing adaptive strategies that reconcile these paradigms and enable effective single-stage training. 13 Effective Amortized Optimization Using Inexpensive Labels 
+
+Table B.1. Performance comparison on a synthetic constrained optimization benchmark (800 labels, max cpu time 0.5s, short pretraining). We report mean and maximum and deviation objective value, L1 equality violation, and L1 inequality violation for vanilla FSNet and FSNet with different warm-start strategies. The pretraining loss in [1] only enforces feasibility and [2] additionally enforces objective. Lower is better.                  
+
+> Method Mean Objective ↓Equality Violation ↓Inequality Violation ↓
+> Mean Max Mean Max
+> FSNet
+> -0.73 (±1.42 )5.85e-05 (±2.42e-05 )1.93e-03 (±1.16e-03 )7.89e-07 (±5.03e-07 )1.31e-04 (±1.62e-04 )
+> Hybrid FSNet w/ cheap labels
+> 2.68 (±4.55 )7.17e-05 (±9.49e-06 )1.11e-03 (±1.85e-04 )4.12e-07 (±1.00e-07 )3.35e-05 (±1.42e-05 )
+> Semi-Supervised FSNet w/ cheap labels
+> -0.33 (±0.50 )8.84e-05 (±2.36e-05 )1.00e-03 (±2.94e-04 )5.43e-07 (±1.23e-07 )3.48e-05 (±1.17e-05 )
+> FSNet w/ no-label warm-start [1]
+> -2.99 (±0.01 )9.97e-05 (±2.87e-06 )8.39e-04 (±7.14e-05 )5.05e-07 (±4.04e-08 )2.14e-05 (±1.06e-06 )
+> FSNet w/ no-label warm-start [2]
+> 0.30 (±0.03 )8.35e-05 (±6.81e-06 )1.13e-03 (±1.16e-04 )4.86e-07 (±6.31e-08 )3.62e-05 (±4.31e-06 )
+> FSNet w/ cheap-label warm-start (Ours)
+> -3.28 (±0.14 )4.06e-05 (±8.54e-06 )1.67e-03 (±8.96e-05 )5.01e-07 (±5.91e-08 )6.25e-05 (±1.50e-05 )
+
+Table B.2. Offline time budget (in seconds) decomposed into label generation, supervised learning (SL), and self-supervised learning (SSL) across different problems and models.                                            
+
+> Generation (s) Supervised (s) Self-Supervised (s) Total (s) Synthetic optimization
+> Supervised w/ 7,000 10.0 labels 28118 190 028308 Penalty 00180 180 Our Penalty w/ warm-start via 800 0.5 labels 400 40 40 480 FSNet 00990 990 Our FSNet w/ warm-start via 800 0.5 labels 400 40 495 935
+> Power grid operations
+> Supervised w/ 10,000 ACOPF labels 827 400 01227 Penalty 00370 370 Our Penalty w/ warm-start via 10,000 DCOPF labels 34 400 300 734 FSNet 0016900 16900 Our FSNet w/ warm-start via 10,000 DCOPF labels 34 400 9100 9534
+
+## C. Additional Discussions 
+
+Relation to solver warm-starting. Our approach is related to but conceptually distinct from methods that learn solution initializations for iterative optimization solvers (Sambharya et al., 2024). In particular, our warm-starting scheme is focused on providing a useful initialization within the parameter space of a neural network surrogate model (i.e., for the network weights θ) during model training; during inference, the neural network then predicts an optimization solution end-to-end, as standard for amortized optimization approaches. In contrast, warm starting techniques for optimization solvers focus on providing initializations within the solution space of the problem; these solution-space initializations are then used to invoke a full iterative optimization technique in order to output a final solution to the optimization problem. One interesting relationship between these approaches is that they both focus on using cheap, inexact solutions to improve the quality of the final solution; however, while our approach takes such inexact solutions as input to use as labels during training, solver warm-starting approaches aim to output inexact solutions to initialize an iterative solver. 
+
+Relation to neural network warm-starting. The benefits of warm-starting neural network training remain under debate. Ash & Adams (2020) observed that sequential warm-starting can degrade generalization due to imbalanced gradient contributions between old and new data, and proposed a “shrink-and-perturb” initialization scheme to mitigate this issue. In contrast, Ahn et al. (2025) showed that the apparent generalization gap disappears under standard training practices, particularly with appropriate data augmentation. While these works focus primarily on supervised continual learning, our setting is fundamentally different: we leverage a task-faithful merit function to regularize the warm start and thereby align two distinct training phases , supervised pretraining and self-supervised training, rather than repeatedly fine-tuning on evolving labeled datasets. This enables stable basin entry and improved downstream generalization. 14 Effective Amortized Optimization Using Inexpensive Labels 
+
+Table B.3. Label generation cost and quality under varying per-instance CPU time limits for the synthetic optimization problems. 
+
+The maximum CPU time allowed per instance controls both the number of solver iterations and the resulting total wall-clock time required to generate 10,000 labels. Allowing 10.0s per instance ensures convergence for all problems within the prescribed budget, yielding the highest-quality labels produced by the solver.                                                              
+
+> Max CPU Time Obj. Eq. Vio. Ineq. Vio. Success Rate Total Time (s) # Iters Merit
+> 0.5 1.06 3.77 122.23 0.00 4957 14 1.26 ×10 7
+> 1.5 11.54 1.31 39.53 0.00 14712 46 4.08 ×10 6
+> 2.0 19.33 0.37 11.68 0.00 20265 64 1.21 ×10 6
+> 3.0 10.32 0.01 1.05 0.03 30229 95 1.06 ×10 5
+> 4.0 -1.67 0.00 0.21 0.56 37845 122 2.10 ×10 4
+> 10.0* -2.44 0.00 0.00 1.00 40168 128 −2.44 ×10 0
+
+Table B.4. Comparison of ACOPF and DCOPF data generation. We report normalized average objective (ACOPF being 1.00), ℓ2
+
+constraint violation, merit value and total computation time of producing 10,000 labels.                            
+
+> Method Normalized Obj. Eq. Violation Ineq. Violation Total Time (s) Merit
+> ACOPF ( 10 −6)1.000 5.0×10 −41.743 ×10 −6827 5.12 ×10 1
+> DCOPF 0.957 4.978 ×10 18.265 ×10 −734 4.98 ×10 6
+
+Relation to hybrid curricula. Our framework can alternatively be interpreted as a curriculum-based hybrid training strategy. In principle, Stages 2 and 3 can be merged into a single phase using a composite loss that combines supervised data-driven fitting terms with self-supervised objective-value and constraint-violation-penalty terms, governed by a weight curriculum. Training would initially emphasize supervised fitting, with the self-supervised objective and constraint terms inactive; once the task-level merit ceases to improve, the supervised fitting loss can be phased out while the self-supervised objective and constraint terms are progressively increased and any hard-constraint techniques are activated. We present the method as two distinct stages to simplify exposition and enable cleaner theoretical analysis. Moreover, our experiments (Section B.2) show that naive hybrid curricula are less effective. 
+
+C.1. Additional Discussion of Remark 2.1 
+
+Using the indicator function IF , the problem is equivalently 
+
+min  
+
+> y
+
+f (y) + IF (y),
+
+where 
+
+IF (y) = 
+
+(
+
+0, y ∈ F ,
+
++∞, otherwise .
+
+A number of different approaches are used to approximate the indicator function IF in practice within optimization methods. 
+
+Penalty methods. Quadratic penalty methods approximate IF by 
+
+ϕρ(y) = ρ ∥h(y)∥2 + ∥g(y)+∥2 ,
+
+and minimize f (y) + ϕρ(y). Under standard constraint qualifications, accumulation points of minimizers converge to KKT points as ρ → ∞ (Nocedal & Wright, 2006; Bertsekas, 2014). 
+
+Barrier methods. Interior-point methods approximate IF from within the feasible region via 
+
+ϕμ(y) = −μ X
+
+> i
+
+log( −gi(y)) ,
+
+and minimize f (y)+ ϕμ(y) over strictly feasible points. Solutions converge to KKT points as μ → 0 (Boyd & Vandenberghe, 2004). 
+
+Augmented Lagrangian methods. Augmented Lagrangian formulations introduce dual variables λ and minimize 
+
+Lρ(y, λ ) = f (y) + λ⊤c(y) + ρ 
+
+> 2
+
+∥c(y)∥2,
+
+which improves conditioning relative to pure penalties while retaining exact KKT consistency (Bertsekas, 2014). 15 Effective Amortized Optimization Using Inexpensive Labels 
+
+Conditioning. Although these methods differ in numerical behavior, they all approximate the indicator function IF . As the approximation becomes exact, the objective develops sharp curvature or non-smoothness, explaining the difficulty of directly optimizing such objectives with gradient-based learning. 
+
+## D. Experimental Details 
+
+D.1. Parametric Nonsmooth Nonconvex Program 
+
+We evaluate our approach on a parametric nonsmooth, nonconvex optimization problem designed to stress both optimization stability and constraint satisfaction (Nguyen & Donti, 2025). The problem takes the form 
+
+min 
+
+> L≤y≤U
+
+12 y⊤Qy + p⊤ sin( y) + λ∥y∥2 (10) s.t. Ay = x, ∥Gi cos( y) + hi∥2 ≤ c⊤ 
+
+> i
+
+y + di, (11) where y ∈ Rn denotes the decision variables and x ∈ Rm is a problem parameter. The objective consists of a quadratic term, a nonlinear sinusoidal perturbation, and a nonsmooth ℓ2 regularization term. The constraints include linear equality constraints parameterized by x and second-order cone constraints with nonlinear dependence on y through elementwise cosine functions. Together, these components induce a highly nonconvex and nonsmooth optimization landscape with many local stationary points. This problem is representative of optimization-first learning settings in which classical solvers are sensitive to initialization and tolerance settings, and purely self-supervised training often exhibits instability. In our experiments, we use this benchmark to study the effects of cheap-label warm starts under both soft and hard constraint enforcement, and to analyze convergence behavior, feasibility, and solution quality across different training regimes. In Figure 2, we train an FSNet model using its default training loss until convergence. From the converged weights, we visualize both the training loss and the task-level merit landscapes along two random directions in parameter space. All evaluations are performed on a held-out test set of 2,000 instances. In Table 1, we pretrain a supervised warm-start using 800 cheap labels, each generated with a maximum CPU time of 0.5 s. We then apply SSL with and without warm-starting. For supervised learning with high-quality labels, we use a pure MSE loss, whereas for supervised learning with cheap labels, we include an additional constraint-violation penalty. In Figure 5 and Figure B.2, we pretrain a supervised warm-start using 7,000 labels generated with a maximum CPU time of 3.0 s and a violation penalty. The task-level merit reaches its minimum at approximately 300 epochs, at which point we initiate FSNet training both from this warm-start and from random initialization. In Figure 6, we compare the trained FSNet models from Figure 3 with and without warm-starting. We visualize the merit landscape along a linear interpolation between the initial and final model parameters, θ(α) = (1 − α)θ0 + αθ 1, highlighting differences in optimization trajectories induced by warm-starting. In Figure 7, we generate 7,000 labels at varying quality levels (see Table B.3), pretrain supervised warm-starts with a violation penalty, and then perform FSNet training initialized from each warm-start to study the effect of label quality. In Figure 8, we vary the number of cheap labels (up to 7,000, each generated with a maximum CPU time of 0.5 s), pretrain corresponding warm-starts, and evaluate FSNet training initialized from these checkpoints to assess label efficiency. In Table B.1, we pretrain multiple warm-start models, both with and without labeled data, and then perform FSNet training initialized from each warm-start to study the impact of label availability and quality on final performance. In Table B.2, we report the total offline time required by each method to reach comparable performance to vanilla self-supervised learning, highlighting the efficiency gains of our warm-start strategy. 16 Effective Amortized Optimization Using Inexpensive Labels 
+
+D.2. AC Optimal Power Flow 
+
+For the AC optimal power flow problem, we use the formulation from (Klamkin et al., 2025), reproduced below: 
+
+min     
+
+> pg,q g,p f,q f,p t,q t,v,θ
+
+X
+
+> i∈N
+
+X
+
+> j∈G i
+
+cj pg
+
+> j
+
+s.t. X
+
+> j∈G i
+
+pg 
+
+> j
+
+− X
+
+> j∈L i
+
+pd 
+
+> j
+
+− gs 
+
+> i
+
+v2 
+
+> i
+
+= X
+
+> e∈E i
+
+pf 
+
+> e
+
++ X
+
+> e∈E Ri
+
+pt 
+
+> e
+
+∀i ∈ N 
+
+X
+
+> j∈G i
+
+qg 
+
+> j
+
+− X
+
+> j∈L i
+
+qd 
+
+> j
+
++ bs 
+
+> i
+
+v2 
+
+> i
+
+= X
+
+> e∈E i
+
+qf 
+
+> e
+
++ X
+
+> e∈E Ri
+
+qt 
+
+> e
+
+∀i ∈ N 
+
+pf 
+
+> e
+
+= gtt  
+
+> e
+
+v2 
+
+> i
+
++ gft  
+
+> e
+
+vivj cos( θi − θj ) + bft  
+
+> e
+
+vivj sin( θi − θj ) ∀e = ( i, j ) ∈ E 
+
+qf 
+
+> e
+
+= −btt  
+
+> e
+
+v2 
+
+> i
+
+− bft  
+
+> e
+
+vivj cos( θi − θj ) + gft  
+
+> e
+
+vivj sin( θi − θj ) ∀e = ( i, j ) ∈ E 
+
+pt 
+
+> e
+
+= gtt  
+
+> e
+
+v2 
+
+> j
+
++ gtf  
+
+> e
+
+vivj cos( θi − θj ) − btf  
+
+> e
+
+vivj sin( θi − θj ) ∀e = ( i, j ) ∈ E 
+
+qt 
+
+> e
+
+= −btt  
+
+> e
+
+v2 
+
+> j
+
+− btf  
+
+> e
+
+vivj cos( θi − θj ) − gtf  
+
+> e
+
+vivj sin( θi − θj ) ∀e = ( i, j ) ∈ E 
+
+(pf
+
+> e
+
+)2 + ( qf
+
+> e
+
+)2 ≤ S2 
+
+> e
+
+∀e ∈ E 
+
+(pt
+
+> e
+
+)2 + ( qt
+
+> e
+
+)2 ≤ S2 
+
+> e
+
+∀e ∈ E 
+
+∆θe ≤ θi − θj ≤ ∆θe ∀e = ( i, j ) ∈ E 
+
+θref = 0 
+
+pg 
+
+> i
+
+≤ pg 
+
+> i
+
+≤ pg 
+
+> i
+
+∀i ∈ G 
+
+qg 
+
+> i
+
+≤ qg 
+
+> i
+
+≤ qg 
+
+> i
+
+∀i ∈ G 
+
+vi ≤ vi ≤ vi ∀i ∈ N − Se ≤ pf 
+
+> e
+
+≤ Se ∀e ∈ E − Se ≤ qf 
+
+> e
+
+≤ Se ∀e ∈ E − Se ≤ pt 
+
+> e
+
+≤ Se ∀e ∈ E − Se ≤ qt 
+
+> e
+
+≤ Se ∀e ∈ E 
+
+where N , E, and G denote the sets of buses, branches, and generators, respectively; pg and qg represent the active and reactive generation powers; pf and qf (pt and qt) denote the active and reactive power flows in the forward (reverse) direction; and v and θ denote the voltage magnitude and angle. The network parameters gff , g ft , g tf , g tt and bff , b ft , b tf , b tt 
+
+are obtained from the admittance matrix of the system. In addition, S denotes the apparent power flow limit, while ∆θ and 
+
+∆θ specify the lower and upper bounds on the voltage angle difference. The parameters pg and pg (qg and qg) indicate the lower and upper limits of active (reactive) generation, and v and v define the permissible range of voltage magnitudes. D.2.1. DC O PTIMAL POWER FLOW 
+
+The DC optimal power flow (DC-OPF) problem is a widely used linear approximation of AC-OPF and underlies most electricity market operations. The DC approximation is motivated by several assumptions that are most accurate for transmission networks: (i) voltage magnitudes are fixed to one per-unit, (ii) voltage angle differences are small so that 
+
+sin( θi − θj ) ≈ θi − θj , and (iii) reactive power and line losses are neglected. Constraint (13) enforces nodal active power balance via Kirchhoff’s current law. Constraint (14) models active power flows using Ohm’s law. Constraint (15) bounds voltage angle differences across each branch, and (16) fixes the reference bus 17 Effective Amortized Optimization Using Inexpensive Labels 
+
+angle. Finally, constraints (17) and (18) enforce generator and line flow limits. 
+
+min   
+
+> pg, p f, θ
+
+X
+
+> i∈N
+
+X
+
+> j∈G i
+
+cj pg 
+
+> j
+
+(12) s.t. X
+
+> j∈G i
+
+pg 
+
+> j
+
+− X
+
+> j∈L i
+
+pd 
+
+> j
+
+= X
+
+> e∈E i
+
+pf 
+
+> e
+
++ X
+
+> e∈E Ri
+
+pf
+
+> e
+
+, ∀i ∈ N (13) 
+
+− be(θi − θj ) − pf 
+
+> e
+
+= 0 , ∀e = ( i, j ) ∈ E (14) 
+
+∆θe ≤ θi − θj ≤ ∆θe, ∀e = ( i, j ) ∈ E (15) 
+
+θref = 0 (16) 
+
+pg 
+
+> i
+
+≤ pg 
+
+> i
+
+≤ pg 
+
+> i
+
+, ∀i ∈ G (17) 
+
+− Se ≤ pf 
+
+> e
+
+≤ Se, ∀e ∈ E (18) Here, N , E, and G denote the sets of buses, branches, and generators, respectively. The variable pg denotes active power generation, pf denotes active power flow on each branch, and θ denotes bus voltage angles. The parameter be is the branch susceptance, Se is the line flow limit, and ∆θe, ∆θe specify angle difference bounds. In Figure 3, we first pretrain a supervised warm-start model with a violation penalty using 10,000 DCOPF labels. We then perform self-supervised learning (SSL) for ACOPF both with and without this warm-start to assess its impact on convergence and final performance. 
+
+D.3. Physics-Informed Flow-Map Training 
+
+D.3.1. M ODEL AND FLOW -M AP PARAMETERIZATION 
+
+We consider a four-state nonlinear dynamical system x = [ δ, ω, P m, E ]⊤ governed by stiff swing–governor–exciter equations. Instead of learning a time-marching solver, we learn a flow map that predicts the state at any time given an initial condition. Let T be the final horizon and define the normalized time τ = t/T ∈ [0 , 1] . We shift and scale the state using an equilibrium xeq and scale vector s and define y = ( x − xeq )/s . The neural flow map is 
+
+bΦθ (τ, y 0) = y0 + τ π θ ([ τ, y 0]) ,
+
+which enforces the initial condition exactly at τ = 0 .D.3.2. P HYSICS RESIDUAL AND LOSS 
+
+Given ˆy = bΦθ (τ, y 0), we recover ˆx = xeq + s ⊙ ˆy. We compute ∂ ˆy/∂τ using automatic differentiation and convert to physical time by 
+
+˙ˆy = 1
+
+Teff 
+
+∂ ˆy∂τ , ˙ˆx = s ⊙ ˙ˆy, 
+
+where Teff is a curriculum horizon. The mass-weighted residual is 
+
+r(x) = 
+
+
+
+˙ˆδ − ˆωM ˙ˆω − ( ˆPm − Pe(ˆδ, ˆE) − D ˆω)
+
+Tg ˙ˆPm − (Pref − Rˆω − ˆPm)
+
+Te ˙ˆE − (Eref − Kf ˆω − ˆE)
+
+ , ry = r(x) ⊘ s. 
+
+where ⊘ denotes elementwise division. We define the normalized residual ry ∈ R4 componentwise as 
+
+(ry )i = ri(x)
+
+si
+
+, i = 1 , . . . , 4,
+
+which uses the same state scaling s employed to define the normalized state y = ( x − xeq )/s . This normalization removes unit imbalance across equations and improves numerical conditioning of the physics loss. 18 Effective Amortized Optimization Using Inexpensive Labels 
+
+We split residual energy into slow components (δ, ω ) and fast components (Pm, E ) and minimize 
+
+Lphys = wslow E∥r(δ,ω ) 
+
+> y
+
+∥22 + wfast E∥r(Pm,E ) 
+
+> y
+
+∥22,
+
+where wslow , w fast are set inversely proportional to current residual magnitudes and constrained by a floor on wfast to preserve attention on stiff channels. D.3.3. P HYSICS -I NFORMED TRAINING AS AMORTIZED OPTIMIZATION 
+
+The goal of training is to learn a single parametric operator that approximately satisfies the governing equations for all initial conditions, rather than solving a new time-integration problem for each trajectory. We interpret physics-informed training as an instance of amortized constrained optimization. For a given initial condition y0, the governing dynamics define an implicit feasibility problem over trajectories y(τ ):find y(·) s.t. ry (τ ; y) = 0 , ∀τ ∈ [0 , 1] , y(0) = y0,
+
+where ry (τ ; y) denotes the normalized physics residual. Solving this problem independently for each y0 corresponds to repeatedly running a numerical time integrator. Amortized optimization replaces this family of per-instance solves with a single parametric map 
+
+y(τ ) ≈ bΦθ (τ, y 0),
+
+shared across all initial conditions. Training the neural operator therefore corresponds to learning a policy that outputs approximately feasible solutions to the physics-constrained problem for all y0 drawn from a distribution. We formalize this objective using an epigraph formulation. Introducing a residual tolerance ϵ ≥ 0, we seek 
+
+min  
+
+> θ, ϵ
+
+ϵ
+
+s.t. Eτ,y 0
+
+∥ry (τ ; θ, y 0)∥22
+
+ ≤ ϵ, 
+
+bΦθ (0 , y 0) = y0,
+
+which minimizes the smallest residual level ϵ such that the amortized model satisfies the governing equations up to tolerance across the distribution of initial conditions. In practice, this constrained problem is solved via a quadratic-penalty relaxation, yielding the physics-informed loss 
+
+Lphys (θ) = Eτ,y 0
+
+∥ry (τ ; θ, y 0)∥22
+
+ ,
+
+optionally augmented with adaptive or scale-aware weighting to improve conditioning. From this perspective, physics-informed learning does not aim to regress onto precomputed trajectories, but rather to amortize the solution of a physics-constrained optimization problem, replacing iterative solvers with a single forward pass of a trained operator. D.3.4. S AMPLING AND RESIDUAL -B ASED ADAPTIVE REFINEMENT 
+
+Initial conditions are sampled uniformly from a hyper-rectangle around equilibrium in each state. At each iteration, we train on a mixture of uniformly drawn collocation points and an adaptive set constructed by residual-based adaptive refinement (RAR): periodically, we sample a large candidate set of (τ, y 0), compute ∥ry ∥1 for each, and add the top-K hardest points to an auxiliary pool that is merged with the uniform set (with random truncation if the pool exceeds a fixed budget). D.3.5. T RAINING STRATEGIES 
+
+Stage 1: Warm-Start Pretraining. The warm-start phase combines the physics loss at the full horizon T with two inexpensive structural guides: (i) linearized flow targets around equilibrium, obtained by computing the Jacobian of the dynamics at the equilibrium xeq and evaluating the exact linear solution 
+
+x(t) = xeq + eAt (x0 − xeq ), A = ∂f ∂x xeq 
+
+,
+
+19 Effective Amortized Optimization Using Inexpensive Labels 
+
+and (ii) a tangent-matching loss that enforces the correct mass-weighted derivative at the initial time τ = 0 .The equilibrium xeq is defined as a steady-state operating point satisfying f (xeq ) = 0 . It is obtained by solving a small set of algebraic equations arising from setting all time derivatives in the swing–governor–exciter model to zero. This computation is inexpensive and performed once per parameter setting. Linearizing the dynamics at xeq yields a first-order Taylor approximation of the vector field, which is valid for small deviations from equilibrium. In power-systems terminology this regime is known as small-signal dynamics , as it characterizes the response of the system to small perturbations around a nominal operating point. For readers outside power systems, this corresponds to the standard local linearization of a nonlinear dynamical system. The linearized flow targets therefore encode correct local modes, damping, and stiffness structure near xeq , but are not intended to be globally accurate. The tangent-matching term complements this by enforcing that the learned flow map leaves each initial condition with the correct physical derivative, i.e., that ˙ˆx(0) = f (x0). Together, these guides shape the early optimization landscape and bias the parameters toward a favorable basin of attraction. Both auxiliary losses are multiplied by time-varying weights that are smoothly annealed to zero over Stage 1. Consequently, by the end of Stage 1 the model is trained using only the physics loss, and Stage 2 continues optimization from this physics-consistent but well-conditioned initialization. 
+
+Stage 2: Physics-only Self-Supervised Learning. In Stage 2 we optimize only Lphys using Adam together with a horizon curriculum 
+
+Teff (k) = T  α + (1 − α)( k/K )p,
+
+which gradually increases the enforced time span. Uniform collocation samples are refreshed periodically, and RAR is interleaved to enrich the training set near high-residual regions. After the Adam phase, we apply LBFGS at Teff = T . The optimizer is run in an outer loop until the relative decrease in 
+
+Lphys falls below a tolerance for several consecutive checks (plateau-based stopping). For basin-of-attraction comparisons, LBFGS can be evaluated on a fixed collocation set shared across runs. 
+
+Vanilla PINN. The baseline removes Stage 1 entirely and trains from random initialization using exactly the same Stage 2 pipeline: same physics loss, same sampling and RAR, same horizon curriculum, and same Adam and LBFGS schedules. The only difference between the proposed method and the baseline is the presence or absence of the warm-start phase. D.3.6. E VALUATION PROTOCOL 
+
+For each trained model we generate test trajectories by evaluating the flow map at multiple times and initial conditions and compare them against high-accuracy RK4 solutions. Errors are reported as MSE, RMSE, and max-absolute error per state. To probe the nonconvex optimization landscape, we repeat training for multiple random seeds and declare a run degenerate if its final error exceeds prescribed thresholds, thereby quantifying basin-of-attraction reliability of the two training strategies. 
+
+D.4. Supervised Learning with Huber Loss 
+
+Because labels are inaccurate, we implement supervised learning using the Huber loss, a robust regression loss that interpolates between squared error and absolute error. For a residual r, it is defined as 
+
+ℓδ (r) = 
+
+( 12 r2, |r| ≤ δ, δ |r| − 12 δ, |r| > δ, 
+
+where δ > 0 controls the transition point. For small residuals, the Huber loss behaves like an ℓ2 loss, encouraging smooth optimization, while for large residuals it behaves like an ℓ1 loss, reducing sensitivity to outliers. 
+
+D.5. Hyperparameters 
+
+To facilitate reproducibility, we report the hyperparameter settings for the dataset, network architecture, optimizer, and each method in Tables D.5 to D.7. Code is included in the Supplementary Material and will be released publicly upon acceptance. 
+
+20 Effective Amortized Optimization Using Inexpensive Labels 
+
+Table D.5. Hyperparameter settings for synthetic optimization experiments. 
+
+(a) Common Settings             
+
+> Parameter Value
+> Dataset
+> Sample 10000 Label 10000 Test 2000 Batch Size 512
+> Architecture
+> Network MLP (4 layers) Hidden Dim 1024 Dropout 0.1
+> Optimizer
+> Optimizer AdamW Weight Decay 0.001 Scheduler Linear Warmup + Cosine Annealing Random Seeds 0 1 2 3
+
+(b) Method-Specific Parameters                                                              
+
+> Method LR Ep. λobj λeq λineq Specifics
+> Supervised Baselines
+> Supervised Compl 5e-41000 –––Loss: Huber (Partial vars)
+> Supervised 1e-41000 0.1 10 10 λsup = 100
+> Soft-Constraint SSL Baselines
+> Penalty 1e-41000 1.0 10 10 –
+> Adaptive Penalty 1e-41000 1.0 10 →500 10 →100 Rate=2.0
+> Hard-Constraint SSL Baselines
+> DC3 5e-51000 1.0 1.0 10 Steps=20, ηcorr = 1 e-6
+> FSNet 1e-4300 1.0 10 10 λdist = 5 , Mem=30, Scl=1000
+> Hybrid FSNet 1e-4300 1.0 10 10 λdist = 5 ,λsup = 2 , Scl=500
+> Semi-Supervised FSNet 1e-4300 1.0 10 10 Mem=30, Scl=1000
+> Note: “Scl” denotes the scaling factor for the solver. “Mem” is the L-BFGS memory size.
+
+Table D.6. Hyperparameter settings for AC-OPF experiments. 
+
+(a) Common Settings                 
+
+> Parameter Value
+> Dataset
+> Sample 7000 Label 50–7000 Val / Test 1000 / 2000
+> Architecture
+> Network 5-Layer MLP Activation SiLU Hidden Size 256 Dropout 0.01 Post-Process Bound & Slack Repair
+> Optimizer
+> Optimizer Adam Betas (0.9, 0.95) Weight Decay 1×10 −5
+> Scheduler Cosine w/ Warmup Random Seeds 0 1 2
+
+(b) Method-Specific Parameters                             
+
+> Method LR Epochs λeq λineq λobj
+> Supervised 5e-3†1000 2000 1000 1000
+> Penalty 1e-31000 2000 1000 10 ·sobj
+> FSNet 2e-4130 2000 1000 10 ·sobj
+> Note: FSNet also uses λdist = 0 .01 .†LR scaled by pbatch /512 .
+
+D.5.1. PINN H YPERPARAMETERS 
+
+Stage 1: Warm-Start Pretraining. Stage 1 combines physics-based residual minimization with auxiliary guidance terms to improve optimization stability and basin exploration. Collocation points are sampled uniformly in the joint space of normalized time τ ∈ [0 , 1] and normalized initial conditions y0, using n = 3500 points per iteration. To provide coarse trajectory supervision, anchor losses are computed from batch RK4 integrations, using 64 initial conditions and 12 time points per trajectory. In addition, linearized flow-map targets around the system equilibrium are incorporated by evaluating the exact matrix exponential of the Jacobian, again using 64 initial conditions and 12 time points. To enforce local consistency at the initial time, a tangent loss is applied at τ = 0 using 512 randomly sampled initial conditions. The physics residual loss employs a Huber penalty during early training, with threshold δ0 = 2 × 10 −2, and transitions to a pure squared loss after 60% of the training steps. The weights of the anchor and linearized losses are annealed using a cosine schedule 
+
+a(s) = 12
+
+ 1 + cos( πs ),
+
+where s denotes normalized training progress. 
+
+Stage 2: Physics-only Training with Time Curriculum and RAR. Stage 2 refines the learned flow-map using physics residuals only. Uniform collocation points are sampled with n = 4500 points per iteration and refreshed every 200 
+
+optimization steps. Training proceeds under a time-curriculum strategy in which the effective integration horizon is gradually increased according to 
+
+Teff = T  α + (1 − α)sp,
+
+21 Effective Amortized Optimization Using Inexpensive Labels 
+
+Table D.7. Hyperparameter settings for flow-map PINN basin and local-minima experiments. 
+
+(a) Common Settings                     
+
+> Parameter Value
+> System Setup
+> States (δ, ω, P m, E )(4D) Horizon T0.5 IC domain δ±0.25
+> ω∈[−0.3,0.3]
+> Pm±0.25 ,E±0.25
+> Architecture
+> Network Residual flow-map MLP Hidden Layers 3Hidden Width 64 Activation Tanh
+> Optimizer
+> Optimizer Adam / LBFGS Precision float64 Random Seeds 0 1 2 3 4
+
+(b) Method-Specific Parameters                       
+
+> Stage LR Steps Notes
+> Stage 1 (Pretrain) 2×10 −315,000 Physics + anchors Stage 2 (Physics) 5×10 −43,500 Physics only LBFGS Polish –≤40 Final refinement Stage 2 Only 5×10 −43,500 No pretraining
+
+with α = 0 .2 and p = 2 , where s again denotes normalized training progress. To focus optimization on difficult regions of the state–time domain, residual-based adaptive refinement (RAR) is applied for 12 rounds. In each round, 400 new collocation points are selected from 20000 candidates based on the magnitude of the physics residual, with the total RAR set capped at 12000 points. Stiff and non-stiff residual components are balanced adaptively using inverse-loss weighting, with a lower bound imposed on the fast-mode weight ( wfast ≥ 0.25 ) to ensure accurate learning of stiff dynamics. 
+
+LBFGS Polishing. Following Stage 2, the network parameters are further refined using the L-BFGS optimizer with strong Wolfe line search. The LBFGS objective corresponds to the balanced physics residual evaluated over the full time horizon 
+
+T . Optimization is performed using an outer-loop convergence criterion with a relative improvement tolerance of 10 −4
+
+and a patience of 5 iterations, where each outer iteration executes up to 50 internal LBFGS steps. For basin comparison experiments, an optional fixed collocation set of 12000 points is used to ensure identical LBFGS objectives across different training runs. 
+
+PINN Baseline. To isolate the effect of Stage 1 pretraining, a PINN baseline is trained using the same physics-only procedure, time curriculum, RAR strategy, and LBFGS polishing as above, but without any auxiliary losses or pretraining. 22

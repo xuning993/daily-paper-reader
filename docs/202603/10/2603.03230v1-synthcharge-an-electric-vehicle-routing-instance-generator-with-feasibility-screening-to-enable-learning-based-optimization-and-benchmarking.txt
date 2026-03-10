@@ -1,0 +1,288 @@
+Title: SynthCharge: An Electric Vehicle Routing Instance Generator with Feasibility Screening to Enable Learning-Based Optimization and Benchmarking
+
+URL Source: https://arxiv.org/pdf/2603.03230v1
+
+Published Time: Wed, 04 Mar 2026 02:25:46 GMT
+
+Number of Pages: 7
+
+Markdown Content:
+# SynthCharge: An Electric Vehicle Routing Instance Generator with Feasibility Screening to Enable Learning-Based Optimization and Benchmarking 
+
+Mertcan Daysalilar ∗, Fuat Uyguroglu †, Gabriel Nicolosi ‡, and Adam Meyers ∗∗Industrial and Systems Engineering, University of Miami, Coral Gables, FL, USA 
+
+†Faculty of Engineering, Cyprus International University 99258 Nicosia, North Cyprus, via Mersin 10, Turkey 
+
+‡Engineering Management and Systems Engineering, Missouri University of Science and Technology, Rolla, MO, USA 
+
+Abstract —The electric vehicle routing problem with time windows (EVRPTW) extends the classical VRPTW by introducing battery capacity constraints and charging station decisions. Existing benchmark datasets are often static and lack verifiable feasibility, which restricts reproducible evaluation of learning-based routing models. We introduce SynthCharge, a parametric generator that produces diverse, feasibility-screened EVRPTW instances across varying spatiotemporal configurations and scalable customer counts. While SynthCharge can currently generate large-scale instances of up to 500 customers, we focus our experiments on sizes ranging from 5 to 100 customers. Unlike static benchmark suites, SynthCharge integrates instance geometry with adaptive energy capacity scaling and range-aware charging station placement. To guarantee structural validity, the generator systematically filters out unsolvable instances through a fast feasibility screening process. Ultimately, SynthCharge provides the dynamic benchmarking infrastructure needed to systematically evaluate the robustness of emerging neural routing and data-driven approaches. 
+
+Index Terms —Synthetic vehicle routing problem, neural com-binatorial optimization, reinforcement learning, intelligent trans-portation systems, sustainable logistics 
+
+I. I NTRODUCTION 
+
+Electrification of urban freight and last-mile delivery makes energy-constrained routing a core problem in sustainable intelligent transportation systems (ITS). The electric vehicle routing problem with time windows (EVRPTW) extends the VRPTW by incorporating battery constraints and decisions about where and when to recharge [1], [2]. These additions fundamentally change route construction and feasibility. While exact and hybrid optimization methods have produced effective algorithms for multiple EVRPTW variants [3]–[6], their high computational costs limit real-time application. This limitation has driven a shift toward learning-based routing methods, which offer near real-time route generation and data-driven policy construction [7], [8]. Moreover, this shift increases the need for evaluation protocols that go beyond a single finite benchmark suite and instead characterize behavior under systematic variation in instance characteristics. Related ITS research also studies EV routing and charging optimization in operational settings, including charging-routing formulations and uncertainty-aware battery-electric truck dispatching with time windows, further motivating benchmark infrastructure that supports controlled, reproducible evaluation across constraint regimes [9]–[11]. A consistent finding in recent neural routing literature is that generalization remains a primary bottleneck. Models trained on a fixed distribution of instances can degrade under shifts in spatial structure, problem size, or constraint parameters. Studies of distribution shift and omni-generalization [12]–[14] show that neural combinatorial optimization can be sensitive to struc-tural shifts, motivating evaluation across controlled temporal and capacity regimes. These results indicate that benchmark suites that have fixed topology and constraint regimes may be insufficient for reproducible, distribution-aware evaluation. Recent advances in learning-based EVRPTW further emphasize this sensitivity to instance regimes. Curriculum-based rein-forcement learning approaches progressively expose models to increasing constraint complexity and report improvements in generalization across problem scales [15]. Such findings suggest that model performance depends strongly on how spatial structure, energy constraints, and time window tightness are distributed during training and evaluation. However, widely used EVRPTW benchmark suites provide limited mechanisms to systematically vary these structural characteristics. Benchmark design has itself been recognized as a research direction. Early EVRPTW benchmarks were built upon the Solomon VRPTW foundation [16] and its electric extensions [1]. While these suites remain indispensable for solver compar-ison, they are finite and provide limited parametric control over instance families. More broadly, benchmark design critiques emphasize that widely adopted instance sets can become overly homogeneous with respect to structural characteristics [17]. Community repositories such as VRP-REP improve reproducibility by consolidating instances and supporting verification workflows [18], but they do not provide controllable instance generation or instance-level feasibility screening. Work on synthetic traffic generation frames the contribution around distribution-level realism and data availability rather than downstream optimization performance [19]. Comple-mentary guidance from machine learning emphasizes dataset transparency through documentation and clear statements of intended use, limitations, and validation [20]. Taken together, these trends point toward a modern benchmark standard incorporating controllable generation, explicit validation, and 
+
+> arXiv:2603.03230v1 [cs.LG] 3 Mar 2026
+
+clearly documented metadata. To address these limitations, we introduce SynthCharge, a fully parametric EVRPTW instance generator. SynthCharge generates geometry-aware EVRPTW instances across multiple spatial topologies, time window regimes, and customer scales. Energy-related parameters (e.g., battery capacity and consump-tion rates) are scaled as explicit functions of instance geometry, including average inter-customer distance and depot dispersion. This geometry-conditioned scaling links energy feasibility to spatial structure, preventing trivial feasibility or systematic infeasibility as instance size or spatial spread changes. Charging station locations are placed using range-aware rules tied to vehicle travel limits rather than fixed templates. To support explicit validation and reproducibility, each gener-ated instance is accompanied by feasibility metadata obtained through two stages: (i) linear-time structural screening that detects obvious violations (e.g., unreachable customers under energy constraints), and (ii) optional exact mixed integer linear programming (MILP) verification for small instances ( N ≤ 10 ). SynthCharge is positioned as a benchmark infrastructure rather than as a solver contribution; its purpose is to enable evaluation under systematically varied spatial structure, customer scale, time window tightness, and energy capacity regimes, thereby supporting distribution-aware performance assessment. II. R ELATED WORK 
+
+A. EVRPTW Formulations and Benchmark Suites 
+
+Solomon’s VRPTW instances [16] established canonical time window routing families with distinct spatial structures, forming the basis of decades of benchmarking practice. Schneider 
+
+et al. extended this formulation to the EVRPTW by incor-porating recharging stations and battery capacity constraints [1]. Subsequent and more recent studies expanded modeling realism through partial recharging policies [5], heterogeneous fleets and charger types [4], [6], soft time window penal-ties [21], and exact solution methodologies [3], reflecting increasing operational complexity. While these contributions enrich EVRPTW modeling and algorithmic development, the associated benchmark suites typically remain as finite instance collections. As such, they provide limited mechanisms for systematic parametric variation across spatial structure, customer scale, and energy regimes, and rarely include instance-level feasibility information that can support transparent and reproducible evaluation. 
+
+B. Learning-Based Routing under Distribution Shift 
+
+Learning-based routing methods commonly train on synthetically-generated instances sampled from fixed distri-butions [7], [8]. Recent work shows that this evaluation protocol can obscure sensitivity to distribution shift. Jiang et al. 
+
+studied vehicle routing under distribution shift [12], while Zhou et al. formalized omni-generalization across instance size and node distribution [13]. Luo et al. show that shifts in constraint tightness can induce systematic degradation [14]. These studies support the need for benchmarks that provide explicit dimensions of variation rather than relying on a single fixed family. 
+
+C. Synthetic Benchmarks and Validation Practices in Intelligent Transportation Systems 
+
+Recent ITS research has emphasized both structured synthetic data generation and operational optimization for electrified transportation systems. Nigam and Srivastava [19] generate synthetic traffic data and evaluate fidelity via distribution-level statistics. Complementary ITS studies address EV routing and charging optimization in application settings, including charging-routing formulations and uncertainty-aware battery-electric truck dispatching with time windows [9]–[11]. How-ever, these works do not target benchmark generation with controllable instance families and explicit instance-level fea-sibility screening for EVRPTW evaluation. Guidance such as “Datasheets for Datasets” emphasizes documentation, trans-parency of construction procedures, and clear statements of intended use and limitations [20]. SynthCharge follows this approach by integrating parametric instance generation with explicit feasibility screening and data reliability reporting. III. M ETHODOLOGY 
+
+This section summarizes the synthetic instance generation procedure. Table I lists the key notation used throughout. 
+
+A. Notation and Variable Definitions 
+
+We consider a single-depot EVRPTW instance defined on a node set V = {0} ∪ C ∪ S , where node 0 denotes the depot, 
+
+C = {1, . . . , N } denotes the set of N customer indices, and 
+
+S = {N + 1 , . . . , N + |S|} denotes the set of external charging station indices. All node indices are positive integers. Let dij 
+
+denote the Euclidean distance between nodes i and j and tij 
+
+the travel time, assumed to be equal to dij (unit speed). Each vehicle has load capacity Q and battery capacity B. The energy consumption rate per unit distance is r, yielding a maximum travel range of R = B/r . Each customer i ∈ C has demand 
+
+qi ∼ U (0 .02 Q, 0.30 Q) and service duration si ∈ [smin , s max ].The planning horizon is the time interval [0 , H ], where H
+
+denotes the maximum allowable route duration. Service at customer i must begin within a time window [ei, l i] ⊆ [0 , H ].Time window widths are generated using a width fraction parameter ϕ ∈ (0 , 1] , where the window width is defined as 
+
+W = ϕH . For a given instance, ϕ is fixed and all customer time windows share the same width W , while their starting times are randomly sampled within [0 , H −W ]. In the MILP formulation used for validation, bi denotes the service start time and yi the battery energy upon arrival at node i. We use γ to denote the acceptance rate, defined as the fraction of generated instances that satisfy feasibility validation relative to the total number of generated instances. All random variables are generated using an instance-specific random number generator with a fixed seed to ensure reproducibility. TABLE I KEY NOTATION USED IN SYNTH CHARGE                                      
+
+> Symbol Meaning
+> NNumber of customers
+> CSet of customer indices {1, . . . , N }SSet of charging station indices
+> QVehicle load capacity
+> BBattery capacity
+> rEnergy consumption per unit distance
+> RMaximum travel range ( R=B/r )
+> dij Euclidean distance between nodes iand jtij Travel time (assumed to be equal to dij )
+> qiDemand of customer isiService duration at customer iei, l iEarliest and latest service start times
+> HPlanning horizon upper bound (of time interval [0 , H ])
+> ϕTime window width fraction (common across customers)
+> WTime window width ( W=ϕH )
+> biService start time at node i(MILP variable)
+> yiBattery energy upon arrival at node i(MILP variable)
+> γAcceptance rate (fraction of generated instances passing validation)
+
+B. Spatial Topology Generation 
+
+All node coordinates are generated within the unit square 
+
+[0 , 1] 2. The depot location is selected according to a depot mode: center (located at (0 .5, 0.5) ), random (sampled uni-formly from [0 , 1] 2), or user-specified . Customers are generated according to one of three spatial families inspired by the Solomon VRPTW structures [16]. For random (R) instances, each customer coordinate xi is sampled independently from the uniform distribution over the unit square, i.e., xi ∼ U  [0 , 1] 2.A minimum pairwise separation dmin = 0 .04 is enforced via rejection sampling: if a sampled point is within distance dmin 
+
+to any previously placed customer, it is resampled. After 10 unsuccessful attempts, the point is accepted regardless of separation to guarantee termination of the procedure. For clustered (C) instances, k cluster centers μc ∈ [0 , 1] 2 are sampled uniformly. Customer coordinates are then drawn from isotropic Gaussian distributions N (μc, σ 2I) with any out-of-bounds coordinates clipped to the borders of the unit square 
+
+[0 , 1] 2 (e.g., a generated coordinate of (1 .05 , 0.4) is clipped to (1 .0, 0.4) ). For mixed (RC) instances, a mixing parameter 
+
+ρ ∈ (0 , 1) specifies the proportion of customers generated using the clustered procedure, with the remaining 1−ρ fraction generated using the random procedure. These spatial families, as illustrated in Fig. 1, enable controlled variation between homogeneous and heterogeneous spatial dispersion patterns. 
+
+C. Charging Infrastructure Generation 
+
+Charging stations are placed using range-aware geometric rules derived from the travel range R. The depot always acts as a charging location. Candidate stations are generated according to two rules: 1) Customer-customer reachability. For each customer pair (i, j ) with dij > 0.8R, a candidate station is inserted near the midpoint (xi + xj )/2. Specifically, we add a small bounded 2D perturbation ϵ ∈ [−δ, δ ]2
+
+and clip the resulting coordinates to ensure they remain within the [0 , 1] 2 domain (e.g., a perturbed coordinate of 
+
+(0 .5, −0.03) is clipped to (0 .5, 0.0) ). 2) Customer-depot reachability. For any customer i sat-isfying d0i > 0.7R, let s denote the nearest existing station. If dis > 0.5R, an additional station is inserted at distance 0.6R along the ray extending from the depot to 
+
+i. We chose 0.6R as a conservative distance that places the station within range of both the depot and isolated customer while providing slack relative to the travel limit 
+
+R.These thresholds partition the unit square’s maximum diagonal distance ( √2 ≈ 1.41 ) into fractions of R. This ensures fundamental spatial reachability, whereas strict routing feasibility is deferred to the subsequent screening procedure. Candidate stations are filtered to remove redundancy and overlap: stations must be separated by at least 0.3R and be at least 0.04 away from any customer node. If fewer than the desired number of stations are generated, additional stations are sampled uniformly with rejection until the target count is reached. All random decisions are governed by the instance-level seed, ensuring reproducibility. 
+
+D. Vehicle and Service Parameters 
+
+Customer demands qi are sampled as fractions of vehicle load capacity Q from a uniform distribution U(0 .02 Q, 0.30 Q). If the aggregate demand exceeds 3Q, the demands are proportionally rescaled so that the total demand equals 3Q. Service durations 
+
+si are drawn independently and uniformly from the interval 
+
+[smin , s max ]. These bounds are kept fractionally small relative to average travel times so service operations do not dominate the routing schedule. Battery capacity B may be specified directly or determined adaptively. Under adaptive scaling, the maximum pairwise customer distance dmax is computed, and a target travel range proportional to this maximum spatial spread is defined as 
+
+R⋆ = κd max . The effective range is then constrained to lie within a fixed normalized band [Rmin , R max ] chosen relative to the unit-square geometry. Battery capacity is finally defined as 
+
+B = r · max 
+
+
+
+Rmin , min  Rmax , R ⋆
+
+,
+
+with Rmin = 0.15 , Rmax = 0.40 , and κ = 0.8. This construction keeps the maximum travel range R = B/r within 
+
+[0 .15 , 0.40] while adapting energy availability to realized spatial dispersion, ensuring that instances remain energy-constrained but generally reachable. 
+
+E. Time Window Assignment 
+
+Time windows are defined over a planning horizon [0 , H ],where H denotes the maximum allowable service time. A width fraction ϕ ∈ (0 , 1] determines a common window width W =
+
+ϕH applied to all customers. Customers are indexed from 1 to 
+
+N . Earliest service times are assigned as ei = ( i/N ) × 0.3H,creating a staggered temporal ordering across customers. Latest service times are set to li = min( H, e i + W ). If li = H, the start time ei is shifted backward so that the window width (a) (b) (c)  
+
+> Fig. 1. Representative SynthCharge spatial topologies under three spatial regimes: (a) random (R), (b) clustered (C), and (c) mixed (RC). The depot is shown as a square, customers as circles, and charging stations as triangles.
+
+li −ei = W is preserved. SynthCharge supports wide ( ϕ = 0 .8), medium ( ϕ = 0 .4), and tight ( ϕ = 0 .2) regimes. 
+
+F. Feasibility Screening Procedure 
+
+SynthCharge employs a two-stage feasibility screening procedure to assign feasibility labels. The first stage removes structurally invalid configurations using deterministic checks, while the second stage optionally verifies small instances using an exact mixed integer linear program. 
+
+1) Stage 1: Structural Feasibility Screening: The first stage applies necessary-condition checks in linear time. Distances are assumed to be Euclidean and symmetric, i.e., dij = dji .Three structural conditions are verified: 1) Energy reachability: Every customer i must be within the maximum travel range R of at least one energy-replenishing node (the depot or a charging station s ∈ S), i.e., min p∈{ 0}∪ S dip ≤ R.2) Depot return consistency: Service at customer i must allow return to the depot within the planning horizon, i.e., ei + si + ti0 ≤ H.3) Station accessibility: For every customer i ∈ C, there must exist at least one charging station s ∈ S such that 
+
+dis ≤ R.Instances failing any condition are rejected and regenerated. For instances with N > 10 , only Stage 1 is applied. Note that satisfying these conditions does not ensure that a feasible route exists; it only filters out instances with trivial structural infeasibilities at negligible computational cost. 
+
+2) Stage 2: Exact MILP Verification (Small Instances): For small instances ( N ≤ 10 ), SynthCharge optionally invokes an exact MILP solver adapted from the three-index formulation of [1]. The formulation enforces flow conservation, time window satisfaction, and energy dynamics. Let xij be a binary variable equal to one if the vehicle travels from node i to node j, and zero otherwise. The MILP includes the following three constraints. (1) Flow conservation (exactly-once visitation): P 
+
+> j∈V
+
+xij = P 
+
+> j∈V
+
+xji = 1 , ∀i ∈ C.These equalities ensure that each customer is entered and exited exactly once. (2) Time window satisfaction: bi + si +
+
+tij ≤ bj + M (1 − xij ), ∀i, j ∈ V , where bi denotes the service start time at node i and M is a sufficiently large constant. (3) Energy propagation: yj ≤ yi − rd ij + M (1 − xij ),
+
+∀i, j ∈ V , where yi denotes the battery level upon arrival at node i. The MILP verifies the existence of a route satisfying all constraints. Because exact solving is computationally expensive, this verification step is restricted to N ≤ 10 .
+
+G. Generation Algorithm 
+
+Algorithm 1 summarizes the procedure for generating syn-thetic instances. After drawing spatial coordinates and building the charging infrastructure, SynthCharge assigns demands, service times, and time windows, and then applies the two-stage feasibility screening process. 
+
+H. GUI and Outputs 
+
+SynthCharge includes an interactive GUI for configuring spatial families, temporal regimes, and energy parameters with real-time visualization. For batch generation, the generator exports instances as standardized .txt files into feasible/ 
+
+and infeasible/ directories based on the validation out-come. Each instance is accompanied by a JSON metadata log recording the full parameter configuration and feasibility status, ensuring exact reproducibility for distribution-aware performance assessment. The complete codebase and GUI will be released as an open-source package. 
+
+I. Data Reliability Metric 
+
+The acceptance rate γ is defined as the proportion of generated instances that pass feasibility screening; that is, γ is the ratio of the number of validated instances to the number of generated instances. γ provides a data reliability indicator and quantifies the interaction between spatial structure, temporal tightness, and energy scaling. For instances with N ≤ 10 , γ
+
+reflects both structural screening and exact MILP verification. For larger instances ( N > 10 ), γ is calculated using only the structural feasibility screening stage. Algorithm 1 SynthCharge instance generation 
+
+Require: Number of customers N , number of stations S,spatial family f ∈ { R, C, RC }, temporal regime w ∈{wide , medium , tight }, seed, and parameter set Θ (includ-ing k, σ, ρ, Q, r, smin , smax , H, ϕ)
+
+Ensure: Feasibility–filtered EVRPTW instance  
+
+> 1:
+
+Initialize random generator with seed  
+
+> 2:
+
+Generate depot location  
+
+> 3:
+
+Generate customer coordinates according to family f 
+
+> 4:
+
+Determine battery capacity B (fixed or adaptive)  
+
+> 5:
+
+Construct charging infrastructure using range–aware rules  
+
+> 6:
+
+Sample demands qi and service times si 
+
+> 7:
+
+Assign time windows [ei, l i] according to regime w 
+
+> 8:
+
+Apply structural feasibility screening (Sec. III-F1)  
+
+> 9:
+
+if N ≤ 10 then  
+
+> 10:
+
+Perform exact MILP feasibility verification (Sec. III-F2)  
+
+> 11:
+
+end if  
+
+> 12:
+
+if validation passes then  
+
+> 13:
+
+Export instance and metadata  
+
+> 14:
+
+else  
+
+> 15:
+
+Regenerate instance  
+
+> 16:
+
+end if 
+
+IV. E XPERIMENTAL EVALUATION 
+
+This section evaluates SynthCharge as a benchmarking infrastructure. We examine acceptance rates across regimes and generation efficiency. Experiments were conducted on a workstation equipped with a 13th Gen Intel Core i7-13700K processor (16 physical cores, 24 logical processors, base frequency 3.40 GHz) and 64 GB of RAM. Instance sizes included the following: 5C2S , 10 C3S, 20 C4S,
+
+30 C4S, 40 C5S, 50 C6S, 60 C7S, 70 C8S, 80 C9S, 90 C10 S, and 
+
+100 C12 S , where the integer preceding C denotes the number of customers and the integer preceding S denotes the number of external charging stations. The depot always functions as an additional charging location. For each spatiotemporal regime combination (R/C/RC × wide/medium/tight), instances were generated using stochastic seeding (random seed mode). Generator configuration parameters included cluster center sampling mode set as random , cluster spread σ = 0 .05 , mix ratio ρ = 0 .5, vehicle capacity Q = 1 .5, energy consumption rate r = 0 .25 , charging rate g = 1 .0 (representing the amount of energy replenished per unit of time), and service times 
+
+si ∼ U (0 .01 , 0.03) . Acceptance rates were computed using Stage 1 structural feasibility screening for all instances and, additionally, Stage 2 exact MILP verification for N ≤ 10 .
+
+A. Acceptance Rate across Regimes 
+
+To compute reliability metrics, we generated 2,475 feasible instances (25 per problem size across the nine spatiotemporal combinations). Table II reports the mean acceptance rate γ
+
+(with standard deviation) across spatiotemporal regimes. Across all spatial families, tighter time windows reduce acceptance in the clustered (C) regime, whereas the random (R) and mixed                                          
+
+> TABLE II ACCEPTANCE RATE γ(MEAN ±STD .) ACROSS SPATIOTEMPORAL REGIMES
+> (N= 5 ,..., 100 )
+> Spatial family Wide Medium Tight
+> Random (R) 46.7 ±22.3 47.4 ±24.2 46.3 ±23.2 Clustered (C) 39.3 ±16.8 39.2 ±16.4 37.0 ±12.1 Mixed (RC) 45.7 ±16.0 45.1 ±18.0 46.2 ±19.6
+> Fig. 2. Acceptance rate γ(%) versus problem size Nacross spatiotemporal regimes.
+
+(RC) regimes show weaker and sometimes non-monotonic sensitivity across wide/medium/tight settings. Figure 2 shows acceptance trends as a function of problem size N for each spatiotemporal regime, demonstrating that acceptance varies with both constraint regime and scaling. Overall, results indicate that feasibility filtering is nontrivial and regime-dependent. 
+
+B. Generation Efficiency 
+
+Efficient data generation is critical for training learning-based solvers. Because runtime behavior remains largely uniform across all spatiotemporal regimes, we summarize the generation times directly. The mean generation time per accepted instance starts at approximately 0.06 seconds for N = 5 , rises to 
+
+0.10 seconds for N = 10 , and then abruptly drops to < 0.01 
+
+seconds for N > 10 . This sharp decrease occurs because the computationally–expensive Stage 2 exact MILP verification is applied exclusively to instances with N ≤ 10 . For larger instances relying solely on Stage 1 linear screening, generation time scales gradually, reaching only 0.04 seconds for N = 100 .These results indicate that SynthCharge can serve as a high-volume instance generator while maintaining some validation transparency. 
+
+C. Empirical Feasibility Evaluation and Resource Utilization 
+
+To verify practical solvability, we evaluated all generated instances across all spatiotemporal regimes ( N = 5 , . . . , 100 )using a baseline variable neighborhood search/tabu search metaheuristic [1]. The algorithm successfully produced feasible routes for 100% of these instances, confirming that Stage III-F 1structural screening strongly correlates with actual routing feasibility. This evaluation also reinforces the operational Fig. 3. Problem size versus mean traveled distance and mean EV count for random (R), clustered (C), and mixed (RC) regimes under a baseline metaheuristic. The trends illustrate how temporal tightening increases fleet requirements. 
+
+impact of tightening constraints. As illustrated in Figure 3, mean travel distance and fleet size increase monotonically as time windows tighten and spatial topologies become more dispersed, with the most pronounced growth occurring in random and mixed configurations. V. C ONCLUSIONS 
+
+This paper presents SynthCharge, a configurable generator for creating benchmark instances of EVRPTW. SynthCharge produces synthetic instances with controlled spatial layouts, customer scales, time-window settings, and energy constraints, while filtering out structurally infeasible cases through an explicit screening procedure. By allowing systematic variation of these problem characteristics, SynthCharge enables rigorous and reproducible evaluation of both optimization- and learning-based routing methods. This is particularly relevant for learning-based EVRPTW methods, where performance can degrade un-der distribution shift and reproducible comparison increasingly depends on explicit generation assumptions and feasibility checks. Several limitations define the current scope. Exact MILP verification is restricted to small instances ( N ≤ 10 ), and structural screening remains necessary but not sufficient for global feasibility. Instances are generated in a Euclidean unit-square domain with deterministic travel times and a single-depot setting; non-Euclidean road geometries, time-dependent travel, stochastic dynamics, and multi-depot configurations are not modeled. Charging behavior assumes linear energy consumption and full recharge decisions, excluding nonlinear charging curves and partial recharging policies. These design choices prioritize interpretability, controlled distributional vari-ation, and computational efficiency within a benchmarking-oriented infrastructure. Future work includes extending the generator to multi-depot settings, nonlinear and partial charging models, time-dependent travel, and integration with real road network geometries. We also plan to release standardized datasets and benchmarking protocols to support reproducible EVRP evaluation. REFERENCES [1] M. Schneider, A. Stenger, and D. Goeke, “The electric vehicle-routing problem with time windows and recharging stations,” Transportation Science , vol. 48, no. 4, pp. 500–520, 2014. [2] S. Erdogan and E. Miller-Hooks, “A green vehicle routing problem,” 
+
+Transportation Research Part E: Logistics and Transportation Review ,vol. 48, no. 1, pp. 100–114, 2012. [3] G. Desaulniers, F. Errico, S. Irnich, and M. Schneider, “Exact algorithms for electric vehicle-routing problems with time windows,” Operations Research , vol. 64, no. 6, pp. 1388–1405, 2016. [4] G. Hiermann, J. Puchinger, S. Ropke, and R. F. Hartl, “The electric fleet size and mix vehicle routing problem with time windows and recharging stations,” European Journal of Operational Research , vol. 252, no. 3, pp. 995–1018, 2016. [5] M. Keskin and B. C¸ atay, “Partial recharge strategies for the electric vehicle routing problem with time windows,” Transportation Research Part C: Emerging Technologies , vol. 65, pp. 111–127, 2016. [6] D. Goeke and M. Schneider, “Routing a mixed fleet of electric and conventional vehicles,” European Journal of Operational Research ,vol. 245, no. 1, pp. 81–99, 2015. [7] M. Nazari, A. Oroojlooy, L. V. Snyder, and M. Tak ´ac, “Reinforcement learning for solving the vehicle routing problem,” in Advances in Neural Information Processing Systems , vol. 31, 2018. [8] W. Kool, H. van Hoof, and M. Welling, “Attention, learn to solve routing problems!” in Proc. International Conference on Learning Representations , 2019. [9] M. G. De Andoin, A. Bottarelli, S. Schmitt, I. Oregi, P. Hauke, and M. Sanz, “Formulation of the Electric Vehicle Charging and Routing Problem for a Hybrid Quantum-Classical Search Space Reduction Heuristic,” in 2023 IEEE 26th International Conference on Intelligent Transportation Systems (ITSC) , pp. 5318–5323, 2023, doi:10.1109/ITSC57777.2023.10421787. [10] D. Peng, M. J. Barth, and K. Boriboonsomsin, “Addressing the Ro-bust Battery Electric Truck Dispatching Problem with Backhauls and Time Windows Under Travel Time Uncertainty,” in 2024 IEEE 27th International Conference on Intelligent Transportation Systems (ITSC) ,pp. 84–89, 2024, doi:10.1109/ITSC58415.2024.10919697. [11] G. De Nunzio, I. Ben Gharbia, and A. Sciarretta, “A Time- and Energy-Optimal Routing Strategy for Electric Vehicles with Charging Constraints,” in 2020 IEEE 23rd International Conference on Intelligent Transportation Systems (ITSC) , pp. 1–8, 2020, doi:10.1109/ITSC45102.2020.9294622. [12] Y. Jiang, Y. Wu, Z. Zheng, and Z. Wang, “Ensemble-based deep reinforcement learning for vehicle routing problems under distribution shift,” in Advances in Neural Inf. Processing Systems , vol. 36, 2023. [13] J. Zhou et al. , “Towards omni-generalizable neural methods for vehicle routing problems,” in Proceedings of the International Conference on Machine Learning , 2023. [14] F. Luo, Y. Wu, Z. Zheng, and Z. Wang, “Rethinking neural combinatorial optimization for VRPs with different constraint tightness degrees,” arXiv preprint arXiv:2505.24627 , 2025. [15] M. Daysalilar, F. Uyguroglu, G. Nicolosi, and A. Meyers, “A curriculum-based deep reinforcement learning framework for the electric vehicle routing problem,” arXiv preprint arXiv:2601.15038 , 2026. [16] M. M. Solomon, “Algorithms for the vehicle routing and scheduling problems with time window constraints,” Operations Research , vol. 35, no. 2, pp. 254–265, 1987. [17] E. Uchoa, D. Pecin, A. Pessoa, M. Poggi, T. Vidal, and A. Subramanian, “New benchmark instances for the capacitated vehicle routing problem,” 
+
+European Journal of Opr. Research , vol. 257, no. 3, pp. 845–858, 2017. [18] J. E. Mendoza, C. Arnold, D. S ¨orensen, and K. Tierney, “VRP-REP: The vehicle routing community repository,” 2014. [19] A. Nigam and S. Srivastava, “Generating realistic synthetic traffic data using conditional tabular GANs for ITS,” in Proc. IEEE International Conference on Intelligent Transportation Systems , 2023. [20] T. Gebru et al. , “Datasheets for datasets,” Communications of the ACM ,vol. 64, no. 12, pp. 86–92, 2021. [21] M. Daysalilar, C. B. Chen, and M. Erkoc, “Electric vehicle routing problems for heterogeneous fleets with partial recharging, diverse charger types, and soft time windows,” in Proc. IISE Annual Conference , 2023, pp. 1–6. doi:10.21872/2023IISE 2943.

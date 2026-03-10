@@ -6,100 +6,82 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-02-09 ~ 2026-03-10
-- 运行时间：2026-03-10 12:34:46 UTC
+- 最新运行日期：2026-03-10
+- 运行时间：2026-03-10 19:34:31 UTC
 - 运行状态：成功
-- 本次总论文数：22
-- 精读区：0
-- 速读区：22
+- 本次总论文数：20
+- 精读区：9
+- 速读区：11
 
 ### 今日简报（AI）
-今日速览 22 篇前沿成果，深度聚焦神经网络在组合优化与物理模型中的跨界融合。
-满分论文揭示了确定性几何流在优化传输中的优势，并展示了超图神经网络解决 p-spin 模型的强大潜力。
-建议优先研读几何流与图学习结合的满分佳作，探索非生成式方法在复杂选址与物理优化中的新路径。
-- 详情：[/20260209-20260310/README](/20260209-20260310/README)
+今日聚焦 20 篇运筹优化与 AI 前沿，深度拆解了多任务 VRP 动态约束理解与柔性车间调度的记忆增强新范式。
+满分论文揭示了“上下文链”学习在复杂路径规划中的卓越表现，同时神经符号系统在溶剂设计与逻辑推理领域展现出强劲潜力。
+推荐优先研读两篇 10 分佳作，探索大模型思维与启发式算法结合在解决大规模组合优化问题上的实战价值。
+- 详情：[/202603/10/README](/202603/10/README)
 
 ### 精读区论文标签
-1. [Constraint-Aware Generative Re-ranking for Multi-Objective Optimization in Advertising Feeds](/20260301-20260310/2603.04227v1-constraint-aware-generative-re-ranking-for-multi-objective-optimization-in-advertising-feeds)  
+1. [Chain-of-Context Learning: Dynamic Constraint Understanding for Multi-Task VRPs](/202603/10/2603.01667v1-chain-of-context-learning-dynamic-constraint-understanding-for-multi-task-vrps)  
+   标签：评分：10.0/10、query:ml-co
+   evidence：用于多任务车辆路径问题的强化学习
+2. [Learning Memory-Enhanced Improvement Heuristics for Flexible Job Shop Scheduling](/202603/10/2603.02846v1-learning-memory-enhanced-improvement-heuristics-for-flexible-job-shop-scheduling)  
+   标签：评分：10.0/10、query:ml-co
+   evidence：深度强化学习用于柔性作业车间调度
+3. [RESCHED: Rethinking Flexible Job Shop Scheduling from a Transformer-based Architecture with Simplified States](/202603/10/2603.07020v1-resched-rethinking-flexible-job-shop-scheduling-from-a-transformer-based-architecture-with-simplified-states)  
+   标签：评分：10.0/10、query:ml-co
+   evidence：深度强化学习解决柔性作业车间调度问题
+4. [Learning to Rank the Initial Branching Order of SAT Solvers](/202603/10/2603.07176v1-learning-to-rank-the-initial-branching-order-of-sat-solvers)  
+   标签：评分：10.0/10、query:ml-co
+   evidence：使用GNN预测SAT求解器中的分支顺序
+5. [Constraints Matrix Diffusion based Generative Neural Solver for Vehicle Routing Problems](/202603/10/2603.07568v1-constraints-matrix-diffusion-based-generative-neural-solver-for-vehicle-routing-problems)  
+   标签：评分：10.0/10、query:ml-co
+   evidence：车辆路径问题的生成式神经求解器
+6. [Preference-Conditioned Reinforcement Learning for Space-Time Efficient Online 3D Bin Packing](/202603/10/2603.07800v1-preference-conditioned-reinforcement-learning-for-space-time-efficient-online-3d-bin-packing)  
+   标签：评分：10.0/10、query:ml-co
+   evidence：强化学习用于3D装箱优化
+7. [SynthCharge: An Electric Vehicle Routing Instance Generator with Feasibility Screening to Enable Learning-Based Optimization and Benchmarking](/202603/10/2603.03230v1-synthcharge-an-electric-vehicle-routing-instance-generator-with-feasibility-screening-to-enable-learning-based-optimization-and-benchmarking)  
    标签：评分：9.0/10、query:ml-co
-   evidence：使用神经解码解决广告流中的约束组合问题
-2. [Revealing Combinatorial Reasoning of GNNs via Graph Concept Bottleneck Layer](/20260301-20260310/2603.02025v1-revealing-combinatorial-reasoning-of-gnns-via-graph-concept-bottleneck-layer)  
-   标签：评分：8.0/10、query:ml-co
-   evidence：图神经网络的组合推理
-3. [From Heuristic Selection to Automated Algorithm Design: LLMs Benefit from Strong Priors](/20260301-20260310/2603.02792v1-from-heuristic-selection-to-automated-algorithm-design-llms-benefit-from-strong-priors)  
-   标签：评分：8.0/10、query:ml-co
-   evidence：大模型驱动的自动化算法设计用于优化
-4. [Type-Aware Retrieval-Augmented Generation with Dependency Closure for Solver-Executable Industrial Optimization Modeling](/20260301-20260310/2603.03180v1-type-aware-retrieval-augmented-generation-with-dependency-closure-for-solver-executable-industrial-optimization-modeling)  
-   标签：评分：8.0/10、query:ml-co
-   evidence：将需求转化为求解器可执行的优化模型
+   evidence：用于基于学习的路径优化实例生成器
+8. [Large Language Model-Driven Full-Component Evolution of Adaptive Large Neighborhood Search](/202603/10/2603.06996v1-large-language-model-driven-full-component-evolution-of-adaptive-large-neighborhood-search)  
+   标签：评分：9.0/10、query:ml-co
+   evidence：大模型驱动的自适应大邻域搜索演化
+9. [Large Language Model for Discrete Optimization Problems: Evaluation and Step-by-step Reasoning](/202603/10/2603.07733v1-large-language-model-for-discrete-optimization-problems-evaluation-and-step-by-step-reasoning)  
+   标签：评分：9.0/10、query:ml-co
+   evidence：大语言模型解决离散优化问题
 
 ### 速读区论文标签
-1. [Transport, Don't Generate: Deterministic Geometric Flows for Combinatorial Optimization](/20260209-20260310/2602.10794v1-transport-dont-generate-deterministic-geometric-flows-for-combinatorial-optimization)  
-   标签：评分：10.0/10、query:ml-co
-   evidence：针对旅行商问题的神经组合优化
-2. [Learning to Approximate Uniform Facility Location via Graph Neural Networks](/20260209-20260310/2602.13155v1-learning-to-approximate-uniform-facility-location-via-graph-neural-networks)  
-   标签：评分：10.0/10、query:ml-co
-   evidence：使用图神经网络解决困难的组合优化问题
-3. [Optimizing p-spin models through hypergraph neural networks and deep reinforcement learning](/20260209-20260310/2602.16665v1-optimizing-p-spin-models-through-hypergraph-neural-networks-and-deep-reinforcement-learning)  
-   标签：评分：10.0/10、query:ml-co
-   evidence：深度强化学习和超图神经网络用于解决NP-hard的p-spin模型
-4. [Tensor Network Generator-Enhanced Optimization for Traveling Salesman Problem](/20260209-20260310/2602.20175v1-tensor-network-generator-enhanced-optimization-for-traveling-salesman-problem)  
-   标签：评分：10.0/10、query:ml-co
-   evidence：针对旅行商问题的张量网络优化
-5. [Rethink Efficiency Side of Neural Combinatorial Solver: An Offline and Self-Play Paradigm](/20260209-20260310/2602.20730v1-rethink-efficiency-side-of-neural-combinatorial-solver-an-offline-and-self-play-paradigm)  
-   标签：评分：10.0/10、query:ml-co
-   evidence：神经组合优化的离线自博弈范式
-6. [Construct, Merge, Solve & Adapt with Reinforcement Learning for the min-max Multiple Traveling Salesman Problem](/20260209-20260310/2602.23579v1-construct-merge-solve--adapt-with-reinforcement-learning-for-the-min-max-multiple-traveling-salesman-problem)  
-   标签：评分：10.0/10、query:ml-co
-   evidence：强化学习解决多旅行商问题
-7. [Can Computational Reducibility Lead to Transferable Models for Graph Combinatorial Optimization?](/20260209-20260310/2603.02462v1-can-computational-reducibility-lead-to-transferable-models-for-graph-combinatorial-optimization)  
-   标签：评分：10.0/10、query:ml-co
-   evidence：基于GNN的图组合优化神经求解器
-8. [G-LNS: Generative Large Neighborhood Search for LLM-Based Automatic Heuristic Design](/20260209-20260310/2602.08253v1-g-lns-generative-large-neighborhood-search-for-llm-based-automatic-heuristic-design)  
-   标签：评分：9.0/10、query:ml-co
-   evidence：基于大模型的超大规模邻域搜索算子自动设计
-9. [On the Expressive Power of GNNs for Boolean Satisfiability](/20260209-20260310/2602.08745v1-on-the-expressive-power-of-gnns-for-boolean-satisfiability)  
-   标签：评分：9.0/10、query:ml-co
-   evidence：GNN在布尔可满足性问题中的表达能力
-10. [Divide, Harmonize, Then Conquer It: Shooting Multi-Commodity Flow Problems with Multimodal Language Models](/20260209-20260310/2602.11057v1-divide-harmonize-then-conquer-it-shooting-multi-commodity-flow-problems-with-multimodal-language-models)  
-   标签：评分：9.0/10、query:ml-co
-   evidence：基于机器学习的多模态语言模型方法用于多商品流优化
-11. [Divide and Learn: Multi-Objective Combinatorial Optimization at Scale](/20260209-20260310/2602.11346v1-divide-and-learn-multi-objective-combinatorial-optimization-at-scale)  
-   标签：评分：9.0/10、query:ml-co
-   evidence：多目标组合优化的在线学习方法
-12. [Learning Structural Hardness for Combinatorial Auctions: Instance-Dependent Algorithm Selection via Graph Neural Networks](/20260209-20260310/2602.14772v1-learning-structural-hardness-for-combinatorial-auctions-instance-dependent-algorithm-selection-via-graph-neural-networks)  
-   标签：评分：9.0/10、query:ml-co
-   evidence：用于组合拍卖算法选择的图神经网络
-13. [Heuristic Search as Language-Guided Program Optimization](/20260209-20260310/2602.16038v1-heuristic-search-as-language-guided-program-optimization)  
-   标签：评分：9.0/10、query:ml-co
-   evidence：大语言模型驱动的组合优化启发式算法自动设计
-14. [Benchmarking Graph Neural Networks in Solving Hard Constraint Satisfaction Problems](/20260209-20260310/2602.18419v1-benchmarking-graph-neural-networks-in-solving-hard-constraint-satisfaction-problems)  
-   标签：评分：9.0/10、query:ml-co
-   evidence：针对硬优化问题的图神经网络基准测试
-15. [Mamba Meets Scheduling: Learning to Solve Flexible Job Shop Scheduling with Efficient Sequence Modeling](/20260209-20260310/2602.21546v1-mamba-meets-scheduling-learning-to-solve-flexible-job-shop-scheduling-with-efficient-sequence-modeling)  
-   标签：评分：9.0/10、query:ml-co
-   evidence：用于柔性作业车间调度组合优化问题的学习方法
-16. [Revealing Combinatorial Reasoning of GNNs via Graph Concept Bottleneck Layer](/20260209-20260310/2603.02025v1-revealing-combinatorial-reasoning-of-gnns-via-graph-concept-bottleneck-layer)  
-   标签：评分：9.0/10、query:ml-co
-   evidence：图神经网络的组合推理能力
-17. [Effectiveness of Binary Autoencoders for QUBO-Based Optimization Problems](/20260209-20260310/2602.10037v1-effectiveness-of-binary-autoencoders-for-qubo-based-optimization-problems)  
+1. [LOTUS: A Warm-Start Framework for Powering Dual Decomposition in Large-Scale Two-Stage Stochastic Programs](/202603/10/2603.01733v1-lotus-a-warm-start-framework-for-powering-dual-decomposition-in-large-scale-two-stage-stochastic-programs)  
    标签：评分：8.0/10、query:ml-co
-   evidence：用于黑盒组合优化的二进制自编码器
-18. [Exploring Multiple High-Scoring Subspaces in Generative Flow Networks](/20260209-20260310/2602.11491v1-exploring-multiple-high-scoring-subspaces-in-generative-flow-networks)  
+   evidence：大规模随机混合整数规划的预热启动框架
+2. [Pencil Puzzle Bench: A Benchmark for Multi-Step Verifiable Reasoning](/202603/10/2603.02119v1-pencil-puzzle-bench-a-benchmark-for-multi-step-verifiable-reasoning)  
    标签：评分：8.0/10、query:ml-co
-   evidence：用于构建复杂组合对象的生成流网络
-19. [DGPO: RL-Steered Graph Diffusion for Neural Architecture Generation](/20260209-20260310/2602.19261v1-dgpo-rl-steered-graph-diffusion-for-neural-architecture-generation)  
+   evidence：NP完全约束满足问题的基准测试
+3. [AI4S-SDS: A Neuro-Symbolic Solvent Design System via Sparse MCTS and Differentiable Physics Alignment](/202603/10/2603.03686v1-ai4s-sds-a-neuro-symbolic-solvent-design-system-via-sparse-mcts-and-differentiable-physics-alignment)  
    标签：评分：8.0/10、query:ml-co
-   evidence：强化学习引导的图扩散用于组合结构生成
-20. [High-Modularity Graph Partitioning Through NLP Techniques and Maximal Clique Enumeration](/20260209-20260310/2602.23948v1-high-modularity-graph-partitioning-through-nlp-techniques-and-maximal-clique-enumeration)  
+   evidence：结合蒙特卡洛树搜索的神经符号框架，用于高维组合空间
+4. [Cheap Thrills: Effective Amortized Optimization Using Inexpensive Labels](/202603/10/2603.05495v1-cheap-thrills-effective-amortized-optimization-using-inexpensive-labels)  
    标签：评分：8.0/10、query:ml-co
-   evidence：将NLP技术和机器学习聚类应用于图划分
-21. [Evaluating GFlowNet from partial episodes for stable and flexible policy-based training](/20260209-20260310/2603.01047v1-evaluating-gflownet-from-partial-episodes-for-stable-and-flexible-policy-based-training)  
-   标签：评分：8.0/10、query:ml-co
-   evidence：用于采样组合候选解的生成流网络
-22. [Learning Shortest Paths with Generative Flow Networks](/20260209-20260310/2603.01786v1-learning-shortest-paths-with-generative-flow-networks)  
-   标签：评分：8.0/10、query:ml-co
-   evidence：使用生成流网络寻找图中的最短路径
+   evidence：优化问题的机器学习代理模型
+5. [Invariant-Stratified Propagation for Expressive Graph Neural Networks](/202603/10/2603.01388v1-invariant-stratified-propagation-for-expressive-graph-neural-networks)  
+   标签：评分：7.0/10、query:ml-co
+   evidence：高表达能力的图神经网络架构
+6. [Layer-wise QUBO-Based Training of CNN Classifiers for Quantum Annealing](/202603/10/2603.02958v1-layer-wise-qubo-based-training-of-cnn-classifiers-for-quantum-annealing)  
+   标签：评分：7.0/10、query:ml-co
+   evidence：基于QUBO的神经网络训练
+7. [CASSR: Continuous A-Star Search through Reachability for real time footstep planning](/202603/10/2603.02989v1-cassr-continuous-a-star-search-through-reachability-for-real-time-footstep-planning)  
+   标签：评分：7.0/10、query:ml-co
+   evidence：改进用于组合足迹规划的A*搜索算法
+8. [CASSR: Continuous A-Star Search through Reachability for real time footstep planning](/202603/10/2603.02989v2-cassr-continuous-a-star-search-through-reachability-for-real-time-footstep-planning)  
+   标签：评分：7.0/10、query:ml-co
+   evidence：足迹规划中的组合搜索
+9. [GPU-friendly and Linearly Convergent First-order Methods for Certifying Optimal $k$-sparse GLMs](/202603/10/2603.01306v1-gpu-friendly-and-linearly-convergent-first-order-methods-for-certifying-optimal-k-sparse-glms)  
+   标签：评分：6.0/10、query:ml-co
+   evidence：利用分支定界和近端框架优化稀疏广义线性模型
+10. [Discrete World Models via Regularization](/202603/10/2603.01748v1-discrete-world-models-via-regularization)  
+   标签：评分：6.0/10、query:ml-co
+   evidence：用于搜索启发式和规划的布尔状态表示
+11. [Reasoning Core: A Scalable Procedural Data Generation Suite for Symbolic Pre-training and Post-Training](/202603/10/2603.02208v1-reasoning-core-a-scalable-procedural-data-generation-suite-for-symbolic-pre-training-and-post-training)  
+   标签：评分：6.0/10、query:ml-co
+   evidence：符号推理和规划任务的数据生成
 
 
 <div class="dpr-home-promo-card">
