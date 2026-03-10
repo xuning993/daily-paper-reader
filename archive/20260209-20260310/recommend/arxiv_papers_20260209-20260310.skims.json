@@ -1,127 +1,19 @@
 {
   "mode": "skims",
-  "generated_at": "2026-03-10T09:15:23.925468+00:00",
+  "generated_at": "2026-03-10T12:32:45.253193+00:00",
   "stats": {
     "mode": "skims",
     "forced_all_quick": true,
     "min_score": 8.0,
-    "deep_divecandidates": 38,
+    "deep_divecandidates": 22,
     "deep_cap": null,
     "deep_selected": 0,
-    "quick_candidates": 38,
+    "quick_candidates": 22,
     "quick_skim_target": null,
-    "quick_selected": 38
+    "quick_selected": 22
   },
   "deep_dive": [],
   "quick_skim": [
-    {
-      "id": "2602.08210v1",
-      "title": "CADO: From Imitation to Cost Minimization for Heatmap-based Solvers in Combinatorial Optimization",
-      "abstract": "Heatmap-based solvers have emerged as a promising paradigm for Combinatorial Optimization (CO). However, we argue that the dominant Supervised Learning (SL) training paradigm suffers from a fundamental objective mismatch: minimizing imitation loss (e.g., cross-entropy) does not guarantee solution cost minimization. We dissect this mismatch into two deficiencies: Decoder-Blindness (being oblivious to the non-differentiable decoding process) and Cost-Blindness (prioritizing structural imitation over solution quality). We empirically demonstrate that these intrinsic flaws impose a hard performance ceiling. To overcome this limitation, we propose CADO (Cost-Aware Diffusion models for Optimization), a streamlined Reinforcement Learning fine-tuning framework that formulates the diffusion denoising process as an MDP to directly optimize the post-decoded solution cost. We introduce Label-Centered Reward, which repurposes ground-truth labels as unbiased baselines rather than imitation targets, and Hybrid Fine-Tuning for parameter-efficient adaptation. CADO achieves state-of-the-art performance across diverse benchmarks, validating that objective alignment is essential for unlocking the full potential of heatmap-based solvers.",
-      "authors": [
-        "Hyungseok Song",
-        "Deunsol Yoon",
-        "Kanghoon Lee",
-        "Han-Seul Jeong",
-        "Soonyoung Lee",
-        "Woohyung Lim"
-      ],
-      "primary_category": "cs.LG",
-      "categories": [
-        "cs.LG",
-        "stat.ML"
-      ],
-      "published": "2026-02-09T02:19:30+00:00",
-      "link": "https://arxiv.org/pdf/2602.08210v1",
-      "tags": [
-        "keyword:ML CO",
-        "query:ML CO"
-      ],
-      "llm_score": 10.0,
-      "llm_evidence_en": "reinforcement learning for heatmap-based CO solvers",
-      "llm_evidence_cn": "用于热图组合优化求解器的强化学习",
-      "llm_evidence": "用于热图组合优化求解器的强化学习",
-      "canonical_evidence": "用于热图组合优化求解器的强化学习",
-      "llm_tldr_en": "Proposes CADO, a reinforcement learning framework to minimize solution cost in heatmap-based CO solvers.",
-      "llm_tldr_cn": "提出了CADO，一种旨在最小化热图组合优化求解器方案成本的强化学习框架。",
-      "llm_tldr": "提出了CADO，一种旨在最小化热图组合优化求解器方案成本的强化学习框架。",
-      "llm_tags": [
-        "query:ml-co"
-      ],
-      "matched_query_tag": "query:ml-co",
-      "matched_query_text": "reinforcement learning for combinatorial optimization",
-      "matched_requirement_id": "req-2",
-      "selection_source": "fresh_fetch"
-    },
-    {
-      "id": "2602.08253v1",
-      "title": "G-LNS: Generative Large Neighborhood Search for LLM-Based Automatic Heuristic Design",
-      "abstract": "While Large Language Models (LLMs) have recently shown promise in Automated Heuristic Design (AHD), existing approaches typically formulate AHD around constructive priority rules or parameterized local search guidance, thereby restricting the search space to fixed heuristic forms. Such designs offer limited capacity for structural exploration, making it difficult to escape deep local optima in complex Combinatorial Optimization Problems (COPs). In this work, we propose G-LNS, a generative evolutionary framework that extends LLM-based AHD to the automated design of Large Neighborhood Search (LNS) operators. Unlike prior methods that evolve heuristics in isolation, G-LNS leverages LLMs to co-evolve tightly coupled pairs of destroy and repair operators. A cooperative evaluation mechanism explicitly captures their interaction, enabling the discovery of complementary operator logic that jointly performs effective structural disruption and reconstruction. Extensive experiments on challenging COP benchmarks, such as Traveling Salesman Problems (TSP) and Capacitated Vehicle Routing Problems (CVRP), demonstrate that G-LNS significantly outperforms LLM-based AHD methods as well as strong classical solvers. The discovered heuristics not only achieve near-optimal solutions with reduced computational budgets but also exhibit robust generalization across diverse and unseen instance distributions.",
-      "authors": [
-        "Baoyun Zhao",
-        "He Wang",
-        "Liang Zeng"
-      ],
-      "primary_category": "cs.AI",
-      "categories": [
-        "cs.AI"
-      ],
-      "published": "2026-02-09T04:13:35+00:00",
-      "link": "https://arxiv.org/pdf/2602.08253v1",
-      "tags": [
-        "keyword:ML CO",
-        "query:ML CO"
-      ],
-      "llm_score": 10.0,
-      "llm_evidence_en": "LLM-based automatic design of Large Neighborhood Search operators",
-      "llm_evidence_cn": "基于大语言模型的自动大邻域搜索算子设计",
-      "llm_evidence": "基于大语言模型的自动大邻域搜索算子设计",
-      "canonical_evidence": "基于大语言模型的自动大邻域搜索算子设计",
-      "llm_tldr_en": "Uses LLMs to automatically design destroy and repair operators for Large Neighborhood Search in COPs.",
-      "llm_tldr_cn": "利用大语言模型自动设计组合优化问题中大邻域搜索的破坏和修复算子。",
-      "llm_tldr": "利用大语言模型自动设计组合优化问题中大邻域搜索的破坏和修复算子。",
-      "llm_tags": [
-        "query:ml-co"
-      ],
-      "matched_query_tag": "query:ml-co",
-      "matched_query_text": "learning to search in combinatorial optimization",
-      "matched_requirement_id": "req-12",
-      "selection_source": "fresh_fetch"
-    },
-    {
-      "id": "2602.09996v2",
-      "title": "Learning to Choose Branching Rules for Nonconvex MINLPs",
-      "abstract": "Outer-approximation-based branch-and-bound is a common algorithmic framework for solving MINLPs (mixed-integer nonlinear programs) to global optimality, with branching variable selection critically influencing overall performance. In modern global MINLP solvers, it is unclear whether branching on fractional integer variables should be prioritized over spatial branching on variables, potentially continuous, that show constraint violations, with different solvers following different defaults. We address this question using a data-driven approach. Based on a test set of hundreds of heterogeneous public and industrial MINLP instances, we train linear and random forest regression models to predict the relative speedup of the FICO(R) Xpress Global solver when using a branching rule that always prioritizes variables with violated integralities versus a mixed rule, allowing for early spatial branches.   We introduce a practical evaluation methodology that measures the effect of the learned model directly in terms of the shifted geometric mean runtime. Using only four features derived from strong branching and the nonlinear structure, our linear regression model achieves an 8-9% reduction in geometric-mean solving time for the Xpress solver, with over 10% improvement on hard instances. We also analyze a random regression forest model. Experiments across solver versions show that a model trained on Xpress 9.6 still yields significant improvements on Xpress 9.8 without retraining.   Our results demonstrate how regression models can successfully guide the branching-rule selection and improve the performance of a state-of-the-art commercial MINLP solver.",
-      "authors": [
-        "Timo Berthold",
-        "Fritz Geis"
-      ],
-      "primary_category": "math.OC",
-      "categories": [
-        "math.OC"
-      ],
-      "published": "2026-02-10T17:20:38+00:00",
-      "link": "https://arxiv.org/pdf/2602.09996v2",
-      "tags": [
-        "keyword:ML CO",
-        "query:ML CO"
-      ],
-      "llm_score": 10.0,
-      "llm_evidence_en": "learning to choose branching rules for MINLPs",
-      "llm_evidence_cn": "学习为混合整数非线性规划选择分支规则",
-      "llm_evidence": "学习为混合整数非线性规划选择分支规则",
-      "canonical_evidence": "学习为混合整数非线性规划选择分支规则",
-      "llm_tldr_en": "Uses machine learning to predict optimal branching rules in branch-and-bound for non-convex MINLPs.",
-      "llm_tldr_cn": "使用机器学习预测非凸混合整数非线性规划分支定界中的最优分支规则。",
-      "llm_tldr": "使用机器学习预测非凸混合整数非线性规划分支定界中的最优分支规则。",
-      "llm_tags": [
-        "query:ml-co"
-      ],
-      "matched_query_tag": "query:ml-co",
-      "matched_query_text": "learning to branch in branch and bound algorithms",
-      "matched_requirement_id": "req-6",
-      "selection_source": "fresh_fetch"
-    },
     {
       "id": "2602.10794v1",
       "title": "Transport, Don't Generate: Deterministic Geometric Flows for Combinatorial Optimization",
@@ -142,13 +34,13 @@
         "query:ML CO"
       ],
       "llm_score": 10.0,
-      "llm_evidence_en": "Neural Combinatorial Optimization for Euclidean Traveling Salesman Problem using geometric flows",
-      "llm_evidence_cn": "使用几何流解决欧几里得旅行商问题的神经组合优化",
-      "llm_evidence": "使用几何流解决欧几里得旅行商问题的神经组合优化",
-      "canonical_evidence": "使用几何流解决欧几里得旅行商问题的神经组合优化",
-      "llm_tldr_en": "Proposes CycFlow, a deterministic geometric flow framework that accelerates solving the Traveling Salesman Problem.",
-      "llm_tldr_cn": "提出CycFlow框架，通过确定性几何流加速解决旅行商问题。",
-      "llm_tldr": "提出CycFlow框架，通过确定性几何流加速解决旅行商问题。",
+      "llm_evidence_en": "Neural Combinatorial Optimization for Traveling Salesman Problem",
+      "llm_evidence_cn": "针对旅行商问题的神经组合优化",
+      "llm_evidence": "针对旅行商问题的神经组合优化",
+      "canonical_evidence": "针对旅行商问题的神经组合优化",
+      "llm_tldr_en": "Proposes CycFlow, a deterministic point transport framework for solving the Euclidean TSP efficiently.",
+      "llm_tldr_cn": "提出CycFlow框架，通过确定性点传输加速求解欧几里得旅行商问题。",
+      "llm_tldr": "提出CycFlow框架，通过确定性点传输加速求解欧几里得旅行商问题。",
       "llm_tags": [
         "query:ml-co"
       ],
@@ -181,60 +73,19 @@
         "query:ML CO"
       ],
       "llm_score": 10.0,
-      "llm_evidence_en": "Graph Neural Networks for solving hard combinatorial optimization problems like Facility Location",
-      "llm_evidence_cn": "使用图神经网络解决设施选址等硬组合优化问题",
-      "llm_evidence": "使用图神经网络解决设施选址等硬组合优化问题",
-      "canonical_evidence": "使用图神经网络解决设施选址等硬组合优化问题",
-      "llm_tldr_en": "Uses Graph Neural Networks to provide heuristic solutions for the Uniform Facility Location problem.",
-      "llm_tldr_cn": "利用图神经网络为统一设施选址问题提供启发式求解方案。",
-      "llm_tldr": "利用图神经网络为统一设施选址问题提供启发式求解方案。",
+      "llm_evidence_en": "Graph Neural Networks to solve hard combinatorial optimization problems",
+      "llm_evidence_cn": "使用图神经网络解决困难的组合优化问题",
+      "llm_evidence": "使用图神经网络解决困难的组合优化问题",
+      "canonical_evidence": "使用图神经网络解决困难的组合优化问题",
+      "llm_tldr_en": "Uses GNNs to learn approximation algorithms for the facility location problem with provable guarantees.",
+      "llm_tldr_cn": "利用图神经网络学习具有可证明保证的设施选址问题近似算法。",
+      "llm_tldr": "利用图神经网络学习具有可证明保证的设施选址问题近似算法。",
       "llm_tags": [
         "query:ml-co"
       ],
       "matched_query_tag": "query:ml-co",
       "matched_query_text": "graph neural networks for combinatorial optimization",
       "matched_requirement_id": "req-3",
-      "selection_source": "fresh_fetch"
-    },
-    {
-      "id": "2602.16012v1",
-      "title": "Towards Efficient Constraint Handling in Neural Solvers for Routing Problems",
-      "abstract": "Neural solvers have achieved impressive progress in addressing simple routing problems, particularly excelling in computational efficiency. However, their advantages under complex constraints remain nascent, for which current constraint-handling schemes via feasibility masking or implicit feasibility awareness can be inefficient or inapplicable for hard constraints. In this paper, we present Construct-and-Refine (CaR), the first general and efficient constraint-handling framework for neural routing solvers based on explicit learning-based feasibility refinement. Unlike prior construction-search hybrids that target reducing optimality gaps through heavy improvements yet still struggle with hard constraints, CaR achieves efficient constraint handling by designing a joint training framework that guides the construction module to generate diverse and high-quality solutions well-suited for a lightweight improvement process, e.g., 10 steps versus 5k steps in prior work. Moreover, CaR presents the first use of construction-improvement-shared representation, enabling potential knowledge sharing across paradigms by unifying the encoder, especially in more complex constrained scenarios. We evaluate CaR on typical hard routing constraints to showcase its broader applicability. Results demonstrate that CaR achieves superior feasibility, solution quality, and efficiency compared to both classical and neural state-of-the-art solvers.",
-      "authors": [
-        "Jieyi Bi",
-        "Zhiguang Cao",
-        "Jianan Zhou",
-        "Wen Song",
-        "Yaoxin Wu",
-        "Jie Zhang",
-        "Yining Ma",
-        "Cathy Wu"
-      ],
-      "primary_category": "cs.AI",
-      "categories": [
-        "cs.AI",
-        "cs.LG",
-        "math.OC"
-      ],
-      "published": "2026-02-17T21:06:23+00:00",
-      "link": "https://arxiv.org/pdf/2602.16012v1",
-      "tags": [
-        "query:ML CO"
-      ],
-      "llm_score": 10.0,
-      "llm_evidence_en": "neural solvers for routing problems with complex constraints",
-      "llm_evidence_cn": "针对复杂约束路径规划问题的神经求解器",
-      "llm_evidence": "针对复杂约束路径规划问题的神经求解器",
-      "canonical_evidence": "针对复杂约束路径规划问题的神经求解器",
-      "llm_tldr_en": "Introduces a framework for neural routing solvers to handle hard constraints through learning-based refinement.",
-      "llm_tldr_cn": "提出了一种神经路径规划求解器框架，通过基于学习的细化处理硬约束问题。",
-      "llm_tldr": "提出了一种神经路径规划求解器框架，通过基于学习的细化处理硬约束问题。",
-      "llm_tags": [
-        "query:ml-co"
-      ],
-      "matched_query_tag": "query:ml-co",
-      "matched_query_text": "deep learning methods for solving NP hard problems",
-      "matched_requirement_id": "req-9",
       "selection_source": "fresh_fetch"
     },
     {
@@ -263,19 +114,55 @@
         "query:ML CO"
       ],
       "llm_score": 10.0,
-      "llm_evidence_en": "Hypergraph neural networks and RL for NP-hard p-spin models",
-      "llm_evidence_cn": "超图神经网络与强化学习解决NP-hard问题",
-      "llm_evidence": "超图神经网络与强化学习解决NP-hard问题",
-      "canonical_evidence": "超图神经网络与强化学习解决NP-hard问题",
-      "llm_tldr_en": "Uses hypergraph neural networks and deep RL to solve NP-hard combinatorial optimization in p-spin glass models.",
-      "llm_tldr_cn": "利用超图神经网络和深度强化学习解决p-spin玻璃模型中的NP-hard组合优化问题。",
-      "llm_tldr": "利用超图神经网络和深度强化学习解决p-spin玻璃模型中的NP-hard组合优化问题。",
+      "llm_evidence_en": "deep reinforcement learning and hypergraph neural networks for NP-hard p-spin models",
+      "llm_evidence_cn": "深度强化学习和超图神经网络用于解决NP-hard的p-spin模型",
+      "llm_evidence": "深度强化学习和超图神经网络用于解决NP-hard的p-spin模型",
+      "canonical_evidence": "深度强化学习和超图神经网络用于解决NP-hard的p-spin模型",
+      "llm_tldr_en": "Proposes PLANCK, a DRL framework with hypergraph neural networks for solving hard combinatorial p-spin models.",
+      "llm_tldr_cn": "提出 PLANCK，一种基于超图神经网络和深度强化学习的框架，用于解决复杂的组合优化 p-spin 模型。",
+      "llm_tldr": "提出 PLANCK，一种基于超图神经网络和深度强化学习的框架，用于解决复杂的组合优化 p-spin 模型。",
       "llm_tags": [
         "query:ml-co"
       ],
       "matched_query_tag": "query:ml-co",
-      "matched_query_text": "graph neural networks for combinatorial optimization",
-      "matched_requirement_id": "req-3",
+      "matched_query_text": "reinforcement learning for combinatorial optimization",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2602.20175v1",
+      "title": "Tensor Network Generator-Enhanced Optimization for Traveling Salesman Problem",
+      "abstract": "We present an application of the tensor network generator-enhanced optimization (TN-GEO) framework to address the traveling salesman problem (TSP), a fundamental combinatorial optimization challenge. Our approach employs a tensor network Born machine based on automatically differentiable matrix product states (MPS) as the generative model, using the Born rule to define probability distributions over candidate solutions. Unlike approaches based on binary encoding, which require $N^2$ variables and penalty terms to enforce valid tour constraints, we adopt a permutation-based formulation with integer variables and use autoregressive sampling with masking to guarantee that every generated sample is a valid tour by construction. We also introduce a $k$-site MPS variant that learns distributions over $k$-grams (consecutive city subsequences) using a sliding window approach, enabling parameter-efficient modeling for larger instances. Experimental validation on TSPLIB benchmark instances with up to 52 cities demonstrates that TN-GEO can outperform classical heuristics including swap and 2-opt hill-climbing. The $k$-site variants, which put more focus on local correlations, show better results compared to the full-MPS case.",
+      "authors": [
+        "Ryo Sakai",
+        "Chen-Yu Liu"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "math.OC",
+        "quant-ph"
+      ],
+      "published": "2026-02-12T21:18:19+00:00",
+      "link": "https://arxiv.org/pdf/2602.20175v1",
+      "tags": [
+        "keyword:ML CO",
+        "query:ML CO"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "Tensor network optimization for Traveling Salesman Problem",
+      "llm_evidence_cn": "针对旅行商问题的张量网络优化",
+      "llm_evidence": "针对旅行商问题的张量网络优化",
+      "canonical_evidence": "针对旅行商问题的张量网络优化",
+      "llm_tldr_en": "Applies tensor network Born machines to solve TSP using a permutation-based generative formulation.",
+      "llm_tldr_cn": "应用张量网络Born机，通过基于排列的生成式建模求解旅行商问题。",
+      "llm_tldr": "应用张量网络Born机，通过基于排列的生成式建模求解旅行商问题。",
+      "llm_tags": [
+        "query:ml-co"
+      ],
+      "matched_query_tag": "query:ml-co",
+      "matched_query_text": "machine learning approaches for traveling salesman problem",
+      "matched_requirement_id": "req-4",
       "selection_source": "fresh_fetch"
     },
     {
@@ -297,103 +184,22 @@
       "published": "2026-02-24T09:53:24+00:00",
       "link": "https://arxiv.org/pdf/2602.20730v1",
       "tags": [
-        "keyword:ML CO",
         "query:ML CO"
       ],
       "llm_score": 10.0,
-      "llm_evidence_en": "neural combinatorial optimization for TSP and CVRP",
-      "llm_evidence_cn": "针对TSP和CVRP的神经组合优化",
-      "llm_evidence": "针对TSP和CVRP的神经组合优化",
-      "canonical_evidence": "针对TSP和CVRP的神经组合优化",
-      "llm_tldr_en": "Introduces ECO, an efficient offline self-play paradigm for neural combinatorial optimization on TSP.",
-      "llm_tldr_cn": "引入了ECO，一种用于TSP神经组合优化的离线自博弈高效学习范式。",
-      "llm_tldr": "引入了ECO，一种用于TSP神经组合优化的离线自博弈高效学习范式。",
+      "llm_evidence_en": "offline self-play paradigm for neural combinatorial optimization",
+      "llm_evidence_cn": "神经组合优化的离线自博弈范式",
+      "llm_evidence": "神经组合优化的离线自博弈范式",
+      "canonical_evidence": "神经组合优化的离线自博弈范式",
+      "llm_tldr_en": "Introduces ECO, an efficient offline self-play learning paradigm for solving TSP and CVRP.",
+      "llm_tldr_cn": "提出ECO范式，通过离线自博弈和Mamba架构提升神经组合优化求解器的效率。",
+      "llm_tldr": "提出ECO范式，通过离线自博弈和Mamba架构提升神经组合优化求解器的效率。",
       "llm_tags": [
         "query:ml-co"
       ],
       "matched_query_tag": "query:ml-co",
-      "matched_query_text": "machine learning approaches for traveling salesman problem",
-      "matched_requirement_id": "req-4",
-      "selection_source": "fresh_fetch"
-    },
-    {
-      "id": "2602.21546v1",
-      "title": "Mamba Meets Scheduling: Learning to Solve Flexible Job Shop Scheduling with Efficient Sequence Modeling",
-      "abstract": "The Flexible Job Shop Problem (FJSP) is a well-studied combinatorial optimization problem with extensive applications for manufacturing and production scheduling. It involves assigning jobs to various machines to optimize criteria, such as minimizing total completion time. Current learning-based methods in this domain often rely on localized feature extraction models, limiting their capacity to capture overarching dependencies spanning operations and machines. This paper introduces an innovative architecture that harnesses Mamba, a state-space model with linear computational complexity, to facilitate comprehensive sequence modeling tailored for FJSP. In contrast to prevalent graph-attention-based frameworks that are computationally intensive for FJSP, we show our model is more efficient. Specifically, the proposed model possesses an encoder and a decoder. The encoder incorporates a dual Mamba block to extract operation and machine features separately. Additionally, we introduce an efficient cross-attention decoder to learn interactive embeddings of operations and machines. Our experimental results demonstrate that our method achieves faster solving speed and surpasses the performance of state-of-the-art learning-based methods for FJSP across various benchmarks.",
-      "authors": [
-        "Zhi Cao",
-        "Cong Zhang",
-        "Yaoxin Wu",
-        "Yaqing Hou",
-        "Hongwei Ge"
-      ],
-      "primary_category": "cs.LG",
-      "categories": [
-        "cs.LG"
-      ],
-      "published": "2026-02-25T04:04:25+00:00",
-      "link": "https://arxiv.org/pdf/2602.21546v1",
-      "tags": [
-        "query:ML CO"
-      ],
-      "llm_score": 10.0,
-      "llm_evidence_en": "learning to solve flexible job shop scheduling with Mamba",
-      "llm_evidence_cn": "利用Mamba学习解决柔性作业车间调度问题",
-      "llm_evidence": "利用Mamba学习解决柔性作业车间调度问题",
-      "canonical_evidence": "利用Mamba学习解决柔性作业车间调度问题",
-      "llm_tldr_en": "Uses Mamba architecture for sequence modeling to solve the Flexible Job Shop combinatorial optimization problem.",
-      "llm_tldr_cn": "利用Mamba架构进行序列建模，以解决柔性作业车间调度这一组合优化问题。",
-      "llm_tldr": "利用Mamba架构进行序列建模，以解决柔性作业车间调度这一组合优化问题。",
-      "llm_tags": [
-        "query:ml-co"
-      ],
-      "matched_query_tag": "query:ml-co",
-      "matched_query_text": "machine learning for combinatorial optimization",
-      "matched_requirement_id": "req-1",
-      "selection_source": "fresh_fetch"
-    },
-    {
-      "id": "2602.21761v1",
-      "title": "Survey on Neural Routing Solvers",
-      "abstract": "Neural routing solvers (NRSs) that leverage deep learning to tackle vehicle routing problems have demonstrated notable potential for practical applications. By learning implicit heuristic rules from data, NRSs replace the handcrafted counterparts in classic heuristic frameworks, thereby reducing reliance on costly manual design and trial-and-error adjustments. This survey makes two main contributions: (1) The heuristic nature of NRSs is highlighted, and existing NRSs are reviewed from the perspective of heuristics. A hierarchical taxonomy based on heuristic principles is further introduced. (2) A generalization-focused evaluation pipeline is proposed to address limitations of the conventional pipeline. Comparative benchmarking of representative NRSs across both pipelines uncovers a series of previously unreported gaps in current research.",
-      "authors": [
-        "Yunpeng Ba",
-        "Xi Lin",
-        "Changliang Zhou",
-        "Ruihao Zheng",
-        "Zhenkun Wang",
-        "Xinyan Liang",
-        "Zhichao Lu",
-        "Jianyong Sun",
-        "Yuhua Qian",
-        "Qingfu Zhang"
-      ],
-      "primary_category": "math.OC",
-      "categories": [
-        "math.OC",
-        "cs.AI",
-        "cs.LG",
-        "cs.NE"
-      ],
-      "published": "2026-02-25T10:24:43+00:00",
-      "link": "https://arxiv.org/pdf/2602.21761v1",
-      "tags": [
-        "query:ML CO"
-      ],
-      "llm_score": 10.0,
-      "llm_evidence_en": "survey on neural routing solvers for vehicle routing problems",
-      "llm_evidence_cn": "关于车辆路径问题的神经路径求解器综述",
-      "llm_evidence": "关于车辆路径问题的神经路径求解器综述",
-      "canonical_evidence": "关于车辆路径问题的神经路径求解器综述",
-      "llm_tldr_en": "Provides a comprehensive survey and evaluation of deep learning-based solvers for vehicle routing problems.",
-      "llm_tldr_cn": "对基于深度学习的车辆路径问题求解器进行了全面的综述和评估。",
-      "llm_tldr": "对基于深度学习的车辆路径问题求解器进行了全面的综述和评估。",
-      "llm_tags": [
-        "query:ml-co"
-      ],
-      "matched_query_tag": "query:ml-co",
-      "matched_query_text": "survey of machine learning for combinatorial optimization",
-      "matched_requirement_id": "req-8",
+      "matched_query_text": "end to end learning for combinatorial optimization",
+      "matched_requirement_id": "req-10",
       "selection_source": "fresh_fetch"
     },
     {
@@ -417,19 +223,19 @@
         "query:ML CO"
       ],
       "llm_score": 10.0,
-      "llm_evidence_en": "Reinforcement learning for multiple traveling salesman problem",
+      "llm_evidence_en": "reinforcement learning for multiple traveling salesman problem",
       "llm_evidence_cn": "强化学习解决多旅行商问题",
       "llm_evidence": "强化学习解决多旅行商问题",
       "canonical_evidence": "强化学习解决多旅行商问题",
-      "llm_tldr_en": "Proposes RL-CMSA, a hybrid reinforcement learning and MILP approach for the min-max Multiple Traveling Salesman Problem.",
-      "llm_tldr_cn": "提出RL-CMSA，一种结合强化学习与MILP的混合方法，用于解决最小最大多旅行商问题。",
-      "llm_tldr": "提出RL-CMSA，一种结合强化学习与MILP的混合方法，用于解决最小最大多旅行商问题。",
+      "llm_tldr_en": "Combines reinforcement learning with CMSA to solve the min-max Multiple Traveling Salesman Problem.",
+      "llm_tldr_cn": "结合强化学习与CMSA算法，解决了极小极大化多旅行商问题。",
+      "llm_tldr": "结合强化学习与CMSA算法，解决了极小极大化多旅行商问题。",
       "llm_tags": [
         "query:ml-co"
       ],
       "matched_query_tag": "query:ml-co",
-      "matched_query_text": "reinforcement learning for combinatorial optimization",
-      "matched_requirement_id": "req-2",
+      "matched_query_text": "machine learning approaches for traveling salesman problem",
+      "matched_requirement_id": "req-4",
       "selection_source": "fresh_fetch"
     },
     {
@@ -455,13 +261,13 @@
         "query:ML CO"
       ],
       "llm_score": 10.0,
-      "llm_evidence_en": "GCON module for graph combinatorial optimization",
-      "llm_evidence_cn": "用于图组合优化的GCON模块",
-      "llm_evidence": "用于图组合优化的GCON模块",
-      "canonical_evidence": "用于图组合优化的GCON模块",
-      "llm_tldr_en": "Explores transferable GNN-based models for graph combinatorial optimization tasks like MVC and MIS.",
-      "llm_tldr_cn": "探索了用于MVC和MIS等图组合优化任务的可迁移GNN模型。",
-      "llm_tldr": "探索了用于MVC和MIS等图组合优化任务的可迁移GNN模型。",
+      "llm_evidence_en": "GNN-based neural solvers for graph combinatorial optimization",
+      "llm_evidence_cn": "基于GNN的图组合优化神经求解器",
+      "llm_evidence": "基于GNN的图组合优化神经求解器",
+      "canonical_evidence": "基于GNN的图组合优化神经求解器",
+      "llm_tldr_en": "Develops a transferable GNN-based solver for multiple graph combinatorial optimization tasks.",
+      "llm_tldr_cn": "开发了一种基于GNN的可迁移神经求解器，用于解决多种图组合优化任务。",
+      "llm_tldr": "开发了一种基于GNN的可迁移神经求解器，用于解决多种图组合优化任务。",
       "llm_tags": [
         "query:ml-co"
       ],
@@ -471,115 +277,38 @@
       "selection_source": "fresh_fetch"
     },
     {
-      "id": "2603.07020v1",
-      "title": "RESCHED: Rethinking Flexible Job Shop Scheduling from a Transformer-based Architecture with Simplified States",
-      "abstract": "Neural approaches to the Flexible Job Shop Scheduling Problem (FJSP), particularly those based on deep reinforcement learning (DRL), have gained growing attention in recent years. However, existing methods rely on complex feature-engineered state representations (i.e., often requiring more than 20 handcrafted features) and graph-biased neural architectures. To reduce modeling complexity and advance a more generalizable framework for FJSP, we introduce \\textsc{ReSched}, a minimalist DRL framework that rethinks both the scheduling formulation and model design. First, by revisiting the Markov Decision Process (MDP) formulation of FJSP, we condense the state space to just four essential features, eliminating historical dependencies through a subproblem-based perspective. Second, we employ Transformer blocks with dot-product attention, augmented by three lightweight but effective architectural modifications tailored to scheduling tasks. Extensive experiments show that \\textsc{ReSched} outperforms classical dispatching rules and state-of-the-art DRL methods on FJSP. Moreover, \\textsc{ReSched} also generalizes well to the Job Shop Scheduling Problem (JSSP) and the Flexible Flow Shop Scheduling Problem (FFSP), achieving competitive performance against neural baselines specifically designed for these variants.",
+      "id": "2602.08253v1",
+      "title": "G-LNS: Generative Large Neighborhood Search for LLM-Based Automatic Heuristic Design",
+      "abstract": "While Large Language Models (LLMs) have recently shown promise in Automated Heuristic Design (AHD), existing approaches typically formulate AHD around constructive priority rules or parameterized local search guidance, thereby restricting the search space to fixed heuristic forms. Such designs offer limited capacity for structural exploration, making it difficult to escape deep local optima in complex Combinatorial Optimization Problems (COPs). In this work, we propose G-LNS, a generative evolutionary framework that extends LLM-based AHD to the automated design of Large Neighborhood Search (LNS) operators. Unlike prior methods that evolve heuristics in isolation, G-LNS leverages LLMs to co-evolve tightly coupled pairs of destroy and repair operators. A cooperative evaluation mechanism explicitly captures their interaction, enabling the discovery of complementary operator logic that jointly performs effective structural disruption and reconstruction. Extensive experiments on challenging COP benchmarks, such as Traveling Salesman Problems (TSP) and Capacitated Vehicle Routing Problems (CVRP), demonstrate that G-LNS significantly outperforms LLM-based AHD methods as well as strong classical solvers. The discovered heuristics not only achieve near-optimal solutions with reduced computational budgets but also exhibit robust generalization across diverse and unseen instance distributions.",
       "authors": [
-        "Xiangjie Xiao",
-        "Cong Zhang",
-        "Wen Song",
-        "Zhiguang Cao"
-      ],
-      "primary_category": "cs.LG",
-      "categories": [
-        "cs.LG",
-        "cs.AI"
-      ],
-      "published": "2026-03-07T03:36:17+00:00",
-      "link": "https://arxiv.org/pdf/2603.07020v1",
-      "tags": [
-        "keyword:ML CO",
-        "query:ML CO"
-      ],
-      "llm_score": 10.0,
-      "llm_evidence_en": "deep reinforcement learning for flexible job shop scheduling",
-      "llm_evidence_cn": "深度强化学习用于柔性作业车间调度",
-      "llm_evidence": "深度强化学习用于柔性作业车间调度",
-      "canonical_evidence": "深度强化学习用于柔性作业车间调度",
-      "llm_tldr_en": "Introduces ReSched, a minimalist DRL framework for flexible job shop scheduling with simplified state representations.",
-      "llm_tldr_cn": "引入ReSched，一个用于柔性作业车间调度的极简深度强化学习框架，简化了状态表示。",
-      "llm_tldr": "引入ReSched，一个用于柔性作业车间调度的极简深度强化学习框架，简化了状态表示。",
-      "llm_tags": [
-        "query:ml-co"
-      ],
-      "matched_query_tag": "query:ml-co",
-      "matched_query_text": "reinforcement learning for combinatorial optimization",
-      "matched_requirement_id": "req-2",
-      "selection_source": "fresh_fetch"
-    },
-    {
-      "id": "2603.07176v1",
-      "title": "Learning to Rank the Initial Branching Order of SAT Solvers",
-      "abstract": "Finding good branching orders is key to solving SAT problems efficiently, but finding such branching orders is a difficult problem. Using a learning based approach to predict a good branching order before solving, therefore, has potential. In this paper, we investigate predicting branching orders using graph neural networks as a preprocessing step to conflict-driven clause learning (CDCL) SAT solvers. We show that there are significant gains to be made in existing CDCL SAT solvers by providing a good initial branching. Further, we provide three labeling methods to find such initial branching orders in a tractable way. Finally, we train a graph neural network to predict these branching orders and show through our evaluations that a GNN-initialized ordering yields significant speedups on random 3-CNF and pseudo-industrial benchmarks, with generalization capabilities to instances much larger than the training set. However, we also find that the predictions fail at speeding up more difficult and industrial instances. We attribute this to the solver's dynamic heuristics, which rapidly overwrite the provided initialization, and to the complexity of these instances, making GNN prediction hard.",
-      "authors": [
-        "Arvid Eriksson",
-        "Gabriel Poesia",
-        "Roman Bresson",
-        "Karl Henrik Johansson",
-        "David Broman"
+        "Baoyun Zhao",
+        "He Wang",
+        "Liang Zeng"
       ],
       "primary_category": "cs.AI",
       "categories": [
-        "cs.AI",
-        "cs.LO"
+        "cs.AI"
       ],
-      "published": "2026-03-07T12:35:36+00:00",
-      "link": "https://arxiv.org/pdf/2603.07176v1",
+      "published": "2026-02-09T04:13:35+00:00",
+      "link": "https://arxiv.org/pdf/2602.08253v1",
       "tags": [
         "keyword:ML CO",
         "query:ML CO"
       ],
-      "llm_score": 10.0,
-      "llm_evidence_en": "GNNs to predict branching order in SAT solvers",
-      "llm_evidence_cn": "使用GNN预测SAT求解器中的分支顺序",
-      "llm_evidence": "使用GNN预测SAT求解器中的分支顺序",
-      "canonical_evidence": "使用GNN预测SAT求解器中的分支顺序",
-      "llm_tldr_en": "Uses Graph Neural Networks to predict initial branching orders, significantly improving CDCL SAT solver efficiency.",
-      "llm_tldr_cn": "利用图神经网络预测初始分支顺序，显著提高了CDCL SAT求解器的效率。",
-      "llm_tldr": "利用图神经网络预测初始分支顺序，显著提高了CDCL SAT求解器的效率。",
+      "llm_score": 9.0,
+      "llm_evidence_en": "LLM-based automatic design of Large Neighborhood Search operators",
+      "llm_evidence_cn": "基于大模型的超大规模邻域搜索算子自动设计",
+      "llm_evidence": "基于大模型的超大规模邻域搜索算子自动设计",
+      "canonical_evidence": "基于大模型的超大规模邻域搜索算子自动设计",
+      "llm_tldr_en": "Uses LLMs to automatically design destroy and repair operators for Large Neighborhood Search in COPs.",
+      "llm_tldr_cn": "利用大语言模型自动设计组合优化问题中的大邻域搜索算子。",
+      "llm_tldr": "利用大语言模型自动设计组合优化问题中的大邻域搜索算子。",
       "llm_tags": [
         "query:ml-co"
       ],
       "matched_query_tag": "query:ml-co",
-      "matched_query_text": "graph neural networks for combinatorial optimization",
-      "matched_requirement_id": "req-3",
-      "selection_source": "fresh_fetch"
-    },
-    {
-      "id": "2603.07568v1",
-      "title": "Constraints Matrix Diffusion based Generative Neural Solver for Vehicle Routing Problems",
-      "abstract": "Over the past decade, neural network solvers powered by generative artificial intelligence have garnered significant attention in the domain of vehicle routing problems (VRPs), owing to their exceptional computational efficiency and superior reasoning capabilities. In particular, autoregressive solvers integrated with reinforcement learning have emerged as a prominent trend. However, much of the existing work emphasizes large-scale generalization of neural approaches while neglecting the limited robustness of attention-based methods across heterogeneous distributions of problem parameters. Their improvements over heuristic search remain largely restricted to hand-curated, fixed-distribution benchmarks. Furthermore, these architectures tend to degrade significantly when node representations are highly similar or when tasks involve long decision horizons. To address the aforementioned limitations, we propose a novel fusion neural network framework that employs a discrete noise graph diffusion model to learn the underlying constraints of vehicle routing problems and generate a constraint assignment matrix. This matrix is subsequently integrated adaptively into the feature representation learning and decision process of the autoregressive solver, serving as a graph structure mask that facilitates the formation of solutions characterized by both global vision and local feature integration. To the best of our knowledge, this work represents the first comprehensive experimental investigation of neural network model solvers across a 378-combinatorial space spanning four distinct dimensions within the CVRPlib public dataset. Extensive experimental evaluations demonstrate that our proposed fusion model effectively captures and leverages problem constraints, achieving state-of-the-art performance across multiple benchmark datasets.",
-      "authors": [
-        "Zhenwei Wang",
-        "Tiehua Zhang",
-        "Ning Xue",
-        "Ender Ozcan",
-        "Ling Wang",
-        "Ruibin Bai"
-      ],
-      "primary_category": "cs.LG",
-      "categories": [
-        "cs.LG"
-      ],
-      "published": "2026-03-08T10:03:34+00:00",
-      "link": "https://arxiv.org/pdf/2603.07568v1",
-      "tags": [
-        "query:ML CO"
-      ],
-      "llm_score": 10.0,
-      "llm_evidence_en": "generative neural solver for vehicle routing problems",
-      "llm_evidence_cn": "用于车辆路径问题的生成式神经求解器",
-      "llm_evidence": "用于车辆路径问题的生成式神经求解器",
-      "canonical_evidence": "用于车辆路径问题的生成式神经求解器",
-      "llm_tldr_en": "Proposes a diffusion-based generative neural solver to improve robustness in solving vehicle routing problems.",
-      "llm_tldr_cn": "提出一种基于扩散的生成式神经求解器，以提高解决车辆路径问题的鲁棒性。",
-      "llm_tldr": "提出一种基于扩散的生成式神经求解器，以提高解决车辆路径问题的鲁棒性。",
-      "llm_tags": [
-        "query:ml-co:composite"
-      ],
-      "matched_query_tag": "query:ml-co:composite",
-      "matched_query_text": "Papers central to 查找机器学习解决组合优化相关的论文, especially work that connects or combines: machine learning for combinatorial optimization; reinforcement learning for combinatorial optimization; graph neural networks for combinatorial optimization; machine learning approaches for traveling salesman problem; machine learning for integer linear programming; learning to branch in branch and bound algorithms; meta-learning for combinatorial optimization; survey of machine learning for combinatorial optimization; deep learning methods for solving NP hard problems; end to end learning for combinatorial optimization.",
-      "matched_requirement_id": "req-composite-ml-co",
+      "matched_query_text": "learning to search in combinatorial optimization",
+      "matched_requirement_id": "req-12",
       "selection_source": "fresh_fetch"
     },
     {
@@ -598,23 +327,57 @@
       "published": "2026-02-09T14:48:16+00:00",
       "link": "https://arxiv.org/pdf/2602.08745v1",
       "tags": [
-        "keyword:ML CO",
         "query:ML CO"
       ],
       "llm_score": 9.0,
       "llm_evidence_en": "expressive power of GNNs for Boolean Satisfiability",
-      "llm_evidence_cn": "GNN在布尔可满足性问题上的表达能力",
-      "llm_evidence": "GNN在布尔可满足性问题上的表达能力",
-      "canonical_evidence": "GNN在布尔可满足性问题上的表达能力",
-      "llm_tldr_en": "Analyzes the theoretical limits of GNNs in distinguishing satisfiable from unsatisfiable SAT instances.",
-      "llm_tldr_cn": "分析了GNN在区分可满足和不可满足SAT实例方面的理论局限性。",
-      "llm_tldr": "分析了GNN在区分可满足和不可满足SAT实例方面的理论局限性。",
+      "llm_evidence_cn": "GNN在布尔可满足性问题中的表达能力",
+      "llm_evidence": "GNN在布尔可满足性问题中的表达能力",
+      "canonical_evidence": "GNN在布尔可满足性问题中的表达能力",
+      "llm_tldr_en": "Analyzes the theoretical limits of GNNs in distinguishing satisfiable from unsatisfiable Boolean formulas.",
+      "llm_tldr_cn": "从理论上分析了图神经网络在区分布尔公式可满足性方面的表达能力限制。",
+      "llm_tldr": "从理论上分析了图神经网络在区分布尔公式可满足性方面的表达能力限制。",
       "llm_tags": [
         "query:ml-co"
       ],
       "matched_query_tag": "query:ml-co",
       "matched_query_text": "graph neural networks for combinatorial optimization",
       "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2602.11057v1",
+      "title": "Divide, Harmonize, Then Conquer It: Shooting Multi-Commodity Flow Problems with Multimodal Language Models",
+      "abstract": "The multi-commodity flow (MCF) problem is a fundamental topic in network flow and combinatorial optimization, with broad applications in transportation, communication, and logistics, etc. Nowadays, the rapid expansion of allocation systems has posed challenges for existing optimization engines in balancing optimality and tractability. In this paper, we present Pram, the first ML-based method that leverages the reasoning power of multimodal language models (MLMs) for addressing the trade-off dilemma -- a great need of service providers. As part of our proposal, Pram (i) quickly computes high-quality allocations by dividing the original problem into local subproblems, which are then resolved by an MLM-powered \"agent\", and (ii) ensures global consistency by harmonizing these subproblems via a multi-agent reinforcement learning algorithm. Theoretically, we show that Pram, which learns to perform gradient descent in context, provably converges to the optimum within the family of MCF problems. Empirically, on real-world datasets and public topologies, Pram achieves performance comparable to, and in some cases even surpassing, linear programming solvers (very close to the optimal solution), and substantially lower runtimes (1 to 2 orders of magnitude faster). Moreover, Pram exhibits strong robustness (<10\\% performance degradation under link failures or flow bursts), demonstrating MLM's generalization ability to unforeseen events. Pram is objective-agnostic and seamlessly integrates with mainstream allocation systems, providing a practical and scalable solution for future networks.",
+      "authors": [
+        "Xinyu Yuan",
+        "Yan Qiao",
+        "Zonghui Wang",
+        "Wenzhi Chen"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-02-11T17:24:49+00:00",
+      "link": "https://arxiv.org/pdf/2602.11057v1",
+      "tags": [
+        "query:ML CO"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "ML-based method using multimodal language models for multi-commodity flow optimization",
+      "llm_evidence_cn": "基于机器学习的多模态语言模型方法用于多商品流优化",
+      "llm_evidence": "基于机器学习的多模态语言模型方法用于多商品流优化",
+      "canonical_evidence": "基于机器学习的多模态语言模型方法用于多商品流优化",
+      "llm_tldr_en": "Presents Pram, an MLM-based agent to solve multi-commodity flow combinatorial optimization problems.",
+      "llm_tldr_cn": "提出 Pram，首个利用多模态语言模型推理能力解决多商品流组合优化问题的方法。",
+      "llm_tldr": "提出 Pram，首个利用多模态语言模型推理能力解决多商品流组合优化问题的方法。",
+      "llm_tags": [
+        "query:ml-co"
+      ],
+      "matched_query_tag": "query:ml-co",
+      "matched_query_text": "machine learning for combinatorial optimization",
+      "matched_requirement_id": "req-1",
       "selection_source": "fresh_fetch"
     },
     {
@@ -641,90 +404,19 @@
         "query:ML CO"
       ],
       "llm_score": 9.0,
-      "llm_evidence_en": "Online learning for multi-objective combinatorial optimization at scale",
-      "llm_evidence_cn": "大规模多目标组合优化的在线学习方法",
-      "llm_evidence": "大规模多目标组合优化的在线学习方法",
-      "canonical_evidence": "大规模多目标组合优化的在线学习方法",
-      "llm_tldr_en": "Reformulates multi-objective combinatorial optimization as an online learning problem to improve efficiency.",
-      "llm_tldr_cn": "将多目标组合优化重新表述为在线学习问题，以提高样本和计算效率。",
-      "llm_tldr": "将多目标组合优化重新表述为在线学习问题，以提高样本和计算效率。",
+      "llm_evidence_en": "online learning for multi-objective combinatorial optimization",
+      "llm_evidence_cn": "多目标组合优化的在线学习方法",
+      "llm_evidence": "多目标组合优化的在线学习方法",
+      "canonical_evidence": "多目标组合优化的在线学习方法",
+      "llm_tldr_en": "Reformulates multi-objective CO as an online learning problem with bandit subproblems for better efficiency.",
+      "llm_tldr_cn": "将多目标组合优化重新表述为在线学习问题，通过老虎机子问题提高样本和计算效率。",
+      "llm_tldr": "将多目标组合优化重新表述为在线学习问题，通过老虎机子问题提高样本和计算效率。",
       "llm_tags": [
         "query:ml-co"
       ],
       "matched_query_tag": "query:ml-co",
       "matched_query_text": "machine learning for combinatorial optimization",
       "matched_requirement_id": "req-1",
-      "selection_source": "fresh_fetch"
-    },
-    {
-      "id": "2602.11491v1",
-      "title": "Exploring Multiple High-Scoring Subspaces in Generative Flow Networks",
-      "abstract": "As a probabilistic sampling framework, Generative Flow Networks (GFlowNets) show strong potential for constructing complex combinatorial objects through the sequential composition of elementary components. However, existing GFlowNets often suffer from excessive exploration over vast state spaces, leading to over-sampling of low-reward regions and convergence to suboptimal distributions. Effectively biasing GFlowNets toward high-reward solutions remains a non-trivial challenge. In this paper, we propose CMAB-GFN, which integrates a combinatorial multi-armed bandit (CMAB) framework with GFlowNet policies. The CMAB component prunes low-quality actions, yielding compact high-scoring subspaces for exploration. Restricting GFNs to these compact high-scoring subspaces accelerates the discovery of high-value candidates, while the exploration of different subspaces ensures that diversity is not sacrificed. Experimental results on multiple tasks demonstrate that CMAB-GFN generates higher-reward candidates than existing approaches.",
-      "authors": [
-        "Xuan Yu",
-        "Xu Wang",
-        "Rui Zhu",
-        "Yudong Zhang",
-        "Yang Wang"
-      ],
-      "primary_category": "cs.LG",
-      "categories": [
-        "cs.LG"
-      ],
-      "published": "2026-02-12T02:30:52+00:00",
-      "link": "https://arxiv.org/pdf/2602.11491v1",
-      "tags": [
-        "keyword:ML CO",
-        "query:ML CO"
-      ],
-      "llm_score": 9.0,
-      "llm_evidence_en": "GFlowNets for constructing complex combinatorial objects",
-      "llm_evidence_cn": "用于构建复杂组合对象的生成流网络",
-      "llm_evidence": "用于构建复杂组合对象的生成流网络",
-      "canonical_evidence": "用于构建复杂组合对象的生成流网络",
-      "llm_tldr_en": "Integrates combinatorial multi-armed bandits with GFlowNets to efficiently sample high-reward combinatorial solutions.",
-      "llm_tldr_cn": "将组合多臂老虎机与GFlowNets结合，以高效采样高奖励的组合解。",
-      "llm_tldr": "将组合多臂老虎机与GFlowNets结合，以高效采样高奖励的组合解。",
-      "llm_tags": [
-        "query:ml-co"
-      ],
-      "matched_query_tag": "query:ml-co",
-      "matched_query_text": "machine learning for combinatorial optimization",
-      "matched_requirement_id": "req-1",
-      "selection_source": "fresh_fetch"
-    },
-    {
-      "id": "2602.14676v1",
-      "title": "GREAT-EER: Graph Edge Attention Network for Emergency Evacuation Responses",
-      "abstract": "Emergency situations that require the evacuation of urban areas can arise from man-made causes (e.g., terrorist attacks or industrial accidents) or natural disasters, the latter becoming more frequent due to climate change. As a result, effective and fast methods to develop evacuation plans are of great importance. In this work, we identify and propose the Bus Evacuation Orienteering Problem (BEOP), an NP-hard combinatorial optimization problem with the goal of evacuating as many people from an affected area by bus in a short, predefined amount of time. The purpose of bus-based evacuation is to reduce congestion and disorder that arises in purely car-focused evacuation scenarios. To solve the BEOP, we propose a deep reinforcement learning-based method utilizing graph learning, which, once trained, achieves fast inference speed and is able to create evacuation routes in fractions of seconds. We can bound the gap of our evacuation plans using an MILP formulation. To validate our method, we create evacuation scenarios for San Francisco using real-world road networks and travel times. We show that we achieve near-optimal solution quality and are further able to investigate how many evacuation vehicles are necessary to achieve certain bus-based evacuation quotas given a predefined evacuation time while keeping run time adequate.",
-      "authors": [
-        "Attila Lischka",
-        "Balázs Kulcsár"
-      ],
-      "primary_category": "cs.AI",
-      "categories": [
-        "cs.AI",
-        "cs.LG"
-      ],
-      "published": "2026-02-16T12:04:14+00:00",
-      "link": "https://arxiv.org/pdf/2602.14676v1",
-      "tags": [
-        "query:ML CO"
-      ],
-      "llm_score": 9.0,
-      "llm_evidence_en": "deep reinforcement learning for NP-hard combinatorial optimization",
-      "llm_evidence_cn": "深度强化学习解决NP-hard组合优化问题",
-      "llm_evidence": "深度强化学习解决NP-hard组合优化问题",
-      "canonical_evidence": "深度强化学习解决NP-hard组合优化问题",
-      "llm_tldr_en": "Applies deep reinforcement learning to solve a novel NP-hard bus evacuation orienteering problem.",
-      "llm_tldr_cn": "应用深度强化学习解决一种新型的NP-hard公交疏散定向问题。",
-      "llm_tldr": "应用深度强化学习解决一种新型的NP-hard公交疏散定向问题。",
-      "llm_tags": [
-        "query:ml-co"
-      ],
-      "matched_query_tag": "query:ml-co",
-      "matched_query_text": "reinforcement learning for combinatorial optimization",
-      "matched_requirement_id": "req-2",
       "selection_source": "fresh_fetch"
     },
     {
@@ -741,17 +433,16 @@
       "published": "2026-02-16T14:26:25+00:00",
       "link": "https://arxiv.org/pdf/2602.14772v1",
       "tags": [
-        "keyword:ML CO",
         "query:ML CO"
       ],
       "llm_score": 9.0,
-      "llm_evidence_en": "graph neural networks for predicting hardness in combinatorial auctions",
-      "llm_evidence_cn": "图神经网络用于预测组合拍卖中的硬度",
-      "llm_evidence": "图神经网络用于预测组合拍卖中的硬度",
-      "canonical_evidence": "图神经网络用于预测组合拍卖中的硬度",
-      "llm_tldr_en": "Uses GNNs to predict instance hardness in combinatorial auctions to enable better algorithm selection.",
-      "llm_tldr_cn": "使用图神经网络预测组合拍卖实例的硬度，以实现更好的算法选择。",
-      "llm_tldr": "使用图神经网络预测组合拍卖实例的硬度，以实现更好的算法选择。",
+      "llm_evidence_en": "Graph Neural Networks for algorithm selection in combinatorial auctions",
+      "llm_evidence_cn": "用于组合拍卖算法选择的图神经网络",
+      "llm_evidence": "用于组合拍卖算法选择的图神经网络",
+      "canonical_evidence": "用于组合拍卖算法选择的图神经网络",
+      "llm_tldr_en": "Uses GNNs to predict instance hardness for greedy heuristics in NP-hard combinatorial auctions.",
+      "llm_tldr_cn": "利用图神经网络预测组合拍卖实例的硬度，以实现自适应的算法选择。",
+      "llm_tldr": "利用图神经网络预测组合拍卖实例的硬度，以实现自适应的算法选择。",
       "llm_tags": [
         "query:ml-co"
       ],
@@ -782,12 +473,12 @@
       ],
       "llm_score": 9.0,
       "llm_evidence_en": "LLM-driven automated heuristic design for combinatorial optimization",
-      "llm_evidence_cn": "大语言模型驱动的组合优化自动启发式设计",
-      "llm_evidence": "大语言模型驱动的组合优化自动启发式设计",
-      "canonical_evidence": "大语言模型驱动的组合优化自动启发式设计",
-      "llm_tldr_en": "Proposes a modular LLM framework for iterative program refinement in automated heuristic design for CO.",
-      "llm_tldr_cn": "提出一个模块化LLM框架，用于组合优化自动启发式设计中的迭代程序改进。",
-      "llm_tldr": "提出一个模块化LLM框架，用于组合优化自动启发式设计中的迭代程序改进。",
+      "llm_evidence_cn": "大语言模型驱动的组合优化启发式算法自动设计",
+      "llm_evidence": "大语言模型驱动的组合优化启发式算法自动设计",
+      "canonical_evidence": "大语言模型驱动的组合优化启发式算法自动设计",
+      "llm_tldr_en": "Proposes a modular framework for LLM-driven automated heuristic design in combinatorial optimization.",
+      "llm_tldr_cn": "提出了一种用于组合优化中大语言模型驱动的启发式算法自动设计的模块化框架。",
+      "llm_tldr": "提出了一种用于组合优化中大语言模型驱动的启发式算法自动设计的模块化框架。",
       "llm_tags": [
         "query:ml-co:composite"
       ],
@@ -823,13 +514,13 @@
         "query:ML CO"
       ],
       "llm_score": 9.0,
-      "llm_evidence_en": "benchmarking GNNs on hard constraint satisfaction problems",
-      "llm_evidence_cn": "在硬约束满足问题上对图神经网络进行基准测试",
-      "llm_evidence": "在硬约束满足问题上对图神经网络进行基准测试",
-      "canonical_evidence": "在硬约束满足问题上对图神经网络进行基准测试",
-      "llm_tldr_en": "Provides a benchmark for GNNs on hard CSPs, showing that classical heuristics still outperform current neural models.",
-      "llm_tldr_cn": "为图神经网络在硬约束满足问题上的表现提供基准，指出经典算法目前仍优于神经模型。",
-      "llm_tldr": "为图神经网络在硬约束满足问题上的表现提供基准，指出经典算法目前仍优于神经模型。",
+      "llm_evidence_en": "Benchmarking Graph Neural Networks for hard optimization problems",
+      "llm_evidence_cn": "针对硬优化问题的图神经网络基准测试",
+      "llm_evidence": "针对硬优化问题的图神经网络基准测试",
+      "canonical_evidence": "针对硬优化问题的图神经网络基准测试",
+      "llm_tldr_en": "Proposes a benchmark for GNNs on hard constraint satisfaction problems, showing classical heuristics still lead.",
+      "llm_tldr_cn": "提出针对硬约束满足问题的GNN基准测试，结果显示经典启发式算法目前仍优于GNN。",
+      "llm_tldr": "提出针对硬约束满足问题的GNN基准测试，结果显示经典启发式算法目前仍优于GNN。",
       "llm_tags": [
         "query:ml-co"
       ],
@@ -839,68 +530,33 @@
       "selection_source": "fresh_fetch"
     },
     {
-      "id": "2602.20175v1",
-      "title": "Tensor Network Generator-Enhanced Optimization for Traveling Salesman Problem",
-      "abstract": "We present an application of the tensor network generator-enhanced optimization (TN-GEO) framework to address the traveling salesman problem (TSP), a fundamental combinatorial optimization challenge. Our approach employs a tensor network Born machine based on automatically differentiable matrix product states (MPS) as the generative model, using the Born rule to define probability distributions over candidate solutions. Unlike approaches based on binary encoding, which require $N^2$ variables and penalty terms to enforce valid tour constraints, we adopt a permutation-based formulation with integer variables and use autoregressive sampling with masking to guarantee that every generated sample is a valid tour by construction. We also introduce a $k$-site MPS variant that learns distributions over $k$-grams (consecutive city subsequences) using a sliding window approach, enabling parameter-efficient modeling for larger instances. Experimental validation on TSPLIB benchmark instances with up to 52 cities demonstrates that TN-GEO can outperform classical heuristics including swap and 2-opt hill-climbing. The $k$-site variants, which put more focus on local correlations, show better results compared to the full-MPS case.",
+      "id": "2602.21546v1",
+      "title": "Mamba Meets Scheduling: Learning to Solve Flexible Job Shop Scheduling with Efficient Sequence Modeling",
+      "abstract": "The Flexible Job Shop Problem (FJSP) is a well-studied combinatorial optimization problem with extensive applications for manufacturing and production scheduling. It involves assigning jobs to various machines to optimize criteria, such as minimizing total completion time. Current learning-based methods in this domain often rely on localized feature extraction models, limiting their capacity to capture overarching dependencies spanning operations and machines. This paper introduces an innovative architecture that harnesses Mamba, a state-space model with linear computational complexity, to facilitate comprehensive sequence modeling tailored for FJSP. In contrast to prevalent graph-attention-based frameworks that are computationally intensive for FJSP, we show our model is more efficient. Specifically, the proposed model possesses an encoder and a decoder. The encoder incorporates a dual Mamba block to extract operation and machine features separately. Additionally, we introduce an efficient cross-attention decoder to learn interactive embeddings of operations and machines. Our experimental results demonstrate that our method achieves faster solving speed and surpasses the performance of state-of-the-art learning-based methods for FJSP across various benchmarks.",
       "authors": [
-        "Ryo Sakai",
-        "Chen-Yu Liu"
+        "Zhi Cao",
+        "Cong Zhang",
+        "Yaoxin Wu",
+        "Yaqing Hou",
+        "Hongwei Ge"
       ],
       "primary_category": "cs.LG",
       "categories": [
-        "cs.LG",
-        "math.OC",
-        "quant-ph"
+        "cs.LG"
       ],
-      "published": "2026-02-12T21:18:19+00:00",
-      "link": "https://arxiv.org/pdf/2602.20175v1",
+      "published": "2026-02-25T04:04:25+00:00",
+      "link": "https://arxiv.org/pdf/2602.21546v1",
       "tags": [
-        "keyword:ML CO",
         "query:ML CO"
       ],
       "llm_score": 9.0,
-      "llm_evidence_en": "Tensor network generator for traveling salesman problem",
-      "llm_evidence_cn": "张量网络生成器解决旅行商问题",
-      "llm_evidence": "张量网络生成器解决旅行商问题",
-      "canonical_evidence": "张量网络生成器解决旅行商问题",
-      "llm_tldr_en": "Applies tensor network Born machines to solve the Traveling Salesman Problem using autoregressive sampling.",
-      "llm_tldr_cn": "应用张量网络Born机，通过自回归采样解决旅行商问题。",
-      "llm_tldr": "应用张量网络Born机，通过自回归采样解决旅行商问题。",
-      "llm_tags": [
-        "query:ml-co"
-      ],
-      "matched_query_tag": "query:ml-co",
-      "matched_query_text": "machine learning approaches for traveling salesman problem",
-      "matched_requirement_id": "req-4",
-      "selection_source": "fresh_fetch"
-    },
-    {
-      "id": "2602.23948v1",
-      "title": "High-Modularity Graph Partitioning Through NLP Techniques and Maximal Clique Enumeration",
-      "abstract": "Natural Language Processing (NLP) provides highly effective tools for interpreting and handling human language, offering a broad spectrum of applications. In this paper, we address a classic combinatorial problem -- finding graph partitions with high modularity -- by applying NLP techniques that compute term frequency and inverse document frequency (TF-IDF) alongside machine learning clustering algorithms. We present a new framework, called Clique-TF-IDF, designed for graph partitioning, a task that holds significant relevance across various network analysis contexts. This approach uses dense substructures of the graph, specifically maximal cliques, to represent each vertex in terms of the cliques it is part of, in a manner akin to term-document matrices. Experiments show that Clique-TF-IDF yields results that are comparable to or outperform the current state-of-the-art algorithms, whether or not the number of partitions is known in advance. Although this framework emphasizes on cliques and partitioning, it can be extended to devise AI-driven solutions for a variety of challenging combinatorial problems that can leverage efficiently enumerable substructures.",
-      "authors": [
-        "Marco D'Elia",
-        "Irene Finocchi",
-        "Maurizio Patrignani"
-      ],
-      "primary_category": "cs.SI",
-      "categories": [
-        "cs.SI"
-      ],
-      "published": "2026-02-27T11:50:06+00:00",
-      "link": "https://arxiv.org/pdf/2602.23948v1",
-      "tags": [
-        "keyword:ML CO",
-        "query:ML CO"
-      ],
-      "llm_score": 9.0,
-      "llm_evidence_en": "machine learning clustering for graph partitioning combinatorial problem",
-      "llm_evidence_cn": "用于图划分组合问题的机器学习聚类",
-      "llm_evidence": "用于图划分组合问题的机器学习聚类",
-      "canonical_evidence": "用于图划分组合问题的机器学习聚类",
-      "llm_tldr_en": "Applies NLP techniques and ML clustering to solve the combinatorial problem of high-modularity graph partitioning.",
-      "llm_tldr_cn": "应用 NLP 技术和机器学习聚类来解决高模块化图划分的组合优化问题。",
-      "llm_tldr": "应用 NLP 技术和机器学习聚类来解决高模块化图划分的组合优化问题。",
+      "llm_evidence_en": "learning-based method for Flexible Job Shop Scheduling combinatorial optimization",
+      "llm_evidence_cn": "用于柔性作业车间调度组合优化问题的学习方法",
+      "llm_evidence": "用于柔性作业车间调度组合优化问题的学习方法",
+      "canonical_evidence": "用于柔性作业车间调度组合优化问题的学习方法",
+      "llm_tldr_en": "Applies Mamba state-space models to solve the Flexible Job Shop Scheduling problem efficiently.",
+      "llm_tldr_cn": "将 Mamba 状态空间模型应用于柔性作业车间调度问题，实现高效的序列建模与求解。",
+      "llm_tldr": "将 Mamba 状态空间模型应用于柔性作业车间调度问题，实现高效的序列建模与求解。",
       "llm_tags": [
         "query:ml-co"
       ],
@@ -910,40 +566,43 @@
       "selection_source": "fresh_fetch"
     },
     {
-      "id": "2602.08616v1",
-      "title": "Breaking the Grid: Distance-Guided Reinforcement Learning in Large Discrete and Hybrid Action Spaces",
-      "abstract": "Reinforcement Learning is increasingly applied to logistics, scheduling, and recommender systems, but standard algorithms struggle with the curse of dimensionality in such large discrete action spaces. Existing algorithms typically rely on restrictive grid-based structures or computationally expensive nearest-neighbor searches, limiting their effectiveness in high-dimensional or irregularly structured domains. We propose Distance-Guided Reinforcement Learning (DGRL), combining Sampled Dynamic Neighborhoods (SDN) and Distance-Based Updates (DBU) to enable efficient RL in spaces with up to 10$^\\text{20}$ actions. Unlike prior methods, SDN leverages a semantic embedding space to perform stochastic volumetric exploration, provably providing full support over a local trust region. Complementing this, DBU transforms policy optimization into a stable regression task, decoupling gradient variance from action space cardinality and guaranteeing monotonic policy improvement. DGRL naturally generalizes to hybrid continuous-discrete action spaces without requiring hierarchical dependencies. We demonstrate performance improvements of up to 66% against state-of-the-art benchmarks across regularly and irregularly structured environments, while simultaneously improving convergence speed and computational complexity.",
+      "id": "2603.02025v1",
+      "title": "Revealing Combinatorial Reasoning of GNNs via Graph Concept Bottleneck Layer",
+      "abstract": "Despite their success in various domains, the growing dependence on GNNs raises a critical concern about the nature of the combinatorial reasoning underlying their predictions, which is often hidden within their black-box architectures. Addressing this challenge requires understanding how GNNs translate topological patterns into logical rules. However, current works only uncover the hard logical rules over graph concepts, which cannot quantify the contribution of each concept to prediction. Moreover, they are post-hoc interpretable methods that generate explanations after model training and may not accurately reflect the true combinatorial reasoning of GNNs, since they approximate it with a surrogate. In this work, we develop a graph concept bottleneck layer that can be integrated into any GNN architectures to guide them to predict the selected discriminative global graph concepts. The predicted concept scores are further projected to class labels by a sparse linear layer. It enforces the combinatorial reasoning of GNNs' predictions to fit the soft logical rule over graph concepts and thus can quantify the contribution of each concept. To further improve the quality of the concept bottleneck, we treat concepts as \"graph words\" and graphs as \"graph sentences\", and leverage language models to learn graph concept embeddings. Extensive experiments on multiple datasets show that our method GCBMs achieve state-of-the-art performance both in classification and interpretability.",
       "authors": [
-        "Heiko Hoppe",
-        "Fabian Akkerman",
-        "Wouter van Heeswijk",
-        "Maximilian Schiffer"
+        "Yue Niu",
+        "Zhaokai Sun",
+        "Jiayi Yang",
+        "Xiaofeng Cao",
+        "Rui Fan",
+        "Xin Sun",
+        "Hanli Wang",
+        "Wei Ye"
       ],
       "primary_category": "cs.LG",
       "categories": [
         "cs.LG",
         "cs.AI"
       ],
-      "published": "2026-02-09T13:05:07+00:00",
-      "link": "https://arxiv.org/pdf/2602.08616v1",
+      "published": "2026-03-02T16:07:24+00:00",
+      "link": "https://arxiv.org/pdf/2603.02025v1",
       "tags": [
-        "keyword:ML CO",
         "query:ML CO"
       ],
-      "llm_score": 8.0,
-      "llm_evidence_en": "reinforcement learning for large discrete action spaces in logistics and scheduling",
-      "llm_evidence_cn": "强化学习用于物流和调度中的大规模离散动作空间",
-      "llm_evidence": "强化学习用于物流和调度中的大规模离散动作空间",
-      "canonical_evidence": "强化学习用于物流和调度中的大规模离散动作空间",
-      "llm_tldr_en": "Proposes Distance-Guided RL to handle extremely large discrete action spaces common in logistics and scheduling.",
-      "llm_tldr_cn": "提出距离引导强化学习，以处理物流和调度中常见的极大规模离散动作空间。",
-      "llm_tldr": "提出距离引导强化学习，以处理物流和调度中常见的极大规模离散动作空间。",
+      "llm_score": 9.0,
+      "llm_evidence_en": "combinatorial reasoning of graph neural networks",
+      "llm_evidence_cn": "图神经网络的组合推理能力",
+      "llm_evidence": "图神经网络的组合推理能力",
+      "canonical_evidence": "图神经网络的组合推理能力",
+      "llm_tldr_en": "Develops a bottleneck layer to reveal and quantify the combinatorial reasoning process within GNNs.",
+      "llm_tldr_cn": "开发了一个瓶颈层，用于揭示和量化图神经网络内部的组合推理过程。",
+      "llm_tldr": "开发了一个瓶颈层，用于揭示和量化图神经网络内部的组合推理过程。",
       "llm_tags": [
         "query:ml-co"
       ],
       "matched_query_tag": "query:ml-co",
-      "matched_query_text": "reinforcement learning for combinatorial optimization",
-      "matched_requirement_id": "req-2",
+      "matched_query_text": "graph neural networks for combinatorial optimization",
+      "matched_requirement_id": "req-3",
       "selection_source": "fresh_fetch"
     },
     {
@@ -968,13 +627,13 @@
         "query:ML CO"
       ],
       "llm_score": 8.0,
-      "llm_evidence_en": "surrogate model for black-box combinatorial optimization",
-      "llm_evidence_cn": "黑盒组合优化的代理模型",
-      "llm_evidence": "黑盒组合优化的代理模型",
-      "canonical_evidence": "黑盒组合优化的代理模型",
-      "llm_tldr_en": "Explores binary autoencoders to improve search efficiency in QUBO-based combinatorial optimization.",
-      "llm_tldr_cn": "探索二进制自编码器以提高基于QUBO的组合优化中的搜索效率。",
-      "llm_tldr": "探索二进制自编码器以提高基于QUBO的组合优化中的搜索效率。",
+      "llm_evidence_en": "binary autoencoders for black-box combinatorial optimization",
+      "llm_evidence_cn": "用于黑盒组合优化的二进制自编码器",
+      "llm_evidence": "用于黑盒组合优化的二进制自编码器",
+      "canonical_evidence": "用于黑盒组合优化的二进制自编码器",
+      "llm_tldr_en": "Uses binary autoencoders to improve search efficiency in QUBO-based combinatorial optimization.",
+      "llm_tldr_cn": "利用二进制自编码器提高基于QUBO的组合优化问题的搜索效率。",
+      "llm_tldr": "利用二进制自编码器提高基于QUBO的组合优化问题的搜索效率。",
       "llm_tags": [
         "query:ml-co"
       ],
@@ -984,154 +643,39 @@
       "selection_source": "fresh_fetch"
     },
     {
-      "id": "2602.11057v1",
-      "title": "Divide, Harmonize, Then Conquer It: Shooting Multi-Commodity Flow Problems with Multimodal Language Models",
-      "abstract": "The multi-commodity flow (MCF) problem is a fundamental topic in network flow and combinatorial optimization, with broad applications in transportation, communication, and logistics, etc. Nowadays, the rapid expansion of allocation systems has posed challenges for existing optimization engines in balancing optimality and tractability. In this paper, we present Pram, the first ML-based method that leverages the reasoning power of multimodal language models (MLMs) for addressing the trade-off dilemma -- a great need of service providers. As part of our proposal, Pram (i) quickly computes high-quality allocations by dividing the original problem into local subproblems, which are then resolved by an MLM-powered \"agent\", and (ii) ensures global consistency by harmonizing these subproblems via a multi-agent reinforcement learning algorithm. Theoretically, we show that Pram, which learns to perform gradient descent in context, provably converges to the optimum within the family of MCF problems. Empirically, on real-world datasets and public topologies, Pram achieves performance comparable to, and in some cases even surpassing, linear programming solvers (very close to the optimal solution), and substantially lower runtimes (1 to 2 orders of magnitude faster). Moreover, Pram exhibits strong robustness (<10\\% performance degradation under link failures or flow bursts), demonstrating MLM's generalization ability to unforeseen events. Pram is objective-agnostic and seamlessly integrates with mainstream allocation systems, providing a practical and scalable solution for future networks.",
+      "id": "2602.11491v1",
+      "title": "Exploring Multiple High-Scoring Subspaces in Generative Flow Networks",
+      "abstract": "As a probabilistic sampling framework, Generative Flow Networks (GFlowNets) show strong potential for constructing complex combinatorial objects through the sequential composition of elementary components. However, existing GFlowNets often suffer from excessive exploration over vast state spaces, leading to over-sampling of low-reward regions and convergence to suboptimal distributions. Effectively biasing GFlowNets toward high-reward solutions remains a non-trivial challenge. In this paper, we propose CMAB-GFN, which integrates a combinatorial multi-armed bandit (CMAB) framework with GFlowNet policies. The CMAB component prunes low-quality actions, yielding compact high-scoring subspaces for exploration. Restricting GFNs to these compact high-scoring subspaces accelerates the discovery of high-value candidates, while the exploration of different subspaces ensures that diversity is not sacrificed. Experimental results on multiple tasks demonstrate that CMAB-GFN generates higher-reward candidates than existing approaches.",
       "authors": [
-        "Xinyu Yuan",
-        "Yan Qiao",
-        "Zonghui Wang",
-        "Wenzhi Chen"
+        "Xuan Yu",
+        "Xu Wang",
+        "Rui Zhu",
+        "Yudong Zhang",
+        "Yang Wang"
       ],
       "primary_category": "cs.LG",
       "categories": [
         "cs.LG"
       ],
-      "published": "2026-02-11T17:24:49+00:00",
-      "link": "https://arxiv.org/pdf/2602.11057v1",
+      "published": "2026-02-12T02:30:52+00:00",
+      "link": "https://arxiv.org/pdf/2602.11491v1",
       "tags": [
-        "keyword:ML CO",
         "query:ML CO"
       ],
       "llm_score": 8.0,
-      "llm_evidence_en": "ML-based method for multi-commodity flow combinatorial optimization",
-      "llm_evidence_cn": "基于机器学习的多商品流组合优化方法",
-      "llm_evidence": "基于机器学习的多商品流组合优化方法",
-      "canonical_evidence": "基于机器学习的多商品流组合优化方法",
-      "llm_tldr_en": "Presents Pram, an MLM-based approach to solve multi-commodity flow problems by dividing them into subproblems.",
-      "llm_tldr_cn": "提出Pram，一种基于多模态语言模型的方法，通过划分子问题来解决多商品流问题。",
-      "llm_tldr": "提出Pram，一种基于多模态语言模型的方法，通过划分子问题来解决多商品流问题。",
+      "llm_evidence_en": "Generative Flow Networks for constructing complex combinatorial objects",
+      "llm_evidence_cn": "用于构建复杂组合对象的生成流网络",
+      "llm_evidence": "用于构建复杂组合对象的生成流网络",
+      "canonical_evidence": "用于构建复杂组合对象的生成流网络",
+      "llm_tldr_en": "Integrates combinatorial multi-armed bandits with GFlowNets to improve exploration in combinatorial state spaces.",
+      "llm_tldr_cn": "将组合多臂老虎机与生成流网络结合，以优化组合状态空间中的探索效率。",
+      "llm_tldr": "将组合多臂老虎机与生成流网络结合，以优化组合状态空间中的探索效率。",
       "llm_tags": [
         "query:ml-co"
       ],
       "matched_query_tag": "query:ml-co",
       "matched_query_text": "machine learning for combinatorial optimization",
       "matched_requirement_id": "req-1",
-      "selection_source": "fresh_fetch"
-    },
-    {
-      "id": "2602.13106v1",
-      "title": "Which Algorithms Can Graph Neural Networks Learn?",
-      "abstract": "In recent years, there has been growing interest in understanding neural architectures' ability to learn to execute discrete algorithms, a line of work often referred to as neural algorithmic reasoning. The goal is to integrate algorithmic reasoning capabilities into larger neural pipelines. Many such architectures are based on (message-passing) graph neural networks (MPNNs), owing to their permutation equivariance and ability to deal with sparsity and variable-sized inputs. However, existing work is either largely empirical and lacks formal guarantees or it focuses solely on expressivity, leaving open the question of when and how such architectures generalize beyond a finite training set. In this work, we propose a general theoretical framework that characterizes the sufficient conditions under which MPNNs can learn an algorithm from a training set of small instances and provably approximate its behavior on inputs of arbitrary size. Our framework applies to a broad class of algorithms, including single-source shortest paths, minimum spanning trees, and general dynamic programming problems, such as the $0$-$1$ knapsack problem. In addition, we establish impossibility results for a wide range of algorithmic tasks, showing that standard MPNNs cannot learn them, and we derive more expressive MPNN-like architectures that overcome these limitations. Finally, we refine our analysis for the Bellman-Ford algorithm, yielding a substantially smaller required training set and significantly extending the recent work of Nerem et al. [2025] by allowing for a differentiable regularization loss. Empirical results largely support our theoretical findings.",
-      "authors": [
-        "Solveig Wittig",
-        "Antonis Vasileiou",
-        "Robert R. Nerem",
-        "Timo Stoll",
-        "Floris Geerts",
-        "Yusu Wang",
-        "Christopher Morris"
-      ],
-      "primary_category": "cs.LG",
-      "categories": [
-        "cs.LG",
-        "cs.AI",
-        "cs.DS",
-        "cs.NE"
-      ],
-      "published": "2026-02-13T17:09:50+00:00",
-      "link": "https://arxiv.org/pdf/2602.13106v1",
-      "tags": [
-        "keyword:ML CO",
-        "query:ML CO"
-      ],
-      "llm_score": 8.0,
-      "llm_evidence_en": "theoretical framework for GNNs learning discrete algorithms",
-      "llm_evidence_cn": "图神经网络学习离散算法的理论框架",
-      "llm_evidence": "图神经网络学习离散算法的理论框架",
-      "canonical_evidence": "图神经网络学习离散算法的理论框架",
-      "llm_tldr_en": "Provides a theoretical framework for understanding how Graph Neural Networks generalize when learning discrete algorithms.",
-      "llm_tldr_cn": "提出了一个理论框架，用于理解图神经网络在学习离散算法时的泛化能力。",
-      "llm_tldr": "提出了一个理论框架，用于理解图神经网络在学习离散算法时的泛化能力。",
-      "llm_tags": [
-        "query:ml-co"
-      ],
-      "matched_query_tag": "query:ml-co",
-      "matched_query_text": "graph neural networks for combinatorial optimization",
-      "matched_requirement_id": "req-3",
-      "selection_source": "fresh_fetch"
-    },
-    {
-      "id": "2602.15146v2",
-      "title": "Beyond Reinforcement Learning: Fast and Scalable Quantum Circuit Synthesis",
-      "abstract": "Quantum unitary synthesis addresses the problem of translating abstract quantum algorithms into sequences of hardware-executable quantum gates. Solving this task exactly is infeasible in general due to the exponential growth of the underlying combinatorial search space. Existing approaches suffer from misaligned optimization objectives, substantial training costs and limited generalization across different qubit counts. We mitigate these limitations by using supervised learning to approximate the minimum description length of residual unitaries and combining this estimate with stochastic beam search to identify near optimal gate sequences. Our method relies on a lightweight model with zero-shot generalization, substantially reducing training overhead compared to prior baselines. Across multiple benchmarks, we achieve faster wall-clock synthesis times while exceeding state-of-the-art methods in terms of success rate for complex circuits.",
-      "authors": [
-        "Lukas Theißinger",
-        "Thore Gerlach",
-        "David Berghaus",
-        "Christian Bauckhage"
-      ],
-      "primary_category": "quant-ph",
-      "categories": [
-        "quant-ph",
-        "cs.LG"
-      ],
-      "published": "2026-02-16T19:43:43+00:00",
-      "link": "https://arxiv.org/pdf/2602.15146v2",
-      "tags": [
-        "query:ML CO"
-      ],
-      "llm_score": 8.0,
-      "llm_evidence_en": "solving combinatorial search space in quantum synthesis",
-      "llm_evidence_cn": "解决量子合成中的组合搜索空间问题",
-      "llm_evidence": "解决量子合成中的组合搜索空间问题",
-      "canonical_evidence": "解决量子合成中的组合搜索空间问题",
-      "llm_tldr_en": "Uses supervised learning and stochastic beam search to solve the combinatorial problem of quantum circuit synthesis.",
-      "llm_tldr_cn": "利用监督学习和随机束搜索解决量子电路合成中的组合优化问题。",
-      "llm_tldr": "利用监督学习和随机束搜索解决量子电路合成中的组合优化问题。",
-      "llm_tags": [
-        "query:ml-co"
-      ],
-      "matched_query_tag": "query:ml-co",
-      "matched_query_text": "deep learning methods for solving NP hard problems",
-      "matched_requirement_id": "req-9",
-      "selection_source": "fresh_fetch"
-    },
-    {
-      "id": "2602.16183v1",
-      "title": "Multi-Agent Combinatorial-Multi-Armed-Bandit framework for the Submodular Welfare Problem under Bandit Feedback",
-      "abstract": "We study the \\emph{Submodular Welfare Problem} (SWP), where items are partitioned among agents with monotone submodular utilities to maximize the total welfare under \\emph{bandit feedback}. Classical SWP assumes full value-oracle access, achieving $(1-1/e)$ approximations via continuous-greedy algorithms. We extend this to a \\emph{multi-agent combinatorial bandit} framework (\\textsc{MA-CMAB}), where actions are partitions under full-bandit feedback with non-communicating agents. Unlike prior single-agent or separable multi-agent CMAB models, our setting couples agents through shared allocation constraints. We propose an explore-then-commit strategy with randomized assignments, achieving $\\tilde{\\mathcal{O}}(T^{2/3})$ regret against a $(1-1/e)$ benchmark, the first such guarantee for partition-based submodular welfare problem under bandit feedback.",
-      "authors": [
-        "Subham Pokhriyal",
-        "Shweta Jain",
-        "Vaneet Aggarwal"
-      ],
-      "primary_category": "cs.GT",
-      "categories": [
-        "cs.GT",
-        "cs.LG",
-        "stat.ML"
-      ],
-      "published": "2026-02-18T05:00:51+00:00",
-      "link": "https://arxiv.org/pdf/2602.16183v1",
-      "tags": [
-        "keyword:ML CO",
-        "query:ML CO"
-      ],
-      "llm_score": 8.0,
-      "llm_evidence_en": "Multi-agent combinatorial bandit for submodular welfare problem",
-      "llm_evidence_cn": "用于子模福利问题的多智能体组合老虎机",
-      "llm_evidence": "用于子模福利问题的多智能体组合老虎机",
-      "canonical_evidence": "用于子模福利问题的多智能体组合老虎机",
-      "llm_tldr_en": "Extends combinatorial bandits to multi-agent settings for solving submodular welfare optimization.",
-      "llm_tldr_cn": "将组合老虎机扩展到多智能体设置，以解决子模福利优化问题。",
-      "llm_tldr": "将组合老虎机扩展到多智能体设置，以解决子模福利优化问题。",
-      "llm_tags": [
-        "query:ml-co"
-      ],
-      "matched_query_tag": "query:ml-co",
-      "matched_query_text": "reinforcement learning for combinatorial optimization",
-      "matched_requirement_id": "req-2",
       "selection_source": "fresh_fetch"
     },
     {
@@ -1156,12 +700,12 @@
       ],
       "llm_score": 8.0,
       "llm_evidence_en": "RL-steered graph diffusion for combinatorial structure generation",
-      "llm_evidence_cn": "强化学习引导的图扩散模型用于组合结构生成",
-      "llm_evidence": "强化学习引导的图扩散模型用于组合结构生成",
-      "canonical_evidence": "强化学习引导的图扩散模型用于组合结构生成",
-      "llm_tldr_en": "Proposes a reinforcement learning method to steer graph diffusion for generating directed acyclic graph structures.",
-      "llm_tldr_cn": "提出一种强化学习方法来引导图扩散模型生成有向无环图结构。",
-      "llm_tldr": "提出一种强化学习方法来引导图扩散模型生成有向无环图结构。",
+      "llm_evidence_cn": "强化学习引导的图扩散用于组合结构生成",
+      "llm_evidence": "强化学习引导的图扩散用于组合结构生成",
+      "canonical_evidence": "强化学习引导的图扩散用于组合结构生成",
+      "llm_tldr_en": "Applies RL to steer graph diffusion models for generating directed acyclic graph structures.",
+      "llm_tldr_cn": "应用强化学习引导图扩散模型生成具有特定属性的有向无环图组合结构。",
+      "llm_tldr": "应用强化学习引导图扩散模型生成具有特定属性的有向无环图组合结构。",
       "llm_tags": [
         "query:ml-co"
       ],
@@ -1171,72 +715,31 @@
       "selection_source": "fresh_fetch"
     },
     {
-      "id": "2602.21442v1",
-      "title": "MINAR: Mechanistic Interpretability for Neural Algorithmic Reasoning",
-      "abstract": "The recent field of neural algorithmic reasoning (NAR) studies the ability of graph neural networks (GNNs) to emulate classical algorithms like Bellman-Ford, a phenomenon known as algorithmic alignment. At the same time, recent advances in large language models (LLMs) have spawned the study of mechanistic interpretability, which aims to identify granular model components like circuits that perform specific computations. In this work, we introduce Mechanistic Interpretability for Neural Algorithmic Reasoning (MINAR), an efficient circuit discovery toolbox that adapts attribution patching methods from mechanistic interpretability to the GNN setting. We show through two case studies that MINAR recovers faithful neuron-level circuits from GNNs trained on algorithmic tasks. Our study sheds new light on the process of circuit formation and pruning during training, as well as giving new insight into how GNNs trained to perform multiple tasks in parallel reuse circuit components for related tasks. Our code is available at https://github.com/pnnl/MINAR.",
+      "id": "2602.23948v1",
+      "title": "High-Modularity Graph Partitioning Through NLP Techniques and Maximal Clique Enumeration",
+      "abstract": "Natural Language Processing (NLP) provides highly effective tools for interpreting and handling human language, offering a broad spectrum of applications. In this paper, we address a classic combinatorial problem -- finding graph partitions with high modularity -- by applying NLP techniques that compute term frequency and inverse document frequency (TF-IDF) alongside machine learning clustering algorithms. We present a new framework, called Clique-TF-IDF, designed for graph partitioning, a task that holds significant relevance across various network analysis contexts. This approach uses dense substructures of the graph, specifically maximal cliques, to represent each vertex in terms of the cliques it is part of, in a manner akin to term-document matrices. Experiments show that Clique-TF-IDF yields results that are comparable to or outperform the current state-of-the-art algorithms, whether or not the number of partitions is known in advance. Although this framework emphasizes on cliques and partitioning, it can be extended to devise AI-driven solutions for a variety of challenging combinatorial problems that can leverage efficiently enumerable substructures.",
       "authors": [
-        "Jesse He",
-        "Helen Jenne",
-        "Max Vargas",
-        "Davis Brown",
-        "Gal Mishne",
-        "Yusu Wang",
-        "Henry Kvinge"
+        "Marco D'Elia",
+        "Irene Finocchi",
+        "Maurizio Patrignani"
       ],
-      "primary_category": "cs.LG",
+      "primary_category": "cs.SI",
       "categories": [
-        "cs.LG",
-        "cs.AI"
+        "cs.SI"
       ],
-      "published": "2026-02-24T23:38:06+00:00",
-      "link": "https://arxiv.org/pdf/2602.21442v1",
+      "published": "2026-02-27T11:50:06+00:00",
+      "link": "https://arxiv.org/pdf/2602.23948v1",
       "tags": [
         "query:ML CO"
       ],
       "llm_score": 8.0,
-      "llm_evidence_en": "GNNs to emulate classical algorithms",
-      "llm_evidence_cn": "GNN模拟经典算法",
-      "llm_evidence": "GNN模拟经典算法",
-      "canonical_evidence": "GNN模拟经典算法",
-      "llm_tldr_en": "Introduces a toolbox for interpreting how GNNs emulate classical algorithms like Bellman-Ford.",
-      "llm_tldr_cn": "引入了一个工具箱，用于解释GNN如何模拟Bellman-Ford等经典算法。",
-      "llm_tldr": "引入了一个工具箱，用于解释GNN如何模拟Bellman-Ford等经典算法。",
-      "llm_tags": [
-        "query:ml-co"
-      ],
-      "matched_query_tag": "query:ml-co",
-      "matched_query_text": "graph neural networks for combinatorial optimization",
-      "matched_requirement_id": "req-3",
-      "selection_source": "fresh_fetch"
-    },
-    {
-      "id": "2602.23529v1",
-      "title": "Active Value Querying to Minimize Additive Error in Subadditive Set Function Learning",
-      "abstract": "Subadditive set functions play a pivotal role in computational economics (especially in combinatorial auctions), combinatorial optimization or artificial intelligence applications such as interpretable machine learning. However, specifying a set function requires assigning values to an exponentially large number of subsets in general, a task that is often resource-intensive in practice, particularly when the values derive from external sources such as retraining of machine learning models. A~simple omission of certain values introduces ambiguity that becomes even more significant when the incomplete set function has to be further optimized over. Motivated by the well-known result about inapproximability of subadditive functions using deterministic value queries with respect to a multiplicative error, we study a problem of approximating an unknown subadditive (or a subclass of thereof) set function with respect to an additive error -- i. e., we aim to efficiently close the distance between minimal and maximal completions. Our contributions are threefold: (i) a thorough exploration of minimal and maximal completions of different classes of set functions with missing values and an analysis of their resulting distance; (ii) the development of methods to minimize this distance over classes of set functions with a known prior, achieved by disclosing values of additional subsets in both offline and online manner; and (iii) empirical demonstrations of the algorithms' performance in practical scenarios.",
-      "authors": [
-        "Martin Černý",
-        "David Sychrovský",
-        "Filip Úradník",
-        "Jakub Černý"
-      ],
-      "primary_category": "cs.LG",
-      "categories": [
-        "cs.LG"
-      ],
-      "published": "2026-02-26T22:21:26+00:00",
-      "link": "https://arxiv.org/pdf/2602.23529v1",
-      "tags": [
-        "keyword:ML CO",
-        "query:ML CO"
-      ],
-      "llm_score": 8.0,
-      "llm_evidence_en": "Subadditive set function learning in combinatorial optimization",
-      "llm_evidence_cn": "组合优化中的次加性集合函数学习",
-      "llm_evidence": "组合优化中的次加性集合函数学习",
-      "canonical_evidence": "组合优化中的次加性集合函数学习",
-      "llm_tldr_en": "Addresses learning subadditive set functions which are crucial for combinatorial auctions and optimization.",
-      "llm_tldr_cn": "研究了对组合拍卖和优化至关重要的次加性集合函数的学习问题。",
-      "llm_tldr": "研究了对组合拍卖和优化至关重要的次加性集合函数的学习问题。",
+      "llm_evidence_en": "applying NLP and machine learning clustering to graph partitioning",
+      "llm_evidence_cn": "将NLP技术和机器学习聚类应用于图划分",
+      "llm_evidence": "将NLP技术和机器学习聚类应用于图划分",
+      "canonical_evidence": "将NLP技术和机器学习聚类应用于图划分",
+      "llm_tldr_en": "Uses NLP techniques like TF-IDF and clustering to solve the combinatorial problem of graph partitioning.",
+      "llm_tldr_cn": "利用TF-IDF等NLP技术和机器学习聚类算法来解决图划分这一经典组合优化问题。",
+      "llm_tldr": "利用TF-IDF等NLP技术和机器学习聚类算法来解决图划分这一经典组合优化问题。",
       "llm_tags": [
         "query:ml-co"
       ],
@@ -1262,7 +765,6 @@
       "published": "2026-03-01T11:00:04+00:00",
       "link": "https://arxiv.org/pdf/2603.01047v1",
       "tags": [
-        "keyword:ML CO",
         "query:ML CO"
       ],
       "llm_score": 8.0,
@@ -1270,9 +772,9 @@
       "llm_evidence_cn": "用于采样组合候选解的生成流网络",
       "llm_evidence": "用于采样组合候选解的生成流网络",
       "canonical_evidence": "用于采样组合候选解的生成流网络",
-      "llm_tldr_en": "Develops a policy-based training strategy for GFlowNets to improve stability in combinatorial sampling.",
-      "llm_tldr_cn": "为GFlowNets开发了一种基于策略的训练策略，以提高组合采样的稳定性。",
-      "llm_tldr": "为GFlowNets开发了一种基于策略的训练策略，以提高组合采样的稳定性。",
+      "llm_tldr_en": "Improves GFlowNet training for more stable and flexible sampling of combinatorial structures.",
+      "llm_tldr_cn": "改进了GFlowNet训练，以实现更稳定、灵活的组合结构采样。",
+      "llm_tldr": "改进了GFlowNet训练，以实现更稳定、灵活的组合结构采样。",
       "llm_tags": [
         "query:ml-co"
       ],
@@ -1300,135 +802,22 @@
       "published": "2026-03-02T12:12:13+00:00",
       "link": "https://arxiv.org/pdf/2603.01786v1",
       "tags": [
-        "keyword:ML CO",
         "query:ML CO"
       ],
       "llm_score": 8.0,
       "llm_evidence_en": "GFlowNets for finding shortest paths in graphs",
-      "llm_evidence_cn": "使用GFlowNets寻找图中的最短路径",
-      "llm_evidence": "使用GFlowNets寻找图中的最短路径",
-      "canonical_evidence": "使用GFlowNets寻找图中的最短路径",
-      "llm_tldr_en": "Applies Generative Flow Networks to solve pathfinding and permutation-based combinatorial problems.",
-      "llm_tldr_cn": "应用生成流网络解决寻路和基于排列的组合问题。",
-      "llm_tldr": "应用生成流网络解决寻路和基于排列的组合问题。",
+      "llm_evidence_cn": "使用生成流网络寻找图中的最短路径",
+      "llm_evidence": "使用生成流网络寻找图中的最短路径",
+      "canonical_evidence": "使用生成流网络寻找图中的最短路径",
+      "llm_tldr_en": "Applies GFlowNets to solve pathfinding and permutation-based combinatorial problems.",
+      "llm_tldr_cn": "应用生成流网络（GFlowNets）解决寻路和基于置换的组合问题。",
+      "llm_tldr": "应用生成流网络（GFlowNets）解决寻路和基于置换的组合问题。",
       "llm_tags": [
         "query:ml-co"
       ],
       "matched_query_tag": "query:ml-co",
-      "matched_query_text": "learning to search in combinatorial optimization",
-      "matched_requirement_id": "req-12",
-      "selection_source": "fresh_fetch"
-    },
-    {
-      "id": "2603.05234v1",
-      "title": "Recursive Inference Machines for Neural Reasoning",
-      "abstract": "Neural reasoners such as Tiny Recursive Models (TRMs) solve complex problems by combining neural backbones with specialized inference schemes. Such inference schemes have been a central component of stochastic reasoning systems, where inference rules are applied to a stochastic model to derive answers to complex queries. In this work, we bridge these two paradigms by introducing Recursive Inference Machines (RIMs), a neural reasoning framework that explicitly incorporates recursive inference mechanisms inspired by classical inference engines. We show that TRMs can be expressed as an instance of RIMs, allowing us to extend them through a reweighting component, yielding better performance on challenging reasoning benchmarks, including ARC-AGI-1, ARC-AGI-2, and Sudoku Extreme. Furthermore, we show that RIMs can be used to improve reasoning on other tasks, such as the classification of tabular data, outperforming TabPFNs.",
-      "authors": [
-        "Mieszko Komisarczyk",
-        "Saurabh Mathur",
-        "Maurice Kraus",
-        "Sriraam Natarajan",
-        "Kristian Kersting"
-      ],
-      "primary_category": "cs.LG",
-      "categories": [
-        "cs.LG",
-        "cs.AI"
-      ],
-      "published": "2026-03-05T14:51:47+00:00",
-      "link": "https://arxiv.org/pdf/2603.05234v1",
-      "tags": [
-        "keyword:ML CO",
-        "query:ML CO"
-      ],
-      "llm_score": 8.0,
-      "llm_evidence_en": "neural reasoning for Sudoku and complex benchmarks",
-      "llm_evidence_cn": "用于数独和复杂基准测试的神经推理",
-      "llm_evidence": "用于数独和复杂基准测试的神经推理",
-      "canonical_evidence": "用于数独和复杂基准测试的神经推理",
-      "llm_tldr_en": "Introduces Recursive Inference Machines to solve complex reasoning tasks like Sudoku using neural mechanisms.",
-      "llm_tldr_cn": "引入递归推理机，利用神经机制解决数独等复杂推理任务。",
-      "llm_tldr": "引入递归推理机，利用神经机制解决数独等复杂推理任务。",
-      "llm_tags": [
-        "query:ml-co"
-      ],
-      "matched_query_tag": "query:ml-co",
-      "matched_query_text": "deep learning methods for solving NP hard problems",
-      "matched_requirement_id": "req-9",
-      "selection_source": "fresh_fetch"
-    },
-    {
-      "id": "2603.08209v1",
-      "title": "Multi-Objective Evolutionary Optimization of Chance-Constrained Multiple-Choice Knapsack Problems with Implicit Probability Distributions",
-      "abstract": "The multiple-choice knapsack problem (MCKP) is a classic combinatorial optimization with wide practical applications. This paper investigates a significant yet underexplored extension of MCKP: the multi-objective chance-constrained MCKP (MO-CCMCKP) under implicit probability distributions. The goal of the problem is to simultaneously minimize the total cost and maximize the confidence level of satisfying the capacity constraint, capturing essential trade-offs in domains like 5G network configuration. To address the computational challenge of evaluating chance constraints under implicit distributions, we first propose an order-preserving efficient resource allocation Monte Carlo (OPERA-MC) method. This approach adaptively allocates sampling resources to preserve dominance relationships while reducing evaluation time significantly. Further, we develop NHILS, a hybrid evolutionary algorithm that integrates specialized initialization and local search into NSGA-II to navigate sparse feasible regions. Experiments on synthetic benchmarks and real-world 5G network configuration benchmarks demonstrate that NHILS consistently outperforms several state-of-the-art multi-objective optimizers in convergence, diversity, and feasibility. The benchmark instances and source code will be made publicly available to facilitate research in this area.",
-      "authors": [
-        "Xuanfeng Li",
-        "Shengcai Liu",
-        "Wenjie Chen",
-        "Yew-Soon Ong",
-        "Ke Tang"
-      ],
-      "primary_category": "cs.NE",
-      "categories": [
-        "cs.NE"
-      ],
-      "published": "2026-03-09T10:39:58+00:00",
-      "link": "https://arxiv.org/pdf/2603.08209v1",
-      "tags": [
-        "keyword:ML CO",
-        "query:ML CO"
-      ],
-      "llm_score": 8.0,
-      "llm_evidence_en": "evolutionary optimization of knapsack problems",
-      "llm_evidence_cn": "背包问题的演化优化",
-      "llm_evidence": "背包问题的演化优化",
-      "canonical_evidence": "背包问题的演化优化",
-      "llm_tldr_en": "Investigates multi-objective evolutionary optimization for chance-constrained multiple-choice knapsack problems.",
-      "llm_tldr_cn": "研究了带机会约束的多选择背包问题的多目标演化优化方法。",
-      "llm_tldr": "研究了带机会约束的多选择背包问题的多目标演化优化方法。",
-      "llm_tags": [
-        "query:ml-co:composite"
-      ],
-      "matched_query_tag": "query:ml-co:composite",
-      "matched_query_text": "Papers central to 查找机器学习解决组合优化相关的论文, especially work that connects or combines: machine learning for combinatorial optimization; reinforcement learning for combinatorial optimization; graph neural networks for combinatorial optimization; machine learning approaches for traveling salesman problem; machine learning for integer linear programming; learning to branch in branch and bound algorithms; meta-learning for combinatorial optimization; survey of machine learning for combinatorial optimization; deep learning methods for solving NP hard problems; end to end learning for combinatorial optimization.",
-      "matched_requirement_id": "req-composite-ml-co",
-      "selection_source": "fresh_fetch"
-    },
-    {
-      "id": "2603.08322v1",
-      "title": "Agentic Neurosymbolic Collaboration for Mathematical Discovery: A Case Study in Combinatorial Design",
-      "abstract": "We study mathematical discovery through the lens of neurosymbolic reasoning, where an AI agent powered by a large language model (LLM), coupled with symbolic computation tools, and human strategic direction, jointly produced a new result in combinatorial design theory. The main result of this human-AI collaboration is a tight lower bound on the imbalance of Latin squares for the notoriously difficult case $n \\equiv 1 \\pmod{3}$.   We reconstruct the discovery process from detailed interaction logs spanning multiple sessions over several days and identify the distinct cognitive contributions of each component. The AI agent proved effective at uncovering hidden structure and generating hypotheses. The symbolic component consists of computer algebra, constraint solvers, and simulated annealing, which provides rigorous verification and exhaustive enumeration. Human steering supplied the critical research pivot that transformed a dead end into a productive inquiry. Our analysis reveals that multi-model deliberation among frontier LLMs proved reliable for criticism and error detection but unreliable for constructive claims.   The resulting human-AI mathematical contribution, a tight lower bound of $4n(n{-}1)/9$, is achieved via a novel class of near-perfect permutations. The bound was formally verified in Lean 4. Our experiments show that neurosymbolic systems can indeed produce genuine discoveries in pure mathematics.",
-      "authors": [
-        "Hai Xia",
-        "Carla P. Gomes",
-        "Bart Selman",
-        "Stefan Szeider"
-      ],
-      "primary_category": "cs.AI",
-      "categories": [
-        "cs.AI",
-        "cs.HC",
-        "math.CO"
-      ],
-      "published": "2026-03-09T12:42:56+00:00",
-      "link": "https://arxiv.org/pdf/2603.08322v1",
-      "tags": [
-        "query:ML CO"
-      ],
-      "llm_score": 8.0,
-      "llm_evidence_en": "neurosymbolic collaboration for combinatorial design theory",
-      "llm_evidence_cn": "组合设计理论中的神经符号协作",
-      "llm_evidence": "组合设计理论中的神经符号协作",
-      "canonical_evidence": "组合设计理论中的神经符号协作",
-      "llm_tldr_en": "Explores human-AI collaboration using LLMs and symbolic tools to solve problems in combinatorial design.",
-      "llm_tldr_cn": "探索利用LLM和符号工具的人机协作，以解决组合设计中的数学难题。",
-      "llm_tldr": "探索利用LLM和符号工具的人机协作，以解决组合设计中的数学难题。",
-      "llm_tags": [
-        "query:ml-co:composite"
-      ],
-      "matched_query_tag": "query:ml-co:composite",
-      "matched_query_text": "Papers central to 查找机器学习解决组合优化相关的论文, especially work that connects or combines: machine learning for combinatorial optimization; reinforcement learning for combinatorial optimization; graph neural networks for combinatorial optimization; machine learning approaches for traveling salesman problem; machine learning for integer linear programming; learning to branch in branch and bound algorithms; meta-learning for combinatorial optimization; survey of machine learning for combinatorial optimization; deep learning methods for solving NP hard problems; end to end learning for combinatorial optimization.",
-      "matched_requirement_id": "req-composite-ml-co",
+      "matched_query_text": "machine learning for combinatorial optimization",
+      "matched_requirement_id": "req-1",
       "selection_source": "fresh_fetch"
     }
   ]

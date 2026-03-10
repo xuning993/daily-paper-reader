@@ -1,0 +1,1085 @@
+Title: Revealing Combinatorial Reasoning of GNNs via Graph Concept Bottleneck Layer
+
+URL Source: https://arxiv.org/pdf/2603.02025v1
+
+Published Time: Tue, 03 Mar 2026 03:51:26 GMT
+
+Number of Pages: 20
+
+Markdown Content:
+# Revealing Combinatorial Reasoning of GNNs via Graph Concept Bottleneck Layer 
+
+Yue Niu 1 Zhaokai Sun 1 Jiayi Yang 1 Xiaofeng Cao 1 Rui Fan 1 Xin Sun 2 Hanli Wang 1 Wei Ye 1
+
+## Abstract 
+
+Despite their success in various domains, the growing dependence on GNNs raises a critical concern about the nature of the combinatorial rea-soning underlying their predictions, which is of-ten hidden within their black-box architectures. Addressing this challenge requires understanding how GNNs translate topological patterns into log-ical rules. However, current works only uncover the hard logical rules over graph concepts, which cannot quantify the contribution of each concept to prediction. Moreover, they are post-hoc inter-pretable methods that generate explanations after model training and may not accurately reflect the true combinatorial reasoning of GNNs, since they approximate it with a surrogate. In this work, we develop a graph concept bottleneck layer that can be integrated into any GNN architectures to guide them to predict the selected discriminative global graph concepts. The predicted concept scores are further projected to class labels by a sparse linear layer. It enforces the combinatorial reason-ing of GNNs’ predictions to fit the soft logical rule over graph concepts and thus can quantify the contribution of each concept. To further im-prove the quality of the concept bottleneck, we treat concepts as “graph words” and graphs as “graph sentences”, and leverage language models to learn graph concept embeddings. Extensive experiments on multiple datasets show that our method GCBMs achieve state-of-the-art perfor-mance both in classification and interpretability. 
+
+## 1. Introduction 
+
+Graph neural networks (GNNs) (Hamilton et al., 2017; Kipf & Welling, 2017; Veli ˇckovi ´c et al., 2018; Zhang et al., 2018; Xu et al., 2018) are prevalent in the learning tasks on graph             
+
+> 1Tongji University, Shanghai, China 2City University of Macau, Macau, China. Correspondence to: Wei Ye
+> <yew@tongji.edu.cn >.
+> Preprint. March 3, 2026.
+
+data. However, they are inherently black-box models. The “combinatorial reasoning” they employ to arrive at predic-tions is opaque to humans. This limits their application in high-stakes fields such as drug discovery. A prediction without a logical “why” is often unplausible and unusable. Humans cannot verify if the GNN used valid chemical prop-erties or just exploited spurious correlations in the dataset for prediction. Combinatorial reasoning in GNNs describes the internal decision process through which a model discovers, eval-uates, and composes discrete structural patterns—such as subgraphs or motifs—into a unified global decision rule that generalizes across a collection of graphs. Since GNNs explicitly contend with the discrete and combinatorial struc-ture inherent to graph data, combinatorial reasoning goes beyond simple statistical correlation; it reflects a learned structural logic that can, at least in principle, be articulated as a Boolean formula over graph concepts (subgraphs or motifs). Most interpretable methods (Ying et al., 2019; Yuan et al., 2021; Xie et al., 2022; Yu et al.; 2022; Zhang et al., 2022; Seo et al., 2023; Rao et al., 2025) are unable to reveal the “combinatorial reasoning” in GNNs. Recently, Graph-Trail (Armgaan et al., 2024) and GLGExplainer (Azzolin et al.) have been proposed to express the combinatorial reasoning of a trained GNN Φ as a set of C (the number of graph classes) Boolean formulas {f1, . . . , f C } of graph concepts such that for any graph G, if Φ( G) = yi (the one-hot label of the i-th class), then fi(C) = T rue and 
+
+∀j̸ = i, fj (C) = F alse , where C contains all unique graph concepts in the dataset. It is obvious that the Boolean formu-las are human-interpretable, but they are hard logical rules (i.e., they cannot quantify the importance of each concept that contributes to the prediction) and just proxies (post-hoc interpretation) for a GNN’s prediction. To tackle these limitations, we aim to develop a globally and intrinsically interpretable method that can identify the soft logical rules on the graph concepts, whose importance to the predictions is directly revealed. Our method is called Graph Concept Bottleneck Models (GCBMs), at the heart of which is a graph concept bottleneck layer that can be integrated into any GNNs and trained together. GCBMs first 1
+
+> arXiv:2603.02025v1 [cs.LG] 2 Mar 2026 Revealing Combinatorial Reasoning of GNNs via Graph Concept Bottleneck Layer
+
+predict graph concepts, then map these predicted concepts to class labels, and identify the combinatorial reasoning (a soft logical rule) between concepts and class labels as a global interpretation. Thus, they can quantify the contribution of each concept to predictions. Besides, it naturally provides an interface (graph concept bottleneck layer) that enables easy manual intervention to improve model accuracy while retaining interpretability. Building GCBMs entails three key challenges: graph con-cept extraction, discriminative concept selection, and high-quality graph concept label generation. Specifically, we first adopt WL-subtrees (Shervashidze et al., 2011) as graph concepts, as the message-passing mechanism of most GNNs follows the aggregate and update rule of the first-order Weisfeiler-Lehman (WL) graph isomorphism test (Leman & Weisfeiler, 1968). Second, we use information gain (Kent, 1983) to select discriminative concepts. Finally, we obtain the concept scores by computing the similarity between the concept frequency vectors of the graphs and the one-hot encodings of the concepts. To improve the accuracy of the concept scores, we treat concepts as “graph words” and graphs as “graph sentences”, leverage language models (LMs) to learn concept embeddings to capture their corre-lations and co-occurrences, and compute accurate concept scores based on these embeddings to optimize the quality of the concept bottleneck. Our contributions can be summarized as follows: • We propose Graph Concept Bottleneck Models (GCBMs), a new globally and intrinsically inter-pretable paradigm for GNNs that reveals the soft com-binatorial reasoning of GNNs’ predictions. • GCBMs are generic interpretation frameworks for GNNs. They can use any GNN as the backbone, any graph substructure as the graph concept, and any lan-guage model as the concept embedding method. • We verify GCBMs’ classification performance, inter-pretability, and intervenability on benchmark graph datasets across multiple domains, showing the advan-tages of GCBMs over baselines. 
+
+## 2. Related Work 
+
+Interpretable GNNs Current research on GNN inter-pretability is mainly categorized into post-hoc explanation and intrinsic interpretability. Post-hoc methods such as GN-NExplainer (Ying et al., 2019) use independent models to trace the rationale behind black-box decisions. However, they suffer from unstable explanations and a tendency to capture spurious features that weaken model reliability (Luo et al., 2020; Vu & Thai, 2020). Intrinsic methods embed explanatory logic into model design, such as GIB (Yu et al., 2020) and ProtGNN (Zhang et al., 2022), which extract in-formative prototypes or subgraphs that support predictions but provide instance-level explanations and lack the ability to uncover combinatorial reasoning. GraphTrail (Armgaan et al., 2024) and GLGExplainer (Azzolin et al.) use a sur-rogate to approximate the logical rules over graph concepts in GNNs, which may not uncover the truly inherent combi-natorial reasoning. In addition, they are post-hoc methods and the logical rules uncovered by them are hard and cannot reveal the importance of each graph concept to prediction. 
+
+Concept Bottleneck Models Concept bottleneck was first proposed in (Koh et al., 2020) and used in image domain and now has been extended to text domain. In the image domain, methods such as Label-free CBM (Oikarinen et al., 2023), LaBo (Yang et al., 2023), and VLG-CBM (Srivas-tava et al., 2024) optimize the generation of concept sets and enhance their adaptability to different visual classifi-cation tasks. Graph-CBMs (Xu et al., 2025) treat image concepts as nodes to construct latent concept graphs, thus capturing the correlations between concepts. Graph-CBMs differ from the GCBMs proposed in this paper. GCBMs are designed for graph data. In the text domain, frameworks such as TBMs (Ludan et al., 2023; Tan et al., 2024) and CB-LLM (Sun et al., 2024) integrate CBMs with LLMs to meet the interpretability requirements of text-related tasks. 
+
+## 3. Preliminaries 
+
+An undirected and labeled graph is denoted by G =(V, E, X), where V is a finite node set with features X =[x1, . . . , x|V| ]T ∈ R|V|× d (xi ∈ Rd is the feature vector of node vi), and E ⊆ V × V = {(vi, v j ) | vi, v j ∈ V} is the edge set, where an edge e = ( vi, v j ) exists iff e ∈ E . For the graph classification task, let D = {Gi, yi}ni=1 denote the graph dataset, where yi is the one-hot class label of graph Gi, and n is the total number of graphs. 
+
+Definition 3.1 (Graph Concept Bottleneck Layer) . Given a dataset D = {Gi, yi}ni=1 consisting of n input-target pairs, a graph concept bottleneck layer decomposes the classifi-cation process of GNNs into two stages: a backbone GNN 
+
+Φ : G → RM , which projects G into an M -dimensional concept space to generate the predicted concept label vector 
+
+ˆc = Φ( G) ∈ RM ; a linear classifier f : RM → RC , which maps ˆc to the final prediction ˆy = f (ˆ c) ∈ RC .Notably, the prediction ˆy is entirely dependent on the input 
+
+G through the bottleneck ˆc, where each dimension of ˆc cor-responds to a predefined concept. To build the graph concept bottleneck layer, a predefined concept set T = {tm}Mm=1 
+
+is necessary. Each concept tm describes a topologically meaningful subgraph of the samples in D. For each in-put Gi, the ground-truth concept label ci ∈ RM is com-puted by quantifying the relevance of Gi to all concepts. 2Revealing Combinatorial Reasoning of GNNs via Graph Concept Bottleneck Layer  
+
+> Figure 1. Overview of the GCBMs construction pipeline.
+
+The dataset is then augmented with these concept labels as 
+
+D = {(Gi, ci, yi)}ni=1 for training both Φ and f .We can directly observe the linear relationship between concepts and class labels through this layer, which is a soft logical rule that quantifies the contribution of each concept to the final prediction. 
+
+## 4. Method: GCBMs 
+
+This section presents the construction of the graph concept bottleneck layer, and the overall architecture of the GCBMs is illustrated in Figure 1. 
+
+4.1. Constructing Graph Concept Bottleneck Layer 
+
+The message-passing mechanism in most GNNs is a con-tinuous relaxation of the first-order WL graph isomorphism test (Leman & Weisfeiler, 1968). Thus, we use WL-subtrees as graph concepts. Figure 2 shows an undirected and labeled graph and a WL-subtree of height 2 rooted at the node with label 1. The WL graph isomorphism test iteratively com-pares the neighborhood of each node between two graphs, and as a byproduct, the encoding of the WL-subtree is gen-erated. This WL-subtree encoding can be represented as “1,(2,13)(3,123)”, which is an integration of the encodings of three WL-subtrees (“1,23”, “2,13”, “3,123”) of height 1 rooted at the nodes with labels 1, 2, 3, respectively.  
+
+> Figure 2. On the left side is a graph, and on the right side is its WL-subtree of height 2 rooted at the node with label 1.
+
+For a graph dataset D = {(Gi, yi)}ni=1 , we first collect WL-subtrees of height k for all nodes in each graph and keep them in the graph concept corpus C(k). Thus, C(k) is a global-level corpus that spans all graphs in D. Subsequently, we extract non-isomorphic WL-subtrees from C(k) to form the graph concept vocabulary V(k) = {T (k)1 , . . . , T (k)
+
+> |V (k)|
+
+},where all the non-isomorphic graph concepts are sorted lexicographically by their encodings. Since not all graph concepts in V(k) are relevant for pre-dicting graph class labels, we need to identify an effective graph concept set V(k) 
+
+> pruned
+
+from V(k) to construct the graph concept bottleneck layer for GNNs. Specifically, V(k)
+
+> pruned
+
+is selected by measuring the mutual information of each concept to the graph class label. Thus, we use information gain IG (D, T (k)) to quantify the relevance of graph con-cept T (k) to class label. For each graph Gi, we compute its representation vector x(k) 
+
+> Gi
+
+, where the j-th entry corresponds to the occurrence frequency of concept T (k) 
+
+> j
+
+in Gi. For the dataset D, we then construct a matrix X(k) with the i-th row 
+
+x(k) 
+
+> i, :
+
+denoting the representation vector of the i-th graph and the j-th column x(k):,j denoting the occurrence frequency of the j-th graph concept across all graphs. The information gain for the j-th graph concept T (k) 
+
+> j
+
+can be computed as: 
+
+IG (D, T (k) 
+
+> j
+
+) = IG (D, x(k):,j ) = H(D) − H(D| x(k):,j ), (1) where H(D) is the entropy of the class distribution in D,and H(D| x(k):,j ) is the conditional entropy of the class distri-bution given graph concept T (k) 
+
+> j
+
+.We select the top M graph concepts with the highest infor-mation gain to form the graph concept set V(k)
+
+> pruned
+
+. Each graph concept T (k) 
+
+> j
+
+∈ V (k) 
+
+> pruned
+
+(1 ≤ j ≤ M ) can be rep-resented as a one-hot vector t(k) 
+
+> j
+
+of length |V (k)| with the entry on its position in V(k) as 1 and others 0. Similar to CBMs, we define the ground-truth concept label/score of graph Gi as the vector: 
+
+c(k) 
+
+> i
+
+= [ E(x(k) 
+
+> Gi
+
+, t(k)1 ), . . . , E (x(k) 
+
+> Gi
+
+, t(k) 
+
+> M
+
+)] , (2) 3Revealing Combinatorial Reasoning of GNNs via Graph Concept Bottleneck Layer 
+
+where c(k) 
+
+> i
+
+∈ RM and its j-th score E(x(k) 
+
+> Gi
+
+, t(k) 
+
+> j
+
+) is com-puted as the cosine similarity between x(k) 
+
+> Gi
+
+and t(k) 
+
+> j
+
+:
+
+E(x(k) 
+
+> Gi
+
+, t(k) 
+
+> j
+
+) = ⟨x(k) 
+
+> Gi
+
+, t(k) 
+
+> j
+
+⟩∥x(k) 
+
+> Gi
+
+∥ · ∥ t(k) 
+
+> j
+
+∥ , (3) where ⟨· , ·⟩ denotes the dot product, and ∥ · ∥ denotes the norm. We concatenate all c(k) 
+
+> i
+
+(1 ≤ k ≤ K) to ob-tain the global ground-truth graph concept label ci =
+
+Concat (c(1)  
+
+> i
+
+, . . . , c(K) 
+
+> i
+
+). We adopt the K-layer graph iso-morphism network (GIN) (Xu et al., 2018) as the GNN backbone Φ, as it has been theoretically proven that its discriminative power is equivalent to the first-order WL graph isomorphism test. We obtain the global graph rep-resentation hGi via a concatenation of each output of the GIN layer. Then, we align the hierarchical outputs with the global ground-truth graph concept labels. This align-ment ensures each layer’s output retains graph structural properties and can be interpreted as the extent to which the selected concepts exist in the graph. To simultaneously optimize the concept learning and clas-sification accuracy, GCBM’s objective function comprises three components: 
+
+L = λcLc + Ly + λr R, (4) where λc, λ r > 0 denote trade-off parameters that balance concept learning, classification performance, and concept sparsity. The concept loss Lc = 1
+
+> |D|
+
+P 
+
+> Gi∈D
+
+∥ΦΘ1 (Gi) −
+
+ci∥2 facilitates alignment between graph representations and their concept labels. The cross-entropy classification loss Ly = 1
+
+> |D|
+
+P 
+
+> Gi∈D
+
+CE (fΘ2 (Φ Θ1 (Gi)) , yi) ensures consistency between predicted and true class labels. The sparsity regularization term R = L1(Θ 3) enhances the spar-sity of concept vectors and suppresses overfitting, where 
+
+L1(·) denotes the L1 regularization applied to the weight matrix Θ3 of the sparse linear layer (Sparse-L). 
+
+4.2. Graph Concept Embedding 
+
+In the above section, the ground-truth graph concept la-bels/scores computed based on the one-hot embeddings of graphs and concepts fail to capture correlations and co-occurrences between concepts and their probability distri-butions in and across graphs, leading to inaccurate ground-truth concept labels/scores. In image and text domains, concepts within the concept set often exhibit inherent corre-lations. For instance, “bone spurs” and “intervertebral space” in images, or “history” and “archaeology” in text. Similarly, graph concepts may share analogous semantic correlations and occurrence patterns. A typical example is the structural similarity between pyridine rings and pyrimidine rings in molecules, which cannot be reflected by their orthogonal one-hot representations. To mitigate this issue, we analogize each graph concept as a “graph word” and draw inspiration from LMs. These mod-els capture correlations and co-occurrences between tokens (“graph words”) through full-sequence context modeling. The analogy is supported by prior observations (Perozzi et al., 2014; Yanardag & Vishwanathan, 2015) that graph substructure distributions follow a power law that is con-sistent with word distributions in natural languages. As shown in Figure 3, WL-subtree distributions in graphs ap-proximate the power law distribution. Thus, LMs such as Transformer (Vaswani et al., 2017) can effectively learn WL-subtree (graph concept) embeddings while capturing their correlations and co-occurrences. 
+
+Figure 3. Distributions of the WL-subtrees ( height ≤ 2) in graph datasets MUTAG, COX2, BZR, and DHFR. The x-axis denotes WL-subtree rank (i.e., the number of occurrences of a WL-subtree), and the y-axis denotes the number of WL-subtrees with the same rank. These distributions approximate a power law. 
+
+Specifically, for graph Gi, we build its “graph sentence” 
+
+S(k) 
+
+> i
+
+= ( T (k) 
+
+> vπ(1)
+
+, . . . , T (k) 
+
+> vπ(|V i|)
+
+), where T (k) 
+
+> vπ(u)
+
+(1 ≤ u ≤ |V i|)
+
+denotes the WL-subtree of height k rooted at node vπ(u)
+
+and π(·) is a permutation function on node indices in Gi, be-cause the “graph words” in this “graph sentence” are sorted lexicographically by the encodings of their WL-subtrees. For concept T (k) 
+
+> j
+
+(1 ≤ j ≤ M ), we also construct a “graph sentence” SV(k)
+
+> pruned
+
+= ( T (k)1 , . . . , T (k) 
+
+> M
+
+) based on V(k)
+
+> pruned
+
+,and the “graph words” are sorted in the same way as above. Then, for graph dataset D = {(Gi, yi)}ni=1 , we add all “graph sentences” at levels k = 1 , . . . , K into a corpus Cgs ,and use the Transformer to learn dense embeddings of graph concepts: 
+
+hT (k)
+
+> vπ(u)
+
+= LM (T (k) 
+
+> vπ(u)
+
+, Cgs ), (5) 
+
+hT (k)
+
+> j
+
+= LM (T (k) 
+
+> j
+
+, Cgs ), (6) where hT (k)
+
+> vπ(u)
+
+∈ Rd denotes the embedding of the WL-subtree T (k) 
+
+> vπ(u)
+
+, which is also treated as the embedding of node vπ(u). Similarly, hT (k)
+
+> j
+
+∈ Rd denotes the embedding of concept T (k) 
+
+> j
+
+. Notably, the embedding dimension d is much smaller than the dimension of one-hot vectors ( |V (k)|). 4Revealing Combinatorial Reasoning of GNNs via Graph Concept Bottleneck Layer 
+
+Table 1. Classification accuracy (mean% ±standard deviation%) of GCBMs and baseline models of 10-fold cross-validation on benchmark datasets. The best results are in bold and the second-best results are as underlined (This notation applies to all subsequent tables).                                                                                                                                                                                                                                                                           
+
+> Dataset MUTAG PTC-MR BZR COX2 DHFR PROTEINS IMDB-B IMDB-M COLLAB DBLP v1 Group 1 GNNExplainer 66.5 ±2.3 67.1 ±6.2 81.1 ±10.4 80.7 ±6.6 69.8 ±7.2 71.9 ±4.9 70.4 ±4.2 45.0 ±4.3 77.6 ±5.0 82.8 ±0.4 PGExplainer 78.6 ±11.4 67.0 ±5.5 82.9 ±2.7 72.2 ±2.7 69.0 ±6.4 72.5 ±3.5 62.2 ±4.0 40.0 ±6.5 75.7 ±4.5 81.2 ±0.5 ProtGNN 77.6 ±4.7 68.2 ±5.8 82.5 ±2.5 79.2 ±3.1 70.8 ±2.3 74.3 ±2.6 58.3 ±7.3 36.0 ±5.7 69.3 ±8.6 80.0 ±0.6 VGIB 72.1 ±21.6 66.5 ±6.1 79.8 ±3.9 80.0 ±4.2 51.7 ±10.5 68.4 ±6.5 50.8 ±3.7 33.9 ±3.1 72.3 ±4.8 80.5 ±0.8 PGIB 76.6 ±6.8 66.9 ±5.4 83.7 ±5.8 75.8 ±2.3 77.4 ±4.1 74.7 ±3.1 57.0 ±2.9 37.0 ±3.9 73.2 ±4.9 81.3 ±0.7 ConfExplainer 82.5 ±6.7 66.8 ±6.1 83.1 ±5.2 75.5 ±3.8 71.8 ±8.2 72.5 ±5.2 65.6 ±5.4 44.9 ±4.5 77.5 ±5.2 82.7 ±0.6 GraphTrail 87.4 ±5.0 69.3 ±5.9 86.7 ±4.7 83.3 ±4.9 77.2 ±3.6 73.5 ±7.9 72.9 ±4.9 46.5 ±2.1 67.3 ±4.2 79.2 ±0.5 Group 2 WL 87.4 ±5.4 56.0 ±3.9 81.3 ±0.6 81.2 ±1.1 82.4 ±0.9 74.4 ±2.6 67.5 ±4.0 48.4 ±4.2 78.5 ±1.7 77.6 ±0.6 WWL 86.3 ±7.9 52.6 ±6.8 87.6 ±0.6 82.7 ±3.0 82.7 ±3.6 73.1 ±1.4 71.6 ±3.8 52.6 ±3.0 81.4 ±2.1 81.8 ±0.6 FWL 85.7 ±7.5 59.3 ±6.5 87.6 ±5.0 82.0 ±2.7 82.5 ±4.0 74.6 ±3.8 72.0 ±4.6 49.5 ±2.6 78.1 ±1.2 81.9 ±0.8 GAWL 87.3 ±6.3 61.6 ±4.6 88.3 ±3.8 79.9 ±4.9 83.1 ±4.0 74.7 ±3.0 74.6 ±4.7 50.7 ±5.4 81.5 ±2.0 81.1 ±0.3 Group 3 OT-GNN 91.6 ±4.6 68.0 ±7.5 85.9 ±3.3 83.5 ±3.6 84.8 ±3.1 76.6 ±4.0 67.5 ±3.5 52.1 ±3.0 80.7 ±2.9 85.4 ±0.3 WEGL 91.0 ±3.4 66.2 ±6.9 84.4 ±4.6 81.8 ±1.8 82.2 ±2.9 73.7 ±1.9 66.4 ±2.1 50.3 ±1.0 79.6 ±0.5 80.4 ±0.4 Group 4 GIN 89.4 ±5.6 64.6 ±7.0 82.6 ±3.5 81.6 ±4.9 82.6 ±2.6 76.2 ±2.8 64.3 ±3.1 50.9 ±1.7 79.3 ±1.7 83.3 ±0.4 DROPGIN 90.4 ±7.0 66.3 ±8.6 77.8 ±2.6 82.1 ±2.7 82.7 ±3.3 76.9 ±4.3 66.3 ±4.5 51.6 ±3.2 80.1 ±2.8 83.0 ±0.9 SEP 89.4 ±6.1 68.5 ±5.2 86.9 ±0.8 83.7 ±1.8 84.1 ±1.2 76.4 ±0.4 74.1 ±0.6 51.5 ±0.7 81.3 ±0.2 85.5 ±0.3 GMT 89.9 ±4.2 70.2 ±6.2 85.6 ±0.8 84.3 ±2.0 83.9 ±0.9 75.1 ±0.6 73.5 ±0.8 50.7 ±0.8 80.7 ±0.5 85.2 ±0.6 MINCUTPOOL 90.6 ±4.6 68.3 ±4.4 87.2 ±1.0 83.5 ±2.7 82.2 ±0.9 74.7 ±0.5 72.7 ±0.8 51.0 ±0.7 80.9 ±0.3 84.9 ±0.5 ASAP 87.4 ±5.7 64.6 ±6.8 85.3 ±1.3 81.1 ±3.1 83.3 ±1.6 73.9 ±0.6 72.8 ±0.5 50.8 ±0.8 78.6 ±0.5 82.6 ±0.6 WITTOPOPOOL 89.4 ±5.4 64.6 ±6.8 87.8 ±2.4 83.7 ±3.6 84.5 ±2.8 80.0 ±3.2 72.6 ±1.8 52.9 ±0.8 80.1 ±1.6 85.6 ±0.8 GRDL 92.1 ±5.9 68.3 ±5.4 92.0 ±1.1 85.9 ±2.2 85.1 ±2.3 82.6 ±1.2 74.8 ±2.0 52.9 ±1.8 79.8 ±0.9 86.2 ±0.5 Group 5 GRAPHORMER 89.6 ±6.2 71.4 ±5.2 85.3 ±2.3 84.0 ±2.9 83.7 ±2.1 76.3 ±2.7 70.3 ±0.9 48.9 ±2.0 80.3 ±1.3 84.8 ±0.6 SAT 92.6 ±4.3 68.3 ±4.9 91.7 ±2.1 84.1 ±2.6 84.4 ±3.4 77.7 ±3.2 70.0 ±1.3 47.3 ±3.2 80.6 ±0.6 85.9 ±0.3 Ours GCBM 93.5 ±4.0 68.5 ±5.8 89.7 ±4.2 84.3 ±3.5 85.7 ±3.6 75.3 ±2.1 74.2 ±4.1 52.5 ±3.1 82.4 ±1.6 86.2 ±0.7 GCBM-E 93.6 ±4.0 70.6 ±5.4 90.4 ±2.8 85.9 ±3.2 86.1 ±3.2 76.8 ±2.7 75.4 ±4.3 53.1 ±2.4 82.8 ±1.4 87.6 ±0.5
+
+The representation h(k) 
+
+> Gi
+
+of Gi is obtained by aggregating all embeddings of WL-subtrees of height k rooted at each node in Gi:
+
+h(k) 
+
+> Gi
+
+= X  
+
+> T(k)
+> vπ(u)∈S(k)
+> Gi
+
+hT (k)
+
+> vπ(u)
+
+. (7) The graph concept label c(k) 
+
+> i
+
+in Equation (2) is updated by replacing x(k) 
+
+> Gi
+
+with the graph embedding h(k) 
+
+> Gi
+
+and t(k) 
+
+> j
+
+by the graph concept embedding hT (k)
+
+> j
+
+. The context-aware embeddings capture correlations and co-occurrence infor-mation between concepts, and these dense embeddings can alleviate the high-dimensional sparsity of one-hot vectors for nodes and concepts. The refined concept labels better align with the intrinsic graph structure, providing a more effective concept bottleneck for GNNs. The generation pro-cess of embedding-based graph concept labels is detailed in Algorithm 1 (see Appendix A). 
+
+## 5. Experimental Evaluation 
+
+In this section, we validate the performance of GCBMs in graph classification and test the interpretability of the con-cept bottleneck layer via human evaluation and quantitative assessment. We further analyze the contributions of the core components via ablation studies, conduct parameter sensitivity analysis, and perform intervention experiments. 1
+
+> 1
+
+Code available at https://anonymous.4open. science/r/gcbms-332C131/ 
+
+5.1. Experimental Setup 
+
+We conduct classification experiments on 10 public datasets and 2 large-scale class-imbalanced datasets, and perform interpretability experiments on 2 specialized interpretation datasets. To comprehensively evaluate GCBM’s perfor-mance, we select 5 groups of representative advanced meth-ods as baselines: interpretable GNN models (Group 1), WL-based graph kernels (Group 2), optimal transport-based models (Group 3), mainstream GNN models (Group 4), and graph Transformer models (Group 5). Detailed statistics of datasets and baselines, as well as the parameter settings and hardware configuration, are provided in Appendix B. 
+
+5.2. Experimental Results and Analysis 
+
+We refer to the GCBM constructed with concept bottlenecks derived from one-hot representations and dense embeddings (generated via a Transformer) as GCBM and GCBM-E, respectively. 5.2.1. G RAPH CLASSIFICATION PERFORMANCE 
+
+Table 1 reports the classification accuracy of the two GCBM versions on 10 datasets of various domains, while Table 2 presents GCBM-E’s AUC scores (Wang & Fan, 2024; Luo et al., 2020) on 2 class-imbalanced datasets. Table 1 shows that on 10 small, medium, and large datasets, GCBM-E ranks among the top 2 on 8 datasets, and achieves 5Revealing Combinatorial Reasoning of GNNs via Graph Concept Bottleneck Layer 
+
+the highest accuracy on 6 of them. Specifically, it nearly outperforms all baselines in Groups 1–3 across datasets, outperforms most Group 4 baselines (only slightly lagging behind the best baselines on BZR and PROTEINS), and remains leading over Group 5 baselines on MUTAG, IMDB-B, IMDB-M, and COLLAB (performing comparably on PTC-MR and BZR). Compared with GCBM-E, GCBM uses simple one-hot vectors as graph concept embeddings to generate concept scores. Its average accuracy decreases by 1.0%. This is because one-hot representations fail to cap-ture contextual differences of the same WL-subtree across different graphs, and ignore correlations and co-occurrences between concepts, leading to degraded quality of concept scores. Additionally, their high sparsity hinders effective graph embedding learning. Table 2 shows that on 2 large-scale class-imbalanced graphs, GCBM-E achieves AUC scores of 0.888 and 0.862, significantly outperforming the best baseline methods.              
+
+> Table 2. AUC scores (mean% ±standard deviation%) of 10-fold cross-validation of each method on class-imbalanced benchmark datasets (only results of methods that can complete the experiments in 24 hours are reported). Dataset PC-3 MCF-7 GNNExplainer 84.1 ±1.6 79.7 ±1.5 ConfExplainer 83.7 ±1.5 79.2 ±1.4 GIN 84.6 ±1.4 80.6 ±1.5 GRDL 85.1 ±1.6 81.4 ±1.3 GCBM-E 88.8 ±1.7 86.2 ±1.3
+
+Detailed analysis of running time and computational com-plexity is presented in Appendix C. In summary, GCBMs achieve excellent performance on multiple datasets, espe-cially in class-imbalanced scenarios, for which we further provide theoretical proof of their superiority in AUC scores (see Appendix D). 5.2.2. I NTERPRETABILITY EVALUATION 
+
+To verify the interpretability of GCBMs, we conduct human evaluation and quantitative assessment. 
+
+Human Evaluation We perform human evaluation from two perspectives. First, we visualize the classification layer weights by plotting a sankey diagram (Oikarinen et al., 2023) for the DHFR dataset in Figure 4. To obtain the specific func-tional groups corresponding to the concepts in the sankey diagram, we map the nodes of the associated WL-subtrees (graph concepts) back to their original molecules and extract the relevant atoms and bonds, as shown in Figure 5. As observed in Figure 4, graph concepts 20, 42, 47, and 59 have high weights across both classes, indicating their critical role in molecule classification. Molecules from dif-ferent classes present distinct concept score distributions   
+
+> Figure 4. The sankey diagram of the classification layer weights of GCBM on the DHFR dataset. The width of the connection between each concept and class corresponds to the exponent of the absolute value of the learned concept weight. To highlight core concepts, only the top 8 concepts with the largest absolute values of weights in each class are shown.
+> Figure 5. Concept indices and their corresponding specific func-tional groups in molecules from the DHFR dataset.
+
+for these cross-class concepts. When making decisions, GCBMs prioritize the scores on these concepts. This visual-ization provides a clear global explanation that reveals how GCBMs make decisions through the linear combinatorial reasoning of these global concepts. Second, we verify that these discriminative concepts cor-respond to human-understandable semantic information. Specifically, we restore the concepts to their original graph structures and validate their consistency with domain knowl-edge. As shown in Figure 6, we present the graph structures of sample molecules from two classes that contain concepts 20 and 42. As observed in Figure 6, concept 20 corresponds to a purine ring structure and concept 42 to a pteridine ring structure. Both substructures have been confirmed by biochemical studies as key active groups of dihydrofolate reductase inhibitors (Srinivasan & Skolnick, 2015; Tassone et al., 2021; Possart et al., 2023; Hoarau et al., 2023), and are highly relevant to the target task labels. These results confirm that GCBMs can identify meaningful concepts con-sistent with real-world domain knowledge through concept selection, verifying the interpretability of the graph concept bottleneck. 6Revealing Combinatorial Reasoning of GNNs via Graph Concept Bottleneck Layer  
+
+> Figure 6. Key graph concepts and sample molecules with these concepts from each class in the DHFR dataset. The red part indi-cates the target substructure that each key concept is mapped back to in the original graph.
+
+Quantitative Assessment We adopt the AUC score as the interpretability metric, which quantifies the alignment de-gree between the true and predicted interpretable subgraphs. Specifically, the quantitative assessment is conducted on 2 datasets Solubility and Benzene with annotations of the true interpretable subgraphs. Using the GCBM’s concept selec-tion method, we filter the top MI = 2 key concepts from the graph concept vocabulary V(k), map these concepts back to each original graph to derive their specific substructures, and finally take the union of nodes from all substructures as GCBM’s predicted interpretable subgraphs for each graph. Table 3 reports GCBM’s AUC scores on these 2 datasets. The results show that GCBM achieves higher AUC scores, confirming that the concepts used to construct the explicit concept layer can accurately correspond to the interpretable substructures in graphs. Notably, unlike baselines, GCBM’s subgraph prediction avoids complex training processes. Its key concept extraction and subgraph mapping are achieved solely by adjusting the hyperparameter MI , greatly reducing the computational cost. The parameter sensitivity analysis of MI is provided in Appendix E.                  
+
+> Table 3. AUC scores (mean%) of each method on datasets Solubil-ity and Benzene for interpretability evaluation. The selected two concepts are shared for GCBM and GCBM-E, leading to the same results. Dataset Solubility Benzene GNNExplainer 51.8 54.7 PGExplainer 77.9 48.2 ProtGNN 56.2 66.4 VGIB 67.5 62.2 PGIB 65.0 61.3 ConfExplainer 80.5 75.3 GCBM/GCBM-E 91.2 83.6
+
+5.2.3. A BLATION STUDIES 
+
+To verify the importance of GCBM-E’s key components, we construct 3 more variants by removing each component individually and compare their performance on 4 bench-mark datasets. Table 4 shows that GCBM-E achieves the best performance across all datasets. GCBM-V replaces the highly discriminative concept set V(k) 
+
+> pruned
+
+with M randomly selected concepts. Its accuracy is reduced across all datasets, as many selected concepts are ineffective: they have low information gain and contribute little to class discrimination, leading to similar concept scores for graphs of different classes. Consequently, the classification layer struggles to distinguish graphs based on these scores. GCBM-GCN and GCBM-G replace the backbone GIN with GCN (Kipf & Welling, 2017) and the graph concept embedding model Transformer with GloVe (Pennington et al., 2014), respec-tively. The performance gap between these variants and GCBM-E mainly stems from differences in the representa-tion learning capabilities of the substituted models. This result suggests that GCBMs can achieve stronger perfor-mance with more powerful backbones and graph concept embedding models. In summary, all key components of GCBM-E contribute significantly to performance.                      
+
+> Table 4. Classification accuracy (mean% ±standard deviation%) of GCBM-E and its variants on benchmark datasets. GCBM-V
+> adopts a randomly selected concept set; GCBM-GCN replaces the backbone GIN with GCN; GCBM-G replaces Transformer with GloVe.
+> Dataset MUTAG COX2 DHFR IMDB-M GCBM-V92.5 ±4.3 85.0 ±2.5 85.7 ±3.3 53.0 ±3.3 GCBM-GCN 87.7 ±6.2 85.0 ±3.4 84.2 ±2.4 52.2 ±3.4 GCBM-G 93.0 ±4.2 85.7 ±2.9 86.0 ±3.7 52.4 ±2.1 GCBM-E 93.6 ±4.0 85.9 ±3.2 86.1 ±3.2 53.1 ±2.4
+
+5.2.4. S ENSITIVITY ANALYSIS 
+
+In this section, we evaluate the sensitivity of GCBM-E’s per-formance to its parameters λc (graph concept loss weight), 
+
+K (the maximum height of the WL-subtrees), and λr (sparse regularization weight) on the same 4 datasets as the above section. Figure 7 demonstrates that adjusting GCBM-E’s key parameters results in performance degradation. Specif-ically, decreasing λc or λr reduces the model’s accuracy, while decreasing K leads to a more significant performance drop. Compared to weakening the alignment between graph representations and concept labels (reducing λc) or relaxing the constraints of sparse regularization (reducing λr ), prun-ing the concept vocabulary (decreasing K) fundamentally undermines the quality of the concept bottleneck, thus caus-ing more severe performance impairment. Overall, reducing 
+
+λc, K, or λr consistently degrades GCBM-E’s performance across all datasets. 7Revealing Combinatorial Reasoning of GNNs via Graph Concept Bottleneck Layer 
+
+Figure 7. Parameter sensitivity analysis of GCBM-E: λc (graph concept loss weight), K (the maximum height of the WL-subtrees), and 
+
+λr (sparse regularization weight). 
+
+Table 5. Intervention results of GCBM and GCBM-E on the DHFR dataset. WF [cls ,cpt ] denotes the weight of the target concept (cpt) corresponding to the class (cls) in the final classification layer weight matrix WF . NMR indicates no modification required. Accuracy represents the classification accuracy (mean%) before and after intervention.                                                          
+
+> Model Intervention Target WF[cls 0 ,cpt j ]WF[cls 1 ,cpt j ]Impact Accuracy GCBM ˆciof misclassified samples NMR NMR +12 corrections 85.7 →87.3 GCBM-E WF[cls 0 ,cpt 20 ],WF[cls 1 ,cpt 20 ]0.384 →-0.037 -0.011 →0.410 +11 corrections; +6 new errors 86.1 →86.8 GCBM-E WF[cls 0 ,cpt 42 ],WF[cls 1 ,cpt 42 ]0.188 →-0.247 0.094 →0.528 +8 corrections; +5 new errors 86.1 →86.5 GCBM-E WF[cls 0 ,cpt 20/42 ],WF[cls 1 ,cpt 20/42 ]0.384/0.188 →-0.037/-0.247 -0.011/0.094 →0.410/0.528 +15 corrections; +8 new errors 86.1 →87.0
+
+5.2.5. I NTERVENTION EXPERIMENTS 
+
+To verify the intervenability of the concept layer in GCBMs, we adopt different intervention strategies for GCBM and GCBM-E, and conduct experiments on their misclassified graphs in the DHFR dataset. Specifically, GCBM’s concept score for graph Gi on concept Tj relies on Gi’s frequency-based representation vector and the one-hot vector of Tj . For misclassified graphs, we directly edit their predicted concept vectors ˆci (Koh et al., 2020) and feed the modified concept vectors into the classification layer to re-predict the class, thus correcting the misclassified graphs. For GCBM-E, con-cept scores are computed via the similarity of Transformer-learned embeddings, and the associations between concepts and classes are measured by the classification layer weights. For graph Gi satisfying ˆyi̸ = yi and sim (ˆ ci, ci) ≥ τc (i.e., valid concept activation but incorrect classification (Oikari-nen et al., 2023)), where τc denotes the similarity threshold for valid concept activation, we design three intervention schemes: modifying the classification layer weights of dis-criminative concept 20 alone, modifying those of concept 42 alone, and performing joint intervention on both concepts explore the synergistic effect of key concepts. Detailed mod-ification rules are provided in Appendix F, and intervention results are shown in Table 5. The results show that GCBM’s classification accuracy in-creases from 85.7% to 87.3%, with the correction of misclas-sified graphs achieving a net improvement. For GCBM-E, all three intervention schemes enhance overall performance, and the joint intervention exhibits the most significant ef-fect: it corrects 15 misclassified graphs (outperforming the sum of individual interventions on each concept) with only 8 new misclassifications, boosting accuracy from 86.1% to 87.0%. This superior performance validates the com-binatorial reasoning of GCBMs. Key concepts do not act independently but synergistically contribute to the model’s decision-making. These intervention experiments confirm GCBMs’ advantages in interpretability and decision control-lability, enabling targeted optimization of prediction results through intervention on core concept combinations. 
+
+## 6. Conclusion 
+
+This paper proposes a globally and intrinsically interpretable paradigm for GNNs called Graph Concept Bottleneck Mod-els (GCBMs). As a generic framework, the explicit graph concept bottleneck layer of GCBMs enforces the combina-torial reasoning of GNNs’ predictions to fit the soft logical rule over graph concepts, achieving both excellent discrim-inative power and interpretability. Experiments on mul-tiple datasets verify the superior predictive performance of GCBMs, with notable advantages on large-scale class-imbalanced datasets. For interpretability, human evaluation of the molecular graphs confirms that the concepts extracted by GCBMs are highly aligned with domain knowledge, while quantitative assessment demonstrates that these con-cepts accurately correspond to interpretable subgraphs in graphs. Moreover, intervention experiments validate the controllability of GCBMs’ decision-making process. In the future, we plan to expand graph concept types (e.g., tex-tual descriptions of graph properties) using large language models and explore more advanced backbone GNNs (e.g., graph Transformers) to further enhance the applicability of GCBMs on complex graph data. 8Revealing Combinatorial Reasoning of GNNs via Graph Concept Bottleneck Layer 
+
+## Impact Statement 
+
+This paper focuses on advancing technological innovation and development in the field of Machine Learning. While our research may yield multifaceted societal impacts, no specifc aspects require special emphasis following careful evaluation. 
+
+## References 
+
+Akiba, T., Sano, S., Yanase, T., Ohta, T., and Koyama, M. Optuna: A next-generation hyperparameter optimization framework. In Proceedings of the 25th ACM SIGKDD International Conference on Knowledge Discovery and Data Mining , 2019. Armgaan, B., Dalmia, M., Medya, S., and Ranu, S. Graphtrail: Translating gnn predictions into human-interpretable logical rules. Advances in Neural Infor-mation Processing Systems , 37:123443–123470, 2024. Azzolin, S., Longa, A., Barbiero, P., Lio, P., and Passerini, A. Global explainability of gnns via logic combination of learned concepts. In The Eleventh International Con-ference on Learning Representations .Baek, J., Kang, M., and Hwang, S. J. Accurate learning of graph representations with graph multiset pooling. arXiv preprint arXiv:2102.11533 , 2021. Bianchi, F. M., Grattarola, D., and Alippi, C. Spectral clustering with graph neural networks for graph pooling. In International conference on machine learning , pp. 874– 883. PMLR, 2020. Chen, B., B ´ecigneul, G., Ganea, O.-E., Barzilay, R., and Jaakkola, T. Optimal transport graph neural networks. 
+
+arXiv preprint arXiv:2006.04804 , 2020. Chen, D., O’Bray, L., and Borgwardt, K. Structure-aware transformer for graph representation learning. In Interna-tional conference on machine learning , pp. 3469–3489. PMLR, 2022. Chen, Y. and Gel, Y. R. Topological pooling on graphs. In 
+
+Proceedings of the AAAI Conference on Artificial Intelli-gence , volume 37, pp. 7096–7103, 2023. Devlin, J., Chang, M.-W., Lee, K., and Toutanova, K. Bert: Pre-training of deep bidirectional transformers for lan-guage understanding. arXiv preprint arXiv:1810.04805 ,2018. Duvenaud, D. K., Maclaurin, D., Iparraguirre, J., Bom-barell, R., Hirzel, T., Aspuru-Guzik, A., and Adams, R. P. Convolutional networks on graphs for learning molecular fingerprints. Advances in neural information processing systems , 28, 2015. Giannis, N. and Michalis, V. Graph alignment kernels using weisfeiler and leman hierarchies. In The 26th Interna-tional Conference on Artificial Intelligence and Statistics ,2023. Hamilton, W., Ying, Z., and Leskovec, J. Inductive repre-sentation learning on large graphs. Advances in neural information processing systems , 30, 2017. Hoarau, M., Sermmai, P., Varatthan, T., Thiabma, R., Jantra, T., Rattanajak, R., Vitsupakorn, D., Vanichtanankul, J., Saepua, S., Yuthavong, Y., et al. Discovery of rigid biphenyl plasmodium falciparum dhfr inhibitors using a fragment linking strategy. RSC Medicinal Chemistry ,14(9):1755–1766, 2023. Kent, J. T. Information gain and a general measure of correlation. Biometrika , 70(1):163–173, 1983. Kingma, D. P. and Ba, J. Adam: A method for stochastic op-timization, 2017. URL https://arxiv.org/abs/ 1412.6980 .Kipf, T. and Welling, M. Semi-supervised classification with graph convolutional networks. In International Con-ference on Learning Representations , 2017. Koh, P. W., Nguyen, T., Tang, Y. S., Mussmann, S., Pierson, E., Kim, B., and Liang, P. Concept bottleneck models. In 
+
+International conference on machine learning , pp. 5338– 5348. PMLR, 2020. Kolouri, S., Naderializadeh, N., Rohde, G. K., and Hoff-mann, H. Wasserstein embedding for graph learning. 
+
+arXiv preprint arXiv:2006.09430 , 2020. Leman, A. and Weisfeiler, B. A reduction of a graph to a canonical form and an algebra arising during this reduc-tion. Nauchno-Technicheskaya Informatsiya , 2(9):12–16, 1968. Ludan, J. M., Lyu, Q., Yang, Y., Dugan, L., Yatskar, M., and Callison-Burch, C. Interpretable-by-design text clas-sification with iteratively generated concept bottleneck. 
+
+arXiv preprint arXiv:2310.19660 , 2023. Luo, D., Cheng, W., Xu, D., Yu, W., Zong, B., Chen, H., and Zhang, X. Parameterized explainer for graph neural network. Advances in neural information processing systems , 33:19620–19631, 2020. Morris, C., Kriege, N. M., Bause, F., Kersting, K., Mutzel, P., and Neumann, M. Tudataset: A collection of bench-mark datasets for learning with graphs. In ICML 2020 Workshop on Graph Representation Learning and Beyond (GRL+ 2020) , 2020. URL www.graphlearning. io .9Revealing Combinatorial Reasoning of GNNs via Graph Concept Bottleneck Layer 
+
+Oikarinen, T., Das, S., Nguyen, L. M., and Weng, T.-W. Label-free concept bottleneck models. arXiv preprint arXiv:2304.06129 , 2023. Papp, P. A., Martinkus, K., Faber, L., and Wattenhofer, R. Dropgnn: Random dropouts increase the expressiveness of graph neural networks. Advances in Neural Informa-tion Processing Systems , 34:21997–22009, 2021. Pennington, J., Socher, R., and Manning, C. D. Glove: Global vectors for word representation. In Proceedings of the 2014 conference on empirical methods in natural language processing (EMNLP) , pp. 1532–1543, 2014. Perozzi, B., Al-Rfou, R., and Skiena, S. Deepwalk: Online learning of social representations. In ACM SIGKDD International Conference on Knowledge Discovery and Data Mining , pp. 701–710. ACM, 2014. Possart, K., Herrmann, F. C., Jose, J., and Schmidt, T. J. In silico and in vitro search for dual inhibitors of the trypanosoma brucei and leishmania major pteridine re-ductase 1 and dihydrofolate reductase. Molecules , 28(22): 7526, 2023. Ranjan, E., Sanyal, S., and Talukdar, P. Asap: Adaptive structure aware pooling for learning hierarchical graph representations. In Proceedings of the AAAI conference on artificial intelligence , volume 34, pp. 5470–5477, 2020. Rao, J., Lin, H., Xie, J., Wang, Z., Zheng, S., and Yang, Y. Incorporating retrieval-based causal learning with in-formation bottlenecks for interpretable molecular graph learning. In Proceedings of the 31st ACM SIGKDD Con-ference on Knowledge Discovery and Data Mining V. 2 ,pp. 2398–2409, 2025. Sanchez-Lengeling, B., Wei, J., Lee, B., Reif, E., Wang, P., Qian, W., McCloskey, K., Colwell, L., and Wiltschko, A. Evaluating attribution for graph neural networks. Ad-vances in neural information processing systems , 33: 5898–5910, 2020. Schulz, T., Welke, P., and Wrobel, S. Graph filtration ker-nels. In Proceedings of the AAAI Conference on Artificial Intelligence , volume 36, pp. 8196–8203, 2022. Seo, S., Kim, S., and Park, C. Interpretable prototype-based graph information bottleneck. Advances in Neural Information Processing Systems , 36:76737–76748, 2023. Shervashidze, N., Schweitzer, P., Van Leeuwen, E. J., Mehlhorn, K., and Borgwardt, K. M. Weisfeiler-lehman graph kernels. Journal of Machine Learning Research ,12(9), 2011. Srinivasan, B. and Skolnick, J. Insights into the slow-onset tight-binding inhibition of escherichia coli dihydrofo-late reductase: detailed mechanistic characterization of pyrrolo [3, 2-f] quinazoline-1, 3-diamine and its deriva-tives as novel tight-binding inhibitors. The FEBS journal ,282(10):1922–1938, 2015. Srivastava, D., Yan, G., and Weng, L. Vlg-cbm: Training concept bottleneck models with vision-language guid-ance. Advances in Neural Information Processing Sys-tems , 37:79057–79094, 2024. Sun, C.-E., Oikarinen, T., Ustun, B., and Weng, T.-W. Con-cept bottleneck large language models. arXiv preprint arXiv:2412.07992 , 2024. Tan, Z., Cheng, L., Wang, S., Yuan, B., Li, J., and Liu, H. Interpreting pretrained language models via concept bottlenecks. In Pacific-Asia Conference on Knowledge Discovery and Data Mining , pp. 56–74. Springer, 2024. Tassone, G., Landi, G., Linciano, P., Francesconi, V., Tonelli, M., Tagliazucchi, L., Costi, M. P., Mangani, S., and Pozzi, C. Evidence of pyrimethamine and cy-cloguanil analogues as dual inhibitors of trypanosoma brucei pteridine reductase and dihydrofolate reductase. 
+
+Pharmaceuticals , 14(7):636, 2021. Togninalli, M., Ghisu, E., Llinares-L ´opez, F., Rieck, B., and Borgwardt, K. Wasserstein weisfeiler-lehman graph ker-nels. Advances in neural information processing systems ,32, 2019. Vaswani, A., Shazeer, N., Parmar, N., Uszkoreit, J., Jones, L., Gomez, A. N., Kaiser, Ł., and Polosukhin, I. Atten-tion is all you need. In Advances in Neural Information Processing Systems , pp. 5998–6008, 2017. Veli ˇckovi ´c, P., Cucurull, G., Casanova, A., Romero, A., Lio, P., and Bengio, Y. Graph attention networks. In 
+
+International Conference on Learning Representations ,2018. Vu, M. and Thai, M. T. Pgm-explainer: Probabilistic graph-ical model explanations for graph neural networks. Ad-vances in neural information processing systems , 33: 12225–12235, 2020. Wang, Z. and Fan, J. Graph classification via reference dis-tribution learning: theory and practice. Advances in Neu-ral Information Processing Systems , 37:137698–137740, 2024. Wu, J., Chen, X., Xu, K., and Li, S. Structural entropy guided graph hierarchical pooling. In International con-ference on machine learning , pp. 24017–24030. PMLR, 2022. 10 Revealing Combinatorial Reasoning of GNNs via Graph Concept Bottleneck Layer 
+
+Xie, Y., Katariya, S., Tang, X., Huang, E., Rao, N., Sub-bian, K., and Ji, S. Task-agnostic graph explanations. 
+
+Advances in neural information processing systems , 35: 12027–12039, 2022. Xu, H., Weng, T.-W., Nguyen, L. M., and Ma, T. Graph con-cept bottleneck models. arXiv preprint arXiv:2508.14255 ,2025. Xu, K., Hu, W., Leskovec, J., and Jegelka, S. How powerful are graph neural networks? arXiv preprint arXiv:1810.00826 , 2018. Yanardag, P. and Vishwanathan, S. Deep graph kernels. In 
+
+ACM SIGKDD International Conference on Knowledge Discovery and Data Mining , pp. 1365–1374. ACM, 2015. Yang, Y., Panagopoulou, A., Zhou, S., Jin, D., Callison-Burch, C., and Yatskar, M. Language in a bottle: Lan-guage model guided concept bottlenecks for interpretable image classification. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition ,pp. 19187–19197, 2023. Ying, C., Cai, T., Luo, S., Zheng, S., Ke, G., He, D., Shen, Y., and Liu, T.-Y. Do transformers really perform badly for graph representation? Advances in neural information processing systems , 34:28877–28888, 2021. Ying, Z., Bourgeois, D., You, J., Zitnik, M., and Leskovec, J. Gnnexplainer: Generating explanations for graph neural networks. Advances in neural information processing systems , 32, 2019. Yu, J., Xu, T., Rong, Y., Bian, Y., Huang, J., and He, R. Graph information bottleneck for subgraph recognition. In International Conference on Learning Representa-tions .Yu, J., Xu, T., Rong, Y., Bian, Y., Huang, J., and He, R. Graph information bottleneck for subgraph recognition. 
+
+arXiv preprint arXiv:2010.05563 , 2020. Yu, J., Cao, J., and He, R. Improving subgraph recognition with variational graph information bottleneck. In Pro-ceedings of the IEEE/CVF conference on computer vision and pattern recognition , pp. 19396–19405, 2022. Yuan, H., Yu, H., Wang, J., Li, K., and Ji, S. On explainabil-ity of graph neural networks via subgraph explorations. In 
+
+International conference on machine learning , pp. 12241– 12252. PMLR, 2021. Zhang, J., Liu, X., Luo, D., and Wei, H. Is your explanation reliable: Confidence-aware explanation on graph neural networks. In Proceedings of the 31st ACM SIGKDD Conference on Knowledge Discovery and Data Mining V. 2, pp. 3740–3751, 2025. Zhang, M., Cui, Z., Neumann, M., and Chen, Y. An end-to-end deep learning architecture for graph classification. In 
+
+Proceedings of the AAAI conference on artificial intelli-gence , volume 32, 2018. Zhang, Z., Liu, Q., Wang, H., Lu, C., and Lee, C. Protgnn: Towards self-explaining graph neural networks. In Pro-ceedings of the AAAI conference on artificial intelligence ,volume 36, pp. 9127–9135, 2022. 11 Revealing Combinatorial Reasoning of GNNs via Graph Concept Bottleneck Layer 
+
+## A. The Generation of Embedding-based Graph Concept Labels 
+
+To clarify our method, we present the generation process of the embedding-based graph concept labels in Algorithm 1. 
+
+Algorithm 1: Generation of Embedding-based Graph Concept Labels 
+
+Input: Graph dataset D = {(Gi, yi)}ni=1 , Max WL-subtree height K, Number of selected concepts M , Pre-trained language model LM 
+
+Output: Complemented dataset D = {(Gi, ci, yi)}ni=1 
+
+// Phase 1: Build graph sentence corpus  
+
+> 1
+
+Initialize the graph sentence corpus Cgs = ∅; 
+
+> 2
+
+for k = 1 to K do  
+
+> 3
+
+Initialize the k-level graph concept corpus C(k) = ∅; 
+
+> 4
+
+Extract the WL-subtree of height k for each node v in each graph Gi and add it to C(k); 
+
+> 5
+
+Form the graph concept vocabulary V(k) = {T (k)1 , . . . , T (k)
+
+> |V (k)|
+
+} with the unique WL-subtrees in C(k); 
+
+> 6
+
+Build the frequency matrix X(k) ∈ Rn×|V (k)| of D, where X(k)[i][ j] = Frequency (Gi, T (k) 
+
+> j
+
+); 
+
+> 7
+
+Calculate information gain for each concept IG (D, T (k) 
+
+> j
+
+) via Eq. (1);  
+
+> 8
+
+Select top-M concepts from V(k) to form the graph concept set V(k) 
+
+> pruned
+
+= {T (k)1 , . . . , T (k) 
+
+> M
+
+}; 
+
+> 9
+
+Build “graph sentences” S(k) 
+
+> i
+
+for each Gi and SV(k)
+
+> pruned
+
+for V(k) 
+
+> pruned
+
+with sorted WL-subtree codes;  
+
+> 10
+
+Form the k-level graph sentence corpus C(k) 
+
+> gs
+
+with S(k) 
+
+> i
+
+and SV(k)
+
+> pruned
+
+; 
+
+> 11
+
+Cgs ← C gs ∪ C (k) 
+
+> gs
+
+;
+
+// Phase 2: Generate graph concept label  
+
+> 12
+
+Train LM on Cgs ; 
+
+> 13
+
+for k = 1 to K do  
+
+> 14
+
+Generate node embeddings hT (k)
+
+> vπ(u)
+
+and concept embeddings hT (k)
+
+> j
+
+via Eq. (5) and Eq. (6);  
+
+> 15
+
+Aggregate the node embeddings of Gi and generate graph embeddings h(k) 
+
+> Gi
+
+via Eq. (7);  
+
+> 16
+
+Calculate concept scores via Eq. (3) and generate k-level concept labels c(k) 
+
+> i
+
+via Eq. (2);  
+
+> 17
+
+Generate global graph labels ci = Concat (c(1)  
+
+> i
+
+, . . . , c(K) 
+
+> i
+
+); 
+
+> 18
+
+Complement the dataset D = {(Gi, ci, yi)}ni=1 with ci; 
+
+> 19
+
+return D
+
+## B. Experimental Setup 
+
+Datasets We conducted experiments on 10 public graph datasets (covering bioinformatics: MUTAG, PTC-MR, BZR, COX2, DHFR, PROTEINS; social networks: IMDB-B, IMDB-M, COLLAB, DBLP v1) for graph classification tasks across small, medium, and large scales, along with 2 large-scale class-imbalanced datasets PC-3 and MCF-7 to test performance in imbalanced scenarios, and 2 specialized interpretation datasets Solubility (Duvenaud et al., 2015), Benzene (Sanchez-Lengeling et al., 2020) for interpretability evaluation. Dataset statistics are available in (Morris et al., 2020). 
+
+Baselines We select 5 groups of representative advanced methods as baselines for a comprehensive evaluation, categorized as follows. Interpretable GNN models (Group 1): These methods focus on identifying graph substructures that support the model’s correct predictions, including GNNExplainer (Ying et al., 2019), PGExplainer (Luo et al., 2020), ProtGNN (Zhang et al., 2022), VGIB (Yu et al., 2022), PGIB (Seo et al., 2023), ConfExplainer (Zhang et al., 2025), GraphTrail (Armgaan et al., 2024). WL-based graph kernels (Group 2): These methods measure graph similarity via hand-crafted kernel functions, serving as classical baselines in graph classification, including WL-subtree kernel (Shervashidze et al., 2011), WWL (Togninalli et al., 2019), FWL (Schulz et al., 2022), and GAWL (Giannis & Michalis, 2023). 12 Revealing Combinatorial Reasoning of GNNs via Graph Concept Bottleneck Layer 
+
+Optimal transport-based models (Group 3): These methods align graph distribution features using optimal transport theory and perform prominently in similarity measurement tasks, including OT-GNN (Chen et al., 2020) and WEGL (Kolouri et al., 2020). Mainstream GNN models (Group 4): These methods capture graph structural features through hierarchical aggregation, representing the mainstream of graph representation learning. These models include GIN (Xu et al., 2018), DropGIN (Papp et al., 2021), SEP (Wu et al., 2022), GMT (Baek et al., 2021), MinCutPool (Bianchi et al., 2020), ASAP (Ranjan et al., 2020), WITTOPOPOOL (Chen & Gel, 2023), and GRDL (Wang & Fan, 2024). Graph Transformer models (Group 5): These methods introduce self-attention mechanisms to model long-range dependencies in graphs, demonstrating potential in handling complex graph structures. These models include GRAPHORMER (Ying et al., 2021) and SAT (Chen et al., 2022). 
+
+Parameter Settings and Hardware Configuration The default parameters for each comparison method are used. For GCBMs: We adopt the Transformer variant BERT (Devlin et al., 2018) as the LM. Both the number of hidden layers and that of attention heads are set to 4, and the hidden dimension is set to 64. The maximum length of text sequences is set to the length of the longest sequence among the “graph sentence” in the dataset. Input tokens are randomly masked at a 15% rate for self-supervised training. The BERT model is trained for 3 epochs with cross-entropy as the loss function, and the batch size is adjusted according to the dataset size. GCBM’s backbone GIN consists of 4 layers with a fixed hidden dimension of 64. The readout operation follows the default setting of GIN, using global sum pooling. To enhance the propagation of deep representations, we introduce residual connections for each layer with learnable residual weights. In addition, we select M = 64 highly discriminative concepts for each layer and dynamically adjust the importance of concepts at different levels via learnable hierarchical concept weights. Furthermore, a dropout mechanism is introduced in each layer to prevent overfitting. During training, concept labels are incorporated to compute concept loss; during testing, no concept labels are required, and the model automatically predicts concept labels and outputs classification results. The total number of training epochs is set to 300, with the Adam (Kingma & Ba, 2017) optimizer employed. The learning rate scheduling strategy is ReduceLROnPlateau, with a minimum improvement threshold of 0.1 and a minimum learning rate of 10 −6. We use the Optuna (Akiba et al., 2019) optimization framework to search for hyperparameters, including dropout rate, initial learning rate, weight decay, learning rate decay factor, patience, and cooldown period. Additionally, a gradient clipping strategy is applied to stabilize training and prevent gradient explosion. Experiments perform 10-fold cross-validation. Experiments are conducted on a server equipped with an Intel (R) Xeon (R) Gold 6226R processor, 256GB memory, an NVIDIA RTX 3090 GPU, and Ubuntu 18.04.6 LTS as the operating system. The deep learning framework used is PyTorch 1.13.0. 
+
+## C. Runing Time and Complexity Analysis 
+
+Table 6 reports the preprocessing time of GCBM-E on different datasets, including three components: WL-subtree extraction, information gain computation, and Transformer training. Table 6 shows that the preprocessing time of GCBM-E is minimal on small datasets and remains acceptable on large datasets.                      
+
+> Table 6. Preprocessing time (in seconds) of each component in GCBM-E . Component MUTAG COX2 DHFR IMDB-M COLLAB WL-subtree extraction 4.43 4.97 6.49 7.54 16840.92 Information gain computation 0.68 1.20 1.24 1.19 2435.85 Transformer training 7.27 10.53 15.59 22.11 39720.67
+
+Table 7 reports the training time of GCBM, GCBM-E and several representative baseline models. As shown in Table 7, WWL (a WL-based graph kernel method) achieves the shortest training time, as graph kernel methods do not require constructing or training neural networks. Among GNN-based methods, GIN is implemented via TensorFlow, while all other 13 Revealing Combinatorial Reasoning of GNNs via Graph Concept Bottleneck Layer 
+
+compared models are developed with PyTorch. For fair comparison, all GNN-based methods use a unified setup of 350 training epochs and a batch size of 64. These results confirm that GCBMs yield superior training efficiency, achieving a good balance between computational cost and predictive performance.                                     
+
+> Table 7. Training time (in seconds) of GCBMs and representative baselines. Dataset MUTAG COX2 DHFR IMDB-M COLLAB GNNExplainer 388.22 677.19 771.87 2058.63 122602.41 WWL 4.75 44.52 117.29 263.62 10044.34 GIN 392.35 726.21 981.19 2452.42 126747.07 GRDL 195.76 356.20 541.52 1438.94 107040.14 GCBM 177.60 337.38 476.58 1353.61 96191.98 GCBM-E 198.93 388.93 577.29 1521.60 106338.83
+
+GCBM-E has a longer training time than GCBM due to differences in the computational complexities of their graph and concept embedding models. GCBM derives graph and concept vectors directly from frequency statistics without additional training overhead, incurring only O(n · M · |V (k)|) complexity for concept label calculation, where n is the number of graphs, M is the number of selected concepts, and |V (k)| is the size of the graph concept vocabulary. In contrast, GCBM-E requires training both GIN as the backbone and a Transformer as the embedding model, leading to O(n · M · d) complexity for concept label calculation plus extra overhead from Transformer training: O(T · n · (L · S2 · d + L · S · d2)) and 
+
+O(T · M · (L · S2 · d + L · S · d2)) . Here, T is the Transformer’s training epochs, L is its number of network layers, 
+
+S is the length of the “graph sentences”, and d is the hidden layer dimension. S2 and d2 terms are the key drivers of GCBM-E ’s higher complexity. Other components share roughly the same complexity for both models: WL-subtree extraction is O(n · K · |V| ), where K is WL-subtrees height and |V| is the number of nodes, information gain computation is approximately O(n · |V (k)|), and the forward computation complexity of the GIN backbone is O(n · K · |V| ).Overall, while GCBM exhibits slightly lower classification accuracy than GCBM-E , it offers improved training efficiency, serving as a more practical solution for fast graph classification tasks. For GCBM-E , despite the increased complexity introduced by the Transformer, it achieves enhanced accuracy via a higher-quality concept bottleneck. 
+
+## D. Theoretical Superiority of GCBMs’ AUC Score in Class-Imbalanced Graph Classification 
+
+D.1. Notations and Premises 
+
+D.1.1. D ATASET DEFINITION 
+
+Consider a class-imbalanced binary classification dataset D = {(Gi, ci, yi)}ni=1 , where hi ∈ Rd and ci ∈ RM are the feature vector and concept label of an input instance, respectively. yi ∈ { 0, 1} denotes the class label. For the class-imbalanced dataset, yi = 0 and yi = 1 indicate the majority and minority classes, respectively. The prior distribution satisfies: 
+
+p1 = p(yi = 1) ≪ p(yi = 0) = p0, (8) where p0 + p1 = 1 and p1 ≪ 0.5.D.1.2. A SSUMPTIONS 
+
+Assumption D.1 (Concept Discriminability Assumption) . The concept set V = {T1, . . . , T M } is highly discriminative. For any concept Tm ∈ V , there exists a discriminability threshold τ > 0 such that: KL (p(ci = Tm|yi = 1) ∥ p(ci = Tm|yi = 0)) > τ, (9) where KL (· ∥ · ) denotes the Kullback-Leibler (KL) divergence between two distributions. This implies that the distribution of the same concept differs significantly between the two classes, enabling distinction between the majority and minority classes. 
+
+Assumption D.2 (Model Prediction Score Distribution Assumption) . The prediction scores of classification models are approximately normally distributed, with no systematic variance differences between the two classes. For simplicity, we 14 Revealing Combinatorial Reasoning of GNNs via Graph Concept Bottleneck Layer 
+
+assume: 
+
+σ21 ≈ σ20 = σ2, (10) where σ21 and σ20 are the variances of prediction scores for minority and majority classes, respectively. This assumption does not affect the validity of core conclusions. For a valid model, the means of the prediction scores for the two classes should satisfy: 
+
+μ1 > μ 0, (11) and δ = μ1 − μ0 > 0 denotes the difference between the two means. 
+
+Assumption D.3 (Prediction Independence Assumption) . Since the prediction process of models for different samples is mutually independent, the distributions of prediction scores for minority and majority class samples satisfy: 
+
+p(ˆ y|yi = 1) ⊥⊥ p(ˆ y|yi = 0) , (12) which means that the prediction score distributions of minority and majority classes are mutually independent. 
+
+D.2. Theoretical Proof 
+
+D.2.1. D ISCRIMINABILITY ANALYSIS OF GCBM S
+
+A GCBM consists of a backbone and a classifier. The backbone Φ : Rd → RM outputs the predicted concepts ˆc = Φ( h),and the classifier f : RM → { 0, 1} outputs the prediction class ˆyc = f (ˆc). The model’s learning objective is to minimize the weighted risk of classification loss and concept loss: 
+
+Rc = λcEh,c[Lc(c, Φ( h))] + Eh,y[Ly (y, f (Φ( h)))] , (13) where Lc(·, ·) is the mean squared error (MSE) loss for concept alignment, Ly (·, ·) is the cross-entropy (CE) loss for classification, and λc > 0 is a trade-off parameter that ensures alignment between predicted and true concepts. A well-trained GCBM satisfies two key constraints, formalized as the following lemmas: 
+
+Lemma D.4 (Strong Concept Alignment Constraint) . After optimization with the concept loss Lc(c, Φ( h)) , the mutual KL divergence between predicted concepts ˆc and concept labels c is bounded: KL (p(c = Tm|y = k) ∥ p(ˆ c = Tm|y = k)) ≤ ϵ, 
+
+KL (p(ˆ c = Tm|y = k) ∥ p(c = Tm|y = k)) ≤ ϵ, (14) 
+
+where Tm ∈ V and k ∈ { 0, 1}. For simplicity, Tm is omitted in subsequent derivations. ϵ ≪ τ is a small alignment error, ensuring the predicted concepts ˆc are highly consistent with the concept labels c.
+
+Lemma D.5 (Discriminability Preservation Constraint) . The classifier f : RM → { 0, 1} (a fully connected layer with ReLU activation) maintains the discriminability order: a larger KL divergence between input concept distributions leads to a larger KL divergence between output prediction distributions. Moreover, the discriminability attenuation is bounded: there exists a small constant ζ > 0 (guaranteed by the model structure and training process) such that: KL (p(ˆ c|y = 1) ∥ p(ˆ c|y = 0)) − KL (p(ˆ yc|y = 1) ∥ p(ˆ yc|y = 0)) ≤ ζ, (15) 
+
+where ζ ≪ τ denotes the maximum allowable discriminability attenuation. 
+
+For the conditional distributions of the predicted concept ˆc across the two classes, we decompose the logarithmic ratio term into a concept label term and two alignment error terms as follows: 
+
+log p(ˆ c|y = 1) 
+
+p(ˆ c|y = 0) = log p(c|y = 1) 
+
+p(c|y = 0) − log p(c|y = 1) 
+
+p(ˆ c|y = 1) − log p(ˆ c|y = 0) 
+
+p(c|y = 0) . (16) We then take the expectation of both sides with respect to c ∼ p(c|y = 1) :
+
+Ec|y=1 
+
+
+
+log p(ˆ c|y = 1) 
+
+p(ˆ c|y = 0) 
+
+
+
+= Ec|y=1 
+
+
+
+log p(c|y = 1) 
+
+p(c|y = 0) 
+
+
+
+− Ec|y=1 
+
+
+
+log p(c|y = 1) 
+
+p(ˆ c|y = 1) 
+
+
+
+− Ec|y=1 
+
+
+
+log p(ˆ c|y = 0) 
+
+p(c|y = 0) 
+
+
+
+. (17) 15 Revealing Combinatorial Reasoning of GNNs via Graph Concept Bottleneck Layer 
+
+By Theorem D.4, the predicted concept ˆc is highly consistent with the concept label c, i.e., ˆc ≈ c, leading to log p(ˆ c|y=0)  
+
+> p(c|y=0)
+
+≈
+
+log p(ˆ c|y=1)  
+
+> p(c|y=1)
+
+≈ 0. Based on this consistency and the definition of KL divergence, we simplify sequentially: 
+
+Ec|y=1 
+
+
+
+log p(ˆ c|y = 1) 
+
+p(ˆ c|y = 0) 
+
+
+
+≈ Eˆc|y=1 
+
+
+
+log p(ˆ c|y = 1) 
+
+p(ˆ c|y = 0) 
+
+
+
+= KL (p(ˆ c|y = 1) ∥ p(ˆ c|y = 0)) .
+
+(18) 
+
+Ec|y=1 
+
+
+
+log p(ˆ c|y = 0) 
+
+p(c|y = 0) 
+
+
+
+≈ Ec|y=1 
+
+
+
+log p(ˆ c|y = 1) 
+
+p(c|y = 1) 
+
+
+
+≈ Eˆc|y=1 
+
+
+
+log p(ˆ c|y = 1) 
+
+p(c|y = 1) 
+
+
+
+= KL (p(ˆ c|y = 1) ∥ p(c|y = 1)) .
+
+(19) Combining Equations (17) to (19), we obtain: KL (p(ˆ c|y = 1) ∥ p(ˆ c|y = 0)) ≈ KL (p(c|y = 1) ∥ p(c|y = 0)) 
+
+| {z }
+
+> KL c
+
+− KL (p(c|y = 1) ∥ p(ˆ c|y = 1)) 
+
+| {z }
+
+> KL err, 1
+
+− KL (p(ˆ c|y = 1) ∥ p(c|y = 1)) 
+
+| {z }
+
+> KL err, 2
+
+. (20) Given that KL err, 1, KL err, 2 ≤ ϵ and KL c > τ (Theorem D.1), we derive: KL (p(ˆ c|y = 1) ∥ p(ˆ c|y = 0)) ≥ τ − 2ϵ. (21) Let τ1 = τ − 2ϵ, which gives: KL (p(ˆ c|y = 1) ∥ p(ˆ c|y = 0)) ≥ τ1. (22) This result shows the predicted concepts inherit the strong discriminability of concept labels. The data processing inequality (DPI) for KL divergence applies to the Markov chain h → ˆc → ˆy of GCBM’s inference pipeline, leading to: KL (p(ˆ yc|y = 1) ∥ p(ˆ yc|y = 0)) ≤ KL (p(ˆ c|y = 1) ∥ p(ˆ c|y = 0)) . (23) Combined with Theorem D.5, the discriminability attenuation of the classifier is bounded, so we derive: KL (p(ˆ yc|y = 1) ∥ p(ˆ yc|y = 0)) ≥ KL (p(ˆ c|y = 1) ∥ p(ˆ c|y = 0)) − ζ. (24) Let τ ′ = τ − 2ϵ − ζ. For a well-trained GCBM, ϵ, ζ ≪ τ (thus negligible), yielding a positive discriminability threshold 
+
+τ ′ > 0. This leads to the following proposition: 
+
+Proposition D.6 (GCBM Discriminability Lower Bound) . The KL divergence of GCBM’s prediction score distributions between two classes satisfies a strict positive lower bound: KL c = KL (p(ˆ yc|y = 1) ∥ p(ˆ yc|y = 0)) ≥ τ ′. (25) D.2.2. D ISCRIMINABILITY OF BLACK -B OX MODELS 
+
+The black-box model h : Rd → { 0, 1} outputs the prediction class ˆyb = g(h), with the learning objective of minimizing the overall expected risk: 
+
+Rb = Eh,y[L(y, g (h))] , (26) where L(·, ·) is the cross-entropy loss. 
+
+Proposition D.7 (Black-Box Model Discriminability Degradation) . Given the prior distribution p1 ≪ p0 (Section D), the black-box model’s prediction score distributions for the two classes are nearly indistinguishable, satisfying: 
+
+p(g(h)|y = 0) ≈ p(g(h)|y = 1) . (27) 16 Revealing Combinatorial Reasoning of GNNs via Graph Concept Bottleneck Layer 
+
+Proof. The expected risk can be decomposed into class-wise risks: 
+
+Rb = p0Eh|y=0 [L(y, g (h))] + p1Eh|y=1 [L(y, g (h))] . (28) Since p1 ≪ p0, the risk is dominated by the majority class, leading to the approximation: 
+
+Rb ≈ p0Eh|y=0 [L(y, g (h))] . (29) To minimize risk, the model learns majority class redundant features instead of minority class discriminative features, so the marginal prediction score distribution satisfies: 
+
+p(g(h)) = p0p(g(h)|y = 0) + p1p(g(h)|y = 1) ≈ p0p(g(h)|y = 0) . (30) Dividing both sides by p(g(h)|y = 0) > 0 gives p(g(h))  
+
+> p(g(h)|y=0)
+
+≈ p0 ≈ 1, so p(g(h)) ≈ p(g(h)|y = 0) . Substituting back into Equation (30): 
+
+p(g(h)|y = 0) ≈ p0p(g(h)|y = 0) + p1p(g(h)|y = 1) . (31) Subtracting p0p(g(h)|y = 0) from both sides and using 1 − p0 = p1:
+
+p1p(g(h)|y = 0) ≈ p1p(g(h)|y = 1) . (32) Dividing both sides by p1 > 0 yields the conclusion. Using KL divergence to measure distribution differences, the discriminability of the black-box model satisfies: 
+
+0 < KL b = KL (p(ˆ yb|y = 1) ∥ p(ˆ yb|y = 0)) ≪ τ ′, (33) where τ ′ is the GCBM discriminability threshold (Theorem D.6). Combining Theorems D.6 and D.7, we directly get KL c > KL b, meaning GCBM has a larger inter-class prediction score distribution divergence in class-imbalanced scenarios. D.2.3. M EAN DIFFERENCE COMPARISON BETWEEN GCBM S AND BLACK -B OX MODELS 
+
+We first establish the relationship between KL divergence and the mean difference of normal distributions via the following lemma: 
+
+Lemma D.8 (KL Divergence for Normal Distributions with Equal Variance) . If two random variables follow normal distributions P ∼ N (μ1, σ 2) and Q ∼ N (μ0, σ 2) (equal variance), the KL divergence between P and Q is: KL (P ∥ Q) = (μ1 − μ0)2
+
+2σ2 . (34) 
+
+Proof. By the definition of KL divergence KL (P ∥ Q) = EP
+
+h
+
+log p(x)
+
+> q(x)
+
+i
+
+, substitute the normal distribution probability density function: 
+
+p(x) = 1
+
+√2πσ exp 
+
+
+
+− (x − μ1)2
+
+2σ2
+
+
+
+, q(x) = 1
+
+√2πσ exp 
+
+
+
+− (x − μ0)2
+
+2σ2
+
+
+
+.
+
+Taking the logarithm and simplifying: 
+
+log p(x)
+
+q(x) = (x − μ0)2 − (x − μ1)2
+
+2σ2 = 2x(μ1 − μ0) + μ20 − μ21
+
+2σ2 .
+
+Taking the expectation with respect to P and using EP [x] = μ1, EP [( x − μ1)2] = σ2:
+
+EP
+
+
+
+log p(x)
+
+q(x)
+
+
+
+= 2μ1(μ1 − μ0) + μ20 − μ21
+
+2σ2 = (μ1 − μ0)2
+
+2σ2 .
+
+17 Revealing Combinatorial Reasoning of GNNs via Graph Concept Bottleneck Layer 
+
+For GCBMs, let μc1, μ c0 denote the mean prediction scores of minority and majority classes, with mean difference 
+
+δc = μc1 − μc0. By Theorem D.8 and Theorem D.2 ( σ2 
+
+> c
+
+= σ2): KL c = δ2
+
+> c
+
+2σ2 . (35) Similarly, for black-box models with mean difference δb = μb1 − μb0:KL b = δ2
+
+> b
+
+2σ2 . (36) Combining KL c > KL b (Theorems D.6 and D.7) and the positive sign of mean differences ( δc, δ b > 0 for valid models), we obtain the following proposition: 
+
+Proposition D.9 (GCBM Mean Difference Superiority) . The mean difference of GCBM’s prediction scores between two classes is strictly larger than that of black-box models: 
+
+δc > δ b. (37) D.2.4. AUC S CORE COMPARISON 
+
+AUC (area under the receiver operating characteristic curve) is a key evaluation metric for class-imbalanced binary classification, with the equivalent definition: AUC = Eh1∼p(h|y=1) ,h0∼p(h|y=0) [I(ˆ y(h1) > ˆy(h0))] , (38) where I(·) is the indicator function, representing the probability that a random minority sample has a higher prediction score than a random majority sample. We now prove the core theoretical result—the AUC superiority of GCBMs—via the following theorem: 
+
+Theorem D.10 (GCBM AUC Superiority in Class-Imbalanced Graph Classification) . For class-imbalanced binary graph classification datasets, the AUC score of GCBMs is strictly larger than that of black-box models, i.e., AUC c > AUC b.Proof. By Theorem D.3, the prediction scores of minority and majority samples are independent. Define the difference random variable for GCBM: Zc = ˆ yc(h1) − ˆyc(h0). By Theorem D.2 (normal distribution) and independent normal distribution properties: 
+
+Zc ∼ N (δc, 2σ2). (39) The AUC of GCBM is the probability that Zc > 0:AUC c = P (Zc > 0) . (40) Standardize Zc to the standard normal variable Z∗ 
+
+> c
+
+= Zc−δc√2σ ∼ N (0 , 1) :AUC c = P
+
+
+
+Z∗ 
+
+> c
+
+> − δc
+
+√2σ
+
+
+
+. (41) By the symmetry of the standard normal distribution ( P (Z∗ > −a) = Φ( a), where Φ( ·) is the cumulative distribution function), we get: AUC c = Φ 
+
+ δc
+
+√2σ
+
+
+
+. (42) Similarly, the AUC of black-box models is: AUC b = Φ 
+
+ δb
+
+√2σ
+
+
+
+. (43) Since Φ( ·) is a strictly increasing function and δc > δ b (Theorem D.9), we conclude AUC c > AUC b.
+
+Remark D.11 . Black-box models tend to be dominated by redundant features of the majority class (frequently appearing but minority-irrelevant features), weakening their minority class classification capability. In contrast, GCBMs are forced to learn cross-class discriminative features through concept alignment (Theorem D.4), which are mapped to the concept space and associated with all classes, significantly enhancing minority class identification. This conclusion can be extended to multi-class class-imbalanced settings with consistent validity. 18 Revealing Combinatorial Reasoning of GNNs via Graph Concept Bottleneck Layer 
+
+## E. Quantitative Assessment of Interpretability 
+
+GCBMs extract key subgraphs without additional training, which is simply achieved by adjusting the number of selected concepts MI . Table 8 reports the AUC scores of GCBMs under different MI values.                  
+
+> Table 8. AUC scores (mean%) of GCBM/GCBM-E with different MIvalues. Dataset Solubility Benzene
+> MI=2 91.2 83.6
+> MI=5 81.2 85.9
+> MI=10 72.8 86.1
+> MI=15 68.9 84.0
+
+## F. Detailed Procedures for Intervention Experiments 
+
+F.1. Definition 
+
+For graph Gi, ˆyi and yi denote the predicted label and the ground-truth label, respectively. ˆci and ci represent the predicted concept label and the graph-truth concept label, respectively. WF is the weight matrix of the final classification layer, where WF [i,j ] denotes the weight of the j-th concept corresponding to the i-th class in WF , and sim (·, ·) denotes the cosine similarity between two vectors. 
+
+F.2. Sample Selection Criteria 
+
+Intervention experiments are conducted exclusively on misclassified graphs satisfying two criteria: • High consistency between the predicted concept label and the ground-truth concept label: sim (ˆ ci, ci) ≥ τc, where τc is a similarity threshold ensuring valid concept activation; • The graph belongs to the target error type: yi = cls 1 but ˆyi = cls 0. The intervention graph set is defined as S = {Gi | ˆyi = cls 0 , yi = cls 1 , sim (ˆ ci, ci) ≥ τc}.
+
+F.3. Core Parameter Calculation for Intervention 
+
+For the intervention graph set S, we first compute two key statistics reflecting the overall error properties: the average logit difference ∆a and the average activation value f (cpt ) of the target concept. F.3.1. A VERAGE LOGIT DIFFERENCE ∆a
+
+For graph Gi ∈ S, the pre-intervention logit difference is defined as: 
+
+∆aGi = logit Gi (cls 0 ) − logit Gi (cls 1 ), (44) where logit Gi (cls ) = WF [cls ,:] · ˆcTi + bF and bF is the bias term of the final classification layer. The average logit difference of S is: 
+
+∆a = 1
+
+|S|
+
+X
+
+> Gi∈S
+
+∆aGi . (45) 
+
+∆a > 0 indicates that the model’s logit value for the incorrect class ( cls 0 ) is higher than that for the correct class ( cls 1 ) on 
+
+S, and the intervention aims to reverse this gap. 19 Revealing Combinatorial Reasoning of GNNs via Graph Concept Bottleneck Layer 
+
+F.3.2. A VERAGE ACTIVATION VALUE OF TARGET CONCEPT f (cpt) 
+
+For the target concept (cpt j), the activation value of Gi is ˆci[j], corresponding to the j-th entry of ˆci. The average activation value of the target concept on S is defined as: 
+
+f (cpt j ) = 1
+
+|S|
+
+X
+
+> Gi∈S
+
+ˆci[j]. (46) This parameter quantifies the average relevance of the target concept to S.
+
+F.4. Weight Adjustment Rules 
+
+The objective of the intervention is to adjust the target concept’s weights for the two classes, enhancing its contribution to the correct class while suppressing that to the incorrect class. F.4.1. W EIGHT ADJUSTMENT VALUE ∆w
+
+The adjustment value is calculated as: 
+
+∆w = ∆a + b
+
+2 · f (cpt ) , (47) where b is the a margin aiming to ensure the correct class’s average logit stably exceeds the incorrect class’s. F.4.2. W EIGHT MODIFICATION OPERATIONS 
+
+For each target concept (cpt j), weight adjustments follow: • Increase the weight for the correct class (cls 1): WF [cls 1 ,cpt j ] ← WF [cls 1 ,cpt j ] + ∆ w;• Decrease the weight for the incorrect class (cls 0): WF [cls 1 ,cpt j ] ← WF [cls 1 ,cpt j ] − ∆w;• Retain all other weights unchanged to avoid interfering with the classification logic of non-target concepts. 
+
+F.5. Intervention Implementation Details 
+
+We perform two rounds of interventions on GCBM-E, focusing on key concepts 20 and 42 (verified as key substructures via human evaluation in interpretability experiments). Detailed parameters are summarized in Table 9. 
+
+Table 9. Detailed parameters of the intervention experiments. Concept ∆a f (j) ∆w WF [cls 0 ,cpt j ] WF [cls 1 ,cpt j ]
+
+cpt 20 0.51 0.8426 0.4213 0.3842 → -0.0371 -0.0112 → 0.4101 cpt 42 0.32 0.7635 0.3405 0.1876 → -0.2466 0.0939 → 0.5281 
+
+Note that the concept similarity threshold τc and the intervention margin b are tunable hyperparameters. Adjusting them can further optimize the intervention effects. The default settings ( τc = 0 .6, b = 0 .2) determined via 5-fold cross-validation to balance concept activation validity and intervention stability. After each round of weight modification, the model is re-evaluated on the entire test set to ensure the number of new misclassifications is fewer than that of corrected samples. 20
