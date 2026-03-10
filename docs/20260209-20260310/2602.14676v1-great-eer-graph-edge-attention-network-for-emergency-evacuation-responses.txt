@@ -1,0 +1,929 @@
+Title: GREAT-EER: Graph Edge Attention Network for Emergency Evacuation Responses
+
+URL Source: https://arxiv.org/pdf/2602.14676v1
+
+Published Time: Tue, 17 Feb 2026 03:19:21 GMT
+
+Number of Pages: 28
+
+Markdown Content:
+# GREAT-EER: Graph Edge Attention Network for Emergency Evacuation Responses 
+
+## Attila Lischka a,∗, Balázs Kulcsár a
+
+> a
+
+Electrical Engineering, Chalmers University of Technology, Gothenburg, Sweden 
+
+A R T I C L E I N F O 
+
+Keywords :Emergency Evacuation Reinforcement learning Combinatorial optimization Orienteering Problem 
+
+A B S T R A C T 
+
+Emergency situations that require the evacuation of urban areas can arise from man-made causes (e.g., terrorist attacks or industrial accidents) or natural disasters, the latter becoming more frequent due to climate change. As a result, effective and fast methods to develop evacuation plans are of great importance. In this work, we identify and propose the Bus Evacuation Orienteering Problem (BEOP), an NP-hard combinatorial optimization problem with the goal of evacuating as many people from an affected area by bus in a short, predefined amount of time. The purpose of bus-based evacuation is to reduce congestion and disorder that arises in purely car-focused evacuation scenarios. To solve the BEOP, we propose a deep reinforcement learning-based method utilizing graph learning, which, once trained, achieves fast inference speed and is able to create evacuation routes in fractions of seconds. We can bound the gap of our evacuation plans using an MILP formulation. To validate our method, we create evacuation scenarios for San Francisco using real-world road networks and travel times. We show that we achieve near-optimal solution quality and are further able to investigate how many evacuation vehicles are necessary to achieve certain bus-based evacuation quotas given a predefined evacuation time while keeping run time adequate. 
+
+## 1. Introduction 
+
+In January 2025, a series of wildfires struck the city of Los Angeles, leading to 30 direct fatalities and up to 440 deaths linked to the natural disaster Paglino et al. (2025). More than 16 , 000 structures where destroyed Casey et al. (2025) and more than 150 , 000 people were under evacuation notice Benmarhnia et al. (2025). On May 19th 2025, the 300 people living in the village of Blatten, Switzerland had to be evacuated as a precaution Der Standard (2025), before the town was hit and destroyed by a landslide on May 28th of the same year. More than 130 buildings were buried Honsig-Erlenburg (2025). Concurrently, Italian authorities plan for the mass evacuation of the residents near Naples in case the neighboring Plegraean Fields volcano should erupt The Guardian (2025). Investigated evacuation scenarios affect up to 135 , 000 people in the proximity of the volcano Charlton et al. (2020). Emergency evacuation situations like described above can arise due to a variety of causes, many of them (e.g., landslides, wildfires or inundation) are becoming more frequent due to the effects of the ongoing climate change Fang et al. (2025); Remondo et al. (2025); Wasserman and Mueller (2023); Chen et al. (2023); Yamamoto et al. (2021). Consequently, the development of effective evacuation strategies is of paramount importance. To mitigate the risk of traffic congestion during purely car-based evacuations like it happened during Hurricane Irma in 2017 Feng and Lin (2021) when highways all over Florida were blocked for days, bus-based, collective evacuation strategies could be of advantage. Bus-based evacuation could also reduce the risk of power-shortages due to grid-limitations that could arise during car-based evacuations using electric vehicles Feng et al. (2020). Existing works, e.g., dealing with the Bus Evacuation Problem focus on evacuating a given set of people in as little time as possible Feng et al. (2024). However, in reality, it might not be possible reach every evacuation point in an evacuation plan since the available evacuation time, capacity and resources in practice might be limited. Consequently, the objective shifts to reaching as many evacuation points under a set of constraints as possible, while assuming that the remainder of the people will evacuate by car themselves. The problem thus becomes related to the capacitated team orienteering problem (CTOP). The CTOP is an NP-hard combinatorial optimization problem with the goal of collecting as many prizes in a given amount of time as possible using several cooperating vehicles of limited carrying 
+
+> ∗
+
+Corresponding author 
+
+lischka@chalmers.se (A. Lischka) 
+
+> ORCID
+
+(s): 0009-0003-1371-5996 (A. Lischka); 0000-0002-3688-1108 (B. Kulcsár) 
+
+A. Lischka, B. Kulcsár: Preprint submitted to Elsevier Page 1 of 28 
+
+> arXiv:2602.14676v1 [cs.AI] 16 Feb 2026 GREAT-EER
+
+capacity and consecutive return to a designated “depot” location. Compared to the conventional definition of the CTOP where vehicles must not leave the depot again once they arrive, we change the problem to allow multiple departures and arrivals of each vehicle at the depot node. Further, we consider additional travel constraints that result in limited time to visit certain points in our problem instance. In a way, we investigate a multi-tour capacitated team orienteering problem with time windows. Since in essence our problem is related to both the BEP and the CTOP, we name it the Bus Evacuation Orienteering Problem (BEOP). In the context of our evacuation setting the problem looks like this: All evacuation operations are centered around a safe location where people can find shelter. To bring people to the shelter, we have several evacuation vehicles with a known capacity (e.g., three buses with 50 seats each). We have a predetermined time (e.g. 2 hours) to evacuate as many people as possible and bring them to the safe location. When a bus has filled up all its seats, it returns to the safe location and drops the evacuees off. If there is time left, it leaves again and evacuates further people. The people are collected from evacuation points (e.g., their houses) with a known amount of people to evacuate. It is possible, however, that some evacuees are not willing to wait until the end of the evacuation time for a pickup but instead want to be picked up during, e.g., the first half of the evacuation period, resulting in an evacuation time window. If the bus does not arrive at such an evacuation point before the time window closes, the evacuees of this point will travel to the shelter by car themselves. In general, we assume knowledge of the travel time between two different evacuation points and the return time to the depot. Further, to not endanger any first responders and emergency rescue personal, we need all rescue vehicles to be back at the safe location before the maximum evacuation time is exceeded. We assume that the remainder of the people that did not get evacuated by the busses go to a safe location on their own by car. However, to reduce the risk of congestion and disorder during a purely car-based evacuation, we want to evacuate as many people by bus as possible. 
+
+1.1. Literature Review 
+
+1.1.1. Machine Learning-Based Methods to Solve Orienteering Problems 
+
+In recent years, several machine learning-based methods to tackle orienteering problems have been proposed. One of the first papers to solve Euclidean OP using deep learning is the attention model (AM) by Kool et al. (2018). Xin et al. (2020) proposes a multi-decoder AM to generate a more diverse solution set and by this increases performance. Kim et al. (2023) exploit symmetries in the solution space (TSP) and representation space (EUC COP) for better learning of different VRPs, among them OP. Lischka et al. (2025) propose a novel deep graph-learning-based methods named GREAT to tackle asymmetric and symmetric OP. Drakulic et al. (2023) use a supervised-learning-based (SL) method that can be trained on small instances of different VRPs and later on generalizes well to larger instances. By this, they are able to solve Euclidean OP for up to 1000 nodes. In Drakulic et al. (2025), this SL framework is generalized to solve different routing problems (among them OP) at once. This shows that trained deep networks can generalize between routing problems and sets the path for the development of a “VRP-foundation model”. Yao et al. (2024) proposes another SL based methods to train deep learning-based routing models (among them for OP). In particular, they investigate data augmentation methods to drastically reduce the amount of labelled ground truth data needed for training. By using this SL approach, they can reduce the training time needed to achieve similar inference performance with RL approaches significantly. Gama and Fernandes (2021) investigates the more restrictive OP with time windows (OPTW) where each node can only be visited between a specified start and end time. They solve this problem using a pointer network trained with reinforcement learning and relate OPTW to the tourist trip design problem. Li et al. (2024) uses value function approximation (VFA) to learn a stochastic variant of OP for parcel delivery. In particular, it unknown when a parcel is ready for delivery at the depot node. The aim is to deliver as many parcels to customers as possible before a deadline. We refer the interested reader to Zhou et al. (2025) for an extensive overview on how machine learning has been used to tackle routing problems (among them OP). 
+
+1.1.2. Capacitated Orienteering Problem 
+
+An overview over different OP extensions, among them the capacitated team orienteering problem or variants with stochastic rewards and travel times can be found in Vansteenwegen and Gunawan (2019b). The capacitated orienteering problem (CTOP) was first studied in Archetti et al. (2009). Compared to the simple OP problem, where the goal is to maximize the amount of collected rewards while respecting a maximum travel distance or time, in the CTOP, a whole fleet of vehicles work together to maximize the amount of maximized rewards. Moreover, each prize also has an associated demand and a vehicle can only serve a certain capacity of demands. After a vehicle’s demands or travel time are exhausted, it needs to go back to its starting point. As pointed out in Gunawan et al. (2016), the CTOP can be   
+
+> A. Lischka, B. Kulcsár: Preprint submitted to Elsevier Page 2 of 28 GREAT-EER
+
+solved using search algorithms Tarantilis et al. (2013) or branch-and-prize methods Archetti et al. (2013). Compared to these deterministic works, Shiri et al. (2024) investigates a stochastic variant of the online CTOP by developing online optimization algorithms. In particular, the exact prize and demand of a node in the considered OP instances are unknown. 
+
+1.1.3. Bus Evacuation Problem 
+
+The Bus Evacuation Problem (BEP) describes a set of Vehicle Routing Problem (VRP) related combinatorial optimization scenarios Bish (2011). In essence, solving the BEP breaks down to route a set of buses in a way to collect all people in an predefined area. The original BEP by Bish (2011) included yard nodes (where buses start their tours), demand nodes (locations where evacuees are waiting) and shelter nodes (safe locations the evacuees are being brought to). The buses and shelter nodes have associated capacities that must be respected and the objective is to minimize the evacuation time. Consequently, the BEP is related to the pickup and delivery problem. Additionally, for the BEP, it can be assumed that individual pick-up locations can have a higher demand than a buses capacity, requiring multiple bus visits and resulting in a Split Delivery VRP related problem. A selection of works dealing with the BEP are Goerigk et al. (2013); Dikas and Minis (2016); Feng et al. (2024); Zhao et al. (2020), ranging from branching-based methods to approximation algorithms. We refer the interested reader to Feng et al. (2024) for a small overview of different works tackling variants of BEP using different algorithm families. In an extension of the BEP in Goerigk et al. (2014b), the selection of the shelter and gathering locations are optimized together with the bus routing. In Goerigk et al. (2014a), individual traffic is additionally also considered and Goerigk et al. (2015) develops a method incorporating uncertainty. In general all variants of the BEP have in common, however, that their objective is to minimize the overall evacuation time or travel distance when serving all evacuation points. This is in contrast to OP settings, where it is possible that there is not enough time available to visit every node and the aim is to visit as many nodes as possible. In Sayyady and Eksioglu (2010) a variant of the BEP is studied that minimizes travel time while at the same time minimizing casualties. This is done by allowing the assignment of evacuees to “sink nodes” (corresponding to no evacuation) which are associated with very high travel costs. Therefore, when minimizing travel time, the model implicitly also aims to minimize the number of casualties. A work that combines reinforcement learning and bus based evacuation is Tang et al. (2025). There, public transport is rerouted to bring people to safe shelters. Their reward function aims to minimize evacuation and waiting times while penalizing inequities during the evacuation. 
+
+1.1.4. OP for Emergency Evacuation 
+
+The study by Baffo et al. (2017) investigates multi-origin CTOP to evacuate people in emergency situations from industrial plants. To solve the problem, an ant colony optimization (ACO) is proposed and evaluated on 2 instances with different amounts of vehicles and origin combinations. The solutions are benchmarked against an exact solver and it is shown that the ACO achieves near-optimal solutions. Dolinskaya et al. (2018) explores adaptive orienteering problem with stochastic travel times in the context of search and rescues in post-disaster-settings. 
+
+1.2. Contributions 
+
+Our paper contains the following main contributions: 
+
+• Model: introduction of the BEOP as a critical component in emergency based evacuations using buses. 
+
+– Introduction of a mixed integer linear program formulation of the BEOP 
+
+– Introduction of a Markov Decision Process for the BEOP 
+
+• Method: a deep graph reinforcement learning framework to solve the BEOP. 
+
+• A real-world experimental evaluation 
+
+– In a deterministic setting, our trained RL model allows us to create high-quality evacuation plans a priory before an emergency situation arises. 
+
+– Our trained model gives guidance on how many evacuation vehicles are needed in an emergency scenario given parameters like evacuation time or vehicle capacity to achieve certain evacuation quotas. 
+
+– In a stochastic setting, our trained RL model can react to stochastic changes resulting from the emergency situation and adjust its routes accordingly.   
+
+> A. Lischka, B. Kulcsár: Preprint submitted to Elsevier Page 3 of 28 GREAT-EER
+
+First, we introduce the BEOP as a key component of bus-based evacuation in emergency settings. To this aim, we introduce both, a mixed-integer linear program (MILP) describing the problem and a Markov Decision Process (MDP) that can model the setting. Second, to solve the BEOP, we develop a graph-learning-based deep reinforcement learning framework. The framework uses the graph edge attention network (GREAT) as an encoder architecture and a multi-pointer network as the decoding part that iteratively selects the next graph node to visit for evacuation (Figure 1). The framework can be trained in an unsupervised setting using reinforcement learning and eliminating the need for an oracle solver. We note that our framework is trained offline once and, after being trained, it can solve any BEOP instance of similar characteristics fast, achieving high solution quality. Third, we confirm and evaluate the proposed solution method by creating an experimental setting based on real world data from San Francisco. We use OpenStreetMap to obtain realistic travel times between points of interests and a publicly available Uber dataset to infer which locations in the city are frequented by people and, therefore, interesting evacuation points. We compare the solution quality to the output of an MILP-based Gurobi model and, by this, can bound its performance and evaluate its optimality gap. Further, we compare our learning-based algorithm’s performance to a simple custom developed greedy algorithm. We use our trained model to investigate how many buses of certain capacities are requires to achieve a predefined bus-evacuation-quota (e.g. 60%) in a given amount of time. Additionally, we demonstrate that our trained model achieves strong performance on data different from the training data by considering larger BEOP instances during testing, as well as instances that contain “hazard zones” that include blocked roads. Moreover, we show that our model also works in a stochastic online setting, by reacting to deviations from the expected travel times and evacuation demands and adjusting its routing decisions accordingly. The remainder of this article is structured as follows: We introduce and define the BEOP in Section 2 providing a MILP formulation and a MDP describing the setting. Moreover, we show that BEOP is NP-hard. In Section 3.1 we describe the graph neural network-based architecture that captures a BEOP instance and is used to construct the evacuation routes. Further, we introduce the reinforcement learning framework used to train the neural model. The experimental evaluation in a deterministic planned way and in a stochastic emergency setting can be found in section 4. The experimental setting is created from publicly available data of San Francisco. Finally, we conclude in 5. 
+
+## 2. Problem Formulation: Bus Evacuation Orienteering Problem 
+
+We define the Bus Evacuation Orienteering Problem (BEOP) as a graph problem: Let 𝑉 = {0 , 1, … , 𝑛 } be a set of 𝑛 + 1 graph nodes where 0 corresponds to the safe depot where rescue vehicles start and end their tours and 
+
+{1 , 2, … , 𝑛 } are the 𝑛 evacuation locations we can pickup people from. Further, we have a set of directed edges 
+
+𝐸 = {( 𝑢, 𝑣 ) ∣ 𝑢, 𝑣 ∈ 𝑉 , 𝑢 ≠ 𝑣 } with associated travel times 𝑡 𝑢𝑣 , 𝑢, 𝑣 ∈ 𝑉 where in general it holds that 𝑡 𝑢𝑣 ≠ 𝑡 𝑣𝑢 , i.e. the travel times are asymmetric. Further, for all 𝑣 ∈ 𝑉 we have an associated prize 𝑝 𝑣 that corresponds to the amount of people that are to be rescued from location 𝑣 . Similarly, we have a demand 𝑑 𝑣 for all 𝑣 ∈ 𝑉 which corresponds to the amount of space the rescue vehicle rescuing the people at node 𝑣 will occupy. In our setting, we generally assume that 
+
+𝑑 𝑣 = 𝑝 𝑣 for all nodes. However, we note that in reality this does not need to hold since some individuals might need more space than others or their associated prize is different (e.g., favoring of the evacuation of children). For the evacuation, we have 𝑘 rescue vehicles (i.e. buses), each with a capacity of 𝐶 𝑘 that corresponds to the maximum amount of people it can carry at once. For the sake of simplicity we assume that all vehicles have the same capacity in our evacuation scenarios, i.e. 𝐶 𝑘 = 𝐶 for all 𝑘 . Due to the capacity constraint, a vehicle cannot visit a subset of nodes 𝑈 ⊆ 𝑉 with ∑𝑢𝑖𝑛𝑈 𝑑 𝑢 > 𝐶 without visiting the depot in between. Let 𝜏 𝑘 = ( 𝑖 𝑘 0 , 𝑖 𝑘 1 , … , 𝑖 𝑘 𝑚 ) be the tour executed by vehicle 𝑘 . Then it most hold that 𝑖 𝑘 0 = 𝑖 𝑘 𝑚 = 0 which means that the tour starts and ends in the safe depot. We explicitly emphasize that a vehicle is allowed to return to the depot intermediately (i.e., for some 
+
+𝑗 ≠ 0, 𝑚 it holds that 𝑖 𝑘 𝑗 = 0 ) to deliver passengers and reset its capacity. This twist makes the problem different from CTOP where each vehicle can only execute a single tour. This iterative arrival and departure at the safe location is fundamental to an emergency evacuation, since it would not make sense for a vehicle to not resume evacuations as long as there is still further time left. For the different evacuation tours of different vehicles 𝑘, 𝑘 ′, 𝑘 ≠ 𝑘 ′ it holds that 
+
+{𝑖 |𝑖 ∈ 𝜏 𝑘 }∩{ 𝑖 |𝑖 ∈ 𝜏 𝑘 ′ } = {0} . This means no node apart from the depot is visited by more than one vehicle. Moreover, for a vehicle 𝑘 it holds that 𝑖 𝑘 𝑗 = 𝑖 𝑘 𝑗 ′ , 𝑗 ≠ 𝑗 ′ → 𝑖 𝑘 𝑗 = 0 which means that no node other than the depot can be visited more than once by a vehicle 𝑘 itself either. Due to the orienteering problem nature of the BEOP, we also have a maximum evacuation time 𝑇 . Consequently, for every vehicle 𝑘 it must hold that its final return to the depot is before the evacuation time 𝑇 is over, i.e.   
+
+> A. Lischka, B. Kulcsár: Preprint submitted to Elsevier Page 4 of 28
+
+GREAT-EER BEOP Instance BEOP Solution 
+
+## GREAT-EER Framework 
+
+## Transformed Input 
+
+## →
+
+## Processed Edges 
+
+## →
+
+## Solution Decoding 
+
+## Input Output 
+
+Figure 1: GREAT-EER Framework for the BEOP: a BEOP instance is transformed into a graph that encodes the pairwise shortest paths between all relevant nodes. Then, the GREAT encoder is used to process this edge-based graph. Finally, a pointer network iteratively selects nodes to visit and their order. The resulting tour is returned as the output. 
+
+∑𝑚 −1  
+
+> 𝑗 =0
+
+𝑡 𝑖 𝑘 𝑗 ,𝑖 𝑘 𝑗 +1 
+
+≤ 𝑇 . We note that the evacuation time of a vehicle is computed over all its subtours, which is why it is not possible to just think of BEOP as a CTOP with additional vehicles that only do one subtour each. Furthermore, it is possible for some nodes 𝑢 ∈ 𝑉 to have individual “deadlines” for the evacuation, i.e. the evacuees of node 𝑢 
+
+want to be picked up before time 𝑓 𝑢 after the evacuation started. this means, that if 𝑖 𝑘 𝓁 = 𝑢 for some vehicle 𝑘 , then 
+
+∑𝓁 −1  
+
+> 𝑗 =0
+
+𝑡 𝑖 𝑘 𝑗 ,𝑖 𝑘 𝑗 +1 
+
+≤ 𝑓 𝑢 .
+
+Theorem 1. The Bus Evacuation Orienteering Problem with satisfied triangle-inequality for the travel times is NP-hard. 
+
+PROOF OF THEOREM 1. It is known that basic OP is NP-hard Vansteenwegen and Gunawan (2019a). As a result, we can show that BEOP is NP-hard by reduction, i.e., if we can solve BEOP efficiently in polynomial time we can also solve OP efficiently in polynomial time by transforming ( reducing ) one problem into another. Note that we can transform an OP instance into a BEOP instance by keeping the same maximum travel time and the same prizes for 
+
+A. Lischka, B. Kulcsár: Preprint submitted to Elsevier Page 5 of 28 GREAT-EER 
+
+each node. Further, the BEOP instance has one vehicle only. The vehicle’s capacity is set to 𝑛 (for an OP instance with 
+
+𝑛 nodes) and each node’s demand is set to 1. It is easy to see that we can perform this transformation in polynomial time in the number of nodes 𝑛 . When solving this BEOP instance, it is possible that the bus in the BEOP solution has an intermediate return to the depot and leaves again (since BEOP allows subtours). Let (𝑖, 0, 𝑗 ) be such a subsequence in the solution tour that visits the depot and afterwards leaves. We observe that the capacity of the bus is big enough to visit all customers without intermediate return to the depot. As a result, we can skip the depot and directly go from 𝑖 to 
+
+𝑗 . Since the triangle inequality holds, we know that 𝑡 𝑖 0 + 𝑡 0𝑗 ≥ 𝑡 𝑖𝑗 and, therefore, that skipping node 0 in the solution also respects the maximum travel time. Such unnecessary depot visits in the BEOP are possible because it is possible that there is more than one optimal solution and the time saved by not going to the depot does not suffice to visit any additional other nodes (or because there is enough time to visit all nodes of the instance either way). We emphasize that real-world graphs are typically asymmetric (considering travel times) but respect the triangle inequality 1. Deleting all unnecessary depot visits of a BEOP solution can be achieved in polynomial time since the size of the solution tour of the BEOP is linear in 𝑛 . Therefore, if a polynomial time algorithm for the BEOP exists, we can also solve OP in polynomial time since the transformation from an OP instance to a BEOP instance and the subsequent recovery of an OP solution from the BEOP solution can be achieved in polynomial time. 
+
+Remark 1. It is straightforward to see that the decision variant of the BEOP (“Is there a feasible route that evacuates at least X people?”) is verifiable in polynomial time. Therefore, BEOP is NP-complete. 
+
+2.1. Optimization Program for the BEOP 
+
+Below, we provide a mixed integer linear program (MILP) formulation for the BEOP based on Shiri et al. (2024) for simple CTOP and adjusted to allow multiple vehicle subtours. We note that the BEOP (compared to the CTOP) also has “time windows” for some nodes which means that an evacuation of a node is, e.g., possible during the first half of the evacuation period only. The constraints for the time window is taken from the team orienteering problem with time windows formulation in Vansteenwegen and Gunawan (2019a) and has again been adjusted for subtours. 
+
+max ∑
+
+> 𝑘 ∗∈𝐾 ∗
+
+∑ 
+
+> 𝑖 ∈𝑉 ⧵{0}
+
+𝑝 𝑖 𝑦 𝑘 ∗ 
+
+> 𝑖
+
+(1) s.t. ∑ 
+
+> 𝑖 ∈𝑉 ⧵{0}
+
+𝑑 𝑖 𝑦 𝑘 ∗ 
+
+> 𝑖
+
+≤ 𝐶, ∀𝑘 ∗ ∈ 𝐾 ∗ (2) 
+
+∑
+
+> 𝑘 ∗∈[ 𝑘 ]
+
+∑
+
+> 𝑖 ∈𝑉
+
+∑ 
+
+> 𝑗 ∈𝑉 ⧵{𝑖 }
+
+𝑡 𝑖𝑗 𝑥 𝑘 ∗ 
+
+> 𝑖𝑗
+
+≤ 𝑇 , ∀𝑘 ∈ 𝐾 (3) 
+
+∑
+
+> 𝑖 ∈𝑉 ,𝑖 ≠𝑙
+
+𝑥 𝑘 ∗ 
+
+> 𝑖𝑙
+
+= ∑
+
+> 𝑗 ∈𝑉 ,𝑗 ≠𝑙
+
+𝑥 𝑘 ∗ 
+
+> 𝑙𝑗
+
+, ∀𝑙 ∈ 𝑉 , ∀𝑘 ∗ ∈ 𝐾 ∗ (4) 
+
+∑
+
+> 𝑖 ∈𝑉
+
+𝑥 𝑘 ∗ 
+
+> 0𝑖
+
+≤1, ∀𝑘 ∗ ∈ 𝐾 ∗ (5) 
+
+∑ 
+
+> 𝑖 ∈𝑉 ⧵{𝑗 }
+
+𝑥 𝑘 ∗ 
+
+> 𝑖𝑗
+
+= 𝑦 𝑘 ∗ 
+
+> 𝑗
+
+, ∀𝑘 ∗ ∈ 𝐾 ∗, ∀𝑗 ∈ 𝑉 ⧵ {0} (6) 
+
+∑
+
+> 𝑘 ∗∈𝐾 ∗
+
+𝑦 𝑘 ∗ 
+
+> 𝑗
+
+≤ 1, ∀𝑗 ∈ 𝑉 (7) 
+
+𝑢 𝑘 ∗ 
+
+> 𝑗
+
+≥ 𝑢 𝑘 ∗ 
+
+> 𝑖
+
++ 1 − |𝑉 | × (1 − 𝑥 𝑘 ∗ 
+
+> 𝑖𝑗
+
+), ∀𝑖, 𝑗 ∈ 𝑉 , 𝑖 ≠ 𝑗, 𝑗 ≠ 0, ∀𝑘 ∗ ∈ 𝐾 ∗ (8) 
+
+𝑢 𝑘 ∗ 
+
+> 𝑖
+
+≤ ∑ 
+
+> 𝑗 ∈𝑉 ⧵{0}
+
+𝑦 𝑘 ∗ 
+
+> 𝑗
+
+, ∀𝑘 ∗ ∈ 𝐾 ∗, ∀𝑖 ∈ 𝑉 ⧵ {0} (9) 
+
+𝑢 𝑘 ∗ 
+
+> 0
+
+= 0 , ∀𝑘 ∗ ∈ 𝐾 ∗ (10) 
+
+𝑠 𝑘 ∗ 
+
+> 𝑖
+
+≤ 𝑓 𝑖 ∀𝑘 ∗ ∈ 𝐾 ∗, ∀𝑖 ∈ 𝑉 (11) 
+
+𝑠 𝑘 ∗ 
+
+> 𝑗
+
+≥ 𝑠 𝑘 ∗ 
+
+> 𝑖
+
++ 𝑡 𝑖𝑗 − 𝑀 𝑇 × (1 − 𝑥 𝑘 ∗ 
+
+> 𝑖𝑗
+
+) ∀𝑘 ∗ ∈ 𝐾 ∗, ∀𝑖 ∈ 𝑉 , ∀𝑗 ∈ 𝑉 ⧵ {0} , 𝑖 ≠ 𝑗 (12) 
+
+𝑠 𝑘 1 
+
+> 0
+
+= 0 ∀𝑘 ∈ 𝐾 (13)            
+
+> 1Consider a matrix 𝑇 that contains the pair-wise shortest travel times between all nodes in a road-network (i.e., length of the shortest paths in the network w.r.t. travel time). Assume there exist three nodes 𝑖, 𝑗, 𝑘 in the road network such that 𝑇 𝑖𝑗 +𝑇 𝑗𝑘 > 𝑇 𝑖𝑘 . Then there is a faster path from 𝑖
+> to 𝑘 than what is reported in the matrix - a contradiction to the matrix containing the pair-wise shortest travel times.
+
+A. Lischka, B. Kulcsár: Preprint submitted to Elsevier Page 6 of 28 GREAT-EER 
+
+𝑠 𝑘 𝑛  
+
+> 0
+
+= ∑
+
+> 𝑖 ∈𝑉
+
+∑ 
+
+> 𝑗 ∈𝑉 ⧵{𝑖 }
+
+∑
+
+> 𝑚<𝑛
+
+𝑥 𝑘 𝑚  
+
+> 𝑖𝑗
+
+𝑡 𝑖𝑗 ∀𝑘 𝑛 ∈ [ 𝑘 ] ⧵ {𝑘 1} (14) 
+
+𝑠 𝑘 ∗ 
+
+> 𝑖
+
+≥ 0, ∀𝑖 ∈ 𝑉 , ∀𝑘 ∗ ∈ 𝐾 ∗ (15) 
+
+𝑢 𝑘 ∗ 
+
+> 𝑖
+
+≥ 0, ∀𝑖 ∈ 𝑉 , ∀𝑘 ∗ ∈ 𝐾 ∗ (16) 
+
+𝑦 𝑘 ∗ 
+
+> 𝑖
+
+∈ {0 , 1} , ∀𝑘 ∗ ∈ 𝐾 ∗, ∀𝑖 ∈ 𝑉 ⧵ {0} (17) 
+
+𝑥 𝑘 ∗ 
+
+> 𝑖𝑗
+
+∈ {0 , 1} , ∀𝑖, 𝑗 ∈ 𝑉 , 𝑖 ≠ 𝑗, ∀𝑘 ∗ ∈ 𝐾 ∗ (18) Our problem contains four types of variables: 𝑥 𝑘 ∗ 
+
+> 𝑖𝑗
+
+(18) which is binary and indicates whether vehicle subtour 𝑘 ∗
+
+traverses the edge from node 𝑖 to node 𝑗 , 𝑦 𝑘 ∗ 
+
+> 𝑖
+
+(17) which is also binary and indicates that node 𝑖 is visited by vehicle subtour 𝑘 ∗ and 𝑢 𝑘 ∗ 
+
+> 𝑖
+
+(16) which is continuous and indicates the order in which vehicle subtour 𝑘 visits a node 𝑖 and 𝑠 𝑘 ∗
+
+> 𝑖
+
+(15) which is also continuous and indicates the arrival time of vehicle k to node 𝑖 . If the BEOP does not contain time windows, we do not need (11) - (15). The purpose of the individual terms is as follows: (1) is the objective function which maximizes the collected prizes of the BEOP, i.e., the amount of people evacuated. (2) ensures that each vehicle subtour respects the vehicle’s capacity. (3) ensures that all sum of the travel times of all subtours a single vehicle does, does not exceed the maximum evacuation time. (4) corresponds to the flow conservation and guarantees that if a vehicle subtour 𝑘 leads to node 𝑙 ,it also leaves the node again. (5) ensures that each subtour leaves the depot at most once. (6) links the binary edge variables with the binary node variables and ensures that if a vehicle subtour 𝑘 traverses and edge 𝑥 𝑘 𝑖𝑗 node 𝑗 ’s variable is set to visited. (7) certifies that each node is visited at most once. (8-10) ensures there are no subtours within a subtour. (11-14) ensures the arrival time at each evacuation node respects the latest possible arrival time for each node. Note that the set 𝐾 ∗ is the set of all vehicle subtours, whereas the set 𝐾 is the set of all vehicles. Further, [𝑘 ]
+
+is the sequence (which is ordered) of all subtours a vehicle 𝑘 ∈ 𝐾 does. In theory, the optimal solution of a BEOP instance could have a very large amount of vehicle subtours for a single vehicle (if a single vehicle visits each node in an individual subtour, we would have |𝑉 ⧵ {0} | subtours). Due to practicality reasons, we restrict the amount of subtours a single vehicle can do, to e.g. three. By this we get: [𝑘 ] = ( 𝑘 1, 𝑘 2, 𝑘 3) and 𝐾 ∗ = ⋃ 
+
+> 𝑘 ∈𝐾
+
+set ([ 𝑘 ]) .While this MILP formulation cannot directly be used to solve stochastic variants of the BEOP, it can be extended by modifying (1) to maximize expected prize. Similarly, we can adapt (2) and (3) to incorporate stochastic demands and travel times through appropriate stochastic constraints. As is, it can serve as an oracle baseline by passing the model the realized values of the stochastic parameters. 
+
+2.2. Markov Decision Process for the BEOP 
+
+Complementary to the MILP above, we now provide a Markov decision process (MDP) for the BEOP. We define the MDP with (𝑆, 𝐴, 𝑃 , 𝑅 ) with a state space 𝑆 , an action space 𝐴 , a probability transition function 𝑃 and a reward function 𝑅 . We note that our 𝑃 is generally deterministic 2 but can become stochastic if we consider stochastic travel times or demands (and corresponding prizes). Our MDP creates tours for all vehicles sequentially, i.e. we plan the whole trip for the first vehicle before the next vehicle’s tour is planned. At step 𝑖 we define the state 𝑆 𝑖 as follows: 
+
+𝑆 𝑖 = ( 𝑖 , 𝑣 𝑖 , 𝜆 𝑖 , 𝜏 𝑖 , 𝜅 𝑖 )
+
+where 𝑖 ⊆ 𝑉 ⧵{0} is the evacuation nodes visited already by any vehicle, 𝑣 𝑖 ∈ 𝑉 is the current location of the vehicle, 
+
+𝜆 𝑖 is the current vehicle load, 𝜏 𝑖 is the time the current vehicle has already spent and 𝜅 𝑖 is the amount of vehicles that have not started their tours yet. The actions space 𝐴 𝑆 given a state S is the following: 𝐴 𝑆 = { 𝑣 ∣ 𝑣 ∈ 𝑉 ⧵ {0} , 𝑣 ∉ 𝑖 , 𝑑 𝑣 + 𝜆 𝑖 ≤ 𝐶, 𝑡 𝑣 𝑖 𝑣 + 𝑡 𝑣 0 + 𝜏 𝑖 ≤
+
+𝑇 } ∪ {0} , i.e., we can visit any unvisited node whose visitation will not violate the time or capacity constraints or we can return to the depot. A visualization of the idea can be found in Figure 2. Note that Figure 2 omits the case where all nodes 𝑣 ∈ 𝑉 ⧵ {0} have been visited already for the sake of simplicity. In such a case, we would also return to the depot (Case 2) and afterwards terminate. We start in the initial state 𝑆 0 = ({} , 0, 0, 0, |𝐾 |}. Then, given a state 𝑆 𝑖 (see above) and an action 𝑎 ∈ 𝐴 𝑆 we have the following state transition:   
+
+> 2Although our MDP is typically deterministic, it remains extremely difficult to solve due to the enormous state space induced by the combinatorial nature of the underlying NP-hard problem.
+> A. Lischka, B. Kulcsár: Preprint submitted to Elsevier Page 7 of 28
+
+GREAT-EER 
+
+Table 1 
+
+Notation for BEOP Symbol Description 
+
+General problem properties 
+
+𝑛 number of evacuation nodes 
+
+𝑉 = {0 , 1, … , 𝑛 } set of safe location (or “depot”) 0 and evacuation nodes 
+
+𝐸 = {( 𝑢, 𝑣 ) ∣ 𝑢, 𝑣 ∈ 𝑉 , 𝑢 ≠ 𝑣 } set of directed edges 
+
+𝑇 maximum evacuation time 
+
+𝐾 = {1 , … , 𝑘 } set of evacuation vehicles 
+
+[𝑘 ] = (𝑘 1, … , 𝑘 𝓁 
+
+) ordered subtours of vehicle 𝑘 𝐾 ∗ set of all vehicle subtours 
+
+𝐶 𝑘 capacity of the bus 𝑘 𝑑 𝑖 demand of node 𝑖 𝑝 𝑖 prize of node 𝑖 𝑓 𝑖 latest pickup time of node 𝑖 𝑡 𝑖𝑗 travel time between node 𝑖 and 𝑗 
+
+ILP variables 
+
+𝑦 𝑘 ∗ 
+
+> 𝑖
+
+binary variable to show that vehicle subtour 𝑘 ∗ visits node i 
+
+𝑥 𝑘 ∗ 
+
+> 𝑖𝑗
+
+binary variable to show that vehicle subtour 𝑘 ∗ traverses edge (𝑖, 𝑗 )
+
+𝑢 𝑘 ∗ 
+
+> 𝑖
+
+continuous helper variable for vehicle subtour 𝑘 ∗
+
+𝑠 𝑘 𝑖 continuous helper variable to ensure vehicle 𝑘 respects time windows 
+
+𝑀 𝑇 A big M constant (we set 𝑀 𝑇 = 10 𝑇 )
+
+MDP variables 
+
+𝑆 𝑖 State of the MDP at step 𝑖 
+
+𝑖 set of evacuated nodes at step 𝑖 𝑣 𝑖 current location of the vehicle at step 𝑖 𝜆 𝑖 current load of the vehicle at step 𝑖 𝜏 𝑖 elapsed time of the current vehicle at step 𝑖 𝜅 𝑖 vehicles to route left at step 𝑖 𝐴 𝑠 Set of possible actions at state 𝑆 𝑎 𝑎 ∈ 𝐴 an action 
+
+𝑅 reward of terminal state 
+
+Case 1: 𝑎 ∈ 𝑉 ⧵ {0} , then 𝑆 𝑖 +1 = ( 𝑖 ∪ { 𝑎 }, 𝑎, 𝜆 𝑖 + 𝑑 𝑎 , 𝜏 𝑖 + 𝑡 𝑣 𝑖 𝑎 , 𝜅 𝑖 )
+
+Case 2: 𝑎 = 0 and ∄𝑣 ∈ 𝑉 ⧵ {0} ∶ 𝑣 ∉ 𝑖 , 𝑡 𝑣 𝑖 𝑎 + 𝑡 𝑎𝑣 + 𝑡 𝑣 0 + 𝜏 𝑖 ≤ 𝑇 (i.e., there is no other node we can visit in time after executing action 𝑎 ), then 𝑆 𝑖 +1 = ( 𝑖 , 0, 0, 0, 𝜅 𝑖 − 1) . This means the plan for the current vehicle is finished and we start the plan for the next vehicle. Note that this is a terminal state if 𝜅 𝑖 − 1 = 0 or 𝑖 = 𝑉 ⧵ {0} .Case 3: 𝑎 = 0 and ∃𝑣 ∈ 𝑉 ⧵ {0} ∶ 𝑣 ∉ 𝑖 , 𝑡 𝑣 𝑖 𝑎 + 𝑡 𝑎𝑣 + 𝑡 𝑣 0 + 𝜏 𝑖 ≤ 𝑇 (i.e., there is another node we can visit in time after executing action 𝑎 ), then 𝑆 𝑖 +1 = ( 𝑖 , 0, 0, 𝜏 𝑖 + 𝑡 𝑣 𝑖 0, 𝜅 𝑖 ).Further, we define a reward 𝑅 for a terminal state 𝑆 = ( , 0, 0, 0, 0) as 𝑅 = ∑𝑛 ∈ 𝑝 𝑛 , i.e., the sum of the prizes of all visited nodes. We note that the above MDP assumes known node demands and travel times. In the stochastic case, we restrict the action space using the expected travel time (i.e., if we assume a move will violate the time constraints, we cannot take it). It can happen however, that the expected travel time was to optimistic and the actual value that has been realized by the stochastic distribution violates the maximum travel time. In case such a violating happens, we set enter another type of terminal state (representing invalid solutions) and assign a reward of 0. In terms of stochastic demands and prizes, we assume that the demand can only be lower than expected (representing people that did not wait for the bus pickup and instead took a car). Then, the vehicle load when transitioning into the updated state does not change (and we do not get a reward for visiting this node in the end either). We note that in the stochastic case, our MDP works only for a single vehicle, since during real-time operations we have to route all vehicles simultaneously and not 
+
+A. Lischka, B. Kulcsár: Preprint submitted to Elsevier Page 8 of 28 GREAT-EER Start MDP State 𝑆 End Evacuation Action: Visit Further Evacuation Node (Case 1) Drop-off Action: Return to Safe Location for Drop-off (Case 3) Terminate Route Action: Return to Safe Location to End Route (Case 2) time and capacity left True no time left further vehicle left only time left (no capacity) True no further vehicles left to route  
+
+> Figure 2: Simplified visualization of the MDP for BEOP showing the different action cases.
+
+subsequently. Therefore, our MDP can be used for apriori planning of evacuation scenarios with multiple vehicles or real-time evacuation with stochastic components for a single vehicle. 
+
+## 3. Solution Method 
+
+3.1. GREAT-EER Framework 
+
+We now introduce the Graph Edge Attention Network for Emergency Evacuation Responses (GREAT-EER) as our framework to generate solutions for the BEOP. A visualization of the framework is shown in Figure 1. The GREAT-EER framework is an encoder-decoder-based approach. This means, that given a suitable input representation (bottom left subfigure in Figure 1) a neural encoding architecture generates hidden feature vectors that represent the edges and nodes in our BEOP instance (second subfigure at the bottom in Figure 1). Afterwards, a neural decoder architecture selects one node at a time to add to a partial solution tour until a complete solution has been incrementally generated (bottom right subfigure in Figure 1). In our BEOP setting, the available evacuation time is one of the problem defining properties. Consequently, we focus on shortest travel time (compared to travel distance) when deciding on how to route our evacuation vehicles. These travel times are an associated edge cost in our routing graph and, in reality, in contrast to Euclidean distance, highly asymmetric due to one way streets and possibly congestion. We refer to Figure 1 to observe the highly non-Euclidean distances of the paths that connect the node pairs. Therefore, to tackle this non-Euclidean setting, we decide to use the graph edge attention network (GREAT) introduced in Lischka et al. (2025) as our deep function approximator for the encoder part of our framework since this neural architecture was developed specifically for asymmetric routing problems. GREAT is graph-neural-network (GNN)-related architecture that operates purely on edge features. This is in contrast to ordinary GNNs that usually operate on node features like Euclidean coordinates. Given an edge-based input graph with associated edge-features, GREAT iteratively updates these edge features by aggregating information over adjacent edge neighborhoods in every network layer. By this, using an attention like mechanism, the network can compare the different edges and determine which edges represent meaningful connections in the routing graph to obtain high-quality solutions. In particular, we compute the edge feature 𝑒 𝑘 𝑖𝑗 for edge (𝑖, 𝑗 ) in the input graph in layer 𝑘 
+
+of the network as follows: 
+
+𝑒 𝑘 𝑖𝑗 = 𝑊 𝑘 
+
+> 3
+
+( ∑
+
+> 𝓁 ∈𝑁 (𝑖 )
+
+(
+
+𝛼 𝑘 𝑖 𝓁 𝑊 𝑘  
+
+> 1
+
+𝑒 𝑘 −1 
+
+> 𝑖 𝓁
+
+||||||𝛽 𝑘 𝑖 𝓁 𝑊 𝑘  
+
+> 2
+
+𝑒 𝑘 −1 
+
+> 𝓁 𝑖
+
+)||||||||∑
+
+> 𝓁 ∈𝑁 (𝑗 )
+
+(
+
+𝛼 𝑘 𝑗 𝓁 𝑊 𝑘  
+
+> 1
+
+𝑒 𝑘 −1 
+
+> 𝑗 𝓁
+
+||||||𝛽 𝑘 𝑗 𝓁 𝑊 𝑘  
+
+> 2
+
+𝑒 𝑘 −1 
+
+> 𝓁 𝑗
+
+))
+
+Where 𝑊 𝑘  
+
+> 1
+
+, 𝑊 𝑘  
+
+> 2
+
+, 𝑊 𝑘  
+
+> 3
+
+are learnable weights of layer 𝑘 , 𝛼 𝑘 , 𝛽 𝑘 are learnable attention scores (for in and outgoing edges of a node), || denotes vector concatenation and 𝑒 𝑘 −1  
+
+> 𝑚𝑛
+
+denotes the feature vector of an edge (𝑚, 𝑛 ) of layer 𝑘 − 1 . The   
+
+> A. Lischka, B. Kulcsár: Preprint submitted to Elsevier Page 9 of 28 GREAT-EER
+
+different concatenations summarize information of both in- and outgoing edges of both endpoints of an edge. GREAT also contains residual layers, layer normalizations and feed-forward layers. We refer the interested reader for these details to the original paper. We note that BEOP also has node features, namely the demand (which also corresponds to the prize) of a node and an optional latest pickup time. Since GREAT does not process any node features, we transform them into edge features as described in Lischka et al. (2025). If a node 𝑗 has a demand 𝑑 𝑗 and a time window 𝑡 𝑗 , we add this feature to every edge 𝑒 ∗𝑗 that ends in node 𝑗 . Intuitively, this means that taking an edge 𝑒 𝑖𝑗 in the vehicle route will lead us to node 𝑗 
+
+which means we need to respect the constraints of node 𝑗 when taking such an edge. Therefore, we can interpret these node features as edge features. While this is omitted in the bottom left subfigure in Figure 1 for the sake of simplicity, it can be thought of as coloring each directed edge in the graph with the color of its end node that show the evacuation point demand in this visualization. In total, an input BEOP instance that shall be processed by GREAT is transformed into the following processable format ( Transformed Input in Figure 1): a complete graph with no node features and a 9 (or 10 if there are time windows) dimensional initial feature vector associated with each edge. The initial features of an edge (𝑖, 𝑗 ) encode: 1. The actual travel time between node 𝑖 and 𝑗 .2. The travel time normalized by the maximum travel time. 3. The travel time normalized by the maximum travel time and the number of available vehicles. 4. The travel time from 𝑖 to 𝑗 compared to the shortest travel time from any node 𝑘 to 𝑗 .5. The travel time from 𝑖 to 𝑗 compared to the average travel time from any node 𝑘 to 𝑗 .6. The travel time from 𝑖 to 𝑗 compared to the shortest travel time from 𝑖 to any node 𝑘 .7. The travel time from 𝑖 to 𝑗 compared to the average travel time from 𝑖 to any node 𝑘 .8. The demand of node 𝑗 normalized by vehicle capacity. 9. The travel time from node 𝑗 to the safe location. 10. Optional: The normalized latest pickup time of node 𝑗 w.r.t. to the maximum travel time. After the GREAT encoder processed the input graph, we obtain an associated edge embedding for every edge in the graph ( Processed Edges in Figure 1). We then transform these edge embeddings into node embeddings, by aggregating all edge embeddings that share an endpoint to a node. This is done by an attention-based weighted average such that each node encodes the information of its most promising adjacent edge embeddings. By this, we reduce the number of embeddings from (𝑛 2) edge embeddings to (𝑛 ) node embeddings. The latent feature vectors of the node embeddings encode the non-Euclidean pairwise distances as captured in the processed edge embeddings. We then pass the node embeddings to multi-pointer decoder network based on Jin et al. (2023) ( Solution Decoding 
+
+in Figure 1). Given a query, this pointer iteratively outputs a probability for the next node to visit. The queries are built to reflect the states in the MDP. In particular, they encode the following information: 1. The embedding of the current node the vehicle is at. 2. The embedding of the safe location. 3. An embeddings of the whole graph (average of all node embeddings). 4. An embedding of all nodes visited so far (average of the corresponding node embeddings). 5. An embedding of the current load of the vehicle. 6. An embedding of the number of vehicles still available. 7. An embedding of the remaining time of the current vehicle.   
+
+> A. Lischka, B. Kulcsár: Preprint submitted to Elsevier Page 10 of 28 GREAT-EER
+
+A query is then multiplied by keys generated from the node embeddings in a fashion similar to the attention mechanism. Different from the attention mechanism, where the scores are then used to update embedding values, the scores are here used as probabilities to visit the next node in our solution tour. To ensure that our generated solutions are valid (i.e., do not violate any vehicle capacity or time constraints or visit nodes twice), we apply masking operations that set the probabilities of invalid moves to zero. 
+
+3.2. Reinforcement Learning 
+
+To train our GREAT-EER framework for BEOP, we use reinforcement learning. While some supervised frame-works have shown superior performance in recent works Drakulic et al. (2023, 2025) when tackling routing problems, BEOP does not have any available strong heuristics or even optimal solution approaches to obtain oracle labels for supervised learning. Using a reinforcement learning-based approach eliminates the need for such labels, effectively allowing us to learn in an unsupervised manner. As a result, we use the MDP formulation described above in a reinforcement learning setting. In particular, we define a reward for the output of the GREAT-EER framework introduced in the last section. To maximize the amount of people evacuated, we define the reward to reflect this number. We note that the GREAT-EER framework in general only outputs valid solutions due to the masking of invalid operations. However, in the stochastic setting where exact travel times are uncertain, it is possible that a vehicle does not respect the maximum travel time. In such a case we set the reward to zero to guide the model to learn not to make any risky moves. We use the POMO framework Kwon et al. (2020) to obtain a robust baseline during training and increase the performance of the model during inference. The framework works by executing a random move in the very first step of the MDP. By this, a diverse set of rollouts is explored. During inference, the best solution achieved by a rollout is then returned as the evacuation route. During training, each rollout’s reward is bench-marked against the average reward of all solutions in order to penalize below average solutions and give a positive emphasize on good solutions. The REINFORCE algorithm Williams (1992) is used to compute the gradients of the network based on the rewards, the baseline and the probabilities for the solution tours. In particular, we sum up the log probabilities of the individual decoding steps of the decoder to obtain probabilities for the whole solution tours. 
+
+## 4. Experiments 
+
+4.1. Environment 
+
+For our experiments, we use the Python package Boeing (2017) to access OpenStreetMap contributors (2025) to obtain a real world graph of San Francisco. The graph contains approximately 10 , 000 nodes representing intersections. Further, the graph contains the travel time for all road segments based on its distance and speed limit. We use Dijkstra’s Algorithm Dijkstra (2022) to compute the shortest travel time between any pair of nodes, resulting in a 10 , 000×10 , 000 
+
+big matrix. We split the node set randomly into 70% training nodes, 15% validation nodes and 15% testing nodes. Further, we associate each node with a sampling probability. Each node has a base frequency of 1. This frequency gets adjusted using the publicly available Uber dataset dima42 (2025). This dataset contains roughly 25 , 000 taxi trajectories. We extract the pickup and delivery points of these trajectories to obtain GPS locations of points of interest in San Francisco. We use these points as an abstract reflection of population density, aiming to make sampling of nodes more probable if the are often frequented by travelers. We map the GPS locations of such taxi start and end points to the nearest location of a node in our OpenStreetMap graph and increment the nodes frequency count by one for each occurrence. These frequencies are then used to sample subsets of the training, testing and validation node sets. We sample graphs of fixed sizes (e.g., 101 nodes) to reflect evacuation scenarios with 100 evacuation points and one depot. Further, we assign random demands between 1 and 5 to each node which reflect the amount of people to evacuate. Moreover, we assign random “latest pickup times” (i.e. time windows) to some of the evacuation points, reflecting that some people do not want to wait until the end of the evacuation scenario to be picked up due to individual preferences. We assign time windows to up to 30% of evacuation nodes where each time window is drawn uniformly at random from the range 30% to 80% of the maximum evacuation time. Apart from the deterministic environment described so far, we also consider a stochastic setting. There, the actual travel times and node demands (i.e. evacuees at an evacuation point) are unknown and only revealed during the operation. In particular, the travel times are sampled from a normal distribution with a 𝜎 chosen such that 95% of values are withing a ±10% range of the expected travel times. For the node demands, we randomly set 20% of the demands to 0 which means that the evacuees did not wait for the bus but instead took a car for the evacuation.   
+
+> A. Lischka, B. Kulcsár: Preprint submitted to Elsevier Page 11 of 28 GREAT-EER
+
+4.2. Hyperparameters and Training 
+
+The hyperparameters of our neural model are chosen in accordance to the original GREAT architecture in Lischka et al. (2025) since those parameters perfomed empirically well and offer a reasonable trade-off between expressiveness (parameter number) and runtime. This means that we use a GREAT encoder with 5 layers (each layer consisting of an individual GREAT and feedforward sublayer) with hidden dimension 128 and 8 attention heads, resulting in approximately 1.4 million trainable parameters. The network is trained using the ADAM optimizer Kingma (2014) with a learning rate of 0.0001 . Similarly to Kwon et al. (2020) and Lischka et al. (2025), we further scale the distances (in our case travel times) with different factors (in the range 0.5 to 1.5) in order for the model to learn a more robust distance distribution. This can lead to better generalization performance of unseen BEOP instances and further be used for instance augmentation which allows us to solve a BEOP instance multiple times during inference and keep the best solution found. We train four GREAT-EER models (with and without time windows, in the deterministic and stochastic setting) for BEOP instances with 100 evacuation points. During training these models, we assume a maximum evacuation times of 
+
+0.5, 1 and 1.5 hours. In the deterministic setting, we assume that between 1 and 3 buses are available for the evacuation. In the stochastic setting, we consider one vehicle only. Each vehicle has a carrying capacity of 25, 30, 35, 40, 45 or 50 individuals. The number of vehicles, evacuation time and vehicle capacity are sampled uniformly at random for each BEOP instance during training. This allows our model to encounter a variety of different problem settings and to learn a robust solution strategy. Our training dataset contains 25 , 000 BEOP instances. The batch size during training is 50 and we train our networks for 50 epochs. Furthermore, we have a validation dataset of 1, 000 BEOP instances. After each training epoch the model is evaluated on the validation dataset. After the 50 epochs of training, we keep the model that achieved the best performance (i.e. the highest amount of rescued individuals) after any training epoch on the validation dataset. We show the performance of the model (i.e. the average evacuation quota over the 1, 000 validation instances) after each epoch of training in Figure 3. The figure shows that all four models can learn successfully, with models operating on BEOP instances without time windows achieving higher performance. We note that the 1, 000 
+
+validation are generally a mixture of different BEOP settings (in terms of evacuation time and number of available vehicles). However, since the stochastic setting allows one vehicle only, the curves are shifted down along the y-axis (fewer vehicles naturally lead to lower quotas). Training is done on NVIDIA A40 GPUs with 48 GB of VRAM, where one epoch of training takes roughly 8.5 minutes and an additional 1 minute for validation. As a result the total training time for 50 epochs is (8 .5 + 1) ∗ 50 = 475 minutes or approximately 8 hours. In addition to the training described so far for BEOP instances with 100 evacuation points, we also train a model in a different setting for smaller problem instances of only 20 evacuation nodes. There, we consider instances with at most two busses only, a maximum capacity of 40 and at most 1h of evacuation time to prevent the problems from becoming trivial to solve. This model is trained for 500 epochs on ten datasets of 25 , 000 instances (alternating between the datasets in each epoch) which also results in a training time of approximately 8 hours. The validation performance of this small GREAT-EER model is show in Figure 4. When zooming in into the first 50 epochs of the training only, the performance development looks similar to Figure 3. However, by keeping training for 8h or 500 epochs we can see that the performance still improves. As a result, we hypothesize that the performance of the larger GREAT-EER models could also be increased further, by prolonging the training time. Note that we train only one such model in the deterministic setting with time windows, no models without time windows or stochastic models. The source code of the GREAT-EER framework will be made publicly available after acceptance of the paper. 
+
+4.3. Evaluation 
+
+All evaluations of GREAT-EER models were run on a MacBook Air with M4 Chip. All Gurobi evaluations were run on a computation cluster consisting of Intel Icelake CPUs using 64 cores. 
+
+4.4. Greedy Baseline 
+
+As a baseline, we also introduce a simple greedy heuristic outlined in Algorithm 2. Similar to GREAT-EER, the input of the greedy heuristic includes the pair-wise shortest travel times between all nodes in a BEOP instance, as well as evacuation node demand, number of vehicles, vehicle capacity, maximum route length and the number of vehicles. The idea of the heuristic is to always greedily visit an unvisited node that has the best tradeoff of “distance” (i.e. travel time) and ”prize” (i.e. number of evacuees at the node) that still respects the maximum travel time, vehicle load and evacuation node time windows. While this heuristic is naive (and does not provide any bounds w.r.t. optimality), it   
+
+> A. Lischka, B. Kulcsár: Preprint submitted to Elsevier Page 12 of 28
+
+GREAT-EER  
+
+> (a) Deterministic models (b) Stochastic models
+
+Figure 3: Validation performance (evacuation quota) per epoch for GREAT-EER models with 100 evacuation points 
+
+Figure 4: Validation performance (evacuation quota) per epoch for GREAT-EER model with 20 evacuation points 
+
+achieves very fast runtimes (wall-clock time) and serves as a lower bound in terms of performance to compare our GREAT-EER approach to. 
+
+A. Lischka, B. Kulcsár: Preprint submitted to Elsevier Page 13 of 28 GREAT-EER 
+
+Algorithm 1 POSSIBLE_MOVES (subroutine of greedy heuristic) 
+
+Require: Current length 𝐿 , return-cost matrix 𝑅 , current node 𝑖 , visited set 𝑉 , current load 𝑞 , demands 𝑑 𝑗 , capacity 
+
+𝐶 , time windows 𝑇 𝑗 , normalized distances 𝐷 
+
+Ensure: Feasible move set  
+
+> 1:
+
+ ← all nodes ⧵𝑉  
+
+> 2:
+
+ ← ∅ 
+
+> 3:
+
+for each 𝑗 ∈  do  
+
+> 4:
+
+𝑡𝑜𝑡𝑎𝑙 _𝑐𝑜𝑠𝑡 ← 𝐿 + 𝑅 𝑖,𝑗  
+
+> 5:
+
+𝑎𝑟𝑟𝑖𝑣𝑎𝑙 _𝑡𝑖𝑚𝑒 ← 𝐿 + 𝐷 𝑖,𝑗  
+
+> 6:
+
+if 𝑡𝑜𝑡𝑎𝑙 _𝑐𝑜𝑠𝑡 ≤ 1 and 𝑎𝑟𝑟𝑖𝑣𝑎𝑙 _𝑡𝑖𝑚𝑒 ≤ 𝑇 𝑗 and 𝑞 + 𝑑 𝑗 ≤ 𝐶 then  
+
+> 7:
+
+ ←  ∪ { 𝑗 } 
+
+> 8:
+
+end if  
+
+> 9:
+
+end for  
+
+> 10:
+
+return 
+
+Algorithm 2 Greedy Heuristic 
+
+Require: Distance matrix 𝑑𝑖𝑠𝑡 , prizes/demands 𝑝 , number of vehicles 𝐾 , time windows 𝑇 , capacity 𝐶 , maximum route length 𝐿 max 
+
+Ensure: Set of tours  
+
+> 1:
+
+𝐷 ← 𝑑𝑖𝑠𝑡 ∕𝐿 max  
+
+> 2:
+
+𝑅 𝑖,𝑗 ← 𝐷 𝑖,𝑗 + 𝐷 𝑗, 0 {travel to 𝑗 and return to depot}  
+
+> 3:
+
+ ← ∅ 
+
+> 4:
+
+for 𝑘 = 1 to 𝐾 do  
+
+> 5:
+
+𝑡𝑜𝑢𝑟 ← [0] {start at depot}  
+
+> 6:
+
+𝐿 ← 0, 𝑞 ← 0 
+
+> 7:
+
+ ← 𝑃 𝑂𝑆𝑆𝐼𝐵𝐿𝐸 _𝑀𝑂𝑉 𝐸𝑆 (𝐿, 𝑅, 0,  ∪ 𝑡𝑜𝑢𝑟, 𝑞, 𝑝, 𝐶, 𝑇 , 𝐷 ) 
+
+> 8:
+
+while  ≠ ∅ do  
+
+> 9:
+
+for each 𝑗 ∈  do  
+
+> 10:
+
+𝑟𝑎𝑡𝑖𝑜 (𝑗 ) ← 𝑝 𝑗 ∕𝐷 𝑙𝑎𝑠𝑡 (𝑡𝑜𝑢𝑟 ),𝑗  
+
+> 11:
+
+end for  
+
+> 12:
+
+𝑚 ← arg max 𝑗 ∈ 𝑟𝑎𝑡𝑖𝑜 (𝑗 ) 
+
+> 13:
+
+𝐿 ← 𝐿 + 𝐷 𝑙𝑎𝑠𝑡 (𝑡𝑜𝑢𝑟 ),𝑚  
+
+> 14:
+
+𝑞 ← 𝑞 + 𝑝 𝑚  
+
+> 15:
+
+append 𝑚 to 𝑡𝑜𝑢𝑟  
+
+> 16:
+
+if 𝑚 = 0 then  
+
+> 17:
+
+𝑞 ← 0 
+
+> 18:
+
+end if  
+
+> 19:
+
+ ← 𝑃 𝑂𝑆𝑆𝐼𝐵𝐿𝐸 _𝑀𝑂𝑉 𝐸𝑆 (𝐿, 𝑅, 𝑚,  ∪ 𝑡𝑜𝑢𝑟, 𝑞, 𝑝, 𝐶, 𝑇 , 𝐷 ) 
+
+> 20:
+
+if  = ∅ then  
+
+> 21:
+
+𝐿 ← 𝐿 + 𝐷 𝑙𝑎𝑠𝑡 (𝑡𝑜𝑢𝑟 ),0 
+
+> 22:
+
+𝑞 ← 0 
+
+> 23:
+
+append 0 to 𝑡𝑜𝑢𝑟  
+
+> 24:
+
+ ← 𝑃 𝑂𝑆𝑆𝐼𝐵𝐿𝐸 _𝑀𝑂𝑉 𝐸𝑆 (𝐿, 𝑅, 0,  ∪ 𝑡𝑜𝑢𝑟, 𝑞, 𝑝, 𝐶, 𝑇 , 𝐷 ) 
+
+> 25:
+
+end if  
+
+> 26:
+
+end while  
+
+> 27:
+
+ ←  ∪ 𝑡𝑜𝑢𝑟  
+
+> 28:
+
+end for  
+
+> 29:
+
+return 
+
+A. Lischka, B. Kulcsár: Preprint submitted to Elsevier Page 14 of 28 GREAT-EER      
+
+> (a) GREAT-EER solution ( 94 .41% evacuation quota, 1s run-time)
+> (b) Greedy heuristic solution ( 85 .53% evacuation quota, 0.003 sruntime)
+> (c) Gurobi solution with time limit ( 88 .16% evacuation quota, 24h runtime)
+> (d) Gurobi solution with time limit and warm initialization by GREAT-EER ( 95 .07% evacuation quota, 10m runtime)
+
+Figure 5: Example evacuations generated by different solution methods in San Francisco given 1.5h evacuation time and 3 buses for evacuation with 50 seats each. 
+
+4.5. Results 
+
+4.5.1. Deterministic GREAT-EER vs. Greedy vs. MILP model 
+
+As an initial baseline, we consider the small GREAT-EER model that was trained for BEOP instances with only 20 evacuation nodes. Due to the relatively small size of these instances, we can compare the performance of the trained GREAT-EER framework not only with the greedy baseline, but also the MILP which is solved using Gurobi. We assign a time limit of 30 minutes to each BEOP instance when calling Gurobi. Further, we use the greedy solution as a warm initialization to the problem in this setting. For comparison, we also run Gurobi with a 1 minute time limit with greedy and also the solution provided by GREAT-EER as a warm initialization. The results of this experiment can be found in 
+
+A. Lischka, B. Kulcsár: Preprint submitted to Elsevier Page 15 of 28 GREAT-EER                                                                                                                                                                                                                
+
+> Table 2
+> Comparison of GREAT-EER (G.-EER), Gurobi (30min time limit) and greedy baseline Instance Gap w.r.t. Gurobi Bound(%) Evac. Quota (%) Runtimes (s) Veh TL Cap TW G.-EER Gurobi Greedy G.-EER Gurobi Greedy G.-EER Gurobi Greedy 10.5 20 030.19 27.95 70.5 55.61 56.83 44.32 0.385 10054.9 0.003 10.5 20 0.3 30.36 28.56 70.0 54.66 56.12 43.6 0.338 9968.1 0.002 10.5 40 011.01 8.86 29.47 68.17 69.61 58.6 0.351 5580.3 0.003 10.5 40 0.3 12.57 9.08 31.64 66.77 69.05 57.25 0.351 5715.9 0.003 1120 06.57 5.55 24.5 87.37 88.25 75.83 0.377 11047.5 0.004 1120 0.3 7.0 5.78 26.23 87.02 88.06 74.84 0.373 11025.7 0.004 1140 01.62 0.84 14.19 95.6 96.3 85.6 0.368 7587.2 0.004 1140 0.3 2.18 1.01 14.44 94.9 95.96 85.2 0.373 8599.2 0.004 20.5 20 015.64 14.59 34.11 83.95 84.52 73.36 0.378 14560.5 0.004 20.5 20 0.3 15.65 15.43 33.84 83.78 83.98 73.36 0.378 14549.5 0.004 20.5 40 02.81 2.57 12.1 93.22 93.4 85.63 0.375 12352.7 0.004 20.5 40 0.3 2.76 2.15 13.08 93.01 93.56 84.78 0.373 12798.6 0.004 2120 00.0 0.0 1.21 100.0 100.0 98.85 0.389 4.6 0.005 2120 0.3 0.0 0.0 0.68 100.0 100.0 99.33 0.388 6.9 0.005 2140 00.0 0.0 0.21 100.0 100.0 99.8 0.383 3.9 0.005 2140 0.3 0.0 0.0 0.16 100.0 100.0 99.84 0.39 4.4 0.005
+
+Table 2 and Table 3. To achieve an overview over different BEOP types, we consider instances with 1 or 2 buses (Veh. in the tables), maximum evacuation times (T. in the tables) of 0.5 and 1h, vehicle capacities of 20 and 40 passengers (Cap. in the tables) and instances with up to 30% time windows and without time windows (TW in the tables). For each combination of these parameters, we consider 10 randomly generated BEOP instances in our San Francisco setting. We report the average optimality gap w.r.t. the bound found by the Gurobi model running for 30 minutes, the average evacuation quota and the total runtime (over all 10 instances). In Table 2, we can see that Gurobi with 30 minutes of runtime consistently achieves the best solutions. We note, however, that the GREAT-EER solution generally achieves almost similar solution quality while only requiring a runtime in the order of fractions of a second ( ∼ 0 .38 s for solving all ten BEOP instances). We note, that Gurobi sometimes finds optimal solutions before the 30minutes ( 1, 800 s for 1 instance) are over. While the greedy heuristic requires even less runtime, its performance is lower than the performance achieved by the other solution methods. In comparison, in Table 3 we can see that Gurobi profits considerably when passing the GREAT-EER solution as a warm initialization, outperforming the 30 minute Gurobi baseline in several BEOP settings even though the runtime is limited to 1 minute. Using greedy as the initialization, Gurobi performs similar to GREAT-EER (without Gurobi postprocessing; found in Table 2). In particular, GREAT-EER performs better on instances with 2 vehicles, while Gurobi leads for instances with 1 vehicle only. As an additional example to show the differences of GREAT-EER, Gurobi and the greedy heuristic, we provide Figure 5 where an example evacuation scenario of San Francisco with 3 buses of capacity 50 in a 1.5h time frame is shown. We can see that GREAT-EER achieves a very high evacuation quota of 94 .41% in only 1s of runtime. When solving the exact same problem instance with Gurobi (using a time limit of 24h and no warm initialization), only 
+
+88 .16% of evacuees are picked up. The greedy heuristic achieves only 85 .53% evacuation quota but is much faster due to its simplicity. Like on the smaller BEOP instances with only 20 nodes, however, Gurobi can profit significantly when the GREAT-EER solution is passed as a warm initialization. In only 10 minutes of runtime it is then able to improve upon the GREAT-EER solution by visiting an additional node (approximately located at longitude -122.450, latitude 37.73 in the visualizations) and increasing the evacuation quota to 95 .07% . We reiterate here that GREAT-EER was only trained for 8h in total and is now applicable to a whole set of BEOP instances while Gurobi needs to be rerun for every BEOP instance and achieves worse performance when running for 24h on a single instance. 
+
+4.5.2. Deterministic Evacuation Planning - Quotas 
+
+In this evaluation we use our trained deterministic GREAT-EER model for BEOP instances with 100 evacuation points to derive evacuation quotas given certain settings. In particular, we investigate how evacuation time, number of available evacuation buses, bus capacity and amount of evacuation points with time windows influence the fraction of                                                                                                                                                                                                                          
+
+> A. Lischka, B. Kulcsár: Preprint submitted to Elsevier Page 16 of 28 GREAT-EER
+> Table 3
+> Comparison of Gurobi (30min time limit), Gurobi (1min time limit) and Gurobi with warm GREAT-EER initialization “G&G” (1min time limit). Gaps w.r.t. the bound found by the Gurobi model with 30 minutes runtime. Instance Gap w.r.t. Gurobi Bound (%) Evac. Quota (%) Runtimes (s) Veh TL Cap TW Gurobi Gurobi G&G Gurobi Gurobi G&G Gurobi Gurobi G&G 30min 1min 1 min 30min 1min 1min 30min 1min 1min 10.5 20 027.95 30.23 26.26 56.83 55.92 57.12 10054.9 568.8 529.9 10.5 20 0.3 28.56 28.98 28.79 56.12 55.96 55.58 9968.1 558.0 561.5 10.5 40 08.86 9.43 8.86 69.61 69.33 69.61 5580.3 328.2 338.2 10.5 40 0.3 9.08 9.08 9.95 69.05 69.05 68.34 5715.9 375.2 399.2 1120 05.55 5.55 5.17 88.25 88.25 88.54 11047.5 469.2 445.1 1120 0.3 5.78 6.64 5.98 88.06 87.38 87.9 11025.7 474.4 487.8 1140 00.84 1.07 1.02 96.3 96.1 96.14 7587.2 438.1 423.4 1140 0.3 1.01 2.56 1.19 95.96 94.57 95.8 8599.2 482.3 419.9 20.5 20 014.59 15.94 14.03 84.52 83.68 84.94 14560.5 553.7 529.0 20.5 20 0.3 15.43 16.88 14.93 83.98 82.95 84.33 14549.5 559.3 525.6 20.5 40 02.57 3.67 2.44 93.4 92.41 93.54 12352.7 519.6 465.2 20.5 40 0.3 2.15 3.07 2.2 93.56 92.73 93.54 12798.6 536.8 484.9 2120 00.0 0.0 0.0 100.0 100.0 100.0 4.6 4.6 4.8 2120 0.3 0.0 0.0 0.0 100.0 100.0 100.0 6.9 7.0 4.9 2140 00.0 0.0 0.0 100.0 100.0 100.0 3.9 3.9 4.3 2140 0.3 0.0 0.0 0.0 100.0 100.0 100.0 4.4 4.4 4.3
+
+people that can be evacuated. We provide the results in Figure 6. For this evaluation, we use the trained GREAT-EER model for 100 evacuation points. The trained model is used to compute the evacuation quotas on different BEOP instances, including out-of-distribution (with vehicle capacity greater than 50, more than 1.5h of evacuation time and more than 3 vehicles). In particular, we consider instances with 0.5, 1, 1.5 and 2h of evacuation time, 30 , 40 , 50 and 
+
+60 vehicle capacity, instances with up to 0.3 and 0.6 time window fraction and no time windows. Further, we consider settings with 1 to 4 vehicles. For each combination we consider ten random BEOP instances of the San Francisco setting. In addition to the GREAT-EER results, we provide the results by the greedy heuristic as a baseline in Tables 4 to 7. In particular, a table contains two scores for each BEOP instance setting representing the mean evacuation quota achieved by GREAT-EER and greedy, respectively. We can see, that GREAT-EER outperforms greedy consistently. The quota tables and figures allow us to determine how many vehicles are needed in specific settings to achieve certain evacuation quotas. E.g., we can see that we need at least 3 vehicles of 40-50 to achieve a quota of 60% if the time limit is 0.5h only. Overall, using Figure 6, we can see that the number of vehicles and the available evacuation time have a much higher influence on the evacuation quota than the amount of evacuation nodes that have time windows and the vehicle capacity. As an additional insight, we provide a visualization of how the likelihood of evacuees being picked up by bus correlates with their distance to the safe location in Figure 7. For this visualization, we consider 100 BEOP instances (per subfigure) with 0.5 ℎ of evacuation time and 1-4 buses. A subfigure shows the percentage of people that are evacuated by bus if their distance from the depot is at most a certain fraction ( 0.2, 0.4, 0.6, 0.8, 1) of the total evacuation time. We can observe that nodes that are closer to the safe location have a higher evacuation fraction than further away nodes. Moreover, we note that fraction 1 corresponds to the total evacuation quota. 
+
+4.5.3. Out-of-Distribution Results 
+
+In the following, we explore how GREAT-EER performs in distributions different from the training data. In particular, we explore how the model behaves when parts of the city become inaccessible (e.g. due to wildfires or inundations). In this setting there are no evacuation nodes in the affected part of the city. Furthermore, it is also not possible to take any roads that pass through this hazard zone. Therefore, the distances between nodes are different from the usual case since the fastest route might be blocked. The hazard zones we consider have a size such that the affected area it covers would usually contain around 20 evacuation points. Instances in this setting are sampled by choosing 121 
+
+nodes in our described San Francisco setting. We chose one node randomly as the safe location and a further random   
+
+> A. Lischka, B. Kulcsár: Preprint submitted to Elsevier Page 17 of 28
+
+GREAT-EER 
+
+Table 4 
+
+Results for 𝑛 = 1 vehicles. Entries show GREAT-EER mean evacuation quota and greedy mean evacuation quota. Evacuation time time window fraction Capacity 30 Capacity 40 Capacity 50 Capacity 60 0.5 h 0 0.26 / 0.20 0.29 / 0.23 0.31 / 0.24 0.33 / 0.25 0.3 0.26 / 0.20 0.28 / 0.23 0.31 / 0.23 0.32 / 0.24 0.6 0.25 / 0.19 0.27 / 0.21 0.30 / 0.22 0.31 / 0.23 1 h 0 0.46 / 0.37 0.51 / 0.39 0.54 / 0.43 0.57 / 0.44 0.3 0.45 / 0.36 0.50 / 0.38 0.53 / 0.42 0.56 / 0.44 0.6 0.44 / 0.36 0.48 / 0.38 0.52 / 0.42 0.55 / 0.43 1.5 h 0 0.62 / 0.50 0.67 / 0.55 0.71 / 0.57 0.74 / 0.59 0.3 0.61 / 0.49 0.66 / 0.54 0.70 / 0.55 0.73 / 0.58 0.6 0.59 / 0.48 0.64 / 0.53 0.68 / 0.55 0.71 / 0.56 2 h 0 0.73 / 0.62 0.79 / 0.68 0.83 / 0.72 0.86 / 0.74 0.3 0.73 / 0.59 0.78 / 0.66 0.82 / 0.69 0.85 / 0.72 0.6 0.71 / 0.59 0.76 / 0.64 0.80 / 0.67 0.82 / 0.71 
+
+Table 5 
+
+Results for 𝑛 = 2 vehicles. Entries show GREAT-EER mean evacuation quota and greedy mean evacuation quota. Evacuation time time window fraction Capacity 30 Capacity 40 Capacity 50 Capacity 60 0.5 h 0 0.45 / 0.36 0.50 / 0.39 0.53 / 0.41 0.56 / 0.43 0.3 0.44 / 0.36 0.49 / 0.39 0.52 / 0.41 0.55 / 0.43 0.6 0.43 / 0.34 0.48 / 0.37 0.51 / 0.40 0.53 / 0.42 1 h 0 0.73 / 0.62 0.79 / 0.68 0.83 / 0.72 0.85 / 0.73 0.3 0.72 / 0.62 0.78 / 0.66 0.82 / 0.71 0.84 / 0.71 0.6 0.71 / 0.60 0.76 / 0.64 0.80 / 0.69 0.81 / 0.69 1.5 h 0 0.90 / 0.79 0.95 / 0.85 0.97 / 0.88 0.98 / 0.91 0.3 0.89 / 0.78 0.94 / 0.84 0.96 / 0.86 0.98 / 0.89 0.6 0.87 / 0.77 0.92 / 0.82 0.94 / 0.84 0.96 / 0.87 2 h 0 0.98 / 0.92 0.99 / 0.96 1.00 / 0.98 1.00 / 0.99 0.3 0.97 / 0.90 0.99 / 0.94 1.00 / 0.96 1.00 / 0.98 0.6 0.96 / 0.88 0.99 / 0.92 1.00 / 0.93 1.00 / 0.95 
+
+node as the hazard zone epicenter. We then determine the radius around the epicenter such that 20 nodes out of the 121 are affected. Afterwards, we remove all roads and road network nodes that are within this radius. We keep the 100 unaffected nodes as our evacuation points. If the safe location is within the hazard zone or the graph becomes disconnected, we resample. We provide two examples of this setting in Figure 8. For both examples, we provide solutions generated by GREAT-EER and greedy side-by-side for comparison. An overview over the average evacuation quota (over 10 test instances) using GREAT-EER and the greedy baseline can be found in Table 8. We assume vehicles of capacity 50 and up to 30% 
+
+time window fraction. In a similar out-of-distribution evaluation, we consider BEOP instances of 200 evacuation nodes, using 3-6 busses of capacity 50, 0.5 to 2h of evacuation time and up to 30% time window fraction. Note that these instances are much larger than the training instances (double the amount of evacuation nodes and up to double the amount of vehicles). The average performance (over 10 test instances) in terms of evacuation quota of GREAT-EER and the greedy baseline can be found in Table 9. We can see that in both out-of-distribution cases (larger instances and hazard zones), GREAT-EER consistently outperforms the simple greedy baseline. 
+
+A. Lischka, B. Kulcsár: Preprint submitted to Elsevier Page 18 of 28 GREAT-EER 
+
+Table 6 
+
+Results for 𝑛 = 3 vehicles. Entries show GREAT-EER mean evacuation quota and greedy mean evacuation quota. Evacuation time time window fraction Capacity 30 Capacity 40 Capacity 50 Capacity 60 0.5 h 0 0.59 / 0.49 0.65 / 0.54 0.69 / 0.57 0.72 / 0.60 0.3 0.59 / 0.48 0.65 / 0.53 0.68 / 0.57 0.72 / 0.59 0.6 0.58 / 0.47 0.63 / 0.51 0.66 / 0.56 0.69 / 0.58 1 h 0 0.89 / 0.79 0.95 / 0.84 0.97 / 0.88 0.98 / 0.90 0.3 0.88 / 0.79 0.93 / 0.83 0.96 / 0.86 0.98 / 0.88 0.6 0.87 / 0.77 0.92 / 0.80 0.94 / 0.85 0.96 / 0.86 1.5 h 0 0.99 / 0.95 1.00 / 0.98 1.00 / 0.99 1.00 / 1.00 0.3 0.99 / 0.94 1.00 / 0.97 1.00 / 0.98 1.00 / 0.99 0.6 0.99 / 0.92 1.00 / 0.96 1.00 / 0.97 1.00 / 0.97 2 h 0 1.00 / 1.00 1.00 / 1.00 1.00 / 1.00 1.00 / 1.00 0.3 1.00 / 0.99 1.00 / 1.00 1.00 / 1.00 1.00 / 1.00 0.6 1.00 / 0.98 1.00 / 1.00 1.00 / 1.00 1.00 / 1.00 
+
+Table 7 
+
+Results for 𝑛 = 4 vehicles. Entries show GREAT-EER mean evacuation quota and greedy mean evacuation quota. Evacuation time time window fraction Capacity 30 Capacity 40 Capacity 50 Capacity 60 0.5 h 0 0.71 / 0.59 0.77 / 0.67 0.81 / 0.70 0.83 / 0.72 0.3 0.70 / 0.59 0.76 / 0.65 0.80 / 0.69 0.82 / 0.70 0.6 0.68 / 0.57 0.74 / 0.64 0.78 / 0.69 0.80 / 0.70 1 h 0 0.97 / 0.91 0.99 / 0.95 1.00 / 0.97 1.00 / 0.98 0.3 0.97 / 0.89 0.99 / 0.94 1.00 / 0.97 1.00 / 0.97 0.6 0.96 / 0.88 0.99 / 0.91 0.99 / 0.94 1.00 / 0.95 1.5 h 0 1.00 / 1.00 1.00 / 1.00 1.00 / 1.00 1.00 / 1.00 0.3 1.00 / 0.99 1.00 / 1.00 1.00 / 1.00 1.00 / 1.00 0.6 1.00 / 0.99 1.00 / 1.00 1.00 / 1.00 1.00 / 1.00 2 h 0 1.00 / 1.00 1.00 / 1.00 1.00 / 1.00 1.00 / 1.00 0.3 1.00 / 1.00 1.00 / 1.00 1.00 / 1.00 1.00 / 1.00 0.6 1.00 / 1.00 1.00 / 1.00 1.00 / 1.00 1.00 / 1.00 
+
+4.5.4. Stochastic Online Evacuation 
+
+So far, we have investigated how GREAT-EER can be used to generate deterministic evacuation plans in advance, before an emergency situation arises. However, during an emergency unexpected, stochastic situations can arise, e.g., travel times can be shorter or longer than expected (due to more or less traffic than expected) and people at evacuation points not waiting for the bus evacuation, but instead taking the car. Therefore, we now compare the performance of deterministic evacuation plans generated by GREAT-EER before an emergency arises and a stochastic GREAT-EER model that dynamically reacts to changes in the environment. For example, the stochastic model can decide to visit a further evacuation node before returning to the depot because there are still available seats on the bus due to evacuees unexpectedly taking the car instead. Additionally, the stochastic model can react to the stochastic travel time nature and decide not to visit further evacuation points due to risk of violating the maximum evacuation time. To demonstrate the advantage of using a stochastic model during real time evacuation over the deterministic model, we consider 100 test instances with 100 evacuation points using 1 vehicle with 50 seats during 1h of evacuation time. The resulting evacuation quotas on the 100 instances are shown in box plots in Figure 9. We note that during deterministic planing we generally use instance augmentation and POMO rollouts to solve every instance multiple times, keeping the best solution the model generates. During stochastic, real-time operations 
+
+A. Lischka, B. Kulcsár: Preprint submitted to Elsevier Page 19 of 28 GREAT-EER                                                           
+
+> Table 8
+> Average evacuation quota (over 10 instances) of GREAT-EER vs. greedy in the hazard zone setting. Higher is better. Instance Evacuation quota (%) Vehicles Time Limit GREAT-EER Greedy 10.5 33.03 24.64 156.61 45.18 1.5 72.33 61.37 20.5 55.50 42.68 183.74 72.21 1.5 98.53 90.11 30.5 70.75 58.62 197.99 90.13 1.5 100.0 99.37
+> Table 9
+> Average evacuation quota (over 10 instances) of GREAT-EER and greedy for instances of size 200. Higher is better. Instance Evacuation quota (%) Vehicles Time limit GREAT-EER Greedy 30.5 43.03 35.68 169.73 61.60 1.5 87.40 78.82 297.25 90.82 40.5 52.35 44.10 181.31 73.09 1.5 97.07 90.83 299.97 98.38 50.5 60.24 52.52 190.47 81.94 1.5 99.75 97.11 2100.0 99.98 60.5 66.92 59.99 196.22 89.39 1.5 100.0 99.53 2100.0 100.0
+
+this is, naturally, not possible, since the vehicle cannot try out different moves at once. Instead, we can only sample one solution trajectory. Therefore, in Figure 9, we report the performance of the stochastic model, the performance of the deterministic plan (using POMO=100 and ×8 augmentation) and the performance of an additional deterministic plan that, similar to the stochastic model, does not do any augmentation. If a model violates the maximum travel time for an instance, we set the corresponding evacuation quota to 0 to represent an invalid evacuation. In terms of evacuation quota, the performance of the stochastic model is roughly in between the augmentation-based deterministic plan and the deterministic plan without augmentation (when ignoring invalid plans). More importantly, we note, that the stochastic model does not lead to any invalid evacuation scenarios, showing the advantage of the possibility to react to the stochastic realizations. The deterministic planning leads to 15 and 9 invalid plans (out of 100) using augmentation and no augmentation, respectively. We suspect that the increased amount of invalid plans when using the augmentation-based plan result from a tighter evacuation plan that uses the whole available travel time budget more effectively, leaving less slack. Due to the decreased slack, the plans are more prone to becoming invalid when travel times deviate from the expected values.   
+
+> A. Lischka, B. Kulcsár: Preprint submitted to Elsevier Page 20 of 28 GREAT-EER
+
+Further, we note that the stochastic model violates 0 time windows (note that generally due to unexpected increased travel time even the stochastic model can lead to time window violations). In comparison, the deterministic plans violate 4 (augmentation) and 2 (no augmentation) time windows. If such a time window violation occurs, we assume that the evacuees of such a node have already left thus not increasing the vehicle load but also not increasing the successful bus-evacuation quota while still having spent time on traveling to the node. 
+
+## 5. Conclusion 
+
+In this paper we introduce an NP-hard combinatorial optimization problem that tackles emergency evacuations using buses called the bus evacuation orienteering problem (BEOP). The aim of this problem is to evacuate as many people as possible during a limited amount of time to reduce congestion occurring in car-based evacuation scenarios. The problem is related to capacitated team orienteering problem with the key distinction of allowing several subtours for a vehicle. To the best of our knowledge, we are the first ones to consider this problem setting. We model the BEOP as an MILP and a Markov Decision Process (MDP). We solve the BEOP using a deep reinforcement learning framework based on the graph edge attention network (GREAT), calling the overall framework graph edge attention network for emergency evacuation responses (GREAT-EER). To validate our model, we consider real-world data from San Francisco. GREAT-EER is benchmarked against an exact solution method using an implementation of the MILP in an exact solver. By this, we can demonstrate that GREAT-EER achieves near optimal performance on small problem instances while being substantially faster. Further, solutions provided by GREAT-EER result in strong warm initializations for the exact solver in the MILP setting. In larger evacuation scenarios, GREAT-EER is able to create solutions fast, while exact methods become prohibitively slow. The performance of GREAT-EER can be lower bounded by a simple greedy heuristic and we can show that GREAT-EER consistently outperforms such a simple heuristic on large BEOP instances. We underline that GREAT-EER can be used by authorities for ex ante, provisional planning of evacuation plans during emergency situations. Further, GREAT-EER can used this way to determine how many vehicles of which capacities are needed given different evacuation times to achieve certain evacuation quotas. We show that once trained GREAT-EER can also be applied to data distributions unseen during training, such as larger problem instances or instances with inaccessible hazard zones. Additionally, we show that GREAT-EER can also be used in stochastic, real-time, online settings. By reacting dynamically to unforeseen changes during the evacuation scenario (changes in the number of evacuees or travel times due to increased traffic or blocked roads), GREAT-EER can prevent the construction of invalid solutions that violate hard constraints of the BEOP like the maximum evacuation time and lead to more effective usage of available vehicle capacities. Beyond these experiments, we note that the extremely fast inference speed of GREAT-EER opens the possibility of additional use cases. For example, by solving each BEOP instance multiple times with different safe locations, we can select a spot that maximizes evacuation quota given a time limit, fixed bus parameters and vehicle number. Solving several BEOP instances at once is highly parallelizable when running GREAT-EER on GPUs (on a NVIDIA A40 GPU, solving 50 BEOP instances with 100 evacuation nodes in parallel takes 3 seconds). By this, it is possible to select a new safe locations within seconds in case parts of the city become inaccessible and existing plans become infeasible (compare hazard zone experiments). In short, the contributions are: 
+
+• Identification and introduction of the BEOP model for evacuations during emergency situations using busses. 
+
+– Formulation of an MILP for the BEOP. 
+
+– Formulation of an MDP for the BEOP. 
+
+• Development of a reinforcement learning-based framework to solve the BEOP called GREAT-EER. 
+
+• Extensive real-world data-based experimental evaluation: 
+
+– Investigation of the performance of GREAT-EER in terms of solution quality and runtime compared to exact methods and heuristics. 
+
+– Investigation and validation of the performance of GREAT-EER in out-of-distribution settings.   
+
+> A. Lischka, B. Kulcsár: Preprint submitted to Elsevier Page 21 of 28 GREAT-EER
+
+– Ex ante, provisional evacuation planning using GREAT-EER on real-world settings using data from San Francisco, serving as guidelines for authorities to determine suitable evacuation resources. 
+
+– Stochastic evacuation operations using GREAT-EER in changing, dynamic evacuation scenarios with unforeseen changes to ensure valid evacuations and effective resource usage. In future works, we aim to generalize our framework to further stochastic, real-time settings. In particular, we aim to consider several vehicles that cooperate in the stochastic setting which, in our MDP so far, is only possible in deterministic settings. Further, we want to consider more elaborate dynamic changes (congestion and travel times in dependence of evacuees choosing car-based evacuation instead of waiting for the bus), split-delivery and stochastic increased node demands or even stochastic new evacuation nodes. Additionally, there are several ways to extend our deterministic setting to be more realistic. Further works can extend the existing BEOP model with loading times 
+
+which reflect the time needed for evacuees entering the bus. While our existing model can easily extended to this setting, it was omitted in this work for the sake of simplicity. Moreover, it can be worth investigating settings with heterogeneous bus characteristics such as different passenger capacities or capacities dedicated to evacuees with special needs. Moreover, our model assumes the same reward for all evacuees. However, it could be possible to prioritize certain groups of evacuees, e.g., based on vulnerability. Further, we note that our solution approach is currently optimized for BEOP instances of 100 evacuation nodes. While experimental evaluation shows strong generalization performance to instances of 200 nodes, scaling to even larger instances is an open challenge and requires more advanced learning pipelines. 
+
+## 6. Acknowledgments 
+
+This work was performed as a part of the research project “LEAR: Robust LEArning methods for electric vehicle Route selection” funded by the Swedish Electromobility Centre (SEC). The computations were enabled by resources provided by the National Academic Infrastructure for Supercomputing in Sweden (NAISS) at Chalmers e-Commons partially funded by the Swedish Research Council through grant agreement no. 2022-06725.   
+
+> A. Lischka, B. Kulcsár: Preprint submitted to Elsevier Page 22 of 28
+
+GREAT-EER 
+
+(a) 1 vehicle - quota vs. capacity (b) 1 vehicle - quota vs. evacuation time 
+
+(c) 2 vehicles - quota vs. capacity (d) 2 vehicles - quota vs. evacuation time 
+
+(e) 3 vehicles - quota vs. capacity (f) 3 vehicles - quota vs. evacuation time 
+
+(g) 4 vehicles - quota vs. capacity (h) 4 vehicles - quota vs. evacuation time 
+
+Figure 6: Evacuation quotas in different BEOP settings (number of vehicles, evacuation time and vehicle capacity) A. Lischka, B. Kulcsár: Preprint submitted to Elsevier Page 23 of 28 GREAT-EER   
+
+> (a) 1 vehicle evacuation quota (b) 2 vehicles evacuation quota
+> (c) 3 vehicles evacuation quota (d) 4 vehicles evacuation quota
+
+Figure 7: Visualization of the quota of people evacuated by bus depending on their distance (fraction of maximum evacuation time) to the safe location. A. Lischka, B. Kulcsár: Preprint submitted to Elsevier Page 24 of 28 GREAT-EER       
+
+> (a) GREAT-EER solution ( 95 .41% evacuation quota) (b) Greedy solution ( 83 .39% evacuation quota)
+> (c) GREAT-EER solution ( 99 .67% evacuation quota) (d) Greedy solution ( 96 .04% evacuation quota)
+
+Figure 8: Example evacuations generated by GREAT-EER and greedy in San Francisco given 1.5h evacuation time with hazard zones A. Lischka, B. Kulcsár: Preprint submitted to Elsevier Page 25 of 28 GREAT-EER 
+
+Figure 9: Evacuation quotas by stochastic GREAT-EER model and deterministic plans generated by GREAT-EER A. Lischka, B. Kulcsár: Preprint submitted to Elsevier Page 26 of 28 GREAT-EER 
+
+## References 
+
+Archetti, C., Bianchessi, N., Speranza, M.G., 2013. Optimal solutions for routing problems with profits. Discrete Applied Mathematics 161, 547–557. Archetti, C., Feillet, D., Hertz, A., Speranza, M.G., 2009. The capacitated team orienteering and profitable tour problems. Journal of the Operational Research Society 60, 831–842. URL: https://doi.org/10.1057/palgrave.jors.2602603 , doi: 10.1057/palgrave.jors.2602603 ,
+
+arXiv:https://doi.org/10.1057/palgrave.jors.2602603 .Baffo, I., Carotenuto, P., Rondine, S., 2017. An orienteering-based approach to manage emergency situation. Transportation research procedia 22, 297–304. Benmarhnia, T., Errett, N.A., Casey, J.A., 2025. Beneath the smoke: Understanding the public health impacts of the los angeles urban wildfires. Environmental Epidemiology 9, e388. Bish, D.R., 2011. Planning for a bus-based evacuation. OR spectrum 33, 629–654. Boeing, G., 2017. Osmnx: New methods for acquiring, constructing, analyzing, and visualizing complex street networks. Computers, environment and urban systems 65, 126–139. Casey, J.A., Gu, Y.M., Schwarz, L., Frankland, T.B., Wilner, L.B., McBrien, H., Flores, N.M., Dey, A.K., Lee, G.S., Chen, C., Benmarhnia, T., Tartof, S.Y., 2025. The 2025 los angeles wildfires and outpatient acute health care utilization. JAMA Health Forum 6, e254632–e254632. URL: 
+
+https://doi.org/10.1001/jamahealthforum.2025.4632 , doi: 10.1001/jamahealthforum.2025.4632 .Charlton, D., Kilburn, C., Edwards, S., 2020. Volcanic unrest scenarios and impact assessment at campi flegrei caldera, southern italy. Journal of Applied Volcanology 9, 7. Chen, J., Shi, X., Gu, L., Wu, G., Su, T., Wang, H.M., Kim, J.S., Zhang, L., Xiong, L., 2023. Impacts of climate warming on global floods and their implication to current flood defense standards. Journal of Hydrology 618, 129236. contributors, O., 2025. Planet Dump. https://planet.osm.org . Accessed via https://www.openstreetmap.org .Der Standard, 2025. Schweizer ort blatten wegen bergsturzgefahr fast völlig evakuiert. derStandard.at URL: https://www.derstandard.at/ story/3000000270469/schweizer-ort-blatten-wegen-bergsturzgefahr-fast-voellig-evakuiert . accessed November 30th 2025. Dijkstra, E.W., 2022. A note on two problems in connexion with graphs, in: Edsger Wybe Dijkstra: his life, work, and legacy, pp. 287–290. Dikas, G., Minis, I., 2016. Solving the bus evacuation problem and its variants. Computers & Operations Research 70, 75–86. dima42, 2025. uber-gps-analysis. https://github.com/dima42/uber-gps-analysis . Accessed December 7th 2025. Dolinskaya, I., Shi, Z.E., Smilowitz, K., 2018. Adaptive orienteering problem with stochastic travel times. Transportation Research Part E: Lo-gistics and Transportation Review 109, 1–19. URL: https://www.sciencedirect.com/science/article/pii/S1366554516300242 ,doi: https://doi.org/10.1016/j.tre.2017.10.013 .Drakulic, D., Michel, S., Andreoli, J.M., 2025. Goal: A generalist combinatorial optimization agent learner. URL: https://arxiv.org/abs/ 2406.15079 , arXiv:2406.15079 .Drakulic, D., Michel, S., Mai, F., Sors, A., Andreoli, J.M., 2023. Bq-nco: Bisimulation quotienting for efficient neural combinatorial optimization. URL: https://arxiv.org/abs/2301.03313 , arXiv:2301.03313 .Fang, Z., Morales, A.B., Wang, Y., Lombardo, L., 2025. Climate change has increased rainfall-induced landslide damages in central china. International Journal of Disaster Risk Reduction 119, 105320. Feng, K., Lin, N., 2021. Reconstructing and analyzing the traffic flow during evacuation in hurricane irma (2017). Transportation Research Part D: Transport and Environment 94, 102788. URL: https://www.sciencedirect.com/science/article/pii/S1361920921000924 ,doi: https://doi.org/10.1016/j.trd.2021.102788 .Feng, K., Lin, N., Xian, S., Chester, M.V., 2020. Can we evacuate from hurricanes with electric vehicles? Transportation Research Part D: Transport and Environment 86, 102458. URL: https://www.sciencedirect.com/science/article/pii/S1361920920306453 ,doi: https://doi.org/10.1016/j.trd.2020.102458 .Feng, Y., Cao, Y., Yang, S., Yang, L., Wei, T., 2024. An approximation algorithm for bus evacuation problem. Neurocomputing 574, 127252. Gama, R., Fernandes, H.L., 2021. A reinforcement learning approach to the orienteering problem with time windows. URL: https://arxiv. org/abs/2011.03647 , arXiv:2011.03647 .Goerigk, M., Deghdak, K., Heßler, P., 2014a. A comprehensive evacuation planning model and genetic solution algorithm. Transportation Research Part E: Logistics and Transportation Review 71, 82–97. URL: https://www.sciencedirect.com/science/article/pii/ S1366554514001471 , doi: https://doi.org/10.1016/j.tre.2014.08.007 .Goerigk, M., Deghdak, K., T’Kindt, V., 2015. A two-stage robustness approach to evacuation planning with buses. Transportation Research Part B: Methodological 78, 66–82. URL: https://www.sciencedirect.com/science/article/pii/S0191261515000831 , doi: https: //doi.org/10.1016/j.trb.2015.04.008 .Goerigk, M., Grün, B., Heßler, P., 2013. Branch and bound algorithms for the bus evacuation problem. Computers & Operations Research 40, 3010–3020. Goerigk, M., Grün, B., Heßler, P., 2014b. Combining bus evacuation with location decisions: A branch-and-price approach. Transportation Research Procedia 2, 783–791. Gunawan, A., Lau, H.C., Vansteenwegen, P., 2016. Orienteering problem: A survey of recent variants, solution approaches and applications. European Journal of Operational Research 255, 315–332. Honsig-Erlenburg, M., 2025. Wie das worst-case-szenario in blatten eintreten konnte. derStandard.at URL: https://www.derstandard.at/ story/3000000271933/wie-das-worst-case-szenario-in-blatten-eintreten-konnte . accessed November 30th 2025. Jin, Y., Ding, Y., Pan, X., He, K., Zhao, L., Qin, T., Song, L., Bian, J., 2023. Pointerformer: Deep reinforced multi-pointer transformer for the traveling salesman problem, in: Proceedings of the AAAI Conference on Artificial Intelligence, pp. 8132–8140. Kim, M., Park, J., Park, J., 2023. Sym-nco: Leveraging symmetricity for neural combinatorial optimization. URL: https://arxiv.org/abs/ 2205.13209 , arXiv:2205.13209 .
+
+A. Lischka, B. Kulcsár: Preprint submitted to Elsevier Page 27 of 28 GREAT-EER 
+
+Kingma, D.P., 2014. Adam: A method for stochastic optimization. arXiv preprint arXiv:1412.6980 . Kool, W., Van Hoof, H., Welling, M., 2018. Attention, learn to solve routing problems! arXiv preprint arXiv:1803.08475 . Kwon, Y.D., Choo, J., Kim, B., Yoon, I., Gwon, Y., Min, S., 2020. Pomo: Policy optimization with multiple optima for reinforcement learning. Advances in Neural Information Processing Systems 33, 21188–21198. Li, Y., Archetti, C., Ljubic, I., 2024. Reinforcement learning approaches for the orienteering problem with stochastic and dynamic release dates. URL: https://arxiv.org/abs/2207.00885 , arXiv:2207.00885 .Lischka, A., Rydin, F., Wu, J., Chehreghani, M.H., Kulcsár, B., 2025. A great architecture for edge-based graph problems like tsp. URL: 
+
+https://arxiv.org/abs/2408.16717 , arXiv:2408.16717 .Paglino, E., Raquib, R.V., Stokes, A.C., 2025. Excess deaths attributable to the los angeles wildfires from january 5 to february 1, 2025. JAMA 334, 1018–1019. URL: https://doi.org/10.1001/jama.2025.10556 , doi: 10.1001/jama.2025.10556 .Remondo, J., Sánchez-Díaz, M., Cuesta-Albertos, J.A., 2025. An increasing trend of landslides as a consequence of the global change. Earth Systems and Environment , 1–14. Sayyady, F., Eksioglu, S.D., 2010. Optimizing the use of public transit system during no-notice evacuation of urban areas. Computers & Industrial Engineering 59, 488–495. Shiri, D., Akbari, V., Hassanzadeh, A., 2024. The capacitated team orienteering problem: An online optimization framework with predictions of unknown accuracy. Transportation Research Part B: Methodological 185, 102984. Tang, F., Wang, H., Delle Monache, M.L., 2025. Strategizing equitable transit evacuations: A data-driven reinforcement learning approach. Transportation Research Part C: Emerging Technologies 180, 105342. Tarantilis, C.D., Stavropoulou, F., Repoussis, P.P., 2013. The capacitated team orienteering problem: a bi-level filter-and-fan method. European Journal of Operational Research 224, 65–78. The Guardian, 2025. Italy plans for mass evacuation as quakes continue around supervolcano URL: https://www.theguardian.com/world/ 2023/oct/05/italy-supervolcano-campi-flegrei-naples-earthquakes-evacuation-plans . accessed November 30th 2025. Vansteenwegen, P., Gunawan, A., 2019a. Orienteering problems. EURO advanced tutorials on operational research 1. Vansteenwegen, P., Gunawan, A., 2019b. Other orienteering problem variants, in: Orienteering Problems: Models and Algorithms for Vehicle Routing Problems with Profits. Springer, pp. 95–112. Wasserman, T.N., Mueller, S.E., 2023. Climate influences on future fire severity: a synthesis of climate-fire interactions and impacts on fire regimes, high-severity fire, and forests in the western united states. Fire Ecology 19, 1–22. Williams, R.J., 1992. Simple statistical gradient-following algorithms for connectionist reinforcement learning. Machine learning 8, 229–256. Xin, L., Song, W., Cao, Z., Zhang, J., 2020. Multi-decoder attention model with embedding glimpse for solving vehicle routing problems. URL: 
+
+https://arxiv.org/abs/2012.10638 , arXiv:2012.10638 .Yamamoto, K., Sayama, T., Apip, 2021. Impact of climate change on flood inundation in a tropical river basin in indonesia. Progress in Earth and Planetary Science 8, 5. Yao, S., Lin, X., Wang, J., Zhang, Q., Wang, Z., 2024. Rethinking supervised learning based neural combinatorial optimization for routing problem. ACM Transactions on Evolutionary Learning . Zhao, X., Ji, K., Xu, P., wen Qian, W., Ren, G., nian Shan, X., 2020. A round-trip bus evacuation model with scheduling and routing planning. Transportation Research Part A: Policy and Practice 137, 285–300. URL: https://www.sciencedirect.com/science/article/pii/ S0965856420305905 , doi: https://doi.org/10.1016/j.tra.2020.05.008 .Zhou, F., Lischka, A., Kulcsár, B., Wu, J., Haghir Chehreghani, M., Laporte, G., 2025. Learning for routing: A guided review of recent developments and future directions. Transportation Research Part E: Logistics and Transportation Review 202, 104278. URL: https: //www.sciencedirect.com/science/article/pii/S1366554525003199 , doi: https://doi.org/10.1016/j.tre.2025.104278 .
+
+A. Lischka, B. Kulcsár: Preprint submitted to Elsevier Page 28 of 28

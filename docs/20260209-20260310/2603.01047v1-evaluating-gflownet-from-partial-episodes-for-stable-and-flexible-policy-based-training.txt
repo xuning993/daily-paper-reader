@@ -1,0 +1,2411 @@
+Title: Evaluating GFlowNet from partial episodes for stable and flexible policy-based training
+
+URL Source: https://arxiv.org/pdf/2603.01047v1
+
+Published Time: Tue, 03 Mar 2026 02:21:14 GMT
+
+Number of Pages: 29
+
+Markdown Content:
+Published as a conference paper at ICLR 2026 
+
+# EVALUATING GF LOW NET FROM PARTIAL EPISODES FOR STABLE AND FLEXIBLE POLICY -BASED TRAINING 
+
+Puhua Niu 
+
+Texas A&M University College Station, TX 77843, USA 
+
+niupuhua.123@tamu.edu 
+
+Shili Wu 
+
+Texas A&M University College Station, TX 77843, USA 
+
+shiliwu@tamu.edu 
+
+Xiaoning Qian 
+
+Texas A&M University College Station, TX 77843, USA Brookhaven National Laboratory Upton, NY 11973, USA 
+
+xqian@tamu.edu 
+
+ABSTRACT 
+
+Generative Flow Networks (GFlowNets) were developed to learn policies for ef-ficiently sampling combinatorial candidates by interpreting their generative pro-cesses as trajectories in directed acyclic graphs. In the value-based training work-flow, the objective is to enforce the balance over partial episodes between the flows of the learned policy and the estimated flows of the desired policy, im-plicitly encouraging policy divergence minimization. The policy-based strategy alternates between estimating the policy divergence and updating the policy, but reliable estimation of the divergence under directed acyclic graphs remains a ma-jor challenge. This work bridges the two perspectives by showing that flow bal-ance also yields a principled policy evaluator that measures the divergence, and an evaluation balance objective over partial episodes is proposed for learning the evaluator. As demonstrated on both synthetic and real-world tasks, evaluation bal-ance not only strengthens the reliability of policy-based training but also broadens its flexibility by seamlessly supporting parameterized backward policies and en-abling the integration of offline data-collection techniques. Our code is available at github.com/niupuhua1234/Sub-EB. 
+
+1 INTRODUCTION 
+
+Generative Flow Networks (GFlowNets) are generative models on combinatorial spaces X , such as graphs formed by organizing nodes and edges in a particular way, or strings composed of alphabets in a specific ordering. GFlowNets aim at sampling x ∈ X with probability ∝ R(x), where R(x)
+
+is a non-negative score function. The task is challenging as |X | can be too large to compute the normalization constant Z∗ := P 
+
+> x∈X
+
+R(x) and the distribution modes can be highly isolated due to the combinatorial nature for efficient exploration. In GFlowNets (Bengio et al., 2021; 2023), generating or sampling x ∈ X is decomposed into incremental trajectories (episodes) that start from a null state, pass through intermediate states, and end at x as the desired terminating state. These trajectories τ ∈ T can be viewed as the paths along a Directed Acyclic Graph (DAG) with state 
+
+s ∈ S and edge (s → s′) ∈ E . Positive measures (unnormalized probability) of trajectories are viewed as the amount of flows along the DAG, and R(x) is the total flow of trajectories ending at x,so that sampled trajectories will end at x with the probability ∝ R(x).The core of the GFlowNet training problem can be understood as minimizing the discrepancy of the forward trajectory distribution PF (τ ) induced by a forward policy πF (s′|s) towards the backward trajectory distribution PB (τ ) := PB (τ |x)R(x)/Z ∗ induced by a given backward policy πB (s|s′)
+
+and R(x) (Bengio et al., 2023; Malkin et al., 2022b). This is motivated by the fact that in real-world applications, sequential generation must be done in a forward manner. Besides, the marginaliza-1
+
+> arXiv:2603.01047v1 [cs.LG] 1 Mar 2026
+
+Published as a conference paper at ICLR 2026 s2 
+
+> s1
+> s3
+> x1
+> x2
+> x3
+> s0
+> sf
+> s2
+> s1
+> s3
+> x1
+> x2
+> x3
+> s0sf
+
+Figure 1: A graphical illustration of a DAG (left) and its graded version (right). Dotted circles represent dummy states, added during the conversion to a graded DAG. tion P ∗(x) = P  
+
+> τ|x
+
+PB (τ ) trivially holds for all x ∈ X , so any backward policy can be used to define a target backward trajectory distribution. Since evaluating Z∗ and thereby the normal-ized distribution PB (τ ) is considered intractable, directly optimizing some distributional divergence of PF (τ ) and PB (τ ) is not feasible. To circumvent this, value-based methods reformulate the problem of distributional matching as a flow-matching problem and leverage the balance condi-tions of flow values to derive training objectives. The basic condition EPD (s)[log πF (s′|s)F (s)] = 
+
+EPD (s)[log πB (s|s′)F (s′)] means that the edge flow value F (s → s′) = πF (s′|s)F (s) matches the target edge flow value in the reverse direction, where PD (s) is the marginal state distribution induced by the data collection policy πD (s′|s). This basic condition leads to various training objectives that implicitly encourage the alignment between forward and backward distributions. These objectives range from edge-wise formulations to subtrajectory-wise variants, providing diverse estimations of target flows and quantifications of flow imbalances (Bengio et al., 2023; Madan et al., 2023; Malkin et al., 2022a). Alternatively, policy-based methods (Malkin et al., 2022b; Niu et al., 2024; Zim-mermann et al., 2022) introduce an evaluation function V (s) of the forward policy πF (·| s), which approximates the Kullback-Leibler (KL) divergence between the distribution of forward subtrajec-tories (partial episodes) starting from state s and that of backward subtrajectories ending at s. Then 
+
+V (s) is used to update the forward policy πF (·| s). While policy updating based on V (s) has been well-studied, how to reliably learn V (s) remains an open problem. In light of the success of value-based methods that leverage flow balance conditions and the anal-ogy between the state flow function F (s) as the total amount of trajectory flows passing state s,and the evaluation function V (s) as a measurement of distributional divergence at state s, it is worthwhile to investigate the relationship between the two quantities. It is known that the optimal forward policy and state flow function can be uniquely determined by the flow balance condition 
+
+EπF [log F (s)πF (s′|s)] = EπF [log F (s′)πB (s|s′)] . We find that, for any fixed πF , the solution of the state flow to this condition coincides with the exact KL divergence starting from state s, that is, the true evaluation function of πF . This paves the way to derive balance-based objectives to learn 
+
+V (s) reliably. Our contributions are as follows: 
+
+• We establish the connection between balance conditions with respect to (w.r.t.) the state flow function F and the evaluation function V . Fixing πF , the expected balancing conditions of 
+
+log F directly lead to a sufficient condition for V , which we call the Subtrajectory Evaluation Balance (Sub-EB) condition. 
+
+• We introduce the Sub-EB objective for reliably learning the evaluation function V , where sub-trajectories (partial episodes) serve as the basic unit of flow balance. 
+
+• Experimental results on both simulated and real-world datasets, including hypergrid model-ing, biological and molecular sequence design, and Bayesian network structure learning, have demonstrated the effectiveness and reliability of Sub-EB for policy evaluation. 
+
+2 PRELIMINARIES 
+
+We restrict DAGs of GFlowNets to be graded as any DAG can be equivalently converted to be graded by adding dummy non-terminating states (Malkin et al., 2022b). In a DAG G := ( S, E),element s ∈ S denotes a state, and element (s → s′) ∈ E (⊆ S × S ) denotes a directed edge. We define the index set of time horizons as [H] := {0, . . . , H }. Being acyclic means the state space S
+
+2Published as a conference paper at ICLR 2026 can be partitioned into disjoint subspaces: S0, . . . , SH+1 , where each element of Sh is denoted as sh
+
+for h ∈ [H + 1] . Being graded further implies that actions are only allowed from Sh to Sh+1 . The initial and final states are unique, that is, S0 = {s0} and SH+1 = {sf }. The terminating state set, 
+
+SH := X is associated with a score function R : X → R+. Furthermore, the (complete) trajectory set is defined as T := {τ = ( s0 → · · · → sf )|∀ (s→s′) ∈ τ : ( s→s′) ∈ E} . For i < j ∈ [H + 1] ,
+
+τi:j , τi: and τi: denote subtrajectories (partial episodes) from si to sj , from si to sf , and from s0 to 
+
+sj , respectively. Denoting the natural σ-algebra on T as σ(T ), P (Γ) := P  
+
+> τ∈Γ
+
+P (τ ) for any event 
+
+Γ ∈ σ(T ). An exemplary DAG and its graded version are shown in Fig. 1. GFlowNet training aims to align the forward trajectory distribution PF (τ ) := QHi=0 πF (sh+1 |sh)
+
+with the backward trajectory distribution PB (τ ) := QHi=0 πB (sh|sh+1 ), where πF and πB are for-ward and backward Markovian policies (transition distributions), respectively, and are assumed to satisfy PF (τ ) > 0 and PB (τ ) > 0 for any τ ∈ T . Accordingly, PF (τi,j |si) = Qj−1 
+
+> h=i
+
+πF (sh+1 |sh),and PB (τi,j |sj ) = Qj−1 
+
+> h=i
+
+πB (sh|sh+1 ). Except that πB (x|sf ) := R(x)/Z ∗ for any x ∈ X , πB (s|s′)
+
+can be arbitrary for intermediate edges, as PB (x) = P  
+
+> τ|x
+
+PB (τ ) = R(x)/Z ∗ always holds. There-fore, the optimal forward policy π∗ 
+
+> F
+
+, satisfying P ∗ 
+
+> F
+
+(τ ) = PB (τ ) for all τ ∈ T , induces its marginal 
+
+PF ∗ (x) = R(x)/Z ∗, thereby achieving the ultimate goal of GFlowNet. Moreover, under the Marko-vian assumption (Bengio et al., 2023), the optimal forward policy π∗ 
+
+> F
+
+corresponding to πB is unique. 2.1 VALUE -BASED TRAINING 
+
+Traditional Variational Inference (VI) approaches that minimize the KL divergence LKL (θ) := 
+
+DKL (PF (τ ; θ)∥PB (τ )) is infeasible as Z∗ is considered intractable (Malkin et al., 2022b). To circumvent the intractable Z∗, value-based methods introduce an unnormalized and Markovian dis-tribution F (τ ) := PF (τ )Z, called (trajectory) flow (Bengio et al., 2023), together with a total flow 
+
+Z. Accordingly, for any event Γ ∈ σ(T ), its flow F (Γ) := P  
+
+> τ∈Γ
+
+P (τ ) . In particular, the edge flow and state flow are F (s → s′) := P  
+
+> τ∋(s→s′)
+
+F (τ ) and F (s) := P 
+
+> s′
+
+F (s → s′). Further-more, F (s0) = F (sf ) = Z, and πF (s′|s) = F (s → s′)/F (s). Analogously, the optimal flow is 
+
+F ∗(τ ) := PB (τ )Z∗ = P (τ |x)R(x). Therefore, the optimality condition of GFlowNets is converted to ∀τ ∈ T : F (τ ) = F ∗(τ ). Thanks to the Markovian assumption, the condition can be relaxed and reformulated to the Sub-Trajectory Balance (Sub-TB) condition (Madan et al., 2023). It requires 
+
+∀i < j ∈ [H + 1] :
+
+EPD (τi:j )
+
+log  F (si)PF (τi:j |si) = EPD (τi:j )
+
+log  F (sj )PB (τi:j |sj ) , (1) where F (sf )PB (x|sf ) := R(x) for x ∈ X , and PD (τi,j ) = P  
+
+> τ∋τi,j
+
+PD (τ ) is induced by the offline data-collection policy πD . It is assumed that PD (τ ) > 0 for any τ ∈ T (Malkin et al., 2022b). Without the assumption, a stricter alternative is to enforce flow balance for each individual subtrajectory, as in Madan et al. (2023). The condition above can be interpreted as the flow value of a subtrajectory should match the target flow value in the reverse direction, which represents an (approximated) desired flow value. Leveraging the balance condition, value-based methods typically use the Sub-TB objective to op-timize the parameterized policy πF (s′|s; θ) and state flow F (s; θ) toward their optimal solutions 
+
+π∗ 
+
+> F
+
+(s′|s) and F ∗(s). The objective is defined as follows: 
+
+LF (θ) := EPD (τ )
+
+h X 
+
+> τi:j
+
+wj−i (δF (τi:j ; θ)) 2 i
+
+, δF (τi:j ; θ) := log PF (τi:j |si; θ)F (si; θ)
+
+PB (τi:j |sj ; θ)F (sj ; θ) , (2) where wj−i denotes the non-zero weight coefficient for subtrajectories that consist of j −
+
+i edges. For practical gradient-based optimization, LF (θ) are approximated by bLF (θ) := 
+
+> 1
+> K
+
+P 
+
+> τ∈D
+
+[P  
+
+> τi:j∈τ
+
+wj−iδF (τi:j ; θ)] , where D := {τ k : τ k ∼ PD (τ )}Kk=1 is the set of samples. 2.2 POLICY -BASED TRAINING 
+
+Policy-based training methods for GFlowNets (Niu et al., 2024) resemble the policy gradient al-gorithm in Reinforcement Learning (RL) and aim to minimize the KL divergence LKL (θ) as in traditional VI approaches. The methods follow the actor-critic framework (Sutton & Barto, 2018; Haarnoja et al., 2018). 3Published as a conference paper at ICLR 2026 
+
+Critic In each training iteration, the critic (true evaluation function) V † of actor πF is first com-puted to capture the policy gaps in terms of KL divergences over subtrajectories, thereby facilitating the computation of the overall trajectory divergence. For any h ∈ [H], V †(sh; θ) is defined as: 1
+
+EPF (τh:|sh;θ)
+
+h HX
+
+> i=h
+
+R(si → si+1 ; θ)
+
+i
+
+= log F ∗(sh)−DKL (PF (τh:|sh; θ)∥PB (τh:|sh)) (3) where R(si → si+1 ; θ) := log eπB (si|si+1 )  
+
+> πF(si+1 |si;θ)
+
+, and eπB = πB expect that eπB (x|sf ) := R(x). The equality can be easily verified (Niu et al., 2024) as shown in (21) in the Appendix. Analytical computation of V † is usually infeasible as |T | can be enormous, so V † is modeled by an evaluation function V with learnable parameters. We will discuss the learning objective of V in the next section. 
+
+Actor To minimize LKL (θ), it is noted that ∇θ V †(s0; θ) = −∇ θ LKL (θ) since F ∗(s0)(= Z∗)
+
+is a constant. Consequently, −V †(s0; θ) can be a surrogate to the KL divergence. Further apply-ing the policy gradient theorems in RL (Agarwal et al., 2021), ∇θ V †(s0; θ) can be simplified and approximated in terms of V as follows: 
+
+EPF (τ )
+
+h HX
+
+> h=0
+
+Aγ (sh → sh+1 )∇θ log πF (sh+1 |sh; θ)
+
+i
+
+, (4) where Aγ (sh → sh+1 ) = PHi=h γi−h (R(si → si+1 ) + V (si+1 ) − V (si)) . When increasing the hyperparameter γ from 0 to 1, Aγ (sh → sh+1 ) evolves from R(sh → sh+1 ) + V (sh+1 ) − V (sh) to 
+
+PHi=h R(si → si+1 ) − V (sh). Therefore, γ enables the variance-bias trade-off during stochastic gradient descent (Schulman et al., 2016; 2017), analogous to w in the Sub-TB method. 
+
+3 SUBTRAJECTORY EVALUATION BALANCE 
+
+As discussed in the previous sections, the evaluation function V plays a central role in policy-based methods. In this section, we first introduce the Sub-EB condition that characterizes the relationship between πF and V , which closely resembles the Sub-TB conditions between πF and F . We then present the Sub-EB objective for learning V . Further, we extend these results with corresponding conditions and objectives for πB and the backward evaluation function W .3.1 THE BALANCE CONDITION AND OBJECTIVE FOR FORWARD POLICIES 
+
+Given a forward policy πF such that PF (τ ) > 0 for all τ ∈ T , the Subtrajectory Evaluation Balance (Sub-EB) condition for the associated evaluation function V can be written as ∀i < j ∈ [H + 1] :
+
+EPF (τi:j )
+
+h
+
+log  PF (τi:j |si) exp V (si) i
+
+= EPF (τi:j )
+
+h
+
+log  PB (τi:j |sj ) exp V (sj )i
+
+, (5) where PB (x|sf ) exp V (sf ) := R(x) for x ∈ X . The condition can be reformulated as: EPF (si,s j )[V (si) − V (sj )] = EPF (τi:j )
+
+h
+
+log PB (τi:j |sj )  
+
+> PF(τi:j|si)
+
+i
+
+= H(PF (si)) − H (PF (sj )) −
+
+EPF (sj )[DKL (PF (τi,j |sj )∥PB (τi,j |sj ))] , where H(·) denotes the entropy of a distribution. There-fore, this condition intuitively requires that the difference of the learned divergences at si and sj
+
+matches the true divergence over subtrajectories between the two states. 
+
+Theorem 3.1. Suppose V is an arbitrary evaluation function over S, and F ∗ is the optimal flow induced by a backward policy πB . Given a forward policy πF ,
+
+∀h ∈ [H] : V (sh) = log F ∗(sh) − DKL (PF (τh:|sh)∥PB (τh:|sh)) , (6) 
+
+if and only if V satisfies the Sub-EB condition (5). 
+
+The corresponding proof can be found in Appendix A.1. 
+
+Theorem 3.2. Suppose F is an arbitrary state flow function over S, πF is an arbitrary forward policy, and (F ∗, π ∗ 
+
+> F
+
+) is the optimal flow and forward policy induced by a backward policy πB . Then, 
+
+∀h ∈ [H] : log F (sh) = log F ∗(sh) − DKL (P ∗ 
+
+> F
+
+(τh:|sh)∥PB (τh:|sh)) (7) 
+
+and πF = π∗ 
+
+> F
+
+if and only if (F, π F ) satisfies the Sub-TB condition (1). 
+
+> 1
+
+Niu et al. (2024) consider an additional total flow estimator Z(θ) to scale down the magnitude of V †. For notational compactness, we defer the discussion of integrating Z into our method to Appendix A.4. 
+
+4Published as a conference paper at ICLR 2026 The corresponding proofs can be found in Appendix A.2. While the sufficiency and necessity of the Sub-TB condition have been studied in prior work (Bengio et al., 2023; Malkin et al., 2022a), Theorem 3.2 offers an alternative perspective that more clearly elucidates the connection between the flow function and the evaluation function. It should be noted that the minimum of the KL term above is zero, as both PF (τ ) and PB (τ ) are Markovian . Moreover, by Proposition 23 in Bengio et al. (2023), the trajectory flow F (τ ) = PF (τ )Z that achieves the zero KL term is unique. Leveraging the balancing condition, we define the Sub-EB objective for optimizing a parameterized evaluation function V (· ; ϕ) as: 
+
+LV (ϕ) := EPF (τ )
+
+h X 
+
+> τi:j
+
+wj−i (δV (τi:j ; ϕ)) 2 i
+
+, δV (τi:j ; ϕ) = log PF (τi:j |si) exp V (si; ϕ)
+
+PB (τi:j |sj ; ϕ) exp V (sj ; ϕ) , (8) where wj−i is the weight for sub-trajectories of j − i edges, as in the Sub-TB objective. While the traditional λ-Temporal-Difference (TD) objective (54) detailed in Appendix A.5 (Niu et al., 2024; Schulman et al., 2016) focuses on learning V (sh; ϕ) only from events starting at step h and edge-wise mismatches δV (s → s′), the Sub-EB objective incorporates events both before and after h and leverages subtrajectory-wise mismatches, yielding more balanced learning of V (sh; ϕ). Moreover, Sub-EB allows freely weighting schemes, whereas the scheme of λ-TD is restricted to the λ-decay form. A detailed comparison between our Sub-EB and λ-TD objectives is provided in Appendix A.5. It should be noted that the Sub-EB objective is specifically designed for estimating V † of πF . In each optimization iteration, its gradient w.r.t. ϕ is computed to update V (· ; ϕ), while θ is frozen. In contrast, the Sub-TB objective 2 is used to jointly update πF (· |· ; θ) and log F (· ; θ).2 We sum-marize the workflow of our policy-based method for GFlowNet training in Algorithm 1, where 
+
+bLV (ϕ) := 1
+
+> K
+
+P 
+
+> τ∈D
+
+[P  
+
+> τi:j∈τ
+
+wj−iδV (τi:j ; ϕ)] and b∇θ V †(s0; θ) := 1
+
+> K
+
+P 
+
+> τ∈D
+
+[PHh=0 Aγ (sh →
+
+sh+1 )∇θ log πF (sh+1 |sh; θ)] .3.2 PARAMETERIZED BACKWARD POLICY 
+
+In this and the following sections, we further discuss two key advantages introduced by the Sub-EB condition, which provide the improved flexibility of policy-based training. The λ-TD objective (54) requires πB to remain fixed throughout optimization, as V λ is treated as constant w.r.t. ϕ. To ad-dress this limitation, Niu et al. (2024) proposed a two-phase algorithm, where each training iteration includes a forward phase and a backward phase. In the forward phase, we sample D ∼ PF (τ ),update V based on D, and update πF based on V and D. In the backward phase, we sample 
+
+D′ ∼ PB (τ |x)PF (x), update the backward evaluation function W that approximates the true back-ward evaluation function W † of πB , and update πB based on W . The definitions of W † and W
+
+will be detailed in Section 3.3. In parallel, Gritsaev et al.; Jang et al. (2024) introduced an addi-tional objective for πB within the forward phase. When applied to the policy-based framework, their approach first samples a batch D ∼ PF (τ ) and updates πB by maximizing its log-likelihood, P  
+
+> τ∈D
+
+log PB (τ ). Then, with πB held fixed, V and πF are updated using the same batch D, follow-ing the procedure described above. In contrast, both the Sub-TB (2) and Sub-EB (8) objectives allow for updating parameterized πB
+
+without introducing a separate backward phase or an additional objective. To be more specific, 
+
+πB is jointly updated with V under the Sub-EB objective, and with (πF , log F ) under the Sub-TB objective. This leads to a more streamlined and efficient training process while enabling the backward policy to adapt dynamically during optimization. Moreover, beyond basic policy-gradient methods, the Sub-EB objective also enables a parameterized πB within more advanced policy-based methods, such as the Trust-Region Policy Optimization (TRPO) method (Niu et al., 2024), where 
+
+πB was previously required to remain fixed under the λ-TD objective. 3.3 OFFLINE POLICY -BASED TRAINING 
+
+Both the single-phase and two-phase algorithms by Niu et al. (2024) operate in an online manner, where we can not use a data-collection policy πD̸ = πF during training. To overcome this limita-tion, we introduce an offline policy-based method made possible by the flexibility of the Sub-EB          
+
+> 2Here, θand ϕare introduced as separate parameter sets. θcorresponds to functions updated jointly with
+> πF, while ϕcorresponds to functions that are not.
+
+5Published as a conference paper at ICLR 2026 
+
+Algorithm 1 Online Policy-based Workflow 
+
+Require: πF (· |· ; θ), πB (· |· ; ϕ), V (· ; ϕ),batch size K, number of total iterations N
+
+for n = 1 , . . . , N do 
+
+D ← { τ k : τ k ∼ PF (τ )}Kk=1 
+
+Based on D, update ϕ by ∇ϕ bLV (ϕ)
+
+Based on D and V , update θ by 
+
+− b∇θ V †(s0; θ)
+
+end for return πF (· |· ; θ), πB (· |· ; ϕ), V (· ; ϕ)
+
+Algorithm 2 Offline Policy-based Workflow 
+
+Require: πB (· |· ; ϕ), πF (· |· ; θ), W (· ; θ), of-fline policy πD , K, N
+
+for n = 1 , . . . , N do 
+
+D⊤ ← { xk : xk ∈ τ k, τ k ∼ PD (τ )}Kk=1 
+
+D ← { τ k : xk ∈ D ⊤, τ k ∼ PB (τ |xk)}Kk=1 
+
+Based on D, update θ by ∇θ bLW (θ)
+
+Based on D and W , update ϕ by 
+
+− b∇ϕEPD (x)[W †(x; ϕ)] 
+
+end for return πB (· |· ; ϕ), πF (· |· ; θ), W (· ; θ)
+
+objective. We define W †(s0) := log F (s0). For any h ∈ [H]\{ 0}, W †(sh; ϕ) is defined as: 
+
+EPB (τ:h|sh;ϕ)
+
+h h−1X
+
+> i=0
+
+R(si ← si+1 ; ϕ)
+
+i
+
+= log F (sh) −DKL (PB (τ:h|sh; ϕ)∥PF (τ:h|sh)) , (9) with R(si ← si+1 ; ϕ) := log πF (si+1 |si)  
+
+> πB(si|si+1 ;ϕ)
+
+. The equality can be easily verified, as shown in (45) in the Appendix. It is known that minimizing EPD (x)[LKL (ϕ|x)] := EPD (x)[DKL (PB (τ |x; ϕ)∥PF (τ |x))] 
+
+also reduces the discrepancy between PB (τ ) and PF (τ ) (Niu et al., 2024). Since ∇ϕ log F (x) = 0 
+
+and −∇ ϕEPD (x)[W †(x; ϕ)] = ∇ϕEPD(x) [LKL (ϕ|x)] , it follows that −EPD (x)[W †(x; ϕ)] can be a surrogate to the expected KL divergence. In analogy to the forward case, we use a parameterized evaluation function W to approximate W †, and ∇ϕEPD (x)[W †(x; ϕ)] is computed as: 
+
+EP D  
+
+> B(τ)
+
+h H−1X
+
+> h=0
+
+Aγ (sh ← sh+1 )∇ϕ log πB (sh|sh+1 ; ϕ)
+
+i
+
+(10) with Aγ (sh ← sh+1 ) = Phi=0 γh−i(R(si ← si+1 )+ W (si)−W (si+1 )) and P D 
+
+> B
+
+(τ ) := PB (τ |x)PD (x).Given a backward policy πB , the Sub-EB condition for W can be written as ∀i < j ∈ [H + 1] :
+
+EP D  
+
+> B(τi:j)
+
+h
+
+log  PF (τi:j |si) exp W (si)i
+
+= EP D  
+
+> B(τi:j)
+
+h
+
+log  PB (τi:j |sj ) exp W (sj )i
+
+, (11) where PB (x|sf ) exp W (sf ) := R(x) for x ∈ X . The condition can be reformulated as 
+
+EP D   
+
+> B(si,s j)
+
+[W (si) − W (sj )] = EP D  
+
+> B(τi:j)
+
+h
+
+log PB (τi:j |sj )  
+
+> PF(τi:j|si)
+
+i
+
+, encouraging learned divergence differ-ence at si and sj to match the true divergence between them. 
+
+Theorem 3.3. Suppose W is an arbitrary evaluation function over S\{ sf }, and F is the flow associated with a forward policy πF . Given a backward policy πB ,
+
+∀h ∈ [H − 1] : W (sh+1 ) = log F (sh+1 ) − DKL (PB (τ:h+1 |sh+1 )∥PF (τ:h+1 |sh+1 )) , (12) 
+
+and W (x) = log R(x) if and only if W satisfies the backward Sub-EB condition (11). 
+
+The corresponding proof can be found in Appendix A.3. Based on the backward Sub-EB condition, we present the backward Sub-EB objective for W (· ; θ) as follows: 
+
+LW (θ) := EP D  
+
+> B(τ)
+
+h X 
+
+> τi:j
+
+wj−i (δW (τi:j ; θ)) 2 i
+
+, δW (τi:j ; θ) = log PF (τi:j |si; θ) exp W (si; θ)
+
+PB (τi:j |sj ) exp W (sj ; θ) (13) When πB and πF are at their optima, the KL term in the expression of W is zero. Consequently, 
+
+F (x) = R(x) and PF (x) = F (x)/ P 
+
+> x
+
+F (x) = R(x)/Z ∗, thereby fulfilling the goal of GFlowNet training. The workflow of our offline policy-based method for GFlowNet training is presented in Algorithm 2, where bLW (θ) := 1
+
+> K
+
+P 
+
+> τ∈D
+
+[P  
+
+> τi:j∈τ
+
+wj−iδW (τi:j ; θ)] and b∇ϕEPD (x)[W †(x; ϕ)] := 
+
+> 1
+> K
+
+P 
+
+> τ∈D
+
+[PH−1 
+
+> h=0
+
+Aγ (sh ← sh+1 )∇ϕ log πB (sh|sh+1 |ϕ)] .6Published as a conference paper at ICLR 2026 
+
+4 RELATED WORKS 
+
+Value-based GFlowNet Training Existing works on value-based GFlowNet training can be cat-egorized into two directions. The first one focuses on designing training objectives to character-ize target flow values, thereby improving the estimation of flow imbalance. The Detailed Balance (DB) objective (Bengio et al., 2023) aims to reduce the logarithmic mismatch between the for-ward edge flow πF (s′|s)F (s) and the backward target edge flow πB (s|s′)F (s′), respectively. The target term F (s′)PB (s|s′) provides biased but low-variance feedback, as F encodes the learned partial knowledge about the task. The Trajectory Balance (TB) objective (Malkin et al., 2022a) optimizes the logarithmic mismatch between the forward trajectory flow PF (τ )Z and the true back-ward trajectory flow PB (τ |x)R(x) = F ∗(τ ), which yields unbiased but high-variance feedback. The Sub-TB objective (Madan et al., 2023) generalizes both DB and TB by minimizing the flow logarithm mismatch of subtrajectories of varying lengths. By reweighting subtrajectories according to their lengths, it enables a bias-variance trade-off, thereby achieving better performance. Build-ing on Sub-TB objectives, various improvements are also proposed. Kim et al. (2023a) introduced temperature-conditional objectives, whose goal turns to make PF (x) ∝ Rβ (x) with positive scalar 
+
+β < 1. Taking R to the exponent β reduces its sharpness, making it easier to match. As PF (x)
+
+does not match R(x) in this case, this representation is specifically useful when the focus is solely on mode seeking. For all the objectives mentioned above, πB (s|s′) can be chosen freely for any intermediate edges (s → s′) and only π(x|sf ) is fixed to R(x). Therefore, target flow values of intermediate edges or subtrajectories do not directly reflect the ground-truth knowledge about the reward function R. However, under the special cases where the covered object space of R can be extended from X to S, Pan et al. (2023) and Jang et al. (2023) improved the formulation of the DB and Sub-TB objectives, propagating partial knowledge of R directly to intermediate edges. Due to the similarity of the Sub-TB objective and our Sub-EB objective, these improvements can also be easily adapted to Sub-EB to facilitate learning V .A key characteristic of value-based methods is that πD can be off-policy, that is, different from πF ,leading to numerous efforts at designing πD (Kim et al., 2023b; Rector-Brooks et al., 2023). The goal is to effectively identify edges that precede highly-rewarded terminating states (exploration) while allowing revisiting the edges already found to yield high reward (exploitation). The most widely used approach is α-greedy design that mixes πF with a uniform policy by a factor α. These efforts, however, fail to achieve deep exploration , which requires considering not only immediate information gain but also the long-term consequences of a transition (edge) in future learning (Os-band et al., 2019). Although there have been many theoretical advances in efficient exploration design from an RL perspective (Azar et al., 2017; Jin et al., 2018; M´ enard et al., 2021), their expen-sive computational cost limits their applicability in practical problems. 
+
+Policy-based GFlowNet Training As mentioned above, designing a data-collection policy that is both computationally efficient and capable of deep exploration remains a significant chal-lenge. Moreover, what is truly needed for training efficiency is identifying the edges of high flow-imbalance rather than the edges that lead to high terminating rewards. However, the flow imbalance is closely related to πF and changes whenever πF is updated. Empirical evidence shows that on-policy training, meaning πD = πF , can result in faster convergence under many condi-tions (Atanackovic & Bengio, 2024). Accordingly, policy-based GFlowNet methods (Malkin et al., 2022b; Niu et al., 2024; Zimmermann et al., 2022) conduct on-policy training, which typically corresponds to optimizing the KL divergence between PF (τ ) and the unnormalized distribution 
+
+PB (τ |x)R(x)(= PB (τ )Z∗), which has gradient equivalence to the divergence between PF (τ ) and 
+
+PB (τ ). Removing the need to design a data-collection policy, the main challenge of policy-based methods shifts to robust estimation of the divergence and its gradients, that is, balancing the trade-off between variance and bias of the estimators. Malkin et al. (2022b) and Silva et al. (2024) construct estimators empirically and require fixed πB . During gradient-based optimization, these estimators are computed solely from the training data sampled in the current iteration. These estimators typi-cally exhibit low bias but high variance. From the theory of policy gradients in RL, Niu et al. (2024) proposed estimators on a parameterized evaluation function V , which enables leveraging sampled data from all previous iterations. These estimators generally have high bias but low variance. Com-bining empirical and parameterized approaches, Niu et al. (2024) introduced a hyperparameter to control variance-bias trade-off explicitly, resulting in significant performance gains. As the ef-fectiveness of these policy-based methods critically depends on how V is learned, our paper is a subsequent work towards this challenge. 7Published as a conference paper at ICLR 2026 
+
+GFlowNet training and RL Value-based methods such as DB and Sub-TB, as well as RL-inspired variants of DB, including Munchausen DQN (denoted as Q-Much) (Tiapkin et al., 2024) and Rec-tified Flow Iteration (RFI) (He et al., 2025), follow the Q-learning framework (Haarnoja et al., 2017). In contrast, policy-based methods, based on policy gradients, operate within the actor–critic framework (Sutton & Barto, 2018; Haarnoja et al., 2018). A detailed discussion of the theoretical distinctions between these two frameworks is provided in Appendix A.6. To further illustrate how the Sub-EB objective and policy gradients operate within the actor-critic framework, we derive the basic soft actor–critic algorithm (Alg. 3) for GFlowNet, together with a modified variant (Alg. 4), in Appendix A.7. 
+
+5 EXPERIMENTS 
+
+We consider tree policy-based methods: the empirical method of Silva et al. (2024), which uses the Control Variate (CV) technique for variance reduction during gradient estimation, and two policy-gradient methods (Niu et al., 2024) that learn V by either the λ-TD objective or the proposed Sub-EB objective. We refer to these methods as CV, RL, and Sub-EB, respectively. Since Sub-TB (Madan et al., 2023) (Tiapkin et al., 2024) is closely related to Sub-EB, we also include it as represen-tative baselines for value-based methods. Among RL-inspired value-based variants, we consider Q-Much (Tiapkin et al., 2024) and RFI (He et al., 2025). However, due to potential computational scalability issues with RFI (see Appendix A.6), we include only Q-Much in our benchmarking exper-iments. To design the data collection policy πD in the Sub-TB method, we follow a common choice, where πD is equal to πF with probability (1 − α) and a uniform policy with probability α (Shen et al., 2023; Rector-Brooks et al., 2023). The common settings of πB can be either a uniform policy or a parameterized policy. By default, we adopt the uniform policy as the parameterized policy does not carry ground-truth information about the reward function. We also augmented Sub-TB and the offline Sub-EB (Algorithm 2) with the local search technique (Kim et al., 2023b) for designing PD ,to explicitly promote the exploration of high-reward terminating states during trajectory sampling. These variants are denoted as Sub-TB-B and Sub-EB-B. As explained in Section 4 and confirmed by the following experiment results, off-policy techniques that explicitly encourage exploration may not benefit distribution modeling. However, when the focus is on discovering modes of terminating states, these techniques can be valuable. For Sub-EB, Sub-TB and their variants, the weight wj−i
+
+for i < j ∈ [H + 1] is set to λj−i/ P 
+
+> i<j ∈[H+1]
+
+λj−i following Madan et al. (2023). Instead of the average l1-distance adopted in the literature, we chose total variation DTV and Jensen–Shannon divergence DJSD between PF (x) and P ∗(x) as the metrics for performance com-parison between competing methods. The rationale and formal definitions are detailed in Ap-pendix B. We have conducted three sets of experiments. The first set is conducted in simulated environments, referred to as ‘Hypergrids’. The second set focuses on biological and molecular sequence design tasks using real-world datasets. The third set involves real-world applications of GFlowNet in Bayesian Network (BN) structure learning. More experimental details, such as model configurations and hyperparameter choices, can be found in Appendix B. Parts of our implementa-tion code are adapted from the torchgfn package (Lahlou et al., 2023). 
+
+Hypergrids Hypergrid experiments are widely used for testing GFlowNet performance (Malkin et al., 2022b; Niu et al., 2024). Here, states are the coordinate tuples of an D-dimensional hyper-cubic grid of height H. The detailed description of the generative process is provided in Ap-pendix B.1. We perform experiments on 256 × 256 , 128 × 128 × 128 and 64 × 64 × 64 grids. We use dynamic programming (Malkin et al., 2022a) to explicitly compute PF (x) of learned πF ,and compute the exact DTV and DJSD between PF (x) and P ∗(x). Experimental results are depicted in Fig. 2 for DTV and Fig. 4 in Appendix B.1 for DJSD respectively. On the 256 × 256 grid, it can be observed that replacing the λ-TD objective for learning V with the proposed Sub-EB objective significantly improves the stability and convergence rate of the policy-gradient method. While the final performances of the two policy-gradient methods (RL and Sub-EB) are close, they both outperform Sub-TB and CV. These experimental results strongly support the effectiveness of the Sub-EB objective in enabling more reliable learning of the evaluation function 
+
+V , leading to improved stability and faster convergence during policy-based GFlowNet training. The empirical gradient estimator constructed solely from the current training batch is not adequate for reliably guiding policy-based training. On the 128 × 128 × 128 grid, the stability and convergence 8Published as a conference paper at ICLR 2026 0 500 1000 1500 2000         
+
+> N
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> DTV
+> Sub-TB
+> Sub-TB-P
+> Q-Much
+> CV
+> RL
+> RL-P
+> RL-MLE
+> Sub-EB
+> Sub-EB-P 0500 1000 1500 2000
+> N
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> DTV
+> Sub-TB
+> Sub-TB-P
+> Q-Much
+> CV
+> RL
+> RL-P
+> RL-MLE
+> Sub-EB
+> Sub-EB-P 0500 1000 1500 2000
+> N
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> DTV
+> Sub-TB
+> Sub-TB-P
+> Q-Much
+> CV
+> RL
+> RL-P
+> RL-MLE
+> Sub-EB
+> Sub-EB-P
+
+Figure 2: Plots of the means and standard deviations (represented by the shaded area) of DTV for different training methods with parameterized πB and uniform πB on the 256 × 256 (left) and 128 ×
+
+128 (middle) and 64 × 64 × 64 (right) grids, based on five randomly started runs for each method. 
+
+By default , metric values are recorded every 20 iterations over N = 2000 training iterations and smoothed by a sliding window of length 5 for all plotted curves in this paper. rate of Sub-EB are again much better than those of RL. While CV, RL, Sub-EB and Sub-TB achieve similar final performance, both RL and Sub-EB outperform Sub-TB and CV in terms of convergence rate. These findings further validate the effectiveness of our Sub-EB objective. Finally, on the 
+
+64 × 64 × 64 grid, both RL and Sub-EB outperform Sub-TB and CV, but the behavior of RL and Sub-EB is very close. This can be ascribed to the fact that the stability of RL is good enough for this experiment, so the advantages brought by the Sub-TB objectives is not obvious. Besides, the grid height N can have more effect on the modeling difficulty than grid dimension D since hypergrids are homogeneous w.r.t. each dimension, and the minimum distance between modes only depends on grid height N (Niu et al., 2024). The training batch size is set to 128 by default, whereas a batch size of 16 and a grid height of 20 are used for hypergrid experiments in Tiapkin et al. (2024). To ensure a fair comparison and assess the impact of these differences, we additionally evaluate the performance of Sub-TB and Q-Much on 128 × 128 and 20 × 20 grids. Detailed discussions and results are provided in Appendix B.1. 
+
+Ablation study on πB and λ To demonstrate that the Sub-EB objective naturally accommodates a parameterized πB . We compare the performance of the different methods with parameterized and uniform πB on 256 × 256 , 128 × 128 , and 64 × 64 × 64 grids. We use Sub-TB-P and Sub-EB-P to denote the corresponding methods with parameterized πB . Furthermore, RL-P and RL-MLE denote two variants of RL that adopt the two-phase algorithm by Niu et al. (2024) and the approach by Gritsaev et al. for parameterized πB , respectively. As CV requires fixed πB , it does not support a parameterized πB and is therefore excluded from this ablation study. As shown in Fig. 2 and Fig. 4 in Appendix B.1, Sub-EB-P achieves the best performance and training stability among all the considered methods. This confirms that the Sub-EB objective well accommodates backward policies, which are parameterized and updated jointly with evaluation functions. For the 
+
+128 × 128 grid, we also conduct an ablation study on the hyperparameter λ of the Sub-EB weights 
+
+wj−i(= λj−i/ P 
+
+> i<j ∈[H+1]
+
+λj−i). Detailed discussions and results are provided in Appendix B.1. 
+
+Sequence design In this set of experiments, we use GFlowNets to generate biological and molec-ular sequences of length D, which are composed of M building blocks (Shen et al., 2023). We use nucleotide sequence datasets (SIX6 and PHO4), and molecular sequence datasets (QM9 and sEH ) from Shen et al. (2023). The detailed description of the generative process and experimental re-sults are provided in Appendix B.2. Experimental results of RL, Sub-TB, Sub-EB, Sub-TB-B and Sub-EB-B on mode discovery and distribution modeling tasks validate that the proposed Sub-EB objective enables the integration of offline sampling techniques into policy-based methods. 
+
+BN structure learning In this experiment set, we focus on real-world studies of Bayesian Net-work (BN) structure learning (Malkin et al., 2022b; Niu et al., 2024). Here, the object space X
+
+corresponds to the space of BN structures. The detailed description of the generative process is provided in Appendix B.3. We consider three cases with 5, 10, and 15 nodes, where the sizes of X
+
+are approximately 2.95 × 10 4, 4.18 × 10 18 , and 2.38 × 10 35 , respectively. For the large-scale cases, either PF (x) or P ∗(x) is computationally infeasible. Instead, we report the average reward of the top 100 unique graphs that are discovered during the training process. Since effective distribution modeling performance implies not only optimality but also diversity of generated candidates, we 9Published as a conference paper at ICLR 2026 0 500 1000 1500 2000         
+
+> N
+> 0.0
+> 0.1
+> 0.2
+> 0.3
+> 0.4
+> 0.5
+> Avg  top  100
+> Sub-TB
+> Sub-TB-B
+> Q-Much
+> RL
+> Sub-EB
+> Sub-EB-B 0500 1000 1500 2000
+> N
+> 18
+> 19
+> 20
+> 21
+> 22
+> 23
+> Div  top  100
+> Sub-TB
+> Sub-TB-B
+> Q-Much
+> RL
+> Sub-EB
+> Sub-EB-B 0500 1000 1500 2000
+> N
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> FCS
+> Sub-TB
+> Sub-TB-B
+> Q-Much
+> RL
+> Sub-EB
+> Sub-EB-B
+
+Figure 3: Plots of the mean and standard deviation values (represented by the shaded area) of average reward (left), diversity (right) and FCS (right) of the top 100 unique candidate graphs over 10 nodes, based on five randomly started runs for each method. also compute the mean pairwise Hamming distance among these 100 graphs as a measure of diver-sity. It should be noted that neither excessively high nor excessively low diversity is desirable : the former corresponds to near-random generation, while the latter indicates that generation gets stuck in a limited set of structures. As exact computation of DTV is infeasible, we use Flow Consistency in Sub-graphs (FCS) (Silva et al., 2025) as the unbiased estimation of DTV . For FCS, we randomly sampled 32 batches of terminal states, each of size 128, to construct the Monte Carlo estimator. We present the discussion for the two large-scale cases below and defer the small-scale case to Ap-pendix B.3. The corresponding experimental results are presented in Fig. 3 and Fig. 12 in the Ap-pendix B.3. Among RL, Sub-EB, Sub-TB, and Q-Much, the results indicate that Sub-EB achieves the highest average reward. The four methods attain similar diversity. Notably, RL and Sub-EB con-verge faster than Sub-TB and Q-Much, and only RL and Sub-EB obtain strong distribution-modeling performance as measured by the FCS metric. Taking together all these findings, we can conclude that all methods achieve appropriate distribution modeling, and Sub-EB performs the best. This supports that Sub-EB not only enables reliable policy-based training but also scales effectively to large com-binatorial spaces, providing both high-quality and diverse solutions. For the two variants, Sub-TB-B and Sub-EB-B, it can be observed that Sub-EB-B achieves the highest average reward among all six methods, accompanied by a more noticeable drop in diversity. Given that the local search compo-nent explicitly prioritizes high-reward regions of the solution space, such a trade-off—significant reward improvement at the expense of reduced diversity—is expected. In contrast, Sub-TB-B does achieve a higher average reward compared to its non-augmented counterpart (Sub-TB) with a mod-erate decrease in diversity. However, the trade-off becomes much less pronounced. Without the local search technique, Sub-EB already achieves a comparable average reward and higher diversity than Sub-TB-B. Overall, Sub-EB-B proves to be more effective than Sub-TB-B, aligning well with our expectations of the optimality-diversity trade-off. This finding further supports the superiority of the policy-based methods and validates that the Sub-EB objective enables the integration of offline techniques within policy-based frameworks. 
+
+Molecular graph design In this set of experiments, we consider the molecular graph design task (with |X | ≈ 10 16 ) described in Bengio et al. (2021). The sequence design task based on the sEH dataset (with |X | ≈ 3.4 × 10 7) (Shen et al., 2023) is simplified from these tasks. A detailed descrip-tion of the generative process and the corresponding experimental results for these graph design tasks is provided in the Appendix B.4. The experimental results demonstrate that Sub-EB achieves strong overall performance on large-scale molecular graph design, providing higher average rewards, faster convergence, and competitive diversity compared to RL, Sub-TB and Q-Much. 
+
+6 DISCUSSION AND CONCLUSION 
+
+In this work, we have established the connection between the state flow function F (s) and the evaluation function V (s). Built upon that, a new objective, called Sub-EB, is proposed for learning the evaluation function V (s). Through four sets of experiments, we provide empirical evidence that the new Sub-EB objective enables more stable and flexible learning of V than the λ-TD objective, thereby improving the performance of the policy-based methods for GFlowNet training. In principle, the Sub-EB objective allows flexible choices of weight coefficients and goes beyond policy-gradient methods. Further investigation into designing optimal weight coefficients and integrating the Sub-EB objective into more advanced policy-based methods is left for future work. 10 Published as a conference paper at ICLR 2026 
+
+ACKNOWLEDGEMENTS 
+
+This work was supported in part by the U.S. National Science Foundation (NSF) grants SHF-2215573 and IIS-2212419. Portions of this research were conducted with the advanced computing resources provided by Texas A&M High Performance Research Computing. 
+
+REFERENCES 
+
+Alekh Agarwal, Sham M Kakade, Jason D Lee, and Gaurav Mahajan. On the theory of policy gradient methods: Optimality, approximation, and distribution shift. Journal of Machine Learning Research , 22(98):1–76, 2021. Lazar Atanackovic and Emmanuel Bengio. Investigating generalization behaviours of generative flow networks. In ICML 2024 Workshop on Structured Probabilistic Inference & Generative Modeling , 2024. Mohammad Gheshlaghi Azar, Ian Osband, and R´ emi Munos. Minimax regret bounds for reinforce-ment learning. In International conference on machine learning , pp. 263–272. PMLR, 2017. Emmanuel Bengio, Moksh Jain, Maksym Korablyov, Doina Precup, and Yoshua Bengio. Flow network based generative models for non-iterative diverse candidate generation. Advances in Neural Information Processing Systems , 34:27381–27394, 2021. Yoshua Bengio, Salem Lahlou, Tristan Deleu, Edward J Hu, Mo Tiwari, and Emmanuel Bengio. Gflownet foundations. Journal of Machine Learning Research , 24(210):1–55, 2023. Tristan Deleu, Ant´ onio G´ ois, Chris Emezue, Mansi Rankawat, Simon Lacoste-Julien, Stefan Bauer, and Yoshua Bengio. Bayesian structure learning with generative flow networks. In Uncertainty in Artificial Intelligence , pp. 518–528. PMLR, 2022. Tristan Deleu, Padideh Nouri, Nikolay Malkin, Doina Precup, and Yoshua Bengio. Discrete proba-bilistic inference as control in multi-path environments. In Uncertainty in Artificial Intelligence ,pp. 997–1021. PMLR, 2024. Timofei Gritsaev, Morozov Nikita, Samsonov Sergey, and Daniil Tiapkin. Optimizing backward policies in gflownets via trajectory likelihood maximization. In The Thirteenth International Conference on Learning Representations .Tuomas Haarnoja, Haoran Tang, Pieter Abbeel, and Sergey Levine. Reinforcement learning with deep energy-based policies. In International conference on machine learning , pp. 1352–1361. PMLR, 2017. Tuomas Haarnoja, Aurick Zhou, Pieter Abbeel, and Sergey Levine. Soft actor-critic: Off-policy maximum entropy deep reinforcement learning with a stochastic actor. In International confer-ence on machine learning , pp. 1861–1870. PMLR, 2018. Haoran He, Emmanuel Bengio, Qingpeng Cai, and Ling Pan. Random policy evaluation uncov-ers policies of generative flow networks. In Forty-second International Conference on Machine Learning , pp. 22351–22367. PMLR, 2025. Hyosoon Jang, Minsu Kim, and Sungsoo Ahn. Learning energy decompositions for partial inference of gflownets. In The Twelfth International Conference on Learning Representations , 2023. Hyosoon Jang, Yunhui Jang, Minsu Kim, Jinkyoo Park, and Sungsoo Ahn. Pessimistic backward policy for gflownets. Advances in Neural Information Processing Systems , 2024. Chi Jin, Zeyuan Allen-Zhu, Sebastien Bubeck, and Michael I Jordan. Is q-learning provably effi-cient? Advances in neural information processing systems , 31, 2018. Minsu Kim, Joohwan Ko, Dinghuai Zhang, Ling Pan, Taeyoung Yun, Woo Chang Kim, Jinkyoo Park, and Yoshua Bengio. Learning to scale logits for temperature-conditional gflownets. In 
+
+NeurIPS 2023 AI for Science Workshop , 2023a. 11 Published as a conference paper at ICLR 2026 Minsu Kim, Taeyoung Yun, Emmanuel Bengio, Dinghuai Zhang, Yoshua Bengio, Sungsoo Ahn, and Jinkyoo Park. Local search gflownets. In The Twelfth International Conference on Learning Representations , 2023b. Jack Kuipers, Giusi Moffa, and David Heckerman. Addendum on the scoring of gaussian directed acyclic graphical models. 2014. Salem Lahlou, Joseph D Viviano, and Victor Schmidt. torchgfn: A pytorch gflownet library. arXiv preprint arXiv:2305.14594 , 2023. Kanika Madan, Jarrid Rector-Brooks, Maksym Korablyov, Emmanuel Bengio, Moksh Jain, An-drei Cristian Nica, Tom Bosc, Yoshua Bengio, and Nikolay Malkin. Learning GFlowNets from partial episodes for improved convergence and stability. In International Conference on Machine Learning , pp. 23467–23483. PMLR, 2023. Nikolay Malkin, Moksh Jain, Emmanuel Bengio, Chen Sun, and Yoshua Bengio. Trajectory balance: Improved credit assignment in GFlowNets. Advances in Neural Information Processing Systems ,35:5955–5967, 2022a. Nikolay Malkin, Salem Lahlou, Tristan Deleu, Xu Ji, Edward J Hu, Katie E Everett, Dinghuai Zhang, and Yoshua Bengio. Gflownets and variational inference. In The Eleventh International Conference on Learning Representations , 2022b. Pierre M´ enard, Omar Darwiche Domingues, Anders Jonsson, Emilie Kaufmann, Edouard Leurent, and Michal Valko. Fast active learning for pure exploration in reinforcement learning. In Inter-national Conference on Machine Learning , pp. 7599–7608. PMLR, 2021. Puhua Niu, Shili Wu, Mingzhou Fan, and Xiaoning Qian. Gflownet training by policy gradients. In 
+
+Forty-first International Conference on Machine Learning , 2024. Ian Osband, Benjamin Van Roy, Daniel J Russo, and Zheng Wen. Deep exploration via randomized value functions. Journal of Machine Learning Research , 20(124):1–62, 2019. Ling Pan, Nikolay Malkin, Dinghuai Zhang, and Yoshua Bengio. Better training of gflownets with local credit and incomplete trajectories. In International Conference on Machine Learning , pp. 26878–26890. PMLR, 2023. Jarrid Rector-Brooks, Kanika Madan, Moksh Jain, Maksym Korablyov, Cheng-Hao Liu, Sarath Chandar, Nikolay Malkin, and Yoshua Bengio. Thompson sampling for improved exploration in gflownets. In ICML 2023 Workshop on Structured Probabilistic Inference & Generative Model-ing , 2023. Robert W Robinson. Counting unlabeled acyclic digraphs. In Combinatorial Mathematics V: Pro-ceedings of the Fifth Australian Conference, Held at the Royal Melbourne Institute of Technology, August 24–26, 1976 , pp. 28–43. Springer, 2006. John Schulman, Philipp Moritz, Sergey Levine, Michael Jordan, and Pieter Abbeel. High-dimensional continuous control using generalized advantage estimation. In Proceedings of the International Conference on Learning Representations (ICLR) , 2016. John Schulman, Xi Chen, and Pieter Abbeel. Equivalence between policy gradients and soft q-learning. arXiv preprint arXiv:1704.06440 , 2017. Max W Shen, Emmanuel Bengio, Ehsan Hajiramezanali, Andreas Loukas, Kyunghyun Cho, and Tommaso Biancalani. Towards understanding and improving gflownet training. In International Conference on Machine Learning , pp. 30956–30975. PMLR, 2023. Tiago Silva, de Souza da Silva Eliezer, and Mesquita Diego. On divergence measures for training gflownets. Advances in Neural Information Processing Systems , 2024. Tiago Silva, Alves Rodrigo Barreto, da Silva Eliezer de Souza, Souza Amauri H, Garg Vikas, Kaski Samuel, and Mesquita Diego. When do gflownets learn the right distribution? In The Thirteenth International Conference on Learning Representations , 2025. 12 Published as a conference paper at ICLR 2026 Richard S Sutton and Andrew G Barto. Reinforcement learning: An introduction . MIT press, 2018. Daniil Tiapkin, Morozov Nikita, Naumov Alexey, and Vetrov P Dmitry. Generative flow networks as entropy-regularized rl. In International Conference on Artificial Intelligence and Statistics .PMLR, 2024. Heiko Zimmermann, Fredrik Lindsten, Jan-Willem van de Meent, and Christian A Naesseth. Avariational perspective on generative flow networks. Transactions on Machine Learning Research ,2022. 13 Published as a conference paper at ICLR 2026 
+
+LLM U SAGE DISCLOSURE 
+
+LLMs were used only for text refinement (grammar and style). All scientific content was developed and verified by the authors. 
+
+A THEORETICAL ANALYSES 
+
+A.1 PROOF OF THEOREM 3.1 
+
+Proof. We first prove the sufficiency of the Sub-EB condition (5). Assume that V is an evaluation function over S that satisfies the Sub-EB condition for a given forward policy πF .Then, for any h ∈ [H]:
+
+EPF (sh)πF (sh+1 |sh) [log πB (sh|sh+1 ) + V (sh+1 ) − log πF (sh+1 |sh) − V (sh)] = 0 (14) 
+
+⇓
+
+EπF (sh+1 |sh) [log πB (sh|sh+1 ) + V (sh+1 ) − log πF (sh+1 |sh) − V (sh)] = 0 (15) 
+
+⇓
+
+V (sh) = EπF (sh+1 |sh)
+
+
+
+log πB (sh|sh+1 )
+
+πF (sh+1 |sh) + V (sh+1 )
+
+
+
+. (16) Here, the second equation holds by our assumption that any valid πF introduces a trajectory distribu-tion PF (τ ) that is strictly positive for any τ ∈ T . Consequently, the corresponding state probability 
+
+PF (s) is strictly positive for any s ∈ S .Based on (16), the previous definition πB (x|sf ) exp V (sf ) := R(x), we have: 
+
+V (x) = EπF (sf |x)
+
+
+
+log R(x)
+
+πF (sf |x)
+
+
+
+= EπF (sf |x)
+
+
+
+log F ∗(x → sf )
+
+πF (sf |x)
+
+
+
+= EPF (x→sf |x)
+
+
+
+log PB (x → sf )Z∗
+
+PF (x → sf |x)
+
+
+
+= EPF (x→sf |x)
+
+
+
+log PB (x → sf |x)
+
+PF (x → sf |x)
+
+
+
++ log PB (x)Z∗
+
+= log F ∗(x) − DKL (PF (τH:|sH )∥PB (τH:|sH )) ,V (sH−1) = EπF (x|sH−1)
+
+
+
+log πB (sH−1|x)
+
+πF (x|sH−1) + EPF (x→sf |x)
+
+
+
+log PB (x → sf )Z∗
+
+PF (x → sf |x)
+
+ 
+
+= EPF (τH−1: |sH−1)
+
+
+
+log PB (τH−1: )Z∗
+
+PF (τH−1: |sH−1)
+
+
+
+= EPF (τH−1: |sH−1)
+
+
+
+log PB (τH−1: |sH−1)
+
+PF (τH−1: |sH−1)
+
+
+
++ log PB (sH−1)Z∗
+
+= log F ∗(sH−1) − DKL (PF (τH−1: |sH−1)∥PB (τH−1: |sH−1)) , (17) ...
+
+V (sh) = EπF (sh+1 |sh)
+
+
+
+log πB (sh|sh+1 )
+
+πF (sh+1 |sh) + EPF (τh+1: |sh+1 )
+
+
+
+log PB (τh+1: )Z∗
+
+PF (τh+1: |sh+1 )
+
+ 
+
+= EPF (τh:|sh)
+
+
+
+log PB (τh:)Z∗
+
+PF (τh:|sh)
+
+
+
+(18) 
+
+= EPF (τh:|sh)
+
+
+
+log PB (τh:|sh)
+
+PF (τh:|sh)
+
+
+
++ log PB (sh)Z∗
+
+= log F ∗(sh) − DKL (PF (τh:|sh)∥PB (τh:|sh)) , (19) 14 Published as a conference paper at ICLR 2026 ...
+
+V (s0) = EPF (τ |sh)
+
+
+
+log PB (τ )Z∗
+
+PF (τ )
+
+
+
+= EPF (τ )
+
+
+
+log PB (τ )
+
+PF (τ )
+
+
+
++ log Z∗
+
+= log F ∗(s0) − DKL (PF (τ )∥PB (τ )) . (20) It should be noted that the definition of the evaluation function (3) coincides with the equation (19) in that 
+
+V (sh) = EPF (τh:|sh)
+
+" HX
+
+> i=h
+
+log eπB (si|si+1 )
+
+πF (si+1 |si)
+
+#
+
+= EPF (τh:|sh)
+
+" HX
+
+> i=h
+
+log πB (si|si+1 )
+
+πF (si+1 |si)
+
+#
+
++ log Z∗
+
+= EPF (τh:|sh)
+
+
+
+log PB (τh:)Z∗
+
+PF (τh:|sh)
+
+
+
+. (21) Now, we prove the necessity of the Sub-EB condition (5). Assume that V is the evaluation function associated with a forward policy πF . Then, ∀h ∈ [H]:
+
+V (sh) = EPF (τh:|sh)
+
+" HX
+
+> i=h
+
+log πB (si|si+1 )
+
+πF (si+1 |si)
+
+#
+
++ log Z∗
+
+= EπF (sh+1 |sh)
+
+
+
+log πB (sh|sh+1 )
+
+πF (sh+1 |sh) + EPF (τh+1: |sh+1 )
+
+
+
+log PB (τh+1: )Z∗
+
+PF (τh+1: |sh+1 )
+
+ 
+
+= EπF (sh+1 |sh)
+
+
+
+log πB (sh|sh+1 )
+
+πF (sh+1 |sh) + V (sh+1 )
+
+
+
+. (22) Therefore, 
+
+EPF (sh)πF (sh+1 |sh) [log πB (sh|sh+1 ) + V (sh+1 ) − log πF (sh+1 |sh) − V (sh)] = 0 (23) 
+
+⇓
+
+> j−1
+
+X
+
+> l=i
+
+EPF (sl→sl+1 ) [log πB (sl|sl+1 ) + V (sl+1 ) − V (sl) − log πF (sl+1 |sl)] = 0 (24) 
+
+⇓
+
+EPF (τi:j )
+
+"j−1X
+
+> l=i
+
+log πB (sl|sl+1 ) + V (sj ) − V (si) −
+
+> j−1
+
+X
+
+> l=i
+
+log πF (sl+1 |sl)
+
+#
+
+= 0 (25) 
+
+⇓
+
+EPF (τi:j ) [log PB (τi:j |sj ) + V (sj ) − log PF (τi:j |si) − V (si)] = 0 (26) for any i < j ∈ [H + 1] .A.2 PROOF OF THEOREM 3.2 
+
+Proof. We first prove the sufficiency of the Sub-TB condition (1). Assume that F is a state flow function over S, and πF is a forward policy, such that they satisfy the Sub-TB condition. Then, for any h ∈ [H]:
+
+EPD (sh→sh+1 ) [log πB (sh|sh+1 )F (sh+1 ) − log πF (sh+1 |sh)F (sh)] = 0 (27) 
+
+⇓
+
+log πB (sh|sh+1 )F (sh+1 ) − log πF (sh+1 |sh)F (sh) = 0 (28) 
+
+⇓
+
+log F (sh) = log πB (sh|sh+1 )
+
+πF (sh+1 |sh) + log F (sh+1 ). (29) 15 Published as a conference paper at ICLR 2026 Here, the second equation holds due to the following two reasons. First, by our assumption that the trajectory distribution PD , which is induced by πD , assigns positive probability to all trajectories in 
+
+T . Thus, the marginal probability PD (s → s′) is strictly positive for any (s → s′) ∈ E . Second, πD
+
+is arbitrarily constructed and may differ from πF . Let 
+
+π†(s′|s) := πB (s|s′)F (s′)
+
+P 
+
+> s′
+
+πB (s|s′)F (s′) . (30) Then, taking the expectation of (29) w.r.t. πF , we have for any h ∈ [H]:
+
+log F (sh) = EπF (sh+1 |sh)
+
+
+
+log πB (sh|sh+1 )
+
+πF (sh+1 |sh) + log F (sh+1 )
+
+
+
+(31) 
+
+= EπF (sh+1 |sh)
+
+
+
+log π†(sh+1 |sh)
+
+πF (sh+1 |sh)
+
+
+
++ log X
+
+> sh+1
+
+πB (sh|sh+1 )F (sh+1 )= −DKL (πF (·| sh)∥π†(·| sh)) + log X
+
+> sh+1
+
+πB (sh|sh+1 )F (sh+1 ). (32) Note that the second term in the last equality is independent of πF (·| sh). Then, given πB (sh|· ) and 
+
+F (sh+1 ), F (sh) is maximized at sh when πF (·| sh) = π†(·| sh). Accordingly, given πB (sh+1 |· )
+
+and F (sh+2 ), F (sh+1 ) is maximized at sh+1 when πF (·| sh+1 ) = π†(·| sh+1 ). Keeping doing this recursion from h = 0 to h = H, we get the conclusion that F is maximized when πF = π† for any 
+
+(s → s′) ∈ E .Taking the exponential of (28) and summing over sh+1 yields P 
+
+> sh+1
+
+log πB (sh|sh+1 )F (sh+1 ) = 
+
+P 
+
+> sh+1
+
+log F (sh)πF (sh+1 |sh) = F (sh). Inserting this back into (28), we arrive at πF =
+
+π†. Achieving the maximum, we have log F (x) = log P 
+
+> sf
+
+π(x|sf )F (sf ) := log R(x) =log F ∗(x), log F (sH−1) = log P 
+
+> x
+
+πB (sH−1|x)F ∗(x) = log F ∗(sH−1), . . . , log F (s0) =log P 
+
+> s1
+
+πB (s0|s1)F ∗(s1) = F ∗(s0). Therefore, F (s) = F ∗(s) for any s ∈ S . Combining this with (28), we have πF = π∗ 
+
+> F
+
+, where π∗ 
+
+> F
+
+(s′|s) = πB (s|s′)F ∗(s′)  
+
+> F∗(s)
+
+is the optimal forward pol-icy induced by πB . Moreover, based on (31) and a derivation analogous to that of V , we have, for Markovian PB and any h ∈ [H]:
+
+log F (sh) := log F ∗(sh) − DKL (PF (τh:|sh)∥PB (τh:|sh)) . (33) Therefore, when πF = π∗ 
+
+> F
+
+, we have: 
+
+log F (sh) = log F ∗(sh) − DKL (P ∗ 
+
+> F
+
+(τh:|sh)∥PB (τh:|sh)) . (34) Now we prove the necessity of the Sub-TB condition (1). Assume that F and πF satisfy the equa-tion (34) above. Then, the equation (33) must also hold for F and πF , and we have, for any h ∈ [H]:
+
+log F (sh) = EPF (τh:|sh)
+
+
+
+log PB (τh:)Z∗
+
+PF (τh:|sh)
+
+
+
+= EPF (τh:|sh)
+
+" HX
+
+> i=h
+
+log πB (si|si+1 )
+
+πF (si+1 |si)
+
+#
+
++ log Z∗
+
+= EπF (sh+1 |sh)
+
+
+
+log πB (sh|sh+1 )
+
+πF (sh+1 |sh) + EPF (τh+1: |sh+1 )
+
+
+
+log PB (τh+1: )Z∗
+
+PF (τh+1: |sh+1 )
+
+ 
+
+= EπF (sh+1 |sh)
+
+
+
+log πB (sh|sh+1 )
+
+πF (sh+1 |sh) + log F (sh+1 )
+
+
+
+. (35) We can rewrite the above equation as follows: 
+
+log F (sh) := −DKL (πF (·| sh)∥π†(·| sh)) + log X
+
+> sh+1
+
+πB (sh|sh+1 )F (sh+1 ), ∀h ∈ [H]. (36) Since πF (·| sh) is independent of πB (sh|· ) and F (sh+1 ), the assumption that log F (sh) is maxi-mized at sh indicates πF (·| sh) = π†(·| sh). Therefore, we recover ∀h ∈ [H]:
+
+log πF (sh+1 |sh)F (sh) = log πB (sh|sh+1 )F (sh+1 ), (37) and the Sub-TB condition can be easily derived from it. 16 Published as a conference paper at ICLR 2026 A.3 PROOF OF THEOREM 3.3 
+
+Proof. We first prove the sufficiency of the backward Sub-EB condition (11). Assume that W is an evaluation function over S\{ sf } that satisfies the backward Sub-EB condition for a given backward policy πB . Then, for any h ∈ [H − 1] :
+
+EπB (sh|sh+1 )PB (sh+1 ) [log πB (sh|sh+1 ) + W (sh+1 ) − log πF (sh+1 |sh) − W (sh)] = 0 (38) 
+
+⇓
+
+EπB (sh|sh+1 ) [log πB (sh|sh+1 ) + W (sh+1 ) − log πF (sh+1 |sh) − W (sh)] = 0 (39) 
+
+⇓
+
+W (sh+1 ) = EπB (sh|sh+1 )
+
+
+
+log πF (sh+1 |sh)
+
+πB (sh|sh+1 ) + W (sh)
+
+
+
+. (40) Here, the second equation holds by our assumption that any valid πB and R should introduce a a trajectory distribution PB (τ ) that is strictly positive for any τ ∈ T . Consequently, the corresponding state probability PB (s) is strictly positive for any s ∈ S .Based on (40), we have: 
+
+W (s1) = EπB (s0|s1)
+
+
+
+log πF (s1|s0)
+
+πB (s0|s1)
+
+
+
++ W (s0)= EPB (s0→s1|s1)
+
+
+
+log PF (s0 → s1)
+
+PB (s0 → s1|s1)
+
+
+
++ log F (s0)= EPB (s0→s1|s1)
+
+
+
+log PF (s0 → s1|s1)
+
+PB (s0 → s1|s1)
+
+
+
++ log F (s0)PF (s1)= log F (s1) − DKL (PB (τ:1 |s1)∥PF (τ:1 |s1)) , (41) ...
+
+W (sh+1 ) = EπB (sh|sh+1 )
+
+
+
+log πF (sh+1 |sh)
+
+πB (sh|sh+1 ) + EPB (τ:h|sh)
+
+
+
+log PF (τ:h)
+
+PB (τ:h|sh)
+
+ 
+
++ W (s0)= EPB (τ:h+1 |sh+1 )
+
+
+
+log PF (τ:h+1 )
+
+PB (τ:h+1 |sh+1 )
+
+
+
++ log F (s0) (42) 
+
+= EPB (τ:h+1 |sh+1 )
+
+
+
+log PF (τ:h+1 |sh+1 )
+
+PB (τ:h+1 |sh+1 )
+
+
+
++ log F (s0)PF (sh+1 )= log F (sh+1 ) − DKL (PF (τ:h+1 |sh+1 )∥PB (τ:h|sh+1 )) , (43) ...
+
+W (x) = EπB (sH−1|x)
+
+
+
+log πF (x|sH−1)
+
+πB (sH−1|x) + EPB (τ:H−1|sH−1)
+
+
+
+log PF (τ:H−1)
+
+PB (τ:H−1|sH−1)
+
+ 
+
++ W (s0)= EPB (τ |x)
+
+
+
+log PF (τ )
+
+PB (τ |x)
+
+
+
++ log F (s0)= EPB (τ |x)
+
+
+
+log PF (τ |x)
+
+PB (τ |x)
+
+
+
++ log F (s0)PF (x)= log F (x) − DKL (PB (τ |x)∥PF (τ |x)) . (44) It should be noted that the definition of evaluation function (9) coincides with the equation (43) in that 
+
+W (sh+1 ) = EPB (τ |x)
+
+" hX
+
+> i=0
+
+log eπF (si+1 |si)
+
+πB (si|si+1 )
+
+#
+
+= EPB (τ |x)
+
+" hX
+
+> i=0
+
+log πF (si+1 |si)
+
+πB (si|si+1 )
+
+#
+
++ log F (s0)= EPF (τh:|sh)
+
+
+
+log PF (τ:h+1 )
+
+PB (τ:h+1 |sh+1 )
+
+
+
++ log F (s0). (45) In particular, when the backward Sub-EB condition is satisfied for h = H, we have 
+
+EPD (x)[log πF (sf |x) + W (x) − log πB (x|sf ) − W (sf )] = 0 (46) 17 Published as a conference paper at ICLR 2026 
+
+⇓
+
+EPD (x)[W (x) − log R(x)] = 0 . (47) Since πF is arbitrarily chosen provided that PD (τ ) > 0 for any τ ∈ T , it follows that PD (x) > 0
+
+for any x ∈ X and W (x) = log R(x).Now, we prove the necessity of backward the Sub-EB condition (11). Assume that W is the evaluation function of a given forward policy πB . Then, ∀h ∈ [H − 1] :
+
+W (sh+1 ) = EPB (τ:h+1 |sh+1 )
+
+" hX
+
+> i=0
+
+log πF (si+1 |si)
+
+πB (si|si+1 )
+
+#
+
++ W (s0)= EπB (sh|sh+1 )
+
+
+
+log πF (sh+1 |sh)
+
+πB (sh|sh+1 ) + EPB (τ:h|sh)
+
+
+
+log PF (τ:h)F (s0)
+
+PB (τ:h|sh)
+
+ 
+
+= EπB (sh|sh+1 )
+
+
+
+log πF (sh+1 |sh)
+
+πB (sh|sh+1 ) + W (sh)
+
+
+
+. (48) and W (x) = log R(x). Therefore, 
+
+EP D   
+
+> B(sh+1 )πB(sh|sh+1 )
+
+[log πB (sh|sh+1 ) + W (sh+1 ) − log πF (sh+1 |sh) − W (sh)] = 0 (49) 
+
+⇓
+
+> j−1
+
+X
+
+> l=i
+
+EP D  
+
+> B(sl→sl+1 )
+
+[log πB (sl|sl+1 ) + W (sl+1 ) − W (sl) − log πF (sl+1 |sl)] = 0 (50) 
+
+⇓
+
+EP D  
+
+> B(τi:j)
+
+"j−1X
+
+> l=i
+
+log πB (sl|sl+1 ) + W (sj ) − W (si) −
+
+> j−1
+
+X
+
+> l=i
+
+log πF (sl+1 |sl)
+
+#
+
+= 0 (51) 
+
+⇓
+
+EP D   
+
+> B(τi:j)
+
+[log PB (τi:j |sj ) + W (sj ) − log PF (τi:j |si) − W (si)] = 0 (52) for any i < j ∈ [H + 1] 
+
+A.4 EVALUATION FUNCTION WITH TOTAL FLOW ESTIMATOR 
+
+When incorporating the total-flow estimator Z, the true evaluation function V † still takes the form of (3), only differing at eπB (x|sf ), which is redefined as R(x)/Z . In this case, it can be verified that V †(s0; θ) = log Z∗ 
+
+> Z(θ)
+
+− DKL (PF (τ )∥PB (τ )) . Then, the gradient of −Eμ(s0;θ)[V †(s0; θ)] is equal to that of DKL (PF (τ ; θ)∥PB (τ )) + 12 (log Z(θ) − log Z∗)2, where μ(s0; θ) := Z(θ)/Z as s0
+
+is unique (Niu et al., 2024). The Sub-EB condition and objective remain unchanged, except that PB (x|sf ) exp V (sf ) is refined as R(x)/Z .
+
+Corollary A.1 (Corollary to Theorem 3.1) . Suppose V is an arbitrary evaluation function over S,and F ∗ is the optimal flow induced by a backward policy πB . Given a forward policy πF ,
+
+∀h ∈ [H] : V (sh) = log F ∗(sh)
+
+Z − DKL (PF (τh:|sh)∥PB (τh:|sh)) , (53) 
+
+if and only if V satisfies the Sub-EB condition (5). Proof. The proof can be done by replacing R(x) in the proof of Theorem 3.1 by R(x)/Z 
+
+Finally, in Algorithm 1, ∇θ Eμ(s0;θ)[V †(s0; θ)] = Eμ(s0)[V †(s0)∇θ log Z(θ) + ∇θ V †(s0; θ)] 
+
+is approximated by b∇θ Eμ(s0;θ)[V †(s0; θ)] := 1
+
+> K
+
+P 
+
+> τ∈D
+
+[PHh=0 R(sh → sh+1 )∇θ log Z(θ) + 
+
+PHh=0 Aγ (sh → sh+1 )∇θ log πF (sh+1 |sh; θ)] .18 Published as a conference paper at ICLR 2026 A.5 COMPARISON BETWEEN λ-TD AND SUB -EB OBJECTIVES 
+
+The traditional λ-TD objective for V (· ; ϕ) can be expressed as follows: 
+
+EPF (τ )
+
+" HX
+
+> h=0
+
+ V λ(sh) − V (sh; ϕ)2
+
+#
+
+,V λ(sh) := V (sh) + 
+
+> H
+
+X
+
+> i=h
+
+λi−hδV (si → si+1 ), (54) where V λ is considered as constant when computing gradients w.r.t. ϕ, and δV (si → si+1 ) is equal to δV (τi,i +1 ) as defined in (8). Without consideration of gradient computation, the expression of the objective value can be simplified as: 
+
+EPF (τ )
+
+" HX
+
+> h=0
+> H
+
+X
+
+> i=h
+
+λi−h(δV (si → si+1 )) 2
+
+#
+
+. (55) In comparison, the expression of the Sub-EB objective value is: 
+
+EPF (τ )
+
+ X  
+
+> τi,j :i<j ∈[H+1]
+
+wj−i(δV (τi:j )) 2
+
+ . (56) It can be observed that the λ-TD objective only considers the events that start at step h for learning 
+
+V (sh), and edges-wise mismatch δV (si → si+1 ). In contrast, the Sub-EB objective incorporates information from both events that start at h and those that end at h by considering subtrajectory-wise mismatches δV (τi:( ·)) that start at i(≥ h) and δV (τ(·): j ) that end at j(≤ h). This results in a more balanced and reliable learning of V (sh). Besides, the form of w can be freely chosen, while it must be λi−h in the λ-TD objective (Schulman et al., 2016). A.6 GF LOW NET AND RL RL methods can be roughly categorized into two main frameworks (Sutton & Barto, 2018): the first is the Q-learning framework, and the second is the actor–critic framework. 
+
+Q-learning Under the Q-learning framework, the core idea, exemplified by the soft Q-learning algorithm, is to learn a parameterized function Q that minimizes the offline Bellman objective for the transition environment G with edge reward log πB (s|s′) and log πB (x|sf ) + V (sf ) := log R(x) (Haarnoja et al., 2017). This objective function can be written as 
+
+EPD (s→s′)[( δQ(s → s′)) 2], δQ(s → s′) := log πB (s|s′) + V (s′) − Q(s, s ′), (57) with V (s) := log P 
+
+> s′
+
+exp Q(s, s ′) and πF (s′|s) := exp Q(s,s ′)exp V (s) . Any function Q that achieves zero mismatch is guaranteed to equal the optimal soft Q-function Q∗ with the corresponding V = V ∗ and 
+
+πF = π∗ 
+
+> F
+
+. Tiapkin et al. (2024) showed that if we treat Q(s, s ′) as log F (s → s′) such that V (s) = log P 
+
+> s′
+
+F (s → s′) = log F (s), then the Bellman objective transforms into the DB objective. The distinction lies only in parameterization: instead of parameterizing Q(s, s ′) directly and deriving V
+
+and πF from it, one may parameterize (πF , V ) jointly and define Q(s, s ′) := πF (s′|s) + log V (s)3.The authors further showed that the optimal solutions of the Bellman objective coincide with those of the DB objective from the perspective of Soft Q-learning. However, as acknowledged by the authors, this result applies only to the DB objective with a fixed πB . To address this limitation, Deleu et al. (2024) established an equivalence between path-consistency learning (which incorporates soft Q-learning as a special case) and the Sub-TB objective (which incorporates DB as a special case) from a gradient-based perspective. Compared to Deleu et al. (2024), our Theorem 3.2 offers a more direct and explicit connection along this RL direction. 
+
+> 3
+
+To be specific, we have δQ(s′ → s′) = log πB (s|s′) exp V (s′) − log πF (s′|s) exp V (s) =log πB (s|s′)F (s′) − log πF (s′|s)F (s), coinciding with the formulation in the DB objective. 
+
+19 Published as a conference paper at ICLR 2026 In analogy to soft Q-learning, we may instead parameterize V , define Q(s, s ′) := log πF (s′|s) + 
+
+V (s) and πF (s′|s) := πB (s|s′) exp V (s′)P     
+
+> s′πB(s|s′) exp V(s′)
+
+, and learn V via the state-level Bellman objective: 
+
+EPD (s)[( δE (s)) 2], δE (s) := log X
+
+> s′
+
+πB (s|s′) exp V (s′) − log X
+
+> s′
+
+exp Q(s, s ′), (58) where log P 
+
+> s′
+
+exp Q(s, s ′) = log P 
+
+> s′
+
+πF (s′|s) exp V (s) = V (s). Notably, RFI (He et al., 2025) follows this formulation, differing in that it parameterizes F (s) as exp V (s) and multiplies F (s) by a rectified scalar g(s). However, this definition of πF can lead to computational scalability issues when sampling trajectories. Let Ch (s) : {s′ ∈ S | (s → s′) ∈ E} denote the set of child states of state s. As πD is equal to or design based on πF , making a transition from πD (· | s) at state 
+
+s requires |Ch (s)| separate passes through V (a neural network with scalar outputs) to obtain the value of V (s′) for every s′ ∈ Ch (s). In contrast, πF (· | s) can be readily obtained from Q (a neural network with vector outputs), where a single pass at s yields Q(s, s ′) for every s′ ∈ Ch (s). In tasks like BN structure learning, where |Ch (s)| can be larger than 10 2, methods that only parameterize V
+
+can be much slower than those that jointly parameterize (V, π F ) or directly parameterize Q.
+
+Actor-Critic Our works presented here and in Niu et al. (2024) are based on the theory of policy-gradient (Agarwal et al., 2021), which operates under the actor–critic framework (Sutton & Barto, 2018; Haarnoja et al., 2018). In this framework, the central idea of the soft actor-critic algorithm is to learn a parameterized evaluation function V that minimizes (but not necessarily) the online 
+
+Bellman objective: 
+
+EPF (s→s′)[( δS (s → s′)) 2], δS (s → s′) := log πF (s′|s) + V (s) − Q(s, s ′), (59) with Q(s, s ′) := log πB (s|s′) + V (s′) and Q(x, s f ) := log R(x), where EPF (s→s′)[. . . ] above can be generalized into EPD (s)[EπF (s′|s)[. . . ]] , but the inner online expectation must still be maintained. Notably, the online Bellman objective can be viewed as a special case of the proposed Sub-EB objective. At this point, the two RL directions begin to diverge (Schulman et al., 2017). When V
+
+achieves the optimal solution of the objective (denoted by V †), we have: 
+
+V (s) = V †(s) = EπF (s′|s)[Q(s, s ′) − log πF (s′|s)] = EπF (s′|s)
+
+"
+
+exp Q(s, s ′)log P 
+
+> s′
+
+exp Q(s, s ′) − log πF (s′|s) + log X
+
+> s′
+
+exp Q(s, s ′)
+
+#
+
+= −DKL (πF (·| s)∥πQ(·| s)) + log X
+
+> s′
+
+exp Q(s, s ′), πQ(s′|s) := exp Q(s, s ′)
+
+P 
+
+> s′
+
+exp Q(s, s ′) .
+
+Defining F (s → s′) := exp Q(s, s ′) yields expressions that coincide with those presented in the main text. This clarifies why V † (and its approximation V ) serves as a critic: it evaluates how far the actor πF is from the local optimal policy πQ. Here πQ is only locally optimal as Q(s, s ′) may still deviate from the globally optimal point Q∗(s, s ′). The divergence is then minimized w.r.t. πF
+
+using V , so that V † of πF moves closer to the optimal one V ∗. This can be achieved either by simply setting πF (· | s) to πQ(· | s) for all sampled states or by applying a policy-gradient update along sampled trajectories. A.7 SOFT ACTOR -CRITIC FOR GF LOW NET 
+
+The soft actor-critic algorithm tailored to GFlowNet training is presented in Alg. 3. When all states are visited through sampling in Alg. 3 and the online Bellman objective of V reaches zero, meaning 
+
+∀s ∈ S : DKL (πF (· | s), π Q(· | s)) = 0 , and V = V †, we show below that policy πF and V will converge to optimal quantities π∗ 
+
+> F
+
+and V ∗. Starting at terminating states, we have: 
+
+V (x) = −DKL (πF (·| x)∥πQ(·| x)) + Q(x, s f )= Q(x, s f ) := log R(x) (60) 
+
+Q(sH−1, x ) := log πB (sH−1|x) + V (x)= log F ∗(sH−1 → x)
+
+F ∗(x) + log R(x) = log F ∗(sH−1 → x), (61) 20 Published as a conference paper at ICLR 2026 where we use the definition of πB . Next, we have: 
+
+V (sH−1) := −DKL (πF (·| sH−1)∥πQ(·| sH−1)) + log X
+
+> x
+
+exp Q(sH−1, x )= log X
+
+> x
+
+F ∗(sH−1, x ) = log F ∗(sH−1), (62) 
+
+πF (x|sH−1) = πQ(x|sH−1) := exp Q(sH−1, x )
+
+P 
+
+> x
+
+exp Q(sH−1, x )= F ∗(sH−1 → x)
+
+F ∗(sH−1) := π∗ 
+
+> F
+
+(x|sH−1). (63) Continuing this recursion, we will arrive at V (s) = log F ∗(s), Q(s → s′) = log F ∗(s → s′), and 
+
+πF (s′|s) = π∗ 
+
+> F
+
+(s′|s) for all states and edges. The online expectation over πF makes Alg. 3 computationally expensive and precludes improve-ments to the edge-wise formulation δS (s → s′). To address this, one may modify it into Alg. 4, where the key difference is online trajectories sampled from PF (τ ). The definition of δS (τi,j ) is identical to that of δV (τi,j ).
+
+Algorithm 3 Soft Actor-Critic Workflow 
+
+Require: πF (· |· ; θ), πB (· |· ), V (· ; ϕ), batch size K, number of total iterations N
+
+for n = 1 , . . . , N do 
+
+D ← { τ k|τ k ∼ PD (τ )}Kk=1 
+
+Based on D, update ϕ by its gradients w.r.t. 1
+
+> K
+
+P 
+
+> τ∈D
+
+[P 
+
+> s∈τ
+
+EπF (s′|s)[δS (s → s′; ϕ)2]] .Based on D and V , setting πF (· | s) to πQ(· | s) for any s(̸= sf ) ∈ D .
+
+end for return πF (· |· ; θ), V (· ; ϕ)
+
+Algorithm 4 Modified Soft Actor-Critic Workflow 
+
+Require: πF (· |· ; θ), πB (· |· ), V (· ; ϕ), batch size K, number of total iterations N
+
+for n = 1 , . . . , N do 
+
+D ← { τ k|τ k ∼ PF (τ )}Kk=1 
+
+Based on D, update ϕ by its gradients w.r.t. 1
+
+> K
+
+P 
+
+> τ∈D
+
+[P 
+
+> (s→s′)∈τ
+
+δS (s → s′; ϕ)2] ( or 
+
+> 1
+> K
+
+P 
+
+> τ∈D
+
+[P  
+
+> τi,j ∈τ
+
+wj−iδS (τi,j ; ϕ)2]). Based on D and V , setting πF (· | s) to πQ(· | s) for any s(̸= sf ) ∈ D .
+
+end for return πF (· |· ; θ), V (· ; ϕ)
+
+Compared to Alg. 4, Alg. 1 improves the basic policy-optimization operator using policy-gradient theory for practical implementation. Since original policy-gradient methods operate strictly in an on-policy manner, Alg. 2 is introduced to enable the use of an offline sampler PD .
+
+B EXPERIMENTAL SETTINGS AND RESULTS 
+
+Hyperparameters For both the original policy-based method and the proposed one with the Sub-TB objective (RL and Sub-EB), we set the hyperparameter γ to 0.99 based on the ablation study results reported in Niu et al. (2024). For the data collection policy πD of Sub-TB, the hyperparame-ter α starts at 1.0 and decays exponentially at a rate of 0.99 , where the decay rate is also determined based on the results of the ablation study in Niu et al. (2024). In the Sub-TB objective, the hyperpa-rameter λ is set to 0.9 following the ablation study by Madan et al. (2023). For the Sub-EB objective, 
+
+λ is set to be 0.9 selected from {0.1, 0.2, . . . , 0.9, 0.99 } based on the ablation study results shown in Fig. 6. All experiments are conducted on the Grace cluster, one of the main Texas A&M High Per-formance Research Computing systems. Each node is equipped with an Intel Xeon Cascade Lake CPU. For our experiments, we requested a single node, 20 GB of RAM, and no GPU was used. The running times of the considered methods across experiments are reported in Appendix B.5. 21 Published as a conference paper at ICLR 2026 0 500 1000 1500 2000         
+
+> N
+> 0.0
+> 0.1
+> 0.2
+> 0.3
+> 0.4
+> 0.5
+> 0.6
+> 0.7
+> DJSD
+> Sub-TB
+> Sub-TB-P
+> Q-Much
+> CV
+> RL
+> RL-P
+> RL-MLE
+> Sub-EB
+> Sub-EB-P 0500 1000 1500 2000
+> N
+> 0.0
+> 0.1
+> 0.2
+> 0.3
+> 0.4
+> 0.5
+> 0.6
+> 0.7
+> DJSD
+> Sub-TB
+> Sub-TB-P
+> Q-Much
+> CV
+> RL
+> RL-P
+> RL-MLE
+> Sub-EB
+> Sub-EB-P 0500 1000 1500 2000
+> N
+> 0.0
+> 0.1
+> 0.2
+> 0.3
+> 0.4
+> 0.5
+> 0.6
+> DJSD
+> Sub-TB
+> Sub-TB-P
+> Q-Much
+> CV
+> RL
+> RL-P
+> RL-MLE
+> Sub-EB
+> Sub-EB-P
+
+Figure 4: Plots of the means and standard deviations (represented by the shaded area) of DJSD for different training methods on the 256 × 256 (left) 128 × 128 (middle) and 64 × 64 × 64 (right) grids, based on five randomly started runs for each method. 0 500 1000 1500 2000     
+
+> N
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> DTV
+> Sub-TB-16
+> Q-Much-16
+> Sub-TB-128
+> Q-Much-128 0500 1000 1500 2000
+> N
+> 0.0
+> 0.1
+> 0.2
+> 0.3
+> 0.4
+> 0.5
+> 0.6
+> 0.7
+> 0.8
+> DTV
+> Q-Much-16
+> Sub-TB-16
+> Sub-TB-128
+> Q-Much-128
+
+Figure 5: Plots of the means and standard deviations (represented by the shaded area) of DTV (right) for different training methods on the 128 × 128 (left) 20 × 20 (right) grids, based on five randomly started runs for Sub-TB-16 Sub-TB-128, Q-much-16 and Q-much 128. Here, “16” and “128” denote the training batch sizes. 
+
+Optimization The Adam optimizer is used for optimization. The sample batch size is set to 128 for each optimization iteration following Niu et al. (2024). The learning rates of πF (· |· ; θ) and 
+
+log F (· ; θ) are equal to 1 × 10 −3, which is selected from {5 × 10 −3, 1 × 10 −3, 5 × 10 −4, 1 × 10 −4}
+
+based on the performance of Sub-TB on the 256 × 256 grid. The learning rate of V (· ; ϕ) is set to 
+
+5 × 10 −3, which is selected from {10 −2, 5 × 10 −3, 10 −3, 5 × 10 −4, 10 −4} based on the performance of RL on the 256 × 256 grid. In all experiments, each training method is run five times, initialized from five different random seeds. 
+
+Model architecture The forward policy πF (· | · ; θ) and evaluation function V (· ; ϕ) are each pa-rameterized by a neural network with four hidden layers, with a hidden dimension of 256 in each layer. The backward policy πB (· | · ) is a uniform distribution over valid transitions (edges). In hypergrid, sequence design, and molecular graph design experiments, coordinate tuples, integer se-quences, and integer matrices are transformed using K-hot encoding before entering the neural net-works. In BN structure learning, adjacency matrices are used directly as input into neural networks without encoding. 
+
+Peformance metrics The first one is the total variation DTV between PF (x) and P ∗(x), which is defined as: DTV (PF (x), P ∗(x)) = 12
+
+P
+
+x∈X |PF (x) − P ∗(x)|. An alternative performance metric adopted in literature is the average l1-distance, which is defined as |X | −1 P
+
+x |P ∗(x) − PF (x)|. The reason that we use DTV instead is as follows. The design space |X | is usually large ( > 10 4) and P
+
+x |P ∗(x)−PF (x)| ≤ 2, resulting in the average l1-distance being heavily scaled down by |X | . We also evaluate different methods using the Jensen–Shannon divergence DJSD as the second metric, which can be written as: DJSD (PF (x), P ∗(x)) = 12 DKL (PF (x), P M (x))+ 12 DKL (P ∗(x), P M (x)) ,where PM := 12 (PF + P ∗).B.1 HYPERGRIDS 
+
+The generative process of hypergrid experiments is defined as follows. For a grid with height H
+
+and width D, the state space excluding the final state, S\{ sf }, consists of all D-dimensional coor-dinate vectors of the form {s = ([ s]1, . . . , [s]d, . . . , [s]D ) | [s]d ∈ { 0, . . . , H − 1}} . The generating 22 Published as a conference paper at ICLR 2026 0 500 1000 1500 2000     
+
+> N
+> 0.0
+> 0.1
+> 0.2
+> 0.3
+> 0.4
+> 0.5
+> 0.6
+> 0.7
+> DTV
+> 0.10
+> 0.20
+> 0.30
+> 0.40
+> 0.50
+> 0.60
+> 0.70
+> 0.80
+> 0.90
+> 0.99 0500 1000 1500 2000
+> N
+> 0.00
+> 0.05
+> 0.10
+> 0.15
+> 0.20
+> 0.25
+> 0.30
+> 0.35
+> DJSD
+> 0.10
+> 0.20
+> 0.30
+> 0.40
+> 0.50
+> 0.60
+> 0.70
+> 0.80
+> 0.90
+> 0.99
+
+Figure 6: Plots of the means and standard deviations (represented by the shaded area) of DTV (left) and DJSD (right) for Sub-EB runs on the 128 × 128 grid. The hyperparameter λ of Sub-EB ranges from 0.1 to 0.99 . The results are based on five Sub-EB runs for each setup. process begins at the initial state s0 = (0 , . . . , 0) and ends in the final state sf , which we de-note as (−1, . . . , −1) . From any state s ∈ S\{ sf }, there are D + 1 valid transitions (edges): (1) for each d ∈ { 0, . . . , D }, the d-th coordinate can be incremented by one, leading to a new state 
+
+s′ = ([ s]1, . . . , [s]d + 1 , . . . , [s]D ); (2) if s ∈ X , the process can be stopped by taking transition 
+
+(s→sf ), returning s as the terminating coordinate tuple x. By the definitions above, the GFlowNet DAG G is not graded , meaning every state (excluding sf ) can be returned as a terminating state. The reward function associated with terminating states is defined as: 
+
+R(x) = R0 + R1
+
+> D
+
+Y
+
+> d=1
+
+I
+
+ [s]d
+
+N − 1 − 0.5 ∈ (0 .25 , 0.5] 
+
+
+
++ R2
+
+> D
+
+Y
+
+> d=1
+
+I
+
+ [s]d
+
+N − 1 − 0.5 ∈ (0 .3, 0.4] 
+
+
+
+,
+
+where R0 = 10 −2, R1 = 0 .5 and R2 = 2 in our experiments. 
+
+Additional experiment results As discussed in our Appendix A.6, Q-much may prioritize ex-ploitation compared to the (Sub-)trajectory level methods and perform less effectively on challeng-ing tasks with well-separated modes. To verify this, we conducted hypergrid tasks with batch sizes of 16 and 128 (our default setting) on both a 20 × 20 grid and a 128 × 128 grid. The rationale is as follows. For a grid with height N and dimension D, the minimum distance between reward modes depends only on the height N . With moderate D and small N , even a uniform policy can still reach the modes with considerable probability. Therefore, N plays a more significant role in determining task difficulty. The experimental results are presented in Fig. 5. On the 20 × 20 grid with batch size 
+
+16 , Q-much performs better than Sub-TB. However, this advantage disappears when using batch size 128. For 128 × 128 grid with batch size 128, the performance of Q-much is considerably worse than Sub-TB. When the batch size is reduced to 16, neither method converges to a satisfactory solution; nevertheless, Q-Much still underperforms Sub-TB. 
+
+Ablation study on λ For the 128 × 128 grid, we conduct an ablation study on the hyperparameter 
+
+λ of the Sub-EB weights wj−i(= λj−i/ P 
+
+> i<j ∈[H+1]
+
+λj−i) to investigate its effect on policy-based GFlowNet training. We run Sub-EB methods with λ equal to 0.1, 0.2, . . . , 0.90 and 0.99 . The experimental results are depicted in Fig. 6. It can be observed that the Sub-EB method with λ = 0 .9
+
+achieves the best performance. Although convergence rates and final performances differ, Sub-EB methods under all configurations exhibit good stability, demonstrating that the proposed Sub-EB objective enables reliable learning of the evaluation function V .B.2 SEQUENCE DESIGN 
+
+The generative process of this set of experiments is defined as follows. The state space excluding the final state S\{ s0, s f } is equal to SHt=1 {0, . . . , N − 1}t, where each state is a sequence com-posed of integers ranging from 0 to N − 1. The set {0, . . . , N − 1} corresponds to the N types of building blocks. The process begins at the initial state s0 = ∅, that is, the empty sequence. For any intermediate state sh ∈ S h, it contains h elements drawn from {0, . . . , N − 1}. There are N × 2
+
+possible transitions for st with t < D , corresponding to either appending or prepending one element from {0, . . . , N − 1} to the current sequence. The procedure continues until sequences reach length 
+
+D, yielding terminal states in X = {0, . . . , N − 1}D , and transitioning to sf := ( N, . . . , N ). Ac-cording to the definition of the generative process, the GFlowNet DAG G is graded and SD = X .23 Published as a conference paper at ICLR 2026 0 500 1000             
+
+> N
+> 0
+> 50
+> 100
+> 150
+> 200
+> 250
+> 300
+> MN
+> Sub-TB
+> Sub-TB-B
+> RL
+> Sub-EB
+> Sub-EB-B 0500 1000 1500 2000
+> N
+> 0
+> 50
+> 100
+> 150
+> 200
+> 250
+> 300
+> 350
+> MN
+> Sub-TB
+> Sub-TB
+> RL
+> Sub-EB
+> Sub-EB 0500 1000 1500 2000
+> N
+> 0
+> 500
+> 1000
+> 1500
+> 2000
+> MN
+> Sub-TB
+> Sub-TB-B
+> RL
+> Sub-EB
+> Sub-EB-B 0500 1000 1500 2000
+> N
+> 0
+> 500
+> 1000
+> 1500
+> 2000
+> MN
+> Sub-TB
+> Sub-TB-B
+> RL
+> Sub-EB
+> Sub-EB-B
+
+Figure 7: Plots of the mean and standard deviation values (represented by the shaded area) of MN for the SIX6 (top left), QM9 (top right), PHO4 (bottom left), and sEH (bottom right) dataset, based on five randomly started runs for each method. 0 500 1000 1500 2000         
+
+> N
+> 0.20
+> 0.25
+> 0.30
+> 0.35
+> 0.40
+> DTV
+> Sub-TB
+> Sub-TB-B
+> RL
+> Sub-EB
+> Sub-EB-B 0500 1000 1500 2000
+> N
+> 0.04
+> 0.06
+> 0.08
+> 0.10
+> 0.12
+> DJSD
+> Sub-TB
+> Sub-TB-B
+> RL
+> Sub-EB
+> Sub-EB-B 0500 1000 1500 2000
+> N
+> 0.4
+> 0.5
+> 0.6
+> 0.7
+> 0.8
+> 0.9
+> 1.0
+> MA
+> Sub-TB
+> Sub-TB-B
+> RL
+> Sub-EB
+> Sub-EB-B
+
+Figure 8: Plots of the mean and standard deviation values (represented by the shaded area) of DTV 
+
+(left), DJSD (middle), and MA (right) for the SIX6 dataset, based on five randomly started runs for each method. In practice, each state st is represented as a sequence of fixed length D, where the first t elements are integers from {0, . . . , N − 1}, and the others are equal to −1. In particular, the initial state s0 is represented as (−1, . . . , −1) . We use nucleotide sequence datasets (SIX6 and PHO4) and molecular sequence datasets (QM9 and sEH ) from Shen et al. (2023). Rewards are defined as the exponents of raw scores from the datasets, R(x) = score β (x). The hyperparameter β is set to 3, 5, 3 and 6 for SIX6, QM9, PHO4 and sEH, respectively, and the rewards are normalized to [10 −3, 10] , [10 −3, 10] ,
+
+[0 , 10] and [10 −3, 10] , respectively. In this experimental setting, we consider an additional metric introduced by Shen et al. (2023). It is Mode Accuracy (MA) of PF (x) w.r.t. P ∗(x), defined as: MA (PF (x), P ∗(x)) = min 
+
+ EPF (x)[R(x)] 
+
+EP ∗(x)[R(x)] , 1
+
+
+
+. (64) We use dynamic programming (Malkin et al., 2022a) to compute PF (x) and the exact MA, DTV 
+
+and DJSD between PF (x) and P ∗(x).In this set of experiments, we focus not only on distribution modeling but also on mode discovery, where the goal is to uncover high-reward terminating states. In addition to RL, Sub-EB, and Sub-TB methods, we consider Sub-TB-B and Sub-EB-B, which explicitly promote the exploration of high-reward states during trajectory sampling. 
+
+Distribution modeling Results We compare different training methods by their performance mea-sured by MA, DTV and DJSD , as shown in Figs. 8, 9, 10, and 11 for SIX, QM9, PHO4, and sEH datasets respectively. It can be seen that Sub-EB performs slightly better than RL. This can be as-cribed to the sufficient stability of RL in these experiments, rendering the advantages brought by the Sub-TB objective less obvious. Nevertheless, Sub-EB and RL outperform Sub-TB in terms of both 24 Published as a conference paper at ICLR 2026 0 500 1000 1500 2000         
+
+> N
+> 0.00
+> 0.02
+> 0.04
+> 0.06
+> 0.08
+> 0.10
+> 0.12
+> 0.14
+> DTV
+> Sub-TB
+> Sub-TB-B
+> RL
+> Sub-EB
+> Sub-EB-B 0500 1000 1500 2000
+> N
+> 0.0000
+> 0.0025
+> 0.0050
+> 0.0075
+> 0.0100
+> 0.0125
+> 0.0150
+> 0.0175
+> 0.0200
+> DJSD
+> Sub-TB
+> Sub-TB-B
+> RL
+> Sub-EB
+> Sub-EB-B 0500 1000 1500 2000
+> N
+> 0.800
+> 0.825
+> 0.850
+> 0.875
+> 0.900
+> 0.925
+> 0.950
+> 0.975
+> 1.000
+> MA
+> Sub-TB
+> Sub-TB-B
+> RL
+> Sub-EB
+> Sub-EB-B
+
+Figure 9: Plots of the mean and standard deviation values (represented by the shaded area) of DTV 
+
+(left), DJSD (middle), and MA (right) for the QM9 dataset, based on five randomly started runs for each method. 0 500 1000 1500 2000         
+
+> N
+> 0.26
+> 0.28
+> 0.30
+> 0.32
+> 0.34
+> DTV
+> Sub-TB
+> Sub-TB-B
+> RL
+> Sub-EB
+> Sub-EB-B 0500 1000 1500 2000
+> N
+> 0.06
+> 0.07
+> 0.08
+> 0.09
+> DJSD
+> Sub-TB
+> Sub-TB-B
+> RL
+> Sub-EB
+> Sub-EB-B 0500 1000 1500 2000
+> N
+> 0.70
+> 0.72
+> 0.74
+> 0.76
+> 0.78
+> 0.80
+> MA
+> Sub-TB
+> Sub-TB-B
+> RL
+> Sub-EB
+> Sub-EB-B
+
+Figure 10: Plots of the mean and standard deviation values (represented by the shaded area) of DTV 
+
+(left), DJSD (middle), and MA (right) for the PHO4 dataset, based on five randomly started runs for each method. 0 500 1000 1500 2000         
+
+> N
+> 0.00
+> 0.05
+> 0.10
+> 0.15
+> 0.20
+> 0.25
+> DTV
+> Sub-TB
+> Sub-TB-B
+> RL
+> Sub-EB
+> Sub-EB-B 0500 1000 1500 2000
+> N
+> 0.00
+> 0.01
+> 0.02
+> 0.03
+> 0.04
+> 0.05
+> 0.06
+> DJSD
+> Sub-TB
+> Sub-TB-B
+> RL
+> Sub-EB
+> Sub-EB-B 0500 1000 1500 2000
+> N
+> 0.75
+> 0.80
+> 0.85
+> 0.90
+> 0.95
+> 1.00
+> MA
+> Sub-TB
+> Sub-TB-B
+> RL
+> Sub-EB
+> Sub-EB-B
+
+Figure 11: Plots of the mean and standard deviation values (represented by the shaded area) of DTV 
+
+(left), DJSD (middle), and MA (right) for the sEH dataset, based on five randomly started runs for each method. convergence rate and final performance. For the offline variants, it can be observed that Sub-EB-B performs slightly better than Sub-TB-B, but performs worse than Sub-EB for all datasets except PHO4. The experiment results validate that the proposed Sub-EB objective can be applied to the policy-based training workflow for learning the valuation function V effectively. 
+
+Mode discovery Results We measure performance using Mode Number (MN), defined as the number of unique high-reward terminating states discovered during training. A terminating state is regarded as highly rewarded if its reward falls within the top 0.5% for the SIX6, QM9, and PHO4 datasets, and the top 0.01% for the sEH dataset. As depicted in Fig. 7, Sub-EB-B and Sub-TB-B can find a fixed number of unique modes faster and discover more unique modes within a fixed number of optimization iterations, despite a decline in distribution modeling performance on all datasets except PHO4. These results validate our offline policy-based training workflow and support our claim that the proposed Sub-EB objective enables the integration of offline sampling techniques. Combined with the mode discovery results in Fig. 7, this indicates that offline techniques that encour-age high-reward terminating states are helpful for mode discovery, while they may hinder accurate distribution modeling. 25 Published as a conference paper at ICLR 2026 0 500 1000 1500 2000         
+
+> N
+> 0.00
+> 0.05
+> 0.10
+> 0.15
+> 0.20
+> Avg  top  100
+> Sub-TB
+> Sub-TB-B
+> Q-Much
+> RL
+> Sub-EB
+> Sub-EB-B 0500 1000 1500 2000
+> N
+> 24
+> 25
+> 26
+> 27
+> 28
+> 29
+> Div  top  100
+> Sub-TB
+> Sub-TB-B
+> Q-Much
+> RL
+> Sub-EB
+> Sub-EB-B 0500 1000 1500 2000
+> N
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> FCS
+> Sub-TB
+> Sub-TB-B
+> Q-Much
+> RL
+> Sub-EB
+> Sub-EB-B
+
+Figure 12: Plots of the mean and standard deviation values (represented by the shaded area) of average reward (left), diversity (middle) and FCS (right) of the top 100 unique candidate graphs over 15 nodes, based on five randomly started runs for each method. B.3 BN STRUCTURE LEARNING 
+
+A Bayesian Network is a probabilistic model, representing the joint distribution of N random variables, whose factorization is determined by the network structure x, which is a DAG graph. Accordingly, the distribution can be written as P (y1, . . . , y N ) = QNn=1 P (yn|P a x(yn)) , where 
+
+P a x(yn) denotes the parent nodes of yn in graph x. Since any graph structure can be en-coded as an adjacency matrix, the state space excluding the final state is defined as S\{ sf } := s|C (s) = 0 , s ∈ { 0, 1}N ×N where C corresponds to the acyclic graph constraint introduced by Deleu et al. (2022). It should be noted that each BN DAG x ∈ X corresponds to a state s ∈ S in the GFlowNet DAG G. The generative process begins from the initial state s0 = 0 N ×N , representing a graph without edges, and ends at sf := −1N ×N . For any s ∈ S\ sf , a transition (s → s′) corre-sponds to adding an edge by flipping a zero entry in the adjacency matrix to one, provided that the resulting state s′ remains acyclic. Alternatively, the generative process is stopped by transitioning to 
+
+sf and returning s as the terminating graph structure. According to the definition of the generative process, G is not graded for this set of experiments. Given an observed sample set Dy of y1: N , the goal of structure learning is to approximate the posterior distribution P (x|D y ) ∝ P (Dy |x)P (x). In the absence of prior knowledge about x, the prior distribution P (x) is often assumed to be uniform, reducing the task to maximizing the likelihood, P (Dy |x)( ∝ P (x|D y )) .The ground-truth graph structure x∗ and the corresponding dataset Dy of size |D y | = 10 3 are simulated from Erd˝ os–R´ enyi model (Deleu et al., 2022). We use BGe score (Kuipers et al., 2014) to assess generated graph structures, and define the reward R(x) = 
+
+ ∆( x;Dy )
+
+> C
+
+β
+
+, where ∆( x; Dy ) = 
+
+BGe (x; Dy ) − BGe (s0; Dy ), β = 10 sharpens the reward function toward high-score structures, and 
+
+C := ∆( x∗; Dy ) normalizes the reward so that R(x∗) = 1 . The exact number of DAGs on n nodes, denoted as a(n) satisfies (Robinson, 2006): 
+
+a(n) = 
+
+> n
+
+X
+
+> k=1
+
+(−1) k+1 
+
+nk
+
+
+
+2k(n−k) a(n − k), (65) with a(0) = 1 . For the ease of accessing distribution modeling performance, Malkin et al. (2022b) set the number of nodes to 5, resulting in about 2.92 × 10 4 possible DAGs. In this setup, the ground-truth DAG contains 5 edges. In addition to this small-scale case, we also consider two much larger cases with 10 and 15 nodes, corresponding to about 4.18 × 10 18 and 2.38 × 10 35 possible DAGs, respectively. We set the ground-truth DAGs to contain 10 and 15 edges in the two respective cases. 
+
+Additional experimental results For the small-scale case, we use dynamic programming (Malkin et al., 2022a) to explicitly compute PF (x) for learned πF , and compute the exact DTV and DJSD 
+
+between PF (x) and P ∗(x). In Fig. 13, the mean and standard deviation values of DTV and DJSD 
+
+are plotted for five runs of Sub-TB, RL, Sub-EB, and Q-Much, respectively. It can be seen that Sub-EB performs better than the RL, Sub-TB and Q-Much. These results confirm our conclusion that the Sub-EB objective enables more reliable learning of the evaluation function V compared to the λ-TD objective, thereby improving the performance of policy-based methods. We also include results for Sub-EB-B and Sub-TB-B. It can be seen that they both perform worse than their original versions. These results further support our conclusion that explicitly encouraging exploration of high-reward regions may not be beneficial for distributional modeling performance. 26 Published as a conference paper at ICLR 2026 0 500 1000 1500 2000     
+
+> N
+> 0.04
+> 0.06
+> 0.08
+> 0.10
+> 0.12
+> 0.14
+> 0.16
+> 0.18
+> 0.20
+> DTV
+> Sub-TB
+> Sub-TB-B
+> Q-Much
+> RL
+> Sub-EB
+> Sub-EB-B 0500 1000 1500 2000
+> N
+> 0.000
+> 0.005
+> 0.010
+> 0.015
+> 0.020
+> 0.025
+> 0.030
+> DJSD
+> Sub-TB
+> Sub-TB-B
+> Q-Much
+> RL
+> Sub-EB
+> Sub-EB-B
+
+Figure 13: Plots of the mean and standard deviation values (represented by the shaded area) of 
+
+DTV (left) and DJSD (right) for the BN learning structure learning task over 5 nodes, based on five randomly started runs for each method. B.4 MOLECULAR GRAPH DESIGN 
+
+Each molecule (graph) is a composition of at most 8 building blocks, selected from N = 105 
+
+predefined molecular substructures provided by Bengio et al. (2021). Each block (graph node) has a list that contains at most M available atom indices for forming bonds (graph edges) with other blocks. Each block’s list contains exactly one target atom and 0 to M − 1 source atoms. A bond is formed by connecting a source atom in one block to a target atom in another. A graphical illustration of 4 exemplary blocks is shown in Fig. 14. Following Bengio et al. (2021), we restrict the maximum number of blocks in a molecular graph to be H = 8 . Each state s ∈ S is represented as a H × 2
+
+matrix. The generative process begins from the initial state s0 = −1H×2, representing an empty graph, and ends at sf = 105 H×2. For any state sh ∈ S h:1. The first column contains h integers drawn from {0, . . . , N − 1}, representing the indices of the building blocks present in the molecule. 2. The second column contains h − 1 integers drawn from {0, . . . , H × M − 1}, representing the indices of bonding sites that encode the connectivity structures. Specifically, if an integer is equal to (i − 1) × H + j, this indicates that the target atom of the newly added block will be connected to the j-th source atom of the i-th block. For any s ∈ S \ (sf , s 0), a transition (s → s′) corresponds to a two-level action: 1. Selecting a building block to add, represented by an integer in {0, . . . , N − 1}.2. Selecting a bonding site represented by an integer k ∈ { 0, . . . , H × M − 1}.The generative process stops when we make the transition (x → sf ), when no available source atoms remain for forming bonds, or when the state reaches the limit of H blocks. According to the definition of the generative process, the GFlowNet DAG G is not graded , meaning that any state except sf can be a terminating state x ∈ X . Since there may be multiple types of bonds between a given pair of blocks, the size of the terminating state space is greater than 105! (105 −8)! ≈ 10 16 . The Octanol–Water Partition Coefficient (LogP) and c-Jun N-terminal Kinase 3 (JNK3) scores provided in the pyTDC package are directly used as the reward functions R(x). Since actions in this gener-ative process involve two levels, we use separate neural networks to represent the policy for each action component. The log-probability of an action is computed as the sum of the log-probabilities produced by the corresponding networks for the two action levels. Finally, following Bengio et al. (2021), we choose parameterized πB and use a batch size of 4 to emulate scenarios where querying the real-world molecule oracle is computationally expensive. The experimental results are presented in Figs. 15 and 16. We report the average reward and diver-sity of the top 100 unique graphs discovered during the training process. The diversity of a set of molecules is computed as the average pairwise dissimilarity based on Tanimoto distance of Morgan fingerprints via the pyTDC package. For the LogP task, RL, Sub-EB, and Q-Much achieve similar average rewards, all outperforming Sub-TB. Moreover, RL and Sub-EB converge much faster than Sub-TB and Q-Much. All four methods exhibit comparable diversity. For the JNK3 task, Sub-EB achieves the highest average reward and demonstrates the fastest convergence among all methods. Its diversity is comparable to that of Sub-TB and higher than that of RL. Although Q-Much achieves 27 Published as a conference paper at ICLR 2026 
+
+Figure 14: Four exemplary building blocks. Red and blue dots indicate the available atoms for bonding, where each bonding edge originates from a red dot and terminates at a blue dot. 0 500 1000 1500 2000     
+
+> N
+> 2
+> 0
+> 2
+> 4
+> 6
+> Avg-top-100
+> LogP
+> Sub-TB
+> RL
+> Sub-EB
+> Q-Much 0500 1000 1500 2000
+> N
+> 0.775
+> 0.800
+> 0.825
+> 0.850
+> 0.875
+> 0.900
+> 0.925
+> 0.950
+> Div-top-100
+> LogP
+> Sub-TB
+> RL
+> Sub-EB
+> Q-Much
+
+Figure 15: Plots of the mean and standard deviation values of average reward (left) and diversity (right, Tanimoto diversity of molecular Morgan fingerprints) of top 100 unique molecules for the LogP task, based on five randomly started runs for each method. 0 500 1000 1500 2000     
+
+> N
+> 0.05
+> 0.10
+> 0.15
+> 0.20
+> 0.25
+> 0.30
+> 0.35
+> Avg-top-100
+> Jnk3
+> Sub-TB
+> Q-Much
+> RL
+> Sub-EB 0500 1000 1500 2000
+> N
+> 0.775
+> 0.800
+> 0.825
+> 0.850
+> 0.875
+> 0.900
+> 0.925
+> 0.950
+> Div-top-100
+> Jnk3
+> Sub-TB
+> Q-Much
+> RL
+> Sub-EB
+
+Figure 16: Plots of the mean and standard deviation values of average reward (left) and diversity (right, Tanimoto diversity of molecular Morgan fingerprints) of top 100 unique molecules for the JNK3 task, based on five randomly started runs for each method. the highest diversity, its average reward is almost the lowest. Overall, these results indicate that Sub-EB achieves the best performance in terms of average reward and convergence rate while main-taining reasonable diversity, confirming its effectiveness for large-scale tasks. B.5 RUNTIME REPORT 
+
+28 Published as a conference paper at ICLR 2026 Method Mean Std Sub-TB 1h 08m 1.09 Sub-TB-P 1h 14m 10.36 
+
+RL 1h 03m 0.92 RL-P 1h 27m 0.57 RL-MLE 1h 09m 1.78 Sub-EB 1h 17m 2.31 Sub-EB-P 1h 17m 1.49 Method Mean Std Sub-TB 0h 52m 0.27 Sub-TB-P 0h 58m 7.92 RL 0h 44m 1.43 RL-P 1h 06m 2.21 RL-MLE 0h 58m 3.27 Sub-EB 0h 54m 2.66 Sub-EB-P 1h 11m 0.82 Method Mean Std Sub-TB 1h 59m 1.53 Sub-TB-P 2h 19m 4.40 RL 1h 27m 7.37 RL-P 2h 03m 10.68 RL-MLE 2h 28m 9.58 Sub-EB 2h 04m 4.11 Sub-EB-P 2h 41m 15.46 Table 1: The mean and standard deviation (std) of the total runtimes for each method on the 64 ×
+
+64 × 64 (left), 128 × 128 × 128 (middle), and 256 × 256 × 256 (right) grids. Here, ‘h’ denotes hours and ‘m’ denotes minutes, and all std values are reported in minutes. Method Mean Std Sub-TB 0h 05m 0.21 Sub-TB-B 0h 16m 0.67 RL 0h 04m 0.06 Sub-EB 0h 04m 0.34 Sub-EB-B 0h 17m 1.63 Method Mean Std Sub-TB 0h 04m 1.10 Sub-TB-B 0h 12m 0.57 RL 0h 04m 0.12 Sub-EB 0h 04m 0.06 Sub-EB-B 0h 13m 0.71 Table 2: The mean and standard deviation (std) of the total runtimes for each method on the SIX6 and QM9 datasets. Here, ‘h’ denotes hours and ‘m’ denotes minutes, and all std values are reported in minutes. Method Mean Time Std (min) Sub-TB 0h 19m 2.05 Sub-TB-B 0h 27m 0.42 
+
+RL 0h 18m 0.10 
+
+Sub-EB 0h 18m 0.15 Sub-EB-B 0h 30m 1.09 Method Mean Time Std (min) 
+
+Sub-TB 3h 30m 10.23 Sub-TB-B 3h 46m 11.59 RL 3h 42m 13.78 Sub-EB 3h 41m 13.97 Sub-EB-B 3h 58m 7.57 Table 3: The mean and standard deviation (std) of the total runtimes for each method on the PHO4 and sEH datasets. Here, ‘h’ denotes hours and ‘m’ denotes minutes, and all std values are reported in minutes. Method Mean Std Sub-TB 0h 57m 1.11 Sub-TB-B 1h 23m 4.27 RL 0h 56m 0.46 
+
+Sub-EB 0h 49m 0.87 Sub-EB-B 1h 07m 1.43 Q-Much 0h 59m 3.57 Method Mean Std 
+
+Sub-TB 0h 10m 0.80 Sub-TB-B 0h 36m 1.82 RL 0h 11m 3.58 
+
+Sub-EB 0h 10m 0.91 Sub-EB-B 0h 31m 2.27 Q-Much 0h 12m 1.34 Method Mean Std Sub-TB 0h 16m 1.28 Sub-TB-B 0h 42m 3.82 
+
+RL 0h 12m 1.79 Sub-EB 0h 14m 0.28 Sub-EB-B 0h 39m 1.13 Q-Much 0h 19 m 0.62 Table 4: The mean and standard deviation (std) of the total runtimes for each method on the 5-node, 10-node and 15-node BN tasks. Here, ‘h’ denotes hours and ‘m’ denotes minutes, and all std values are reported in minutes. The runtimes for the 5-node cases are the largest due to the explicit computation of DT V for performance comparison during training. Method Mean Time Std (min) 
+
+RL 0h 9m 0.36 RLEval 0h 13m 0.17 Sub-TB 0h 13m 0.93 Q-Much 0h 19 m 3.50 Method Mean Time Std (min) RL 0h 12m 1.33 
+
+RLEval 0h 9m 0.08 
+
+Sub-TB 0h 9m 0.29 Q-Much 0 h 10 m 0.26 Table 5: The mean and standard deviation (std) of the total runtimes for each method on the LogP and JNK3 tasks. Here, ‘h’ denotes hours and ‘m’ denotes minutes, and all std values are reported in minutes. 29

@@ -1,0 +1,1320 @@
+Title: Multi-Agent Combinatorial-Multi-Armed-Bandit framework for the Submodular Welfare Problem under Bandit Feedback
+
+URL Source: https://arxiv.org/pdf/2602.16183v1
+
+Published Time: Thu, 19 Feb 2026 01:26:14 GMT
+
+Number of Pages: 18
+
+Markdown Content:
+# Multi-Agent Combinatorial-Multi-Armed-Bandit framework for the Submodular Welfare Problem under Bandit Feedback 
+
+Subham Pokhriyal 1 Shweta Jain 1 Vaneet Aggarwal 2
+
+# Abstract 
+
+We study the Submodular Welfare Problem 
+
+(SWP), where items are partitioned among agents with monotone submodular utilities to maximize the total welfare under bandit feedback . Classical SWP assumes full value-oracle access, achieving 
+
+(1 − 1/e ) approximations via continuous-greedy algorithms. We extend this to a multi-agent combi-natorial bandit framework (MA-CMAB), where actions are partitions under full-bandit feedback with non-communicating agents. Unlike prior single-agent or separable multi-agent CMAB models, our setting couples agents through shared allocation constraints. We propose an explore– then–commit strategy with randomized assign-ments, achieving ˜O(T 2/3) regret against a (1 −
+
+1/e ) benchmark—the first such guarantee for partition-based submodular welfare problem un-der bandit feedback. 
+
+# 1. Introduction 
+
+In combinatorial multi-armed bandit (CMAB) problems, a learner selects a subset of base arms at each round and receives stochastic feedback. The challenge stems from the structured yet exponentially large action space, which makes exploration and optimization nontrivial. In CMAB, two types of feedback are typically studied. With semi-bandit feedback, the learner observes the individual reward contribution of each chosen arm in the selected subset. This allows for efficient estimation and often leads to faster learn-ing. However, in the full-bandit feedback setting, only the total reward from the chosen set is observed, without any information about individual arm contributions. This makes 
+
+> 1
+
+Indian Institute of Technology Ropar, Rupnagar, In-dia 2Purdue University, West Lafayette, USA. Correspon-dence to: Subham Pokhriyal <subham.22csz0002@iitrpr.ac.in >,Shweta Jain <shwetajain@iitrpr.ac.in >, Vaneet Aggarwal <va-neet@purdue.edu >.A preliminary version of this work is accepted for publication as an extended abstract in the Proceedings of the 25th International Con-ference on Autonomous Agents and Multiagent Systems (AAMAS 2026). 
+
+learning significantly harder, as marginal values must be in-ferred indirectly, often requiring deliberate and suboptimal exploration. Despite its challenges, full-bandit feedback more accurately reflects many real-world scenarios where per-arm signals are inaccessible due to privacy concerns, measurement limits, or system constraints. Applications such as recommender systems, data summarization, fair allocation, revenue and influence maximization frequently operate in such regimes, where only aggregate outcomes are observable (Fourati et al., 2023; Nie et al., 2023; Fourati et al., 2024a; Pokhriyal et al., 2025). This motivates the need for learning algorithms that can operate effectively in the full-bandit setting. Our work addresses a multi-agent variant of this problem, grounded in the well-studied Submodular Welfare Problem (SWP). In an offline SWP, the objective is to divide a set of items among multiple agents (partitions) so as to maximize the total (utilitarian) utility, where each agent’s utility is defined by a monotone submodular function. This problem arises in domains such as economics, fair division, and resource allocation. In the value-oracle model, the problem admits a 1/2-approximation via a greedy algorithm (Fisher et al., 1978; Lehmann et al., 2001), while more advanced techniques (such as the continuous-greedy algorithm with pipage or randomized rounding) achieve the optimal (1 −
+
+1/e ) approximation (Vondr ´ak, 2008). The SWP reduces to submodular maximization under a partition matroid. Online submodular optimization under bandit feedback has gained considerable attention in recent literature, particu-larly in single-agent CMAB settings. For non-monotone objectives, Fourati et al. (2023) adapts the RANDOMIZED-SUM algorithm from Buchbinder et al. (2015), establishing a sublinear 1/2-regret. In the monotone case under car-dinality constraints, Nie et al. (2023) builds on the classi-cal GREEDY algorithm of Nemhauser et al. (1978), while Fourati et al. (2024a) extends the STOCHASTIC-GREEDY 
+
+approach of Mirzasoleiman et al. (2015), both of which yield a sublinear (1 − 1/e )-regret. However, all these works are limited to a single agent setting. Extensions to multi-agent scenarios have been proposed in federated and decentralized optimization contexts (Kone ˇcn `yet al., 2016; McMahan et al., 2017; Li et al., 2020; Hos-1
+
+> arXiv:2602.16183v1 [cs.GT] 18 Feb 2026 Multi-Agent Combinatorial-Multi-Armed-Bandit framework for the Submodular Welfare Problem under Bandit Feedback
+
+seinalipour et al., 2021; Elgabli et al., 2022; Fourati et al., 2024b), but these typically assume continuous updates and communication between agents. In contrast, we focus on discrete, non-communicating, multi-agent settings where global utility depends on structured item allocations, and feedback is limited to total reward. Practical applications of this framework include partitioned recommendation, dis-tributed sensing, influence maximization across user groups, and equitable allocation of indivisible goods. In this work we formalize a connection between the offline SWP (Vondr ´ak, 2008) and the online multi-agent CMAB framework, with a particular focus on settings involving full-bandit feedback. In the online variant, the learner re-peatedly selects a feasible partition of items among agents, receives aggregate reward feedback, and aims to minimize regret with respect to a benchmark offline solution. Our formulation departs from prior work in four key aspects: (i) all agents are present and active in every round (no partial participation), (ii) agents are non-communicating and for each agent i we have distinct submodular utility wi(·), (iii) the learner selects a partition of the item set, assigning dis-joint subsets to agents, rather than a single best subset, and (iv) the optimization objective is the total welfare P 
+
+> i
+
+wi(·),coupling feasibility across agents. To the best of our knowledge, this is the first work to cast dis-crete partitioning for submodular welfare as a multi-agent CMAB problem under full-bandit feedback. We design a learning algorithm that lifts offline approximation guaran-tees to the online setting and achieves a regret bound of 
+
+˜O(T 2/3) using discrete randomized allocation, adaptive ex-ploration, and full-bandit feedback. We outline the principal contributions of this work as follows: • We introduce a non-communicating multi-agent par-titioning framework, where each agent receives a dis-tinct (possibly monotone) submodular reward and only aggregate outcomes are observed. • We establish new resilience guarantees for the offline submodular welfare problem under noisy value or-acles, applicable to partition/matroid/knapsack-style constraints. • We propose an offline-to-online reduction that achieves 
+
+˜O(T 2/3) regret with respect to an α-approximate benchmark under standard noise models (bounded or sub-Gaussian). • We design a discrete, randomized assignment policy that approximates the continuous-greedy trajectory via adaptive sampling and deliberate exploration based only on total rewards. 
+
+# 2. Related Work 
+
+In this section, we review related work relevant to the con-struction of an online multi-agent CMAB framework for the offline Submodular Welfare Problem (SWP), organized into three key areas: (1) Submodular Welfare Optimization – studies item allocation for maximizing welfare with approx-imation guarantees under value and demand oracle models. (2) Multi-agent MAB (MA-MAB) – explores decentralized learning with limited communication and agent-specific rewards. (3) Combinatorial Bandit Frameworks – adapts offline submodular algorithms to online settings, recently extended to multi-agent cases. These lines of work col-lectively motivate our decentralized, non-communicating, online approach to SWP. 
+
+2.1. Submodular Welfare Problem 
+
+The Submodular Welfare Problem (SWP) arises naturally in combinatorial auctions, where multiple agents compete for a set of items and derive value from combinations of them. Each agent is associated with a private utility function that evaluates the value of any subset of items. The objective is to allocate items among agents in a way that maximizes the overall (total) welfare. Since the input space is exponen-tial in size, algorithmic access is typically assumed to be restricted to oracle (query) access to the valuation functions. Two standard oracles are commonly used. The value oracle model allows the algorithm to evaluate the utility of par-ticular item sets via direct queries. In the more expressive 
+
+demand oracle model , given item prices, the oracle returns the player’s most preferred bundle under those prices. These models allow optimization over general submodular func-tions without assuming explicit representation. In the value oracle setting, a greedy algorithm provides a 
+
+1/2-approximation (Lehmann et al., 2001), while (Vondr ´ak, 2008) later achieved an optimal approximation ratio of 
+
+(1 − 1/e ) using the continuous greedy technique and pi-page rounding. In the demand oracle model, the same 
+
+(1 − 1/e + ε′) approximation factor can be achieved us-ing oblivious rounding procedures (Feige & Vondr ´ak, 2010). However, improving beyond this threshold is NP-hard (Khot et al., 2005), and even matching it with only value queries requires exponentially many calls (Mirrokni et al., 2008). In particular, SWP is a special case of maximizing a mono-tone submodular function subject to matroid constraints, first studied by (Fisher et al., 1978), with reduction formal-ized in (Lehmann et al., 2001). In the uniform matroid case, where only k items can be selected, the greedy algorithm achieves (1 − 1/e ) (Nemhauser et al., 1978). For general matroids, it provides only a 1/2-approximation. A major breakthrough was achieved by Calinescu et al. (2007), who proposed the continuous greedy algorithm. This method 2Multi-Agent Combinatorial-Multi-Armed-Bandit framework for the Submodular Welfare Problem under Bandit Feedback          
+
+> Table 1. Summary of Resilience Parameters and Regret Guarantee for MA-CMAB. This table outlines the key components underlying the regret analysis of the MA-CMAB algorithm for online submodular welfare maximization. It includes the approximation factor
+> α= 1 −1/e , the robustness parameter δcapturing noise sensitivity, and the oracle complexity η. The framework achieves a sublinear
+> O(T2/3)regret bound with respect to the best offline allocation, under stochastic full-bandit feedback.
+
+App. Objective f α δ η Regret Bound 
+
+USW max (Sub) 1 − 1 
+
+> e
+
+(4 M N + 2 M ) (M N )8 O
+
+
+
+δ2/3η1/3C2/3T 2/3 log 1/3(T )
+
+
+
+operates on a fractional relaxation of the submodular func-tion’s multilinear extension and subsequently applies pipage rounding (Ageev & Sviridenko, 2004) to recover a feasible integral solution without compromising the approximation guarantee. This method achieves the tight (1 − 1/e ) bound in the value oracle model for general matroids. In this work, we adopt continuous greedy value-oracle benchmark of (Vondr ´ak, 2008) as the offline reference for our stochastic variant of the SWP in a Multi-Agent Combinatorial Multi-Arm Bandit (MA-CMAB) framework. 
+
+2.2. Multi-agent Multi-armed Bandits 
+
+Motivated by the single-agent bandit setting (Chawla et al., 2020), (Chawla et al., 2023) proposed decentralized algo-rithms that facilitate agent collaboration through selective in-formation sharing. Recent works in multi-agent multi-armed bandits (MA-MAB) consider various communication-based models, including broadcasting (Agarwal et al., 2022; Buc-capatnam et al., 2015; Chakraborty et al., 2017), pairwise gossip (Chawla et al., 2020; Sankararaman et al., 2019), and decentralized settings with frequent interactions (Kolla et al., 2018; Lalitha & Goldsmith, 2021; Mart ´ınez-Rubio et al., 2019). Contextual and linear-reward MA-MAB vari-ants have also been explored (Dubey et al., 2020; Tekin & Van Der Schaar, 2015; Dubey & Pentland, 2020; Chawla et al., 2022; Korda et al., 2016). A few works target min-imizing simple regret instead of cumulative regret (Hillel et al., 2013; Szorenyi et al., 2013), and others allow hetero-geneous bandits across agents (Bistritz & Leshem, 2018; Shahrampour et al., 2017; R ´eda et al., 2022; Zhu et al., 2021). Additionally, collision-based models have received attention (Anandkumar et al., 2011; Avner & Mannor, 2014; Bistritz & Leshem, 2018; Boursier & Perchet, 2019; Dak-douk et al., 2021; Kalathil et al., 2014; Liu & Zhao, 2010; Liu et al., 2020; Mansour et al., 2017; Rosenski et al., 2016). Our setting differs from collision-based MA-MAB models, as there are no collisions among arms, each agent oper-ates an independent bandit with its own reward distribution. Consequently, the reward obtained by different agents for pulling the same arm may differ, which fundamentally dis-tinguishes our framework from traditional collision-based settings. However, agents still compete with each other as the allocation of items comprises a partition. 
+
+2.3. Single/Multi-agent CMAB Framework 
+
+Combinatorial bandit frameworks in the single-agent setting have been extensively studied. Niazadeh et al. (2021) in-troduced a general framework for adapting iterative greedy algorithms from offline settings to adversarial combinatorial bandit problems, under the requirement that the offline algo-rithm exhibits an iterative greedy structure and a property known as Blackwell reproducibility. More recently, (Nie et al., 2023) introduced the C-ETC framework, which ex-tends offline algorithms with robustness guarantees to the stochastic CMAB setting. This framework generalizes ear-lier approaches for submodular maximization (Nie et al., 2022; Fourati et al., 2023), though it does not subsume more recent work such as (Fourati et al., 2024c), which offers refined guarantees for submodular bandits. These works col-lectively form the foundation of single-agent combinatorial bandit theory, particularly in scenarios involving robustness and offline-to-online reductions. While the C-ETC framework (Nie et al., 2023) provides an offline-to-online reduction for stochastic CMABs in the single-agent setting, it does not extend to recent advances in multi-agent learning. In contrast, (Fourati et al., 2024a) propose a generalized framework that accommodates multi-ple communicating agents ( M ≥ 1), allowing coordination across disjoint combinatorial actions. This yields tighter regret guarantees by reducing exploration variance through distributed sampling and shared information. Our setting differs from both single-agent and prior multi-agent CMAB frameworks in several key aspects. Unlike single-agent models, we consider multiple agents acting con-currently, each with their own distinct submodular utility function. All agents participate in every round, but they are non-communicating, making coordination more challenging. Unlike recent multi-agent approaches such as (Fourati et al., 2024a), which focus on selecting a single best subset shared among agents, our model requires computing a disjoint par-tition of items, i.e., one subset per agent with the goal of maximizing the total submodular welfare P 
+
+> i
+
+wi(Si). Build-ing on the single-agent foundation of (Nie et al., 2023), we extend to this decentralized multi-agent partitioning setting and provide online guarantees with sublinear regret subject to matroid constraints. 3Multi-Agent Combinatorial-Multi-Armed-Bandit framework for the Submodular Welfare Problem under Bandit Feedback 
+
+# 3. Problem Statement 
+
+Model. We consider a fair division setting with M agents 
+
+P = {1, . . . , M } and a finite collection of N indivisible items, denoted by Q. The ground set of all possible agent-item assignments is defined as X = P × Q, where an element (i, j ) ∈ X represents the assignment of item j to agent i. A feasible allocation is a subset S ⊆ X that satisfies allocation constraints specified by a partition matroid , with optional per-agent quotas: 
+
+D =
+
+n
+
+S ⊆ X : ∀j ∈ Q, |S ∩ (P × { j})| ≤ 1 and 
+
+∀i ∈ P, |S ∩ ({i} × Q)| ≤ bi
+
+o
+
+,
+
+where bi ∈ Z≥0 is the (optional) quota of agent i. Setting 
+
+bi = N for all i removes agent-side capacity constraints. Each feasible allocation S ∈ D induces a bundle si =
+
+{j ∈ Q : ( i, j ) ∈ S} for each agent i, which together form a (possibly capped) partition of Q. Each agent i is equipped with a monotone submodular valuation function 
+
+wi : 2 Q → [0 , 1] , with wi(∅) = 0 . An allocation S has (utilitarian) welfare defined as the total sum of the agents valuations: f (S) = PMi=1 wi(si) ∈ [0 , 1] .
+
+Example. The proposed model subsumes stochastic com-binatorial auctions with noisy valuation access; see Ap-pendix H for a detailed instantiation. 
+
+Offline Benchmark. Let OPT ∈ arg max A∈D f (A) de-note an optimal allocation maximizing total welfare. Since exact maximization over D is NP-hard in general, we as-sume access to an α-approximate polynomial-time offline algorithm Alg of f that returns a feasible solution AAlg ∈ D 
+
+satisfying: 
+
+f (AAlg ) ≥ α · f (OPT) , for some α ∈ (0 , 1] .
+
+This offline guarantee serves as the benchmark for our online learning protocol. 
+
+Online Learning Protocol. Time proceeds in discrete rounds indexed by t = 1 , . . . , T . At each round t, a learning policy selects a feasible allocation At ∈ D , and receives a stochastic full-bandit reward: 
+
+rt = ft(At), where ft(At) ∈ [0 , 1] and E[ft(At)] = f (At).
+
+The reward sequence {ft(At)}t≥1 is assumed to be i.i.d. across rounds for each fixed allocation AAlg ∈ D , and only the aggregate reward ft(At) is observed after each round— no agent or item level feedback is available. 
+
+Regret for Submodular Welfare Problem. The goal is to minimize regret against the offline benchmark. Let R(T )
+
+denote the cumulative α-regret after T rounds, defined as: 
+
+E[R(T )] = α T f (OPT) − E
+
+" TX
+
+> t=1
+
+ft(At)
+
+#
+
+. (1) This is a specialization of the standard CMAB pseudo-regret to our setting of partitioned actions and submodular social welfare. A smaller E[R(T )] indicates better learning rela-tive to the best achievable offline approximation. 
+
+# 4. Resilience Guarantee for the Submodular Welfare Problem 
+
+Continuous Greedy for Submodular Welfare. Wolsey (1982) early work on real-valued submodular maximization over knapsack polytopes updates one coordinate at a time and attains only a 1/2-approximation in that setting. In contrast, the continuous greedy method of (Vondr ´ak, 2008) moves in a globally chosen ascent direction inside the ma-troid polytope and achieves a (1 − 1/e )-approximation; a discrete variant with pipage rounding yields integral solu-tions with the same expectation. Let P = {1, . . . , M } be the set of agents and Q =
+
+{1, . . . , N } the set of items. Each agent i ∈ P has a monotone submodular valuation wi : 2 Q → R+. De-fine the ground set X = P × Q and, for any S ⊆ X,let si = { j ∈ Q : (i, j ) ∈ S } be agent i’s bundle. For y ∈ [0 , 1] X , define a random vector ˆy ∈ { 0, 1}X by rounding each coordinate independently: set ˆyj = 1 with probability yj and ˆyj = 0 with probability 1 − yj . The welfare function is f (S) = PMi=1 wi(si), max S∈I f (S),
+
+subject to the partition matroid I =  S ⊆ X : ∀j ∈
+
+Q, |{ i ∈ P : (i, j ) ∈ S }| ≤ 1 . Its polytope is 
+
+P(M) = 
+
+n
+
+y ∈ [0 , 1] M ×N : PMi=1 yij ≤ 1 ∀j ∈ Q
+
+o
+
+.
+
+The multilinear extension of f is 
+
+F (y) := Ef (by) = X
+
+> R⊆X
+
+f (R) Y
+
+> i∈R
+
+yi
+
+Y
+
+> j / ∈R
+
+(1 − yj )=
+
+> M
+
+X
+
+> i=1
+
+Ewi(Ri). (2) where for each agent i, Ri ⊆ Q is formed by including each item j independently with probability yij , and the collec-tions {Ri}Mi=1 are mutually independent. Equivalently, item 
+
+j is assigned to agent i with probability yij (and unassigned with probability 1 − P 
+
+> i
+
+yij ), which respects the partition constraint in expectation. 
+
+Approximation Guarantees. By the analysis of (Vondr ´ak, 2008), the above Algorithm 1 returns (after rounding) an allocation S satisfying, E[f (S)] ≥ (1 − 1/e ) · f (OPT) ,
+
+where OPT denotes the optimal feasible allocation. 4Multi-Agent Combinatorial-Multi-Armed-Bandit framework for the Submodular Welfare Problem under Bandit Feedback 
+
+Algorithm 1 CONTINUOUS GREEDY (P ARTITION MA-
+
+> TROID
+
+)
+
+Require: Stepsize λ ∈ (0 , 1] (e.g., λ = 1(M N )2 )1: Initialize t ← 0, and set yij (0) = 0 for all i ∈ [M ], j ∈ [N ]
+
+2: while t < 1 do 
+
+3: for each i ∈ [M ], j ∈ [N ] do 
+
+4: Estimate marginal: 
+
+ωij (t) ≈ E[wi(Ri(t) ∪ { j}) − wi(Ri(t))] 
+
+where Ri(t) includes each j′ ∈ Q independently with probability yij ′ (t)
+
+5: end for 
+
+6: for each item j do 
+
+7: Pick ij (t) ∈ arg max i ωij (t) and update: 
+
+yij (t),j (t + λ) ← yij (t),j (t) + λyij (t + λ) ← yij (t), ∀i̸ = ij (t)
+
+8: end for 
+
+9: t ← t + λ
+
+10: end while 
+
+11: Rounding: Use pipage rounding to convert y(1) to integral 
+
+S ∈ I , preserving E[f (S)] = F (y(1)) 
+
+Oracle complexity. Let S denote the number of value-oracle samples used to estimate each ωij (t) at a time step. With step size λ, the number of iterations is 1/λ , and each iteration touches M N pairs, so the total value-oracle calls are 
+
+> 1
+> λ
+
+|{z} 
+
+> iterations
+
+× M N |{z} 
+
+> pairs
+
+× Z|{z} 
+
+> samples per pair
+
+= O  M N Z λ
+
+ .
+
+For the canonical discretization λ = 1(M N )2 and a conser-vative choice Z = ( M N )5, this upper-bounds to (M N )8
+
+calls, matching the standard worst-case accounting used to secure the approximation guarantee in the value-oracle model. 
+
+4.1. Offline Resilient Approximation 
+
+In the Submodular Welfare Problem, where the objective is to maximize f (S) = P 
+
+> i
+
+f (si), with S = {s1, s 2, . . . , s M }
+
+being a disjoint partition of items among agents, the Contin-uous Greedy algorithm achieves the following guarantee: 
+
+Definition 4.1 ((α, δ, η )- Resilient Approximation) . An of-fline algorithm Alg is an (α, δ, η )-resilient if, given an ac-cess to approximate oracle ˆf satisfying |f (S) − ˆf (S)| < ϵ 
+
+for all S ∈ Ω, Alg returns a solution SAlg such that: 
+
+E[f (SAlg )] ≥ αf (OPT) − δϵ, (3) where f (OPT) = arg max S⊆X f (S) =arg max S⊆X
+
+P 
+
+> i∈M
+
+wi(si).Here, η bounds the total number of oracle calls to ˆf , and δ
+
+quantifies resilience to approximation errors. In our setting, the oracle complexity parameter η from Theorem 4.1 coin-cides with the number of distinct actions evaluated during the exploration phase; we therefore use a single symbol η
+
+for both quantities. 
+
+Remark 1. The robustness notion of (Niazadeh et al., 2021) is tied to approximation algorithms with an iterative greedy 
+
+structure. In contrast, Definition 4.1 imposes no such struc-tural assumptions. 
+
+Remark 2. The noisy oracle ˆwi(si) need not preserve mono-tonicity or submodularity, which is explicitly accounted for in our resilience analysis. 
+
+Remark 3. When f and ˆf take values in [0 , 1] , a multi-plicative error bound |f (S) − ˆf (S)| ≤ ε′f (S) implies the additive bound |f (S) − ˆf (S)| ≤ ε′.
+
+4.2. Resilience Guarantees for Continuous Greedy Algorithm under Noisy Oracle Access 
+
+Resilience means that even if utility evaluations are noisy within ϵ, the algorithm still achieves near-optimal perfor-mance up to an additive error proportional to ϵ i.e. δϵ , with-out breaking the 1 − 1 
+
+> e
+
+-approximation guarantee. We now show that the C ONTINUOUS GREEDY algorithm satisfies Theorem 4.2 under additive oracle noise. 
+
+Theorem 4.2 (C ONTINUOUS GREEDY Resilience) . Un-der inexact utility evaluations | ˆw(S) − w(S)| ≤ ϵ, for 
+
+ϵ ≤ 1(M N )2 , CONTINUOUS GREEDY is an (α, δ, η )-resilient approximation algorithm for the Submodular Welfare (dis-crete partition) problem, where: 
+
+α = 1 − 1
+
+e , δ = (4 M N + 2 M ), η = ( M N )8.
+
+The key resilience parameters α, δ and, η are summarized in Table 1. We next prove the Theorem 4.2 by series of Lemmas. Theorem 4.5 is a standard result and is used as a black-box rounding procedure throughout the paper. For y ∈ [0 , 1] X and random vector ˆy ∈ { 0, 1}X indepen-dently rounded by 0/1 corresponds to probability yj .
+
+Lemma 4.3. Let y ∈ [0 , 1] X be a fractional solution and let R denote a random set corresponding to ˆy, obtained by sampling each element j ∈ X independently with probabil-ity yj . Let OPT = max S∈I f (S). If all oracle evaluations are noisy with additive error at most ε, i.e. 
+
+| ˆf (S) − f (S)| ≤ ε ∀S ⊆ X, 
+
+then, the true optimum satisfies the following upper bound: 
+
+f (OPT) ≤ F (y) + max 
+
+> I∈I
+
+X
+
+> j∈I
+
+E[fR(j)] + (4 M N + 2 M )ε, 
+
+where: 
+
+5Multi-Agent Combinatorial-Multi-Armed-Bandit framework for the Submodular Welfare Problem under Bandit Feedback 
+
+• F (y) is the true multilinear extension of f evaluated at y,
+
+• fR(j) := f (R ∪ { j}) − f (R) is the true marginal contribution of j under random set R,
+
+• and I is the family of feasible integral solutions (e.g., a partition matroid). Proof sketch. Fix an optimal solution OPT ∈ I . By sub-modularity, for any random set R, we have 
+
+f (OPT) ≤ f (R) + X
+
+> j∈OPT
+
+ f (R ∪ { j}) − f (R).
+
+Taking expectation and carefully accounting for oracle noise yields the stated bound. The complete argument is provided in Theorem A.1 ( Section A). In the continuous greedy algorithm, at each time step t, we want to know how valuable each element j is if we add it next. This value is the expected marginal gain :
+
+ωj (t) = Ef (R(t) ∪ { j}) − f (R(t)) ,
+
+where R(t) is a random set formed by including each ele-ment independently with probability yi(t). Since this expec-tation cannot be computed directly, the algorithm estimates it by Monte Carlo sampling : draw about (M N )5 random sets R(t), query the oracle for each sample, compute the marginal contribution of j, and average. This gives an accu-rate estimate ˆωj (t) with high probability. Once we have ωj (t) for every element, we select a 
+
+maximum-weight independent set I(t) under the matroid constraints, using ωj (t) as weights. Intuitively, I(t) is the best feasible subset to move towards, and we update the fractional vector in that direction: 
+
+y(t + λ) = y(t) + λ · 1I(t).
+
+Iterating this process makes y(1) a convex combination of independent sets, which can then be rounded to an integral solution. 
+
+Lemma 4.4 (Noisy resilient bound for Continuous Greedy) .
+
+Let y be the fractional solution returned by CONTINUOUS 
+
+GREEDY under noisy oracle access. Then 
+
+F (y) ≥
+
+
+
+1 − 1
+
+e
+
+
+
+f (OPT) − (4 M N + 2 M )ε. 
+
+Proof sketch. The argument combines the noisy upper bound on the optimal value (Lemma 4.3) with a stepwise analysis of the continuous greedy update. A full deriva-tion of the recurrence is provided in Appendix A, see Lem-mas A.1 and A.2. 
+
+Remark 4. In the noiseless case ( ε = 0), the additive error vanishes and we recover the classical (1 − 1/e )-approximation guarantee. With noisy oracles, the additive error grows only linearly in (M N )ε, proving resilience. 
+
+Pipage Rounding To establish resilience, our approach leverages a powerful rounding technique first introduced by (Ageev & Sviridenko, 2004), and subsequently refined for matroid polytopes by (Calinescu et al., 2007). We incorpo-rate this method as a modular, black-box tool within our framework. 
+
+Lemma 4.5. There exists a randomized algorithm that runs in polynomial time and, given oracle access to a matroid 
+
+M = ( X, I), a monotone submodular function f : 2 X →
+
+R+ (accessible via a value oracle), and a fractional vector 
+
+y ∈ P (M), returns an independent set S ∈ I such that, with high probability, 
+
+f (S) ≥ (1 − o(1)) · E[f (ˆ y)] ,
+
+where ˆy ⊆ X is a random subset in which each element 
+
+j ∈ X is included independently with probability yj . The 
+
+o(1) term can be made polynomially small in M = |X|.
+
+This result implies that any fractional solution y ∈ P (M)
+
+can be efficiently converted into an integral solution with only a negligible loss in expected function value. Therefore, it suffices to consider the continuous optimization problem 
+
+max {F (y) : y ∈ P (M)} ,
+
+where F denotes the multilinear extension of f , in-stead of directly optimizing the discrete problem 
+
+max {f (S) : S ∈ I} .
+
+Resilient Approximation via Pipage Rounding. Let y ∈
+
+P (M) be the fractional solution obtained by the Continuous Greedy Algorithm with noisy marginal estimates bounded by ε. Then, the multilinear extension satisfies 
+
+F (y) ≥
+
+
+
+1 − 1
+
+e
+
+
+
+f (OPT) − (4 M N + 2 M )ε. 
+
+Applying pipage rounding (Lemma 4.5) to y produces an integral independent set S ∈ I such that 
+
+f (S) ≥ (1 − o(1)) F (y)
+
+≥
+
+
+
+1 − 1
+
+e − o(1) 
+
+
+
+f (OPT) − (4 M N + 2 M ) ε. (4) where o(1) is the discretization error of the continuous greedy process and can be made arbitrarily small as M →∞.
+
+Remark 5. For noiseless oracles, the additive ε term van-ishes, recovering the classical 1 − 1/e − o(1) approximation guarantee. 6Multi-Agent Combinatorial-Multi-Armed-Bandit framework for the Submodular Welfare Problem under Bandit Feedback 
+
+# 5. Algorithmic Framework and Analysis 
+
+5.1. MA-CMAB for Social Welfare: Offline to Stochastic Algorithm 2 SUBMODULAR WELFARE MA-CMAB ALGORITHM 
+
+Require: Horizon T , ground set X, (α, δ, η )-resilient algo-rithm Alg .1: Set m ←                                                      
+
+> lδ2/3T2/3M2/3(log T)1/3
+> 2η2/3
+> m
+> 2: Exploration Phase:
+> 3: while Alg queries action S(m-times) do
+> 4: for i= 1 to Magents do
+> 5: Select set S, observe wij (si)′s∀i’s 6: end for
+> 7: Compute ¯wi(si) = 1
+> m
+> Pmk=1 wi,j (si)∀i’s 8: Compute ¯f(S) = PMi=1 wi(si)
+> 9: Return ¯f(S)to Alg
+> 10: end while
+> 11: Exploitation Phase:
+> 12: Let S←output of A
+> 13: while t≤Tdo
+> 14: Play S
+> 15: end while
+
+The proposed MA-CMAB algorithm 2, addresses the com-plex problem of multi-agent allocation under submodular social welfare in a stochastic setting through a principled offline-to-online reduction. The algorithm is divided into two phases: an exploration phase , in which empirical es-timates are collected over m =
+
+l δ2/3T 2/3M 2/3(log T )1/3
+
+> 2η2/3
+
+m
+
+rounds, and an exploitation phase , where the algorithm commits to a partition S = {s1, . . . , s M } returned by a 
+
+(α, δ, η )-resilient offline oracle Alg . During exploration, each queried action S is evaluated across agents by observ-ing stochastic rewards wij (Si), and the corresponding esti-mates ¯wi(si) and ¯f (S) are averaged and passed back to Alg .This mechanism enables robust selection of a high-welfare allocation using offline optimization over empirical means. The design draws inspiration from the ETC procedure for non-combinatorial bandits (Slivkins et al., 2019), extending it to a multi-agent, submodular, and combinatorial domain. The regret analysis is structured around a high-probability “clean event” E, where empirical estimates concentrate around their true means (as shown in Theorem 6.2), and a low-probability “unclean event,” whose regret contribution is bounded separately. Under the clean event, the output of Alg yields an (α, δ )-approximate allocation, ensuring near-optimal Utilitarian Social Welfare (USW) during the exploitation phase. Our setting is more challenging than prior work such as C-ETC (Nie et al., 2023), due to the need to (i) select disjoint subsets of items for multiple agents, (ii) optimize a monotone submodular utility function under partitioning constraints, and (iii) operate without simple marginal gain feedback. The resulting allocation problem is NP-hard even offline, as it generalizes the discrete sub-modular partitioning problem. Consequently, our frame-work must address the more challenging task of identifying optimal agent-item allocations based on stochastic reward feedback. This positions the MA-CMAB algorithm as a significant advancement for online social welfare maximiza-tion in structured, uncertain, and combinatorial multi-agent environments. 
+
+# 6. Offline to Stochastic Regret 
+
+6.1. Notation Overview 
+
+We consider a horizon of T rounds, M agents, and N items. A feasible action A is an allocation obeying the problem constraints (e.g., a partition of items to agents). At round 
+
+t, playing A yields a bounded stochastic reward ft(A) ∈
+
+[0 , 1] with mean f (A) := E[ft(A)] . During exploration, the algorithm selects η ∈ N actions S1, . . . , S η and plays each action m ∈ N times; the empirical mean is ¯f (Si) := 
+
+> 1
+> m
+
+Pmℓ=1 fti,ℓ (Si). Let Ti be the time index by which action 
+
+Si has been completed m plays, and set T0 = 0 , Tη+1 ≤ T .We use the confidence radius 
+
+rad := 
+
+r log T
+
+2m . (5) The offline subroutine is (α, δ )-robust in the sense that if the inputs are uniformly within ϵ of the truth on all actions it evaluates, then the returned allocation S satisfies 
+
+E[f (S)] ≥ α f (OPT) − δ ϵ. (6) If the final score aggregates M agentwise terms via a 1-Lipschitz map, we set C := M and ϵ = C · rad ; otherwise 
+
+C := 1 and ϵ = rad . The α-regret is 
+
+R(T ) := 
+
+> T
+
+X
+
+> t=1
+
+ α f (OPT) − ft(St). (7) 
+
+6.2. Clean Event and Concentration 
+
+We define a high-probability event under which all empiri-cal estimates used by the offline subroutine are uniformly accurate. 
+
+Definition 6.1 (Clean event) . Define 
+
+E := 
+
+> η
+
+\
+
+> j=1
+
+ ¯f (Sj ) − f (Sj ) < rad . (8) In the aggregated model use the threshold C rad with the same rad as in (5). 
+
+Lemma 6.2 (Probability of the clean event) . With rad as in 
+
+(5) , we have 
+
+P(E) ≥ 1 − 2ηT . (9) 
+
+Proof sketch. Lemma 6.2 follows from Hoeffding’s inequal-ity and a union bound over explored actions. A complete proof is provided in Appendix B. 7Multi-Agent Combinatorial-Multi-Armed-Bandit framework for the Submodular Welfare Problem under Bandit Feedback 
+
+6.3. Robust Approximation Transfer Under Clean Estimates: 
+
+Under the clean event, uniform concentration ensures that the offline oracle’s approximation guarantee transfers to the true objective up to an additive error. 
+
+Lemma 6.3 (Robust transfer) . Let ˜f be the empirical objec-tive and suppose ∥ ˜f −f ∥∞ ≤ ϵ on all actions the subroutine evaluates. If the subroutine is (α, δ, η )-robust as in (6) , then for its output S,
+
+E[f (S)] ≥ αf (OPT) − δ ϵ. (10) 
+
+In particular, on E with ϵ = C rad ,
+
+αf (OPT) − E[f (S)] ≤ δ C rad . (11) 
+
+Proof sketch. The result follows directly from the (α, δ )-robustness definition applied to the empirical objective. Full details are provided in Section C. 
+
+6.4. Regret Decomposition: 
+
+We first bound the regret incurred during exploration and exploitation separately, and then combine these bounds to obtain a conditional regret guarantee that can be optimized by an appropriate choice of the exploration length. 
+
+Lemma 6.4 (Exploration bound) . During exploration, each of the η actions is played m times and ft(·) ∈ [0 , 1] . Hence, 
+
+> η
+
+X
+
+> i=1
+
+m  αf (OPT) − E[f (Si)]  ≤ η m. (12) 
+
+Proof sketch. Lemma 6.4 follows from bounded rewards. For any i, αf (OPT) − E[f (Si)] ≤ α · 1 − 0 ≤ 1. Summing 
+
+m plays per Si, then over i = 1 , . . . , η , yields (12) . The detailed argument is deferred to Section D. 
+
+Lemma 6.5 (Exploitation bound under E). Conditioned on 
+
+E, let S be the exploitation action returned by the subroutine. Then 
+
+> T
+
+X 
+
+> t=Tη+1
+
+ αf (OPT) − E[f (S)]  ≤ T · δ C rad . (13) 
+
+Proof sketch. By Theorem 6.3, on E we have αf (OPT) −
+
+E[f (S)] ≤ δ C rad per step. The exploitation phase has length at most T , which gives (13) . Detailed proofs appear in Appendix D. 
+
+Theorem 6.6 (Conditional regret bound) . With rad as in 
+
+(5) , the conditional expected regret satisfies 
+
+E[R(T ) | E ] ≤ ηm 
+
+|{z} 
+
+> exploration
+
++ T δ C 
+
+r log T
+
+2m| {z }
+
+> exploitation
+
+. (14) 
+
+Proof sketch. The proof follows by conditioning on E and decomposing the regret into exploration and exploitation phases. See Appendix E. 
+
+Proposition 6.7 (Optimal exploration length m) . Let 
+
+g(m) := ηm + T δC 
+
+r log T
+
+2 m−1/2 (m > 0) .
+
+(15) 
+
+Then the minimizer satisfies 
+
+m⋆ =
+
+ T δC 
+
+2η
+
+r log T
+
+2
+
+2/3
+
+. (16) 
+
+Proof sketch. The result follows from a convexity argument. A full derivation appears in Appendix F. 
+
+Corollary 6.8 (conditional regret at m⋆). With m = ⌈m⋆⌉,the conditional regret obeys 
+
+E[R(T ) | E ] = O
+
+
+
+δ2/3 η1/3 C2/3 T 2/3 log( T )1/3
+
+.
+
+(17) 
+
+Proof sketch. Substitute (16) into (14) and simplify. 
+
+6.5. Final MA-CMAB Regret Bound for SWP 
+
+We remove the conditioning on the clean event using total expectation and obtain the final MA-CMAB regret bound. 
+
+Theorem 6.9 (MA-CMAB regret for SWP) . With m =
+
+⌈m⋆⌉ and E as in (8) ,
+
+E[R(T )] = O
+
+
+
+δ2/3 η1/3 C2/3 T 2/3 log( T )1/3
+
+. (18) 
+
+Proof sketch. The result follows from the conditional bound, the optimal choice of m, and a union bound over the complement of the clean event. Full details appear in Section G. 
+
+# 7. Conclusion 
+
+We introduced MA-CMAB, a unified framework for fair division of indivisible goods with submodular valuations under bandit feedback, and established robustness of offline welfare maximization under noisy value oracles. Leverag-ing this resilience, we obtained an online regret guarantee of ˜O(T 2/3) against a (1 − 1/e ) approximation benchmark, matching the best known achievable rate for monotone sub-modular CMAB with bandit feedback. An important open direction is to characterize lower bounds that explicitly cap-ture the multi-agent dimension. Future work includes tight-ening constants, reducing oracle complexity, and extending the framework to richer feedback and non-stationary set-tings. 8Multi-Agent Combinatorial-Multi-Armed-Bandit framework for the Submodular Welfare Problem under Bandit Feedback 
+
+# References 
+
+Agarwal, M., Aggarwal, V., and Azizzadenesheli, K. Multi-agent multi-armed bandits with limited communication. 
+
+Journal of Machine Learning Research , 23(212):1–24, 2022. Ageev, A. A. and Sviridenko, M. I. Pipage rounding: A new method of constructing algorithms with proven perfor-mance guarantee. Journal of Combinatorial Optimization ,8(3):307–328, 2004. Anandkumar, A., Michael, N., Tang, A. K., and Swami, A. Distributed algorithms for learning and cognitive medium access with logarithmic regret. IEEE Journal on Selected Areas in Communications , 29(4):731–745, 2011. Avner, O. and Mannor, S. Concurrent bandits and cognitive radio networks. In Joint European Conference on Ma-chine Learning and Knowledge Discovery in Databases ,pp. 66–81. Springer, 2014. Bistritz, I. and Leshem, A. Distributed multi-player bandits-a game of thrones approach. Advances in Neural Infor-mation Processing Systems , 31, 2018. Boursier, E. and Perchet, V. Sic-mmab: Synchronisation involves communication in multiplayer multi-armed ban-dits. Advances in Neural Information Processing Systems ,32, 2019. Buccapatnam, S., Tan, J., and Zhang, L. Information sharing in distributed stochastic bandits. In 2015 IEEE Confer-ence on Computer Communications (INFOCOM) , pp. 2605–2613. IEEE, 2015. Buchbinder, N., Feldman, M., Seffi, J., and Schwartz, R. A tight linear time (1/2)-approximation for unconstrained submodular maximization. SIAM Journal on Computing ,44(5):1384–1402, 2015. Calinescu, G., Chekuri, C., P ´al, M., and Vondr ´ak, J. Max-imizing a submodular set function subject to a matroid constraint. In International Conference on Integer Pro-gramming and Combinatorial Optimization , pp. 182–196. Springer, 2007. Chakraborty, M., Chua, K. Y. P., Das, S., and Juba, B. Coor-dinated versus decentralized exploration in multi-agent multi-armed bandits. In IJCAI , pp. 164–170, 2017. Chawla, R., Sankararaman, A., Ganesh, A., and Shakkottai, S. The gossiping insert-eliminate algorithm for multi-agent bandits. In Chiappa, S. and Calandra, R. (eds.), 
+
+Proceedings of the Twenty Third International Conference on Artificial Intelligence and Statistics , volume 108 of 
+
+Proceedings of Machine Learning Research , pp. 3471– 3481. PMLR, 26–28 Aug 2020. Chawla, R., Sankararaman, A., and Shakkottai, S. Multia-gent low-dimensional linear bandits. IEEE Transactions on Automatic Control , 68(5):2667–2682, 2022. Chawla, R., Vial, D., Shakkottai, S., and Srikant, R. Collab-orative multi-agent heterogeneous multi-armed bandits. In International Conference on Machine Learning , pp. 4189–4217. PMLR, 2023. Dakdouk, H., F ´eraud, R., Laroche, R., Varsier, N., and Maill ´e, P. Collaborative exploration and exploitation in massively multi-player bandits. 2021. Dubey, A. and Pentland, A. Differentially-private federated linear bandits. Advances in Neural Information Process-ing Systems , 33:6003–6014, 2020. Dubey, A. et al. Kernel methods for cooperative multi-agent contextual bandits. In International Conference on Machine Learning , pp. 2740–2750. PMLR, 2020. Elgabli, A., Issaid, C. B., Bedi, A. S., Rajawat, K., Ben-nis, M., and Aggarwal, V. Fednew: A communication-efficient and privacy-preserving newton-type method for federated learning. In International conference on ma-chine learning , pp. 5861–5877. PMLR, 2022. Feige, U. and Vondr ´ak, J. The submodular welfare problem with demand queries. Theory of Computing , 6(1):247– 290, 2010. Fisher, M., Nemhauser, G., and Wolsey, L. An analysis of approximations for maximizing submodular set func-tions—ii. Mathematical Programming Studies , 8:73–87, 1978. Fourati, F., Aggarwal, V., Quinn, C., and Alouini, M.-S. Randomized greedy learning for non-monotone stochas-tic submodular maximization under full-bandit feedback. In International Conference on Artificial Intelligence and Statistics , pp. 7455–7471. PMLR, 2023. Fourati, F., Alouini, M.-S., and Aggarwal, V. Federated combinatorial multi-agent multi-armed bandits. In Pro-ceedings of the 41st International Conference on Machine Learning , pp. 13760–13782, 2024a. Fourati, F., Kharrat, S., Aggarwal, V., Alouini, M.-S., and Canini, M. Filfl: Client filtering for optimized client participation in federated learning. In ECAI 2024 , pp. 2460–2467. IOS Press, 2024b. Fourati, F., Quinn, C. J., Alouini, M.-S., and Aggarwal, V. Combinatorial stochastic-greedy bandit. In Proceed-ings of the AAAI Conference on Artificial Intelligence ,volume 38, pp. 12052–12060, 2024c. 9Multi-Agent Combinatorial-Multi-Armed-Bandit framework for the Submodular Welfare Problem under Bandit Feedback 
+
+Hillel, E., Karnin, Z. S., Koren, T., Lempel, R., and Somekh, O. Distributed exploration in multi-armed bandits. Ad-vances in Neural Information Processing Systems , 26, 2013. Hosseinalipour, S., Brinton, C. G., Aggarwal, V., Dai, H., and Chiang, M. From federated to fog learning: Dis-tributed machine learning over heterogeneous wireless networks. IEEE Communications Magazine , 58(12):41– 47, 2021. Kalathil, D., Nayyar, N., and Jain, R. Decentralized learning for multiplayer multiarmed bandits. IEEE Transactions on Information Theory , 60(4):2331–2345, 2014. Khot, S., Lipton, R. J., Markakis, E., and Mehta, A. Inap-proximability results for combinatorial auctions with sub-modular utility functions. In International Workshop on Internet and Network Economics , pp. 92–101. Springer, 2005. Kolla, R. K., Jagannathan, K., and Gopalan, A. Collab-orative learning of stochastic bandits over a social net-work. IEEE/ACM Transactions on Networking , 26(4): 1782–1795, 2018. Kone ˇcn `y, J., McMahan, H. B., Yu, F. X., Richt ´arik, P., Suresh, A. T., and Bacon, D. Federated learning: Strate-gies for improving communication efficiency. arXiv preprint arXiv:1610.05492 , 2016. Korda, N., Szorenyi, B., and Li, S. Distributed clustering of linear bandits in peer to peer networks. In International conference on machine learning , pp. 1301–1309. PMLR, 2016. Lalitha, A. and Goldsmith, A. Bayesian algorithms for de-centralized stochastic bandits. IEEE Journal on Selected Areas in Information Theory , 2(2):564–583, 2021. Lehmann, B., Lehmann, D., and Nisan, N. Combinatorial auctions with decreasing marginal utilities. In Proceed-ings of the 3rd ACM conference on Electronic Commerce ,pp. 18–28, 2001. Li, T., Sahu, A. K., Zaheer, M., Sanjabi, M., Talwalkar, A., and Smith, V. Federated optimization in heterogeneous networks. Proceedings of Machine learning and systems ,2:429–450, 2020. Liu, K. and Zhao, Q. Distributed learning in multi-armed bandit with multiple players. IEEE transactions on signal processing , 58(11):5667–5681, 2010. Liu, L. T., Mania, H., and Jordan, M. Competing bandits in matching markets. In International Conference on Artifi-cial Intelligence and Statistics , pp. 1618–1628. PMLR, 2020. Mansour, Y., Slivkins, A., and Wu, Z. S. Competing bandits: Learning under competition. arXiv preprint arXiv:1702.08533 , 2017. Mart ´ınez-Rubio, D., Kanade, V., and Rebeschini, P. De-centralized cooperative stochastic bandits. Advances in Neural Information Processing Systems , 32, 2019. McMahan, B., Moore, E., Ramage, D., Hampson, S., and y Arcas, B. A. Communication-efficient learning of deep networks from decentralized data. In Artificial intelli-gence and statistics , pp. 1273–1282. PMLR, 2017. Mirrokni, V., Schapira, M., and Vondr ´ak, J. Tight information-theoretic lower bounds for welfare maximiza-tion in combinatorial auctions. In Proceedings of the 9th ACM conference on Electronic commerce , pp. 70–77, 2008. Mirzasoleiman, B., Badanidiyuru, A., Karbasi, A., Vondr ´ak, J., and Krause, A. Lazier than lazy greedy. In Proceed-ings of the AAAI Conference on Artificial Intelligence ,volume 29, 2015. Nemhauser, G. L., Wolsey, L. A., and Fisher, M. L. An analysis of approximations for maximizing submodular set functions—i. Mathematical programming , 14(1):265– 294, 1978. Niazadeh, R., Golrezaei, N., Wang, J. R., Susan, F., and Badanidiyuru, A. Online learning via offline greedy algo-rithms: Applications in market design and optimization. In Proceedings of the 22nd ACM Conference on Eco-nomics and Computation , pp. 737–738, 2021. Nie, G., Agarwal, M., Umrawal, A. K., Aggarwal, V., and Quinn, C. J. An explore-then-commit algorithm for sub-modular maximization under full-bandit feedback. In Un-certainty in Artificial Intelligence , pp. 1541–1551. PMLR, 2022. Nie, G., Nadew, Y. Y., Zhu, Y., Aggarwal, V., and Quinn, C. J. A framework for adapting offline algorithms to solve combinatorial multi-armed bandit problems with bandit feedback. In International Conference on Machine Learning , pp. 26166–26198. PMLR, 2023. Pokhriyal, S., Jain, S., Ghalme, G., and Aggarwal, V. Any-time fairness guarantees in stochastic combinatorial mabs: A novel learning framework. In Proceedings of the 24th International Conference on Autonomous Agents and Multiagent Systems , pp. 1660–1669, 2025. R ´eda, C., Vakili, S., and Kaufmann, E. Near-optimal collab-orative learning in bandits. Advances in Neural Informa-tion Processing Systems , 35:14183–14195, 2022. 10 Multi-Agent Combinatorial-Multi-Armed-Bandit framework for the Submodular Welfare Problem under Bandit Feedback 
+
+Rosenski, J., Shamir, O., and Szlak, L. Multi-player bandits– a musical chairs approach. In International Conference on Machine Learning , pp. 155–163. PMLR, 2016. Sankararaman, A., Ganesh, A., and Shakkottai, S. Social learning in multi agent multi armed bandits. Proceedings of the ACM on Measurement and Analysis of Computing Systems , 3(3):1–35, 2019. Shahrampour, S., Rakhlin, A., and Jadbabaie, A. Multi-armed bandits in multi-agent networks. In 2017 IEEE International Conference on Acoustics, Speech and Sig-nal Processing (ICASSP) , pp. 2786–2790. IEEE, 2017. Slivkins, A. et al. Introduction to multi-armed bandits. 
+
+Foundations and Trends® in Machine Learning , 12(1-2):1–286, 2019. Szorenyi, B., Busa-Fekete, R., Hegedus, I., Orm ´andi, R., Je-lasity, M., and K ´egl, B. Gossip-based distributed stochas-tic bandit algorithms. In International conference on machine learning , pp. 19–27. PMLR, 2013. Tekin, C. and Van Der Schaar, M. Distributed online learn-ing via cooperative contextual bandits. IEEE transactions on signal processing , 63(14):3700–3714, 2015. Vondr ´ak, J. Optimal approximation for the submodular welfare problem in the value oracle model. In Proceed-ings of the fortieth annual ACM symposium on Theory of computing , pp. 67–74, 2008. Wolsey, L. A. An analysis of the greedy algorithm for the submodular set covering problem. Combinatorica , 2(4): 385–393, 1982. Zhu, Z., Zhu, J., Liu, J., and Liu, Y. Federated bandit: A gossiping approach. Proceedings of the ACM on Mea-surement and Analysis of Computing Systems , 5(1):1–29, 2021. 11 Multi-Agent Combinatorial-Multi-Armed-Bandit framework for the Submodular Welfare Problem under Bandit Feedback 
+
+# Appendix 
+
+# A. Resilience of Continuous Greedy under Noisy Oracles 
+
+The proofs of Lemmas 4.3 and 4.4 from the main text are provided below for completeness. 
+
+Lemma A.1. Let y ∈ [0 , 1] X be a fractional solution and let R denote a random set corresponding to ˆy, obtained by sampling each element j ∈ X independently with probability yj . Let OPT = max S∈I f (S). If all oracle evaluations are noisy with additive error at most ε, i.e. 
+
+| ˆf (S) − f (S)| ≤ ε ∀S ⊆ X, 
+
+then, the true optimum satisfies the following upper bound: 
+
+f (OPT ) ≤ F (y) + max 
+
+> I∈I
+
+X
+
+> j∈I
+
+E[fR(j)] + (4 M N + 2 M )ε, 
+
+where: 
+
+• F (y) is the true multilinear extension of f evaluated at y,
+
+• fR(j) := f (R ∪ { j}) − f (R) is the true marginal contribution of j under random set R,
+
+• and I is the family of feasible integral solutions (e.g., a partition matroid). Proof. Fix an optimal solution OPT ∈ I . By submodularity, for any R:
+
+f (OPT) ≤ f (R) + X
+
+> j∈OPT
+
+ f (R ∪ { j}) − f (R).
+
+Taking expectation over random R ∼ y, we obtain 
+
+f (OPT) ≤ E[f (R)] + X
+
+> j∈OPT
+
+E[fR(j)] .
+
+Since E[f (R)] = F (y), this gives 
+
+f (OPT) ≤ F (y) + max 
+
+> I∈I
+
+X
+
+> j∈I
+
+E[fR(j)] . (19) 
+
+Relating true and noisy multilinear extension: Because each evaluation of f (S) may deviate by at most M ε . For each agent the noisy value oracle ˆwi return estimates of exact value oracle wi(si) with bounded error: 
+
+| ˆwi(si) − wi(si)| ≤ ε for all si ∈ S, S ⊆ Q. 
+
+| ˆf (S) − f (S)| ≤ | ˆF (S) − F (S)| ≤ M ε for all S ⊆ Q. 
+
+Then for any feasible fractional allocation, 
+
+|F (y) − ˆF (y)| ≤ M ε. 
+
+Thus, 
+
+F (y) ≤ ˆF (y) + M ε. (20) 
+
+Relating true and noisy marginals: For any marginal contribution, 
+
+ f (R ∪ { j}) − f (R),
+
+if both oracle calls incur error at most ε, then 
+
+  ˆf (R ∪ { j}) − ˆf (R) −  f (R ∪ { j}) − f (R) ≤ 2ε. 
+
+12 Multi-Agent Combinatorial-Multi-Armed-Bandit framework for the Submodular Welfare Problem under Bandit Feedback 
+
+Hence, 
+
+E[fR(j)] ≤ E[ ˆfR(j)] + 2 ε. 
+
+Summing over at most N items per block and M blocks yields 
+
+X
+
+> j∈I
+
+E[fR(j)] ≤ X
+
+> j∈I
+
+E[ ˆfR(j)] + 2 M N ε. (21) Plugging (20) and (21) into (19), we obtain 
+
+f (OPT) ≤ ˆF (y) + M ε + max 
+
+> I∈I
+
+X
+
+> j∈I
+
+E[ ˆfR(j)] + 2 M N ε 
+
+!
+
+.
+
+Simplifying, 
+
+f (OPT) ≤ ˆF (y) + max 
+
+> I∈I
+
+X
+
+> j∈I
+
+E[ ˆfR(j)] + (2 M N + M )ε. 
+
+We now reverse the inequalities and substitute, in order to express a fully clean bound in terms of true values F (y) and 
+
+fR(j) from Equations (20) and (21), we obtain: 
+
+f (OPT) ≤ F (y) + X
+
+> j∈I
+
+E[fR(j)] + (4 M N + 2 M )ε. 
+
+Maximizing over all feasible sets I ∈ I , we conclude: 
+
+f (OPT) ≤ F (y) + max 
+
+> I∈I
+
+X
+
+> j∈I
+
+E[fR(j)] + (4 M N + 2 M )ε. 
+
+This completes the proof. 
+
+Lemma A.2 (Noisy Resilient Bound for f ). Let y ∈ P (M) be the fractional solution returned by the Continuous Greedy Algorithm using noisy marginal estimates with additive error ε. Let S ∈ I be the integral independent set obtained by pipage rounding. Then, with high probability, 
+
+f (S) ≥ (1 − o(1)) F (y) (22) 
+
+≥
+
+
+
+1 − 1
+
+e − o(1) 
+
+
+
+f (OPT) − (4 M N + 2 M )ε. (23) 
+
+where F (y) is the multilinear extension of f evaluated at y, and the o(1) term can be made arbitrarily small in the problem size N .Proof Sketch. Start from a fractional solution y(t). Let R(t) be a random set drawn according to y(t). Define the increment 
+
+∆( t) = y(t + λ) − y(t) and let D(t) denote the corresponding set. We want to bound 
+
+F (y(t + λ)) − F (y(t)) . (24) 
+
+Monotonicity bound. Since R(t + λ) stochastically dominates R(t), we obtain 
+
+F (y(t + λ)) − F (y(t)) ≥ E[f (R(t) ∪ D(t)) − f (R(t))] . (25) 
+
+Expansion via singleton contributions. Because λ is small, with high probability only singletons are added. Thus, 
+
+E[f (R(t) ∪ D(t)) − f (R(t))] = X
+
+> j
+
+Pr[ D(t) = {j}] · E[fR(t)(j)] . (26) 13 Multi-Agent Combinatorial-Multi-Armed-Bandit framework for the Submodular Welfare Problem under Bandit Feedback 
+
+Use of maximum-weight independent set. I(t) is chosen as the maximum-weight independent set under the matroid, using weights ωj (t). Therefore, 
+
+F (y(t + λ)) − F (y(t)) ≥ λ(1 − M λ ) X
+
+> j∈I(t)
+
+E[fR(t)(j)] . (27) 
+
+Noisy marginal estimates. We only observe noisy weights ˆωj (t) with 
+
+ˆωj (t) = ωj (t) ± ε. (28) By Chernoff bounds (given (M N )5 samples), the estimation error in ˆωj (t) is small. Replacing true marginals with noisy ones introduces an additive error of at most 2M N ελ .Combining the above, we obtain 
+
+F (y(t + λ)) − F (y(t)) ≥ λ(1 − M λ )
+
+
+
+f (OPT) − F (y(t)) − (4 M N + 2 M )ε
+
+
+
+. (29) 
+
+Optimality Gap. Let 
+
+G(t) = f (OPT) − F (y(t)) (30) denote the gap between the optimal value and the multilinear extension. The recurrence becomes 
+
+G(t + λ) ≤ G(t) (1 − λ(1 − M λ )) + (4 M N + 2 M )λ(1 − M λ ) ε
+
+= G(t)  1 − (λ − M λ 2) + (4 M N + 2 M )( λ − M λ 2) ε. (31) Define 
+
+ρ = λ(1 − M λ ), (32) which captures the effective progress factor per iteration. Then 
+
+G(t + λ) ≤ G(t)(1 − ρ) + (4 M N + 2 M )ρ ε. (33) 
+
+Unroll recurrence. Over k = 1 /λ steps, 
+
+G(1) ≤ (1 − ρ)kG(0) + 
+
+> k−1
+
+X
+
+> i=0
+
+(1 − ρ)i(4 M N + 2 M )ρε. (34) Since (1 − ρ)k ≤ e−ρk = e−(1 −M λ ) ≤ 1 
+
+> e
+
++ o(1) and the geometric sum is at most 1, we obtain 
+
+G(1) ≤ 1
+
+e f (OPT) + (4 M N + 2 M )ε. (35) 
+
+Final bound. Hence, 
+
+F (y(1)) ≥
+
+
+
+1 − 1
+
+e
+
+
+
+f (OPT) − (4 M N + 2 M )ε. (36) 
+
+# B. Concentration and the Clean Event 
+
+Lemma B.1 (Hoeffding’s inequality) . Let X1, . . . , X m be independent random variables taking values in [0 , 1] , with common mean μ, and let 
+
+¯X := 1
+
+m
+
+> m
+
+X
+
+> k=1
+
+Xk.
+
+Then for any ϵ > 0,
+
+Pr  | ¯X − μ| ≥ ϵ ≤ 2 exp( −2mϵ 2).
+
+14 Multi-Agent Combinatorial-Multi-Armed-Bandit framework for the Submodular Welfare Problem under Bandit Feedback 
+
+Lemma B.2 (Probability of the clean event) . Let 
+
+rad := 
+
+r log T
+
+2m , E := 
+
+> η
+
+\
+
+> j=1
+
+n
+
+| ¯f (Sj ) − f (Sj )| < C rad 
+
+o
+
+.
+
+Then 
+
+Pr( E) ≥ 1 − 2ηT .
+
+Proof. Fix an explored action Sj . By construction, ¯f (Sj ) is the empirical mean of m independent random variables in [0 , 1] 
+
+with expectation f (Sj ). Applying Lemma B.1 with ϵ = rad yields 
+
+Pr  | ¯f (Sj ) − f (Sj )| ≥ rad  ≤ 2 exp( −2mrad 2) = 2
+
+T .
+
+If the objective aggregates C bounded components, then by the triangle inequality, 
+
+| ¯f (Sj ) − f (Sj )| ≤ 
+
+> C
+
+X
+
+> c=1
+
+| ¯fc(Sj ) − fc(Sj )|.
+
+Applying Hoeffding’s inequality to each component and union bounding over the C components yields 
+
+Pr  | ¯f (Sj ) − f (Sj )| ≥ C rad  ≤ 2
+
+T C2 ≤ 2
+
+T .
+
+Finally, applying a union bound over the η explored actions gives 
+
+Pr( ¯E) ≤
+
+> η
+
+X
+
+> j=1
+
+2
+
+T = 2ηT ,
+
+which completes the proof. 
+
+# C. Robust Approximation Transfer 
+
+Lemma C.1 (Robust transfer) . Let ˜f be an empirical objective satisfying 
+
+∥ ˜f − f ∥∞ := sup 
+
+> A
+
+| ˜f (A) − f (A)| ≤ ϵ
+
+over all actions evaluated by the offline subroutine. If the subroutine is (α, δ )-robust, then its output S satisfies 
+
+E[f (S)] ≥ αf (OPT) − δϵ. 
+
+Proof. By the definition of (α, δ )-robustness, whenever the input objective ˜f deviates uniformly from the true objective f
+
+by at most ϵ, the subroutine returns an action S such that 
+
+f (S) ≥ αf (OPT) − δϵ. 
+
+If the subroutine is randomized, this inequality holds for every realization of its internal randomness. Taking expectation over this randomness preserves the inequality, yielding the stated bound. 
+
+# D. Exploration and Exploitation Bounds 
+
+Lemma D.1 (Exploration bound) . During the exploration phase, 
+
+> η
+
+X
+
+> i=1
+
+m αf (OPT) − E[f (Si)]  ≤ ηm. 
+
+15 Multi-Agent Combinatorial-Multi-Armed-Bandit framework for the Submodular Welfare Problem under Bandit Feedback 
+
+Proof. For any action A, since rewards are bounded in [0 , 1] ,
+
+0 ≤ f (A) ≤ 1 and 0 ≤ f (OPT) ≤ 1.
+
+Therefore, 
+
+αf (OPT) − E[f (A)] ≤ α ≤ 1.
+
+Each explored action Si is played exactly m times, contributing at most m regret. Summing over all η explored actions yields the claim. 
+
+Lemma D.2 (Exploitation bound under E). Conditioned on the clean event E, the exploitation action S satisfies 
+
+> T
+
+X 
+
+> t=Tη+1
+
+ αf (OPT) − E[f (S)]  ≤ T δC rad .
+
+Proof. On the event E, the empirical objective satisfies ∥ ˜f − f ∥∞ ≤ C rad . Applying Lemma C.1 with ϵ = C rad gives 
+
+αf (OPT) − E[f (S)] ≤ δC rad 
+
+for each exploitation round. Since the exploitation phase lasts for at most T rounds, summing over time yields the result. 
+
+# E. Conditional Regret 
+
+Theorem E.1 (Conditional regret) . Conditioned on the clean event E, the expected α-regret satisfies 
+
+E[R(T ) | E ] ≤ ηm 
+
+|{z} 
+
+> exploration
+
++ T δ C 
+
+r log T
+
+2m| {z }
+
+> exploitation
+
+. (37) 
+
+Proof. Recall that the α-regret is defined as 
+
+R(T ) = 
+
+> T
+
+X
+
+> t=1
+
+ αf (OPT) − ft(St).
+
+Conditioning on the event E and using linearity of expectation, we have 
+
+E[R(T ) | E ] = 
+
+> T
+
+X
+
+> t=1
+
+E[αf (OPT) − ft(St) | E ] . (38) Let Tη = ηm denote the last round of the exploration phase. We decompose the sum in (38) into two disjoint intervals, corresponding to exploration and exploitation: 
+
+E[R(T ) | E ] = 
+
+> Tη
+
+X
+
+> t=1
+
+E[αf (OPT) − ft(St) | E ] + 
+
+> T
+
+X 
+
+> t=Tη+1
+
+E[αf (OPT) − ft(St) | E ] . (39) We first bound the exploration contribution. During exploration, each of the η actions S1, . . . , S η is played exactly m times. By Lemma D.1, for each explored action Si,
+
+X 
+
+> t:St=Si
+
+E[αf (OPT) − ft(St) | E ] ≤ m. 
+
+Summing over all i ∈ [η] yields Tη
+
+X
+
+> t=1
+
+E[αf (OPT) − ft(St) | E ] ≤ ηm. (40) 16 Multi-Agent Combinatorial-Multi-Armed-Bandit framework for the Submodular Welfare Problem under Bandit Feedback 
+
+We next bound the exploitation contribution. Let S denote the action selected by the offline subroutine at the end of the exploration phase. By Lemma D.2, conditioned on E, the per-round expected regret satisfies 
+
+E[αf (OPT) − ft(S) | E ] ≤ δC rad for all t > T η .
+
+Since the exploitation phase lasts for at most T − Tη ≤ T rounds, we obtain 
+
+> T
+
+X 
+
+> t=Tη+1
+
+E[αf (OPT) − ft(S) | E ] ≤ T δC rad . (41) Combining (40) and (41) with the decomposition in (39), we conclude that 
+
+E[R(T ) | E ] ≤ ηm + T δC rad .
+
+Substituting rad = plog T / (2 m) completes the proof. 
+
+# F. Optimizing the Exploration Length 
+
+Define the function g : (0 , ∞) → R by 
+
+g(m) := ηm + T δC 
+
+r log T
+
+2 m−1/2.
+
+Proposition F.1 (Optimal exploration length) . The function g admits a unique global minimizer on (0 , ∞) given by 
+
+m⋆ = T δC 
+
+2η
+
+r log T
+
+2
+
+!2/3
+
+. (42) 
+
+Proof. Since g is continuously differentiable on (0 , ∞), any global minimizer must satisfy the first-order optimality condition. Computing the derivative, we obtain 
+
+g′(m) = η − 12 T δC 
+
+r log T
+
+2 m−3/2.
+
+Setting g′(m) = 0 and rearranging terms yields 
+
+m3/2 = T δC 
+
+2η
+
+r log T
+
+2 ,
+
+which has the unique solution 
+
+m⋆ = T δC 
+
+2η
+
+r log T
+
+2
+
+!2/3
+
+.
+
+To establish global optimality, we compute the second derivative, 
+
+g′′ (m) = 34 T δC 
+
+r log T
+
+2 m−5/2.
+
+Since g′′ (m) > 0 for all m > 0, the function g is strictly convex on (0 , ∞). Therefore, the stationary point m⋆ is the unique global minimizer of g.17 Multi-Agent Combinatorial-Multi-Armed-Bandit framework for the Submodular Welfare Problem under Bandit Feedback 
+
+# G. Proof of the MA-CMAB Regret Bound for SWP 
+
+Theorem G.1 (MA-CMAB Regret for SWP) . With m = ⌈m⋆⌉,
+
+E[R(T )] = O
+
+
+
+δ2/3η1/3C2/3T 2/3 log( T )1/3
+
+.
+
+Proof. Let E denote the clean event defined in Lemma B.2. By the law of total expectation, 
+
+E[R(T )] = E[R(T ) | E ] Pr( E) + E[R(T ) | ¯E] Pr( ¯E). (43) We first bound the contribution of the clean event. By Theorem E.1, for any integer m ≥ 1,
+
+E[R(T ) | E ] ≤ ηm + T δC 
+
+r log T
+
+2m . (44) Choosing m = ⌈m⋆⌉, where m⋆ is defined in Lemma F.1, and substituting into (44) yields 
+
+E[R(T ) | E ] = O
+
+
+
+δ2/3η1/3C2/3T 2/3 log( T )1/3
+
+. (45) We next bound the contribution of the failure event ¯E. Since rewards are bounded in [0 , 1] , the instantaneous regret 
+
+αf (OPT) − ft(St) is at most 1 for every round t. Therefore, 
+
+R(T ) ≤ T almost surely on ¯E, (46) which implies 
+
+E[R(T ) | ¯E] ≤ T. 
+
+Moreover, Lemma B.2 gives 
+
+Pr( ¯E) ≤ 2ηT . (47) Combining these two bounds, we obtain 
+
+E[R(T ) | ¯E] Pr( ¯E) ≤ T · 2ηT = 2 η. (48) Substituting (45) and (48) into (43) yields 
+
+E[R(T )] ≤ O 
+
+
+
+δ2/3η1/3C2/3T 2/3 log( T )1/3
+
++ 2 η. 
+
+For polynomial horizons T and polynomially bounded η, the additive term 2η is asymptotically dominated by the leading term. Absorbing constants completes the proof. 
+
+# H. Application: Stochastic Combinatorial Auctions 
+
+We illustrate how stochastic combinatorial auctions fit naturally into the multi-agent combinatorial bandit (MA-CMAB) framework. Following the classical submodular welfare formulation (Vondr ´ak, 2008; Feige & Vondr ´ak, 2010), consider 
+
+M bidders (agents) and N indivisible items. Each bidder i is endowed with a monotone submodular valuation function 
+
+wi : 2 [N ] → [0 , 1] over item bundles. In each round, the auctioneer selects a feasible allocation, represented as a partition of items among bidders. The auctioneer observes only the realized social welfare, ft(S) = PMi=1 wi(si), where si denotes the bundle assigned to bidder i. Individual bidder utilities or marginal values are not revealed. When bidder valuations are accessible only through noisy value or demand queries, each query returns a stochastic estimate of the true valuation. This induces a full-bandit feedback model, where the auctioneer must learn near-optimal allocations solely from aggregate welfare observations. Accordingly, each bidder corresponds to an agent with a stochastic submodular reward function, and feasible allocations correspond to combinatorial actions subject to partition constraints. This setting is therefore an instance of the MA-CMAB problem studied in this paper, with regret measured relative to the optimal offline welfare benchmark. Our regret bounds quantify the learning cost incurred by the auctioneer when optimizing social welfare under noisy, bandit-style valuation access. 18

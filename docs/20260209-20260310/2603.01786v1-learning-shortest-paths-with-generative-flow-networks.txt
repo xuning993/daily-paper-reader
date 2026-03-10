@@ -1,0 +1,574 @@
+Title: Learning Shortest Paths with Generative Flow Networks
+
+URL Source: https://arxiv.org/pdf/2603.01786v1
+
+Published Time: Tue, 03 Mar 2026 03:28:15 GMT
+
+Number of Pages: 14
+
+Markdown Content:
+# Learning Shortest Paths with Generative Flow Networks 
+
+Nikita Morozov 1 Ian Maksimov 1 Daniil Tiapkin 2,3 Sergey Samsonov 11HSE University 2 CMAP, CNRS, École polytechnique 3 LMO, Université Paris-Saclay 
+
+## Abstract 
+
+In this paper, we present a novel learning frame-work for finding shortest paths in graphs utilizing Generative Flow Networks (GFlowNets). First, we examine theoretical properties of GFlowNets in non-acyclic environments in relation to shortest paths. We prove that, if the total flow is minimized, forward and backward policies traverse the envi-ronment graph exclusively along shortest paths between the initial and terminal states. Building on this result, we show that the pathfinding prob-lem in an arbitrary graph can be solved by training a non-acyclic GFlowNet with flow regularization. We experimentally demonstrate the performance of our method in pathfinding in permutation environ-ments and in solving Rubik’s Cubes. For the latter problem, our approach shows competitive results with state-of-the-art machine learning approaches designed specifically for this task in terms of the solution length, while requiring smaller search bud-get at test-time. 
+
+## 1 INTRODUCTION 
+
+Finding shortest paths in large discrete graphs is a funda-mental problem in artificial intelligence, underlying appli-cations in planning, routing, robotics, and combinatorial optimization [Hart et al., 1968, Gallo and Pallottino, 1988, Sutton et al., 1998, Schrijver et al., 2003, Madkour et al., 2017, Karur et al., 2021]. Classical methods such as Dijk-stra’s algorithm and A* provide complete and often optimal solutions when the graph can be explored and a suitable heuristic is available [Hart et al., 1968]. However, designing accurate heuristics is often challenging in high-dimensional spaces, and many domains of practical interest induce state spaces so large that even storing a meaningful fraction of 
+
+> Correspondence to: Nikita Morozov <nvmorozov@hse.ru>
+
+the graph is infeasible. In particular, this is the case for the combinatorial puzzles and planning problems whose tran-sition structure forms a Cayley graph [Cooperman et al., 1990], where the number of reachable configurations may grow factorially with problem size. As a result, modern work has focused on learning-based approaches that approx-imate distance-to-goal functions and combine them with heuristic search at test time. Notable examples include deep reinforcement learning methods for solving the Rubik’s Cube [McAleer et al., 2018, Agostinelli et al., 2019] and more recent advances on general permutation puzzles based on learning to estimate random walk distances and using the estimates to guide beam search [Chervov et al., 2025b]. Generative Flow Networks (GFlowNets), on the other hand, have emerged as a probabilistic framework for learning to sample compositional objects proportionally to a given reward function [Bengio et al., 2021], representing a syn-thesis of variational inference and reinforcement learning paradigms [Malkin et al., 2023, Zimmermann et al., 2023, Tiapkin et al., 2024, Deleu et al., 2024]. GFlowNets de-fine forward and backward policies over transitions in a directed acyclic graph, and enforce consistency between them via various objectives [Malkin et al., 2022, Bengio et al., 2023, Madan et al., 2023]. These models have found success in different areas within discrete domains, including molecule generation [Koziarski et al., 2024, Cretu et al., 2025], combinatorial optimization [Zhang et al., 2023, Kim et al., 2025], causal discovery [Manta et al., 2023, Atanack-ovic et al., 2024], Bayesian structure learning [Deleu et al., 2022, 2023], and Bayesian inference in large language mod-els [Hu et al., 2023]. Importantly for pathfinding, many environments of inter-est are cyclic: actions can be undone, and trajectories may revisit states. Recent works [Brunswic et al., 2024, Moro-zov et al., 2025] extend GFlowNets beyond acyclic gen-eration graphs to non-acyclic environments and highlight that, in this setting, the expected trajectory length becomes a key quantity controlling sampling efficiency and avoiding pathological cycling behavior. However, the structural im-
+
+> arXiv:2603.01786v1 [cs.LG] 2 Mar 2026
+
+plications of minimizing this quantity have not been fully analyzed in these works. In this paper, we establish a previously unexplored theo-retical connection between minimizing expected trajectory length in non-acyclic GFlowNets and finding shortest paths. Based on this connection, we show how GFlowNets can be utilized as a probabilistic learning framework for solv-ing general pathfinding problems. Our contributions can be summarized as follows: • We prove that, when the expected trajectory length is minimized, GFlowNet policies traverse the environ-ment graph only along shortest paths between the ini-tial and terminal states, assigning zero probability to all non-shortest trajectories. • Building on this characterization, we propose a con-structive reduction from shortest-path problems in ar-bitrary unweighted graphs to training a non-acyclic GFlowNet that minimizes its expected trajectory length. Unlike heuristic-based approaches that learn value functions to guide search [Agostinelli et al., 2019, Cher-vov et al., 2025b], our method directly aims to learn a policy whose optimal solution recovers exact shortest paths. • We present a training algorithm based on a regularized variant of the trajectory balance objective [Malkin et al., 2022], and provide experimental validation on a syn-thetic permutation puzzle (Swap), as well as 2x2x2 and 3×3×3 Rubik’s Cubes. While our method aims to re-cover exact shortest paths with a single learned policy, we also show that it can be combined with beam search at test time to improve solution lengths. We compare against a state-of-the-art approach for pathfinding in Rubik’s Cubes [Chervov et al., 2025a], demonstrating that our method exhibits competitive performance in terms of the solution length, while scaling better when smaller beam widths are used. Source code: github.com/GreatDrake/gfn-pathfinding. 
+
+## 2 BACKGROUND 
+
+2.1 NON-ACYCLIC GFLOWNETS 
+
+Brunswic et al. [2024] and Morozov et al. [2025] generalize the theoretical construction of GFlowNets [Bengio et al., 2023] to environments that may contain cycles. We follow the theory and notation of Morozov et al. [2025], which is summarized below. The sequential decision-making process is described by a directed graph G = ( S, E), where S is a finite state space and E ⊆ S × S is a finite set of edges (or transitions). The following assumption is made with respect to the structure of G:
+
+Assumption 2.1. (1) There is a special initial state s0 with no incoming edges and a special sink state sf with no outgo-ing edges; (2) For any state s ∈ S , there exists a path from 
+
+s0 to s and from s to sf .Let T be a set of all finite-length trajectories τ =(s0 → s1 → . . . → snτ → sf ) from s0 to sf , where we use 
+
+nτ to denote the length of the trajectory τ . We use a conven-tion snτ +1 = sf . We say that τ terminates in a state s if its last transition is s → sf . The edges of the form (s → sf )
+
+are called terminating transitions, and the states s that have an outgoing edge into sf are called terminal states . The set of terminal states is denoted by X , and the probability distri-bution of interest R(x)/Z is defined on it, where R(x) > 0
+
+is called GFlowNet reward and Z = P 
+
+> x∈X
+
+R(x) is an unknown normalizing constant. GFlowNets operate with a pair of policies, where a forward policy PF(s′ | s) is a distribution over children of each state, and a backward policy PB(s | s′) is a distribution over parents of each state. During training, GFlowNets aim to find a pair of policies such that their induced distributions over trajectories coincide: 
+
+P(τ ) = 
+
+> nτ
+
+Y
+
+> t=0
+
+PF(st+1 | st) = 
+
+> nτ
+
+Y
+
+> t=0
+
+PB(st | st+1 ) . (1) The main goal is to have such P that for any x ∈ X , proba-bility that τ ∼ P terminates in x coincides with R(x)/Z.This property is called the reward matching condition , and w.r.t PB it can be simply written as 
+
+PB(x | sf ) = R(x)/Z ∀x ∈ X . (2) If both Equation (1) and Equation (2) are satisfied, PF can be used to sample terminal states from the reward distribu-tion (see Bengio et al. [2023] and Morozov et al. [2025] for more details). Brunswic et al. [2024] and Morozov et al. [2025] point out that the main difference of non-acyclic GFlowNets from their standard acyclic counterparts is the fact that the trajec-tory length nτ is generally unbounded. Since E[nτ ] exactly represents the average number of forward policy steps a GFlowNet needs to make to produce a sample, it also signi-fies the practical efficiency of the sampler. Thus, it is natural formulate the problem of training a non-acyclic GFlowNet that minimizes E[nτ ].Morozov et al. [2025] define state flows through the ex-pected number of times a certain state is visited 
+
+F(s) = Z · Eτ ∼P 
+
+"nτ +1 X
+
+> t=0
+
+I{st = s}
+
+#
+
+. (3) Then, the expected trajectory length coincides with the nor-malized total flow E[nτ ] = 1
+
+> Z
+
+P  
+
+> s∈S\{ s0,s f}
+
+F(s), so learn-ing a model with the smallest E[nτ ] is equivalent to learning a model with the smallest total flow. A simple practical approach proposed in Brunswic et al. [2024] and further explored in Morozov et al. [2025] involves adding a regular-izer λFθ (s) to the utilized loss, where λ is a regularization coefficient. E.g., detailed balance [Bengio et al., 2023] loss with state flow regularization is defined as 
+
+L(s → s′) = 
+
+
+
+log Fθ (s)PF(s′ | s, θ )
+
+Fθ (s′)PB(s | s′, θ )
+
+2
+
++ λFθ (s) ,
+
+where reward matching is enforced by substituting Fθ (sf ) ·PB(x | sf , θ ) = R(x).
+
+2.2 PATHFINDING ON CAYLEY GRAPHS 
+
+The problem of pathfinding on Cayley graphs has been of particular interest to the machine learning commu-nity [McAleer et al., 2018, Agostinelli et al., 2019, Takano, 2023, Chervov et al., 2025b,a]. The most famous instance of this problem is solving Rubik’s Cube. Here, all possible cube configurations are represented as vertices, and edges correspond to moves between them (turning a side of the cube), with the main goal consisting of finding the short-est paths to the solved configuration. Many other existing puzzles, games, and riddles can be described using Cay-ley graphs, where gameplay corresponds to finding a path towards a predefined goal state [Mulholland, 2016]. Existing approaches generally follow a similar idea: train a neural network that evaluates how far a state is from the goal state, and use its predictions to guide some heuristic search algorithm during inference. McAleer et al. [2018] and Agostinelli et al. [2019] use reinforcement learning to learn the value function via deep approximate value itera-tion [Sutton et al., 1998]. Then, McAleer et al. [2018] use the learned value within Monte Carlo Tree Search [Coulom, 2006], and Agostinelli et al. [2019] in a variation of A* algorithm [Ebendt and Drechsler, 2009] to search for a path to the goal state. A recent work of Chervov et al. [2025b] obtained state-of-the-art results on Rubik’s Cube and other permutation puz-zles by generating non-backtracking random walks [Alon et al., 2007] from the goal state, and training a neural net-work to approximate the average number of steps a random walk has to take to reach a state in the graph. Then, to find shortest paths during inference, the predictions of the neural network are used to guide a variation of the beam search algorithm. Our work follows a different paradigm, aiming to directly train a policy that will move across shortest paths to the predefined goal state. 
+
+## 3 LEARNING SHORTEST PATHS WITH GFLOWNETS 
+
+3.1 CONDITIONS FOR SMALLEST EXPECTED TRAJECTORY LENGTH 
+
+In this section, we theoretically examine non-acyclic GFlowNets that minimize their respective expected trajec-tory length. We prove that E[nτ ] is minimized if and only if 
+
+PF and PB move exclusively across shortest paths between 
+
+s0 and terminal states. We denote ℓ(s′) to be the length of a shortest path from s0 to s′; note that by Assumption 2.1, such a path always exists. To define a probability distribution over T , Morozov et al. [2025] assume that PB(s | s′) > 0 for any transition (s →
+
+s′). As we will show, minimizing E[nτ ] requires PB to assign zero probabilities to transitions that do not lie on a shortest path. Therefore we replace the assumption PB(s |
+
+s′) > 0 with a more general and natural assumption that requires E[nτ ] < +∞. Here nτ is the average number of steps a backward random walk starting in sf with transition probabilities given by PB needs to take to reach s0.
+
+Assumption 3.1. The backward policy PB satisfies 
+
+E[nτ ] < +∞.This assumption implies that PB can therefore be viewed as a transition kernel of an absorbing Markov chain [Kemeny and Snell, 1969], and defines a valid probability distribution over T with probability function P(τ ) = Qnτ 
+
+> t=0
+
+PB(st |
+
+st+1 ). For a formal derivation and detailed discussion, we refer the reader to Appendix A. Next, we provide two lem-mas that link E[nτ ] to the lengths of shortest paths. 
+
+Lemma 3.2. Grant Assumption 2.1. Then for any backward policy PB that satisfies Assumption 3.1, it holds 
+
+E[nτ ] ≥ X
+
+> x∈X
+
+PB(x | sf )ℓ(x) . (4) 
+
+Proof. First, we apply the tower property of conditional expectation 
+
+E[nτ ] = E[E[nτ | snτ = x]] = X
+
+> x∈X
+
+PB(x | sf )E[nτ | snτ = x] . (5) Then, for any x ∈ X , since the length of any trajectory from 
+
+s0 to x by definition is at least ℓ(x), we have E[nτ | snτ =
+
+x] ≥ ℓ(x), finishing the proof. This is a rather intuitive result, stating that E[nτ ] is lower bounded by the expected length of a shortest path from 
+
+s0 to a terminal state weighted by PB(x | sf ). Next, we show that there always exists a backward policy PB(·| s)
+
+that achieves equality in Equation (4) . Recall that we write 
+
+R(x) for GFlowNet reward. Lemma 3.3. Grant Assumption 2.1. Then, there always exists a backward policy that satisfies the reward matching condition PB(s | sf ) = R(s) and induces the trajectory distribution with expected trajectory length equal to 
+
+E[nτ ] = X
+
+> x∈X
+
+R(x)
+
+Z ℓ(x) . (6) 
+
+Proof. Let us define a map par : S \ { s0, s f } → S \ { sf },where for any s ∈ S \ { s0, s f } the state par (s) is de-fined arbitrarily such that (par (s) → s) ∈ E and ℓ(s) = 
+
+ℓ(par (s)) + 1 . Such a state always exists because there al-ways exists a path between s0 and s, and precedent state on the corresponding shortest path from s0 to s satisfies 
+
+ℓ(s) = ℓ(par (s)) + 1 . Then, define PB(x | sf ) = R(x)/Z
+
+for all x ∈ X (to satisfy the reward matching condition), and PB(s | s′) = I{s = par (s′)} for all s′ ∈ S \ { sf }.Therefore, when sampling a trajectory using PB, we first go from sf to some terminal state x, and after that, at each step, we get exactly one edge closer to s0, meaning that a shortest path between s0 and x is always sampled. Thus, for all x ∈ X we have E[nτ | snτ = x] = ℓ(x). Applying Equation (5), we conclude the proof. The proof is constructive, showing that a backward policy that always travels along shortest paths between s0 and ter-minal states has the smallest possible E[nτ ]. Finally, com-bining the results of the two lemmas, we state the main theorem. 
+
+Theorem 3.4. Grant Assumption 2.1 and let PB be a back-ward policy that satisfies the reward matching condition 
+
+PB(s | sf ) = R(s) and satisfies Assumption 3.1. Then PB
+
+minimizes E[nτ ] if and only if, for each trajectory τ ∈ T 
+
+that terminates at any state x ∈ X , nτ̸ = ℓ(x) implies 
+
+P(τ ) = 0 . In other words, minimization of expected trajec-tory length E[nτ ] is equivalent to assigning zero probability to all trajectories that are not shortest paths from s0 to a terminal state. 
+
+The proof immediately follows from Lemma 3.2 and Lemma 3.3; we refer to Appendix B for a detailed deriva-tion. Intuitively, we have shown that if we have a backward policy that minimizes E[nτ ], sampling a trajectory from it means sampling a terminal state x from the probability distribution 
+
+R(x′)/Z, and then sampling a shortest path between s0
+
+and x in the backward direction. It is important to note that such PB is generally not unique: for any s ∈ S \ { sf },it can assign arbitrary probabilities to parents of s that lie on a shortest path between s0 and s (but must assign zero probability to parents that do not lie on a shortest path). 
+
+Remark 3.5 . Proposition 3.8 of Morozov et al. [2025] states that for any backward policy PB, there exists a unique for-ward policy PF that induces the same probability distribu-tion over T as PB, and vice versa. Therefore, Theorem 3.4 can be equivalently restated for forward policies as well, since the condition of the theorem is related only to the trajectory distribution induced by the policy, not the policy itself. 
+
+Remark 3.6 . The proof of Lemma 3.3 provided a construc-tive way to design a backward policy with the smallest 
+
+E[nτ ]. It can also be used to constructively provide the unique corresponding forward policy. Once again, for any 
+
+s ∈ S \ { s0, s f } we pick an arbitrary state par (s) such that there is an edge (par (s) → s) ∈ E and ℓ(s) = ℓ(par (s))+1 ,defining PB(s | s′) = I{s = par (s′)} for all s′ ∈ S \ { sf }.If we exclude sf , the structure of par (s) defines an oriented tree subgraph of G rooted in s0, and PB is degenerate in essence, always choosing the unique parent of a state. In this case, there exists a simple expression for the corresponding forward policy: PF(s′ | s) = V (s′)/V (s), where V (s) is the sum of GFlowNet rewards in tree leaves reachable from 
+
+s, see Bengio et al. [2021]. 
+
+3.2 APPLICATION TO PATHFINDING IN GENERAL GRAPHS 
+
+Building on the presented theory, we next show how GFlowNets can be applied to find shortest paths in general graphs. Let G = ( V, E ) be an arbitrary finite ordered graph. The task is to find shortest paths from every vertex v to a spec-ified goal vertex vg . We note that the pathfinding problem on unweighted graphs is considered, and assume that a path from every vertex to the goal vertex exists. The core idea of our approach is to slightly modify the graph G to define such a non-acyclic GFlowNet environ-ment, where PB with the smallest E[nτ ] solves the pathfind-ing task of interest. First, we remove all edges outgoing from vg in G. This does not change the task since no such edge lies on a shortest path to vg . Then, we define a non-acyclic GFlowNet environment 
+
+G = ( S, E), where 1. States S correspond to vertices in G, with an addition of a special sink state sf . Initial state specifically s0
+
+corresponds to vg ;2. Transitions E correspond to reversed edges from G. In addition, a transition from each state to sf is added (with an exception of sf itself). This is a valid GFlowNet environment that satisfies Assump-tion 2.1. Firstly, s0 has no incoming edges and sf has no outgoing edges. There is a also path from each state to sf
+
+since each state has a transition to sf , also meaning that all states except sf are terminal. Finally, there is a path from 
+
+s0 to each state s because there is a path from each vertex v
+
+to vg in G, and transitions in G are reversed edges from G.Let R be any positive reward function defined on S \ { sf }.Then, by Theorem 3.4, a backward policy with the small-est E[nτ ] that satisfies the reward matching condition with respect to R, will assign non-zero probabilities only to short-est paths between s0 and terminal states, where the former coincides with vg , and the latter coincide with all vertices in the graph G. Since PB traverses G in reverse direction, and transitions in G are reversed edges from G, starting in arbitrary state s ∈ S \ { sf } and sampling a trajectory via 
+
+PB will result in a shortest path from the vertex v (corre-sponding to s) to vg (corresponding to s0). Therefore, training a non-acyclic GFlowNet that minimizes its expected trajectory length will result in a model that solves the pathfinding task in the graph G, specifically via the obtained backward policy PB. Figure 1 visualizes the overall construction. 
+
+Choice of rewards. While the presented construction al-lows for any positive reward function to be used, the most natural task-agnostic choice is a uniform reward distribu-tion: R(s) = 1 . Additionally, the optimal E[nτ ] in this case coincides with the average length of a shortest path to the goal state 1 
+
+> |V|
+
+P 
+
+> v∈V
+
+ℓ(v). We follow this design choice in the training algorithm discussed below and in all our experi-ments. 
+
+Forward policy. The aim of the backward policy in the presented construction is to find shortest paths to the goal state s0. The forward policy, however, is an auxiliary com-ponent needed for training and serves a different purpose. It starts in the goal state and traverses the graph in the other direction, aiming to sample states from the specified reward distribution, which is uniform in our case. It also has to as-sign a probability to stop in each state, corresponding to the transition to the sink state PF(sf | s). For example, in the case of Rubik’s Cubes, PB has to solve any possible config-uration in the smallest possible number of moves, while PF
+
+has to scramble a solved cube in the smallest possible num-ber of moves (including deciding when to stop scrambling), obtaining a uniformly distributed configuration. 
+
+3.3 TRAINING ALGORITHM 3.3.1 Considerations from Previous Literature 
+
+Morozov et al. [2025] trained non-acyclic GFlowNets on-policy, sampling a batch of trajectories from PF at each training step to compute the loss. The authors utilized de-tailed balance loss [Bengio et al., 2023] with state-flow regularization (see Section 2.1). We ran into two crucial problems in an attempt to apply this approach to train our models for pathfinding. Firstly, as observed by Morozov et al. [2025], expected tra-jectory length E[nτ ] of the model at early stages of training 
+
+Figure 1: Visualization of the GFlowNet environment in the proposed construction using Rubik’s Cube as an example. Forward transitions are denoted by blue arrows, backward transition are denoted by red arrows. Note that backward transitions from the goal state s0 are removed in our con-struction — it is an absorbing state with respect to PB, while there are forward and backward transitions in both direc-tions between s1 and s3 (since the Cayley graph of Rubik’s Cube has transitions between them in both directions too). Each state has a forward transition to sf , corresponding to the stop action, while PB(s | sf ) corresponds to the reward distribution, which we set as uniform. can be very high, and sampling a full trajectory from the model introduces a training cost that can be prohibitive in case of larger environments. To alleviate this cost, we bound the length of trajectories that are sampled during training. This design choice was also employed in Brunswic et al. [2024]. Secondly, in our early experiments, we observed very slow convergence of training with detailed balance loss. In-stead, we opt for using a modification of trajectory balance loss [Malkin et al., 2022] to train the model, which produced significantly better results in our case. We hypothesize that this is due to the fact that trajectory balance loss was shown to have more efficient credit assignment than detailed bal-ance [Malkin et al., 2022]. In addition, one can note that the main training signal for our model comes from the goal state itself. Detailed balance is defined on individual transi-tions, most of which do not contain the goal state, whereas trajectory balance is defined on whole trajectories, each con-taining the goal state by design. We leave the examination of this phenomenon for further study as an interesting research direction. 
+
+3.3.2 Trajectory Balance with Flow Regularization 
+
+In detail, our approach is as follows. The model parameter-izes and learns forward and backward policies: PF(s′ | s, θ )
+
+and PB(s | s′, θ ). At each step, we generate a batch of partial trajectories of a fixed length Nmax from the for-ward policy PF starting in s0. To ensure that the trajec-tory does not terminate earlier, we simply mask the stop action PF(sf | s, θ ) during sampling. Denote such a partial trajectory as τ ′ = ( s0 → s1 → ... → sNmax ).Since each state in the environment is terminal (see Sec-tion 3.2), each prefix τ ′ 
+
+> 0: i
+
+with an addition of a terminal transition (si → sf ) can be viewed as a complete trajectory 
+
+(s0 → s1 → ... → si → sf ) ∈ T . We then compute trajec-tory balance loss [Malkin et al., 2022] for all prefixes and take the sum: 
+
+> Nmax
+
+X
+
+> i=0
+
+log PF(sf | si, θ ) Qit=1 PF(st | st−1, θ )(R(si)/Z) Qit=1 PB(st−1 | st, θ )
+
+!2
+
+. (7) The motivation for this design choice is that considering the balance conditions on all prefixes instead of only the whole trajectory produces more information about the sampled trajectory, resulting in a more sample-efficient approach. In general, the normalizing constant is unknown in GFlowNets, and a learnable scalar log Zθ is plugged into the loss. How-ever, in the case of our reward choice R(s) = 1 , it simply corresponds to the number of vertices in the graph Z = |V |,thus does not need to be learned. To add state flow regularization [Brunswic et al., 2024, Mo-rozov et al., 2025] to the loss, one can note that in envi-ronments where there is a transition to sf from every other state, which is the case in our construction, the flow can be expressed as F(s) = R(s)/PF(sf | s), and does not need to be learned as an additional component, see, e.g., Deleu et al. [2022]. Theoretically, this parameterization can be obtained by combining the conditions on terminal edge flows F(s → sf ) = R(s) (Proposition 3.10 of Moro-zov et al. [2025]) and a part of detailed balance conditions 
+
+F(s → sf ) = F(s)PF(sf | s) (Proposition 3.8 of Moro-zov et al. [2025]). Finally, combining the choice of uniform rewards and the parameterization of the flows discussed above, we obtain the following regularized training objective: 
+
+LregTB (θ, τ ) = 
+
+> Nmax
+
+X
+
+> i=0
+
+
+
+LTB (θ, τ 0: i) + λ
+
+PF(sf | si, θ )
+
+
+
+, (8) where 
+
+LTB (θ, τ 0: i) = 
+
+
+
+log PF(sf |si, θ ) Qit=1 PF(st|st−1, θ )(1 /|V |) Qit=1 PB(st−1|st, θ )
+
+2
+
+.
+
+The full training procedure is summarized in Algorithm 1. An important note here is that optimization with respect to both PF and PB is a crucial part of our algorithm. Spe-cialized methods for optimizing backward policies exist in GFlowNet literature [Jang et al., 2024, Gritsaev et al., 2025], and can be potentially applied to further improve training. 
+
+Algorithm 1 Training a GFlowNet for pathfinding with regularized trajectory balance objective  
+
+> 1:
+
+Input: Model and optimizer, regularization coefficient 
+
+λ, maximum length of training trajectories Nmax , batch size B 
+
+> 2:
+
+repeat  
+
+> 3:
+
+Sample a batch of trajectories τ 1: B of length up to 
+
+Nmax from the policy PF(s′ | s, θ ) starting in s0 
+
+> 4:
+
+Compute 1
+
+> B
+
+PBi=1 ∇θ LregTB (θ, τ i) and update model parameters θ 
+
+> 5:
+
+until convergence 
+
+3.4 BEAM SEARCH 
+
+While in theory, the optimal backward policy in our ap-proach finds shortest paths exactly, the learned policy will only provide approximate solutions in case of larger graphs in practice, as further demonstrated in our experimental eval-uation in Section 4. Following Chervov et al. [2025b], we use beam search as a heuristic to improve the solution at test-time. Let W be the width of beam search. At each step of beam search, we consider all ways to continue each of the cur-rently stored trajectories, and keep top W candidates based on the logarithm of the product of backward transition prob-abilities along the trajectory. The search stops when the goal state s0 is reached. The resulting algorithm is very similar to the one widely applied in text generation models [Sutskever et al., 2014, Meister et al., 2020], and can be viewed as an approximate way to find a trajectory with the highest proba-bility assigned by the model. We also found an additional heuristic proposed in Chervov et al. [2025b] to slightly im-prove the results, consisting of dropping duplicate states from the current batch at each step of beam search, and utilize it in our experiments. A corner case of the algorithm when beam width W is set to 1 corresponds to the greedy evaluation of the learned backward policy: instead of faithfully sampling a trajectory from PB, at each step one chooses a transition with the highest probability argmax s PB(s | s′, θ ). If the learned policy is optimal, this will still produce shortest paths, as zero probability must be assigned to all transitions that do not lie on a shortest path (Theorem 3.4). It is worth noting that other search algorithms can be poten-tially applied here, e.g., Morozov et al. [2024] showed that entropy-regularized Monte Carlo Tree Search [Xiao et al., 2019] can be applied to GFlowNets at test-time, posing as an interesting direction for future research. 
+
+## 4 EXPERIMENTS 
+
+We conduct an experimental evaluation on a synthetic Swap task, as well as on 2x2x2 and 3x3x3 Rubik’s Cubes. Our neu-10000 20000 30000 40000 50000 60000 70000 80000 90000 100000          
+
+> Training iterations
+> 53.0
+> 53.5
+> 54.0
+> 54.5
+> 55.0
+> 55.5
+> Avg. path length
+> Swap Puzzle n=15
+> Policy with beam search W=4
+> Policy with beam search W=1 (greedy)
+> Policy
+> Ground truth avg. shortest path 10000 20000 30000 40000 50000 60000 70000 80000 90000 100000
+> Training iterations
+> 96
+> 98
+> 100
+> 102
+> 104
+> 106
+> Avg. path length
+> Swap Puzzle n=20
+> Policy with beam search W=4
+> Policy with beam search W=1 (greedy)
+> Policy
+> Ground truth avg. shortest path
+
+Figure 2: The results for Swap Puzzle n = 15 and n = 20 
+
+for three evaluation protocols: 1) the path is faithfully sam-pled from PB, 2) the path is obtained by a greedy evaluation of PB, 3) the path is generated with beam search of a small width W = 4 . The results for greedy evaluation are not presented for checkpoints where it failed to find a valid solu-tion for every permutation in the test set. For n = 20 , 100k training iterations took 15 minutes to run on an NVIDIA H200 GPU. ral network architecture is very similar to the one employed in Chervov et al. [2025b]: MLP with residual connections and layer normalization. In each task, states correspond to permutations of a fixed size, and a one-hot encoding is pro-vided as input to the neural network. For comprehensive experimental details, we refer the reader to Appendix C. 
+
+4.1 SWAP PUZZLE 
+
+To evaluate the capability of the proposed approach to find shortest paths, as well as the ability generalize to unseen states in large graphs, we first consider a synthetic environ-ment, which is a variation of the Swap Puzzle described in Mulholland [2016]. Suppose that you are given an arbitrary permutation of n
+
+elements, and your task is to sort it using the smallest possi-ble number of moves, where at each step you are allowed to swap any pair of adjacent elements. The task corresponds to pathfinding in the Cayley graph of the Symmetric group 
+
+Sn with the generating set consisting of transpositions of adjacent elements. The solution is rather straightforward: at each step, one must swap any pair of adjacent elements that are in descending order. This strategy is optimal due to two facts: 1) the identity permutation (goal state) is the only permutation that has 0 inversions, and 2) swapping a 10000 20000 30000 40000 50000 60000 70000 80000 90000 100000                    
+
+> Training iterations
+> 55
+> 60
+> 65
+> 70
+> 75
+> Avg. path length
+> Swap Puzzle n=15
+> Policy, λ= 0.001
+> Policy, λ= 0.0001
+> Policy, λ= 0.00001
+> Ground truth avg. shortest path 50000 100000 150000 200000 250000 300000 350000 400000
+> Training iterations
+> 10.7
+> 10.8
+> 10.9
+> 11.0
+> 11.1
+> Avg. path length
+> 2x2x2 Rubik's Cube
+> Policy with beam search W=256, λ= 0.01
+> Policy with beam search W=256, λ= 0.005
+> Policy with beam search W=256, λ= 0.001
+> Ground truth avg. shortest path
+
+Figure 3: Effect of the regularization coefficient λ on the obtained solution lengths on Swap Puzzle n = 15 and 2x2x2 Rubik’c sube. In both cases, choosing a larger λ led to models that fail to find any valid paths. pair of adjacent elements can either decrease the number of inversions by one (if they are in descending order) or increase it by one (if they are in ascending order). Thus, the length of the solution for any permutation s corresponds to the number of inversions in it. The goal is to verify that our model successfully learns the optimal strategy. Figure 2 presents the evaluation results for n = 15 and 
+
+n = 20 , corresponding to Cayley graphs with ≈ 1.3 · 10 12 
+
+and ≈ 2.4 · 10 18 states respectively. For each task, we fix a test set of 500 uniformly sampled permutations, and report the average length of the path found by the model over the course of training. We plot the results for three evaluation protocols 1) the path is faithfully sampled from PB, 2) the path is obtained by a greedy evaluation of PB, 3) the path is generated with beam search of a small width W = 4 .We observe that after sufficient training, both greedy and beam search evaluation protocols produce exact shortest paths for every permutation in the test set (with the beam search protocol requiring less training to produce optimal solutions), and the policy itself produces solutions that are close to optimal on average. It is important to note that, e.g., in the case of n = 20 , the model in Figure 2 has seen only 
+
+10 9 out of overall 2.4 · 10 18 states during training, which demonstrates its generalization capabilities. 
+
+4.2 RUBIK’S CUBES 
+
+Next, we evaluate our approach on 2x2x2 and 3x3x3 Ru-bik’s Cubes against CayleyPy Cube [Chervov et al., 2025b]. It is a state-of-the-art machine learning approach designed Table 1: Comparison with CayleyPy Cube [Chervov et al., 2025b]. We use the test set from [Chervov et al., 2025b] containing 100 examples for 2x2x2 Rubik’s Cube and the test set from [Agostinelli et al., 2019] containing 1000 examples for 3x3x3 Rubik’s Cube, presenting average lengths of solutions found by both methods for different beam search budgets. Solve rate corresponds to the fraction of examples in the test set for which the model has found a valid path to the goal within 100 steps. For the 2x2x2 Rubik’s Cube, the average length of 10.64 is optimal for the test set, validated by the BFS algorithm. 
+
+2x2x2 Rubik’s Cube 3x3x3 Rubik’s Cube Ours CayleyPy Cube Ours CayleyPy Cube 
+
+Beam size Avg. length Solve rate Avg. length Solve rate Beam size Avg. length Solve rate Avg. length Solve rate 
+
+W = 2 0 11.62 1.0 x 0.00 W = 2 0 x 0.471 x 0.000 
+
+W = 2 2 11.24 1.0 x 0.00 W = 2 3 x 0.984 x 0.001 
+
+W = 2 4 10.78 1.0 x 0.00 W = 2 6 25.33 1.0 x 0.687 
+
+W = 2 6 10.64 1.0 x 0.06 W = 2 9 23.49 1.0 24.34 1.0 
+
+W = 2 8 10.64 1.0 x 0.89 W = 2 12 22.42 1.0 22.44 1.0 
+
+W = 2 10 10.64 1.0 10.64 1.0 W = 2 15 21.70 1.0 21.61 1.0 
+
+W = 2 12 10.64 1.0 10.64 1.0 W = 2 18 21.24 1.0 21.15 1.0 
+
+specifically for solving Rubik’s Cubes and similar puzzles, which was shown to outperform previous methods like Deep-CubeA [Agostinelli et al., 2019] and EfficientCube [Takano, 2023] in both solution lengths and runtime efficiency. To ensure a fair comparison, for CayleyPy Cube, we train a model with neural network hyperparameters specified in the original work [Chervov et al., 2025b] and a model with the same neural network size as ours, picking the best of the two. For both puzzles, we allow only 90-degree face turns, thus the presented solution lengths are in QTM – quarter-turn metric. We use the same way to encode states and transitions as permutations as in Chervov et al. [2025b]. Both methods utilize beam search to look for the shortest paths once the model is trained, and we provide the com-parison across different beam search widths W in Table 1. For the 2x2x2 Rubik’s Cube, our approach requires a beam search width 16 times smaller to find optimal solutions, as well as provides valid solutions for the entire test set even with greedy evaluation ( W = 1 ), whereas CayleyPy cube fails to find any valid paths for smaller beam search widths. For the 3x3x3 Rubik’s Cube, our model also shows better performance across smaller beam search widths from 1 to 
+
+29, while showing comparable results for larger values of 
+
+W = {212 , 215 , 218 }.In addition, we evaluate the runtime efficiency of both mod-els on 3x3x3 cubes with a large beam search budget of 
+
+W = 2 18 , which produces the best results in Table 1. When run on a single NVIDIA H200 GPU, our model takes 1.74 
+
+seconds on average to solve a single Rubik’s Cube configura-tion with a 25M-parameter neural network, while CayleyPy cube takes 6.19 seconds on average with a 4M-parameter neural network. The main reason for speedup even when a larger neural network is used is the fact that CayleyPy Cube and similar approaches like DeepCubeA [Agostinelli et al., 2019] require 12 times more neural network evaluations (here 12 is the number of neighbours of each state) with the same beam width. Indeed, mentioned approaches have to run a forward pass for every neighbor of a state to esti-mate values or distances, while our model outputs backward policy logits corresponding to every neighbor with a single forward pass. 
+
+4.3 ABLATION OF REGULARIZATION COEFFICIENT 
+
+Finally, we discuss the role of the regularization coefficient 
+
+λ (see Equation (8) ), which is one of the main hyperparame-ters in non-acyclic GFlowNet training with flow regulariza-tion. In our experiments, we observed that models perform better when trained with a larger value of λ, but can fail completely when λ is too large. We show the effect of λ
+
+on the results in Figure 3. Because of this, a simple rule of thumb can be used to quickly tune λ in our approach: evaluate the model after a very small number of training iterations, and choose the largest λ that produces a model that is able find valid paths to the goal state. 
+
+## 5 CONCLUSION 
+
+In this work, we established a direct theoretical connection between non-acyclic GFlowNets and pathfinding. Our main result shows that minimizing expected trajectory length is equivalent to concentrating probability mass exclusively on shortest paths. This provides a new interpretation of flow minimization in non-acyclic GFlowNets and reframes shortest-path optimality in probabilistic terms. Based on this result, we show how non-acyclic GFlowNets with flow regularization can be used to train a stochastic policy to find shortest paths in an arbitrary unweighted graph. Our experimental evaluation, including comparison with a strong baseline on Rubik’s Cubes, demonstrates strong capabilities of the presented approach in pathfinding problems on Cayley graphs. Overall, our results position non-acyclic GFlowNets as a principled and general framework for shortest-path learning in discrete environments. Further work could extend the framework to weighted graphs and cost-sensitive settings, as well as explore its scalability to extremely large graphs and applications in domains beyond Cayley graphs. 
+
+Acknowledgements 
+
+This research was supported in part through computational resources of HPC facilities at HSE University [Kostenetskiy et al., 2021]. 
+
+References 
+
+Forest Agostinelli, Stephen McAleer, Alexander Shmakov, and Pierre Baldi. Solving the rubik’s cube with deep reinforcement learning and search. Nature Machine Intel-ligence , 1(8):356–363, 2019. Noga Alon, Itai Benjamini, Eyal Lubetzky, and Sasha Sodin. Non-backtracking random walks mix faster. Communi-cations in Contemporary Mathematics , 9(04):585–603, 2007. Lazar Atanackovic, Alexander Tong, Bo Wang, Leo J Lee, Yoshua Bengio, and Jason S Hartford. Dyngfn: Towards bayesian inference of gene regulatory networks with gflownets. Advances in Neural Information Processing Systems , 36, 2024. Jimmy Lei Ba, Jamie Ryan Kiros, and Geoffrey E Hinton. Layer normalization. arXiv preprint arXiv:1607.06450 ,2016. Emmanuel Bengio, Moksh Jain, Maksym Korablyov, Doina Precup, and Yoshua Bengio. Flow network based genera-tive models for non-iterative diverse candidate generation. 
+
+Advances in Neural Information Processing Systems , 34: 27381–27394, 2021. Yoshua Bengio, Salem Lahlou, Tristan Deleu, Edward J Hu, Mo Tiwari, and Emmanuel Bengio. Gflownet foundations. 
+
+Journal of Machine Learning Research , 24(210):1–55, 2023. James Bradbury, Roy Frostig, Peter Hawkins, Matthew James Johnson, Chris Leary, Dougal Maclaurin, George Necula, Adam Paszke, Jake VanderPlas, Skye Wanderman-Milne, and Qiao Zhang. JAX: composable transformations of Python+NumPy programs, 2018. URL http://github.com/jax-ml/jax .Leo Brunswic, Yinchuan Li, Yushun Xu, Yijun Feng, Shangling Jui, and Lizhuang Ma. A theory of non-acyclic generative flow networks. In Proceedings of the AAAI Conference on Artificial Intelligence , volume 38, pages 11124–11131, 2024. A Chervov, A Soibelman, S Lytkin, Igor Kiselev, S Fironov, A Lukyanenko, A Dolgorukova, A Ogurtsov, F Petrov, S Krymskii, et al. Cayleypy rl: Pathfinding and rein-forcement learning on cayley graphs. arXiv preprint arXiv:2502.18663 , 2025a. Alexander Chervov, Kirill Khoruzhii, Nikita Bukhal, Jalal Naghiyev, Vladislav Zamkovoy, Ivan Koltsov, Lyudmila Cheldieva, Arsenii Sychev, Arsenii Lenin, Mark Obozov, Egor Urvanov, and Alexey M. Romanov. A machine learn-ing approach that beats rubik’s cubes. In Proceedings of the 39th Conference on Neural Information Processing Systems (NeurIPS 2025) , 2025b. Gene Cooperman, Larry Finkelstein, and Namita Sarawagi. Applications of cayley graphs. In International sympo-sium on applied algebra, algebraic algorithms, and error-correcting codes , pages 367–378. Springer, 1990. Rémi Coulom. Efficient selectivity and backup operators in monte-carlo tree search. In International conference on computers and games , pages 72–83. Springer, 2006. Miruna Cretu, Charles Harris, Ilia Igashov, Arne Schneuing, Marwin Segler, Bruno Correia, Julien Roy, Emmanuel Bengio, and Pietro Lio. SynFlowNet: Design of diverse and novel molecules with synthesis constraints. In The Thirteenth International Conference on Learning Repre-sentations , 2025. Tristan Deleu, António Góis, Chris Emezue, Mansi Rankawat, Simon Lacoste-Julien, Stefan Bauer, and Yoshua Bengio. Bayesian structure learning with gen-erative flow networks. In Uncertainty in Artificial Intelli-gence , pages 518–528. PMLR, 2022. Tristan Deleu, Mizu Nishikawa-Toomey, Jithendaraa Sub-ramanian, Nikolay Malkin, Laurent Charlin, and Yoshua Bengio. Joint bayesian inference of graphical structure and parameters with a single generative flow network. 
+
+Advances in neural information processing systems , 36: 31204–31231, 2023. Tristan Deleu, Padideh Nouri, Nikolay Malkin, Doina Pre-cup, and Yoshua Bengio. Discrete probabilistic inference as control in multi-path environments. In The 40th Con-ference on Uncertainty in Artificial Intelligence , 2024. Rüdiger Ebendt and Rolf Drechsler. Weighted A* search– unifying view and application. Artificial Intelligence , 173 (14):1310–1342, 2009. Giorgio Gallo and Stefano Pallottino. Shortest path algo-rithms. Annals of operations research , 13(1):1–79, 1988. Timofei Gritsaev, Nikita Morozov, Sergey Samsonov, and Daniil Tiapkin. Optimizing backward policies in GFlownets via trajectory likelihood maximization. In 
+
+The Thirteenth International Conference on Learning Representations , 2025. Peter E Hart, Nils J Nilsson, and Bertram Raphael. A for-mal basis for the heuristic determination of minimum cost paths. IEEE transactions on Systems Science and Cybernetics , 4(2):100–107, 1968. Edward J Hu, Moksh Jain, Eric Elmoznino, Younesse Kad-dar, Guillaume Lajoie, Yoshua Bengio, and Nikolay Malkin. Amortizing intractable inference in large lan-guage models. In The Twelfth International Conference on Learning Representations , 2023. Sergey Ioffe and Christian Szegedy. Batch normalization: Accelerating deep network training by reducing internal covariate shift. In International conference on machine learning , pages 448–456. pmlr, 2015. Hyosoon Jang, Yunhui Jang, Minsu Kim, Jinkyoo Park, and Sungsoo Ahn. Pessimistic backward policy for GFlowNets. In Advances in Neural Information Process-ing Systems , volume 37, pages 107087–107111, 2024. Karthik Karur, Nitin Sharma, Chinmay Dharmatti, and Joshua E Siegel. A survey of path planning algorithms for mobile robots. Vehicles , 3(3):448–468, 2021. John G Kemeny and J Laurie Snell. Finite markov chains ,volume 26. van Nostrand Princeton, NJ, 1969. Minsu Kim, Sanghyeok Choi, Hyeonah Kim, Jiwoo Son, Jinkyoo Park, and Yoshua Bengio. Ant colony sampling with gflownets for combinatorial optimization. In Interna-tional Conference on Artificial Intelligence and Statistics ,pages 469–477. PMLR, 2025. PS Kostenetskiy, RA Chulkevich, and VI Kozyrev. Hpc resources of the higher school of economics. In Journal of Physics: Conference Series , volume 1740, page 012050. IOP Publishing, 2021. Michał Koziarski, Andrei Rekesh, Dmytro Shevchuk, Almer van der Sloot, Piotr Gai´ nski, Yoshua Bengio, Chenghao Liu, Mike Tyers, and Robert Batey. Rgfn: Synthesizable molecular generation using gflownets. Advances in Neu-ral Information Processing Systems , 37:46908–46955, 2024. Ilya Loshchilov and Frank Hutter. Decoupled weight decay regularization. In International Conference on Learning Representations (ICLR) , 2019. Kanika Madan, Jarrid Rector-Brooks, Maksym Korablyov, Emmanuel Bengio, Moksh Jain, Andrei Cristian Nica, Tom Bosc, Yoshua Bengio, and Nikolay Malkin. Learning gflownets from partial episodes for improved convergence and stability. In International Conference on Machine Learning , pages 23467–23483. PMLR, 2023. Amgad Madkour, Walid G Aref, Faizan Ur Rehman, Mohamed Abdur Rahman, and Saleh Basalamah. Asurvey of shortest-path algorithms. arXiv preprint arXiv:1705.02044 , 2017. Nikolay Malkin, Moksh Jain, Emmanuel Bengio, Chen Sun, and Yoshua Bengio. Trajectory balance: Improved credit assignment in gflownets. Advances in Neural Information Processing Systems , 35:5955–5967, 2022. Nikolay Malkin, Salem Lahlou, Tristan Deleu, Xu Ji, Ed-ward J Hu, Katie E Everett, Dinghuai Zhang, and Yoshua Bengio. GFlownets and variational inference. In The Eleventh International Conference on Learning Repre-sentations , 2023. Dragos Cristian Manta, Edward J Hu, and Yoshua Bengio. Gflownets for causal discovery: an overview. In ICML 2023 Workshop on Structured Probabilistic Inference &
+
+Generative Modeling , 2023. Stephen McAleer, Forest Agostinelli, Alexander Shmakov, and Pierre Baldi. Solving the rubik’s cube without human knowledge. arXiv preprint arXiv:1805.07470 , 2018. Clara Meister, Ryan Cotterell, and Tim Vieira. If beam search is the answer, what was the question? In Pro-ceedings of the 2020 Conference on Empirical Methods in Natural Language Processing (EMNLP) , pages 2173– 2185, 2020. Nikita Morozov, Daniil Tiapkin, Sergey Samsonov, Alexey Naumov, and Dmitry Vetrov. Improving gflownets with monte carlo tree search. In ICML 2024 Workshop on Structured Probabilistic Inference & Generative Model-ing , 2024. Nikita Morozov, Ian Maksimov, Daniil Tiapkin, and Sergey Samsonov. Revisiting non-acyclic gflownets in discrete environments. In International Conference on Machine Learning , pages 44887–44910. PMLR, 2025. Jamie Mulholland. Permutation puzzles: a mathematical perspective. Departement Of mathematics Simon fraser University , 54, 2016. Alexander Schrijver et al. Combinatorial optimization: poly-hedra and efficiency , volume 24. Springer, 2003. Ilya Sutskever, Oriol Vinyals, and Quoc V Le. Sequence to sequence learning with neural networks. Advances in neural information processing systems , 27, 2014. Richard S Sutton, Andrew G Barto, et al. Reinforcement learning: An introduction , volume 1. MIT press Cam-bridge, 1998. Kyo Takano. Self-supervision is all you need for solving ru-bik’s cube. Transactions on Machine Learning Research ,2023. ISSN 2835-8856. Daniil Tiapkin, Nikita Morozov, Alexey Naumov, and Dmitry P Vetrov. Generative flow networks as entropy-regularized rl. In International Conference on Artifi-cial Intelligence and Statistics , pages 4213–4221. PMLR, 2024. Daniil Tiapkin, Artem Agarkov, Nikita Morozov, Ian Mak-simov, Askar Tsyganov, Timofei Gritsaev, and Sergey Samsonov. gfnx: Fast and scalable library for generative flow networks in jax. arXiv preprint arXiv:2511.16592 ,2025. Chenjun Xiao, Ruitong Huang, Jincheng Mei, Dale Schuur-mans, and Martin Müller. Maximum entropy monte-carlo planning. Advances in Neural Information Processing Systems , 32, 2019. Dinghuai Zhang, Hanjun Dai, Nikolay Malkin, Aaron C Courville, Yoshua Bengio, and Ling Pan. Let the flows tell: Solving graph combinatorial problems with gflownets. In Advances in Neural Information Processing Systems , volume 36, pages 11952–11969, 2023. Heiko Zimmermann, Fredrik Lindsten, Jan-Willem van de Meent, and Christian A Naesseth. A variational per-spective on generative flow networks. Transactions on Machine Learning Research , 2023. ISSN 2835-8856. Learning Shortest Paths with Generative Flow Networks (Supplementary Material) 
+
+Nikita Morozov 1 Ian Maksimov 1 Daniil Tiapkin 2,3 Sergey Samsonov 11HSE University 2 CMAP, CNRS, École polytechnique 3 LMO, Université Paris-Saclay 
+
+## A BACKWARD POLICY ASSUMPTIONS 
+
+Consider a random walk on G with reversed edges and transition probabilities given by a backward policy PB. Specifically, define a Markov chain {Xn}∞
+
+> n=0
+
+, such that X0 = sf a.s. and P[Xt = s | Xt−1 = s′] = PB(s | s′). Also define P[Xt = s0 |
+
+Xt−1 = s0] = 1 . Assumption 3.1 means that the expected length of this walk is finite: E[nτ ] = E[P∞ 
+
+> t=0
+
+I{Xt̸ = s0}] < ∞.This implies that the random walk X terminates in s0 with probability 1: P[∃t : Xt = s0] = 1 , because otherwise the event {P∞ 
+
+> t=0
+
+I{Xt̸ = s0} = ∞} has non-zero probability, contradicting the finiteness of E[nτ ]. From this, it automatically follows that P(τ ) is a correct probability measure over T since for any τ = ( s0, s 1 . . . , s nτ , s f ) it holds 
+
+P[( Xnτ +1 , . . . , X 0) = τ ] = 
+
+> nτ
+
+Y
+
+> t=0
+
+PB(st | st+1 ) = P(τ ) ,
+
+and we have 
+
+X 
+
+> τ∈T
+
+P[( Xnτ +1 , . . . , X 0) = τ ] = P[∃τ ∈ T : ( Xnτ +1 , . . . , X 0) = τ ] = P[∃t : Xt = s0] = 1 ,
+
+since the events {(Xnτ +1 , . . . , X 0) = τ } do not intersect for different τ .The above reasoning directly follows a part of the proof of Lemma 3.4 of Morozov et al. [2025]. The same Lemma 3.4 shows that the fact PB(s | s′) > 0 ∀τ ∈ T implies E[nτ ] < ∞, making it a stronger assumption than Assumption 3.1. The main problem of this assumption is that it generally does not hold for PB with the smallest E[nτ ], as Theorem 3.4 suggests, making the theory of Morozov et al. [2025] not directly applicable to the task of learning non-acyclic GFlowNets with the smallest expected trajectory length. However, upon closer inspection of theoretical results of Morozov et al. [2025], one can note that the only part that actually uses this assumption is Lemma 3.4 itself, and proofs of all other results only require the fact that E[nτ ] < ∞ and the fact that P(τ ) is a correct probability measure over T , thus can be carefully re-written under Assumption 3.1. The same theoretical results under a more general Assumption 3.1 can also be directly derived from the results which assume 
+
+PB(s | s′) > 0. E.g., Remark 3.5 references Proposition 3.8 of Morozov et al. [2025], which requires PB(s | s′) > 0. To apply this result to PB that can assign zero probability to certain transitions, one can consider a subset T ′ ⊆ T consisting of trajectories τ ′ with P(τ ′) > 0. This subset induces a subgraph G′ of G that satisfies Assumption 2.1 since 1) it contains 
+
+sf and s0, 2) any state s it contains by construction lies on some trajectory τ ′ ∈ T ′. Then, for any PB(s | s′) under Assumption 3.1, there exists a unique PF that induces the same distribution over T ′ by Proposition 3.8 of Morozov et al. [2025] applied to G′, where PB assigns non-zero probabilities to all transitions. For transitions not lying in G′, this PF is then simply defined to be zero. 
+
+> Correspondence to: Nikita Morozov <nvmorozov@hse.ru>
+
+## B PROOF OF THEOREM 3.4 
+
+Proof. Our proof consists of the two main steps. First, we show that taking only shortest paths guarantees the minimum expected length. Second, we show that minimizing the expected length strictly forbids taking non-shortest paths. 
+
+Part 1: If the policy only takes shortest paths, it minimizes the expected length ( ⇐). Assume that if trajectory τ
+
+ending at state x has a non-zero probability ( P(τ ) > 0), its length nτ must exactly be equal to the shortest possible path length to that state, denoted as ℓ(x). Because the policy satisfies the reward matching condition, we know the probability of terminating at any state x ∈ X is fixed at R(x) 
+
+> Z
+
+> 0. By Equation (5) 
+
+E[nτ ] = X
+
+> x∈X
+
+R(x)
+
+Z E[nτ |snτ = x] = X
+
+> x∈X
+
+R(x)
+
+Z ℓ(x) .
+
+According to Lemma 3.2, this sum represents the absolute theoretical lower bound for the expected length of any valid backward policy. Since our policy achieves this exact lower bound, it successfully minimizes the expected trajectory length. 
+
+Part 2: If the policy minimizes expected length, it must only take shortest paths ( ⇒). We will prove this by contradiction. Suppose there is at least one trajectory τ ending at some terminal state x′ that is longer than the shortest path from s0 to x′ (nτ > ℓ (x′)), and the policy gives this trajectory a non-zero probability ( P(τ ) > 0). Then, we have 
+
+E[nτ | snτ = x′] > ℓ (x′).
+
+For all other terminal states x ∈ X , the average path length is at least the shortest path length, meaning E[nτ | snτ = x] ≥
+
+ℓ(x). Now, applying Equation (5) 
+
+E[nτ ] = X
+
+> x∈X
+
+R(x)
+
+Z E[nτ | snτ = x] > X
+
+> x∈X
+
+R(x)
+
+Z ℓ(x) .
+
+However, Lemma 3.3 proves that it is possible to construct a backward policy that achieves the exact theoretical minimum on the right-hand side. Because our policy PB results in a strictly greater expected trajectory length, it does not minimize 
+
+E[nτ ], which contradicts our initial assumption. 
+
+## C EXPERIMENTAL DETAILS 
+
+In all experiments, similarly to previous works [Agostinelli et al., 2019, Chervov et al., 2025b], we use a variant of residual MLP architecture to parameterize our models, consisting of six ReLU(Linear(LayerNorm( x)) + x) blocks. A difference from previous works is that we replace batch normalization [Ioffe and Szegedy, 2015] with layer normalization [Ba et al., 2016] to improve training and evaluation stability. PF(s′ | s, θ ) and PB(s | s′, θ ) share the same backbone, with different linear heads predicting the logits of the forward policy and the logits of the backward policy. Note that the number of forward policy logits is the number of transitions from the state in the initial graph plus one logit corresponding to stop action. We use JAX [Bradbury et al., 2018] for implementing our approach due to its acceleration capabilities through just-in-time (JIT) compilation of the entire training loop, which was shown to significantly speed up GFlowNet training [Tiapkin et al., 2025]. 
+
+C.1 SWAP PUZZLE 
+
+We train all models for 100,000 iterations with a batch size of 128 using AdamW optimizer [Loshchilov and Hutter, 2019] with weight decay 10 −5. We set the learning rate to 3 · 10 −4 and use a hidden size of 1024. We found clipping the gradient norm to be helpful to stabilize training, and use a threshold of 100 . Models in Figure 2 were trained with regularization coefficient λ = 10 −3 for n = 15 and λ = 10 −4 for n = 20 . We set Nmax = 50 .C.2 RUBIK’S CUBE 
+
+We use 500,000 training iterations with a batch size of 128 for 2x2x2 Rubik’s Cube, and 1,000,000 training iterations with a batch size of 2048 for 3x3x3 Rubik’s Cube. We set the learning rate to 3 · 10 −4 and use a hidden size of 1024 for 2x2x2 Rubik’s Cube and 2048 for 3x3x3 Rubik’s cube. All models are trained using AdamW optimizer [Loshchilov and Hutter, 2019] with weight decay 10 −5. We found clipping the gradient norm to be helpful to stabilize training, and use a threshold of 100 . Models in Table 1 were trained with regularization coefficient λ = 10 −2 for 2x2x2 Rubik’s Cube and λ = 5 · 10 −7
+
+for 3x3x3 Rubik’s cube. We set Nmax = 12 for 2x2x2 Rubik’s Cube and Nmax = 24 for 3x3x3 Rubik’s cube. We found these values to lead to efficient training, despite being smaller than longest paths in the respective environments. This further demonstrates generalization capabilities of the proposed approach. To evaluate against CayleyPy Cube [Chervov et al., 2025b], we use the official implementation provided by the authors 1. We train all models using the same amount of sampled cube configurations to ensure a fair comparison.

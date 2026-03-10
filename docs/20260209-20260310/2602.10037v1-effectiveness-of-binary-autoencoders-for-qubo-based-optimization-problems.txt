@@ -1,0 +1,642 @@
+Title: Effectiveness of Binary Autoencoders for QUBO-Based Optimization Problems
+
+URL Source: https://arxiv.org/pdf/2602.10037v1
+
+Published Time: Wed, 11 Feb 2026 02:22:01 GMT
+
+Number of Pages: 14
+
+Markdown Content:
+# Effectiveness of Binary Autoencoders for QUBO-Based Optimization Problems 
+
+# Tetsuro Abe 1,* , Masashi Yamashita 1, and Shu Tanaka 1,2,3,4 
+
+> 1
+
+Graduate School of Science and Technology, Keio University, Kanagawa 223-8522, Japan 
+
+> 2
+
+Keio University Sustainable Quantum Artificial Intelligence Center (KSQAIC), Keio University, Tokyo 108-8345, Japan 
+
+> 3
+
+Department of Applied Physics and Physico-Informatics, Keio University, Kanagawa 223-8522, Japan 
+
+> 4
+
+Human Biology-Microbiome-Quantum Research Center (WPI-Bio2Q), Keio University, Tokyo 108-8345, Japan 
+
+> *
+
+Corresponding author : tetsu.abe1231@keio.jp 
+
+## ABSTRACT 
+
+In black-box combinatorial optimization, objective evaluations are often expensive, so high quality solutions must be found under a limited budget. Factorization machine with quantum annealing (FMQA) builds a quadratic surrogate model from evaluated samples and optimizes it on an Ising machine. However, FMQA requires binary decision variables, and for nonbinary structures such as integer permutations, the choice of binary encoding strongly affects search efficiency. If the encoding fails to reflect the original neighborhood structure, small Hamming moves may not correspond to meaningful modifications in the original solution space, and constrained problems can yield many infeasible candidates that waste evaluations. Recent work combines FMQA with a binary autoencoder (bAE) that learns a compact binary latent code from feasible solutions, yet the mechanism behind its performance gains is unclear. Using a small traveling salesman problem as an interpretable testbed, we show that the bAE reconstructs feasible tours accurately and, compared with manually designed encodings at similar compression, better aligns tour distances with latent Hamming distances, yields smoother neighborhoods under small bit flips, and produces fewer local optima. These geometric properties explain why bAE+FMQA improves the approximation ratio faster while maintaining feasibility throughout optimization, and they provide guidance for designing latent representations for black-box optimization. 
+
+## Introduction 
+
+Combinatorial optimization problems arise broadly across science and engineering, including transportation, structural design, and finance 1–5 , yet many practically relevant instances are both computationally intractable and evaluation-intensive. Many of these problems are NP-hard, and the size of the solution space grows exponentially with problem scale, making exhaustive search intractable. In addition, when the objective function is only accessible through simulations or experiments, each evaluation can be expensive, and the optimization task becomes a black-box problem in which the evaluation budget is a primary bottleneck. A common strategy for expensive black-box optimization is to construct a surrogate model from evaluated data and to generate new candidate solutions by optimizing the surrogate model. Recently, approaches that represent the surrogate model as a quadratic unconstrained binary optimization (QUBO) enables the use of Ising machines, including quantum annealing (QA) 6–12 , as e ffi cient solvers for large discrete search spaces. In this context, factorization machine with quantum annealing (FMQA) 13–16 provides a practical framework by learning pairwise interactions via a factorization machine (FM) 17, 18 to construct a quadratic surrogate model, and directly optimizing it on an Ising machine, thereby coupling surrogate model learning and combinatorial search in a unified binary formulation. A key limitation of FMQA is that it assumes binary decision variables. To apply FMQA to problems naturally described by nonbinary structures, such as permutations, categorical variables, or multivalued discrete variables, one must introduce a binary encoding. However, the choice of encoding can critically a ff ect search e ffi ciency: under an unsuitable encoding, a local move in Hamming space (e.g., a single-bit flip) may not preserve neighborhood relations or constraint structure in the original solution space 19 . As a result, neighborhood exploration becomes e ff ectively random, learning of the surrogate model can become unstable, and the optimization may waste evaluations. This issue is particularly severe in constrained problems, where feasible solutions can be extremely sparse in the binary space and many generated candidates violate constraints, further consuming the limited evaluation budget. Recent studies have proposed using latent representations learned by generative models and performing search directly in the latent space 20–23 . In the context of QUBO-based optimization, such representations o ff er a promising way to alleviate the sensitivity to handcrafted binary encodings. To mitigate these di ffi culties, the bAE +FMQA framework employs a binary 
+
+> arXiv:2602.10037v1 [cs.LG] 10 Feb 2026
+
+## Factorization Machine           
+
+> 𝑓 !" 𝒛 =𝑤 #+&𝑤 $𝑧 $
+> %!"#
+> $&'
+> +&𝒗 $,𝒗 (𝑧 $𝑧 (
+> $)(
+
+## QUBO 
+
+## Add to dataset 
+
+## Solu0on Sampling 
+
+## Evaluation 
+
+## Decode 
+
+## Quantum Annealing 
+
+## Encode Figure 1. bAE +FMQA workflow for black-box optimization. A binary autoencoder (bAE) trained only on feasible solutions maps non-binary combinatorial solutions to a low-dimensional binary latent code. In the latent space, a factorization machine (FM) is trained on previously evaluated samples and their objective values, and its quadratic approximation is formulated as a QUBO and optimized using an Ising machine (e.g., quantum annealing). The optimized latent code is decoded back to the original solution representation and evaluated, and the resulting sample is added to the dataset for the next iteration, enabling black-box optimization without relying on handcrafted encodings. autoencoder (bAE) 24 to map non-binary solutions into a compact binary latent code and runs FMQA over the latent space. This approach aims to reduce reliance on handcrafted encodings and instead learn a binary representation that is more suitable for search from problem-specific data. Empirical e ff ectiveness has been reported in applications such as antimicrobial peptide and molecular design 25, 26 , yet the mechanisms that make bAE +FMQA work remain insu ffi ciently understood (Fig. 1). In particular, it is unclear which properties of the learned latent geometry enable e ffi cient optimization. We systematically analyze three key aspects of the latent representation: (i) preservation of distance structure between solutions, (ii) locality induced by small bit flips in the binary space, and (iii) how feasibility is internalized into the representation. In this study, we investigate these mechanisms using a small traveling salesman problem (TSP) as an interpretable and fully analyzable testbed. We first validate that the bAE can reconstruct feasible tours with high fidelity. We then quantify how the learned binary latent space preserves the structure of the original solution space from both global and local perspectives, and compare it with handcrafted encodings under comparable compression rates. Finally, we evaluate the impact of the learned representation on FMQA performance in terms of approximation quality and the probability of generating feasible solutions. Through these analyses, we provide practical design insights into latent-representation-based black-box optimization and clarify how solution-space compression and structure-preserving latent geometry contribute to smoother and more feasible search landscapes. Importantly, our goal is not to propose yet another optimization pipeline, but to make the learned representation itself interpretable and actionable for surrogate-based search. In a controlled setting, we evaluate reconstruction accuracy, structure preservation, and downstream optimization behavior side by side, and identify which geometric properties of the binary latent space are most strongly linked to feasibility and search e ffi ciency. We expect these findings to serve as practical guidance for designing latent representations and encodings in QUBO-based black-box optimization beyond the specific TSP instance studied here. 
+
+## Results 
+
+In this section, we show that bAE can learn a binary latent representation that reflects the structure of the feasible-solution set of the TSP, and that QUBO optimization performed in this latent space is advantageous both in feasibility and in search e ffi ciency. We present the results in the following order: reconstruction fidelity of the bAE, structure preservation in the learned latent space, and optimization performance within the FMQA cycle. Detailed definitions of the metrics and the full experimental          
+
+> 2/14 0500 1000 1500 2000
+> Epoch
+> 0.02
+> 0.04
+> 0.06
+> 0.08
+> 0.10
+> MSE
+> Train loss
+> Validation loss 0500 1000 1500 2000
+> Epoch
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Train accuracy
+> Validation accuracy Figure 2.
+
+Training curves of the bAE with ( dz, dh) = (14 , 64) on feasible tours. (a) Reconstruction loss LMSE as a function of epoch. (b) Reconstruction accuracy A as a function of epoch. Both training and validation metrics are shown. setup are given in Methods. Here we summarize only what is needed to follow the Results. 
+
+> bAE learns faithful binary reconstructions of feasible tours
+
+As a prerequisite for the downstream FMQA optimization, we first verify that the bAE can map feasible tours to a binary latent code and reconstruct them with high fidelity through the decoder. In our framework, the Ising machine searches for low-energy solutions of the QUBO defined in the latent space, and candidate tours are obtained by decoding the optimized latent codes. Therefore, the reconstruction performance of the bAE determines both the set of solutions that the search can practically reach and the stability of subsequent candidate evaluation. In practical applications, the amount of available training data can vary substantially depending on problem size, constraint structure, and how feasible samples are generated. Establishing a universal su ffi cient dataset size is beyond the scope of this study. Instead, we prioritize analyzing the latent-space structure and downstream optimization behavior under conditions where underfitting due to data scarcity is minimized. Since the 8-city TSP has a finite solution space of ( L − 1)! = 5040 feasible tours, we train the bAE on 5000 tours, which covers almost the entire space. We measure reconstruction loss using the mean squared error (MSE) between the input tour representation π and its reconstruction ˆπ (see Methods for the exact definition). We also define reconstruction accuracy A as the fraction of samples whose reconstructed tour exactly matches the original tour. Since A counts a tour as incorrect even if a single position di ff ers, it is a stringent metric that does not tolerate local errors. Thus, an increase in A provides direct evidence that the latent code retains the global structure of the tour. Figure 2 shows the training dynamics of the bAE in terms of the reconstruction loss LMSE and the reconstruction accuracy 
+
+A. As shown in Fig. 2(a), the reconstruction loss rapidly decreases in the early stage of training and then gradually converges. A similar decreasing trend is observed for the validation loss, and no clear increase is observed in the late stage of training, indicating the absence of severe overfitting under the present setting. Consistent with the loss reduction, Fig. 2(b) shows that the reconstruction accuracy A increases during training and stabilizes at a high value in the later epochs. Although the final training accuracy is slightly higher than the validation accuracy, suggesting mild overfitting, the bAE still generalizes to unseen tours and encodes global tour information in the binary latent space. Next, we determine a representative model configuration for subsequent analyses by examining the dependence of reconstruction accuracy on the latent dimension dz and the hidden-layer size dh, which respectively control the compression rate and model capacity. Figure 3(a) shows the dependence of A on dz with the hidden-layer size fixed. Each data point represents the average over five independent training runs with di ff erent random seeds, and the error bars indicate the standard deviation. For small dz, the reconstruction accuracy is low and exhibits large variance, whereas A improves and stabilizes as dz increases. However, increasing dz also exponentially enlarges the latent search space size 2 dz , which can make optimization on an Ising machine more di ffi cult. Therefore, it is crucial to identify a regime where reconstruction fidelity saturates without introducing excessive dimensionality. Based on this trade-o ff , we adopt dz = 14 as the smallest representative value that yields su ffi ciently high and stable reconstruction accuracy, with approximately 70% of tours reconstructed correctly on average. Figure 3(b) further shows the dependence of A on the hidden-layer size dh with dz fixed at 14. While the training accuracy increases monotonically with dh, the validation accuracy reaches its maximum around dh = 64 and decreases for larger values, indicating 
+
+> 3/14
+
+13 14 15 16 
+
+dz
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+0.8 
+
+1.0 
+
+Train accuracy 
+
+Validation accuracy 16 32 64 128 256 
+
+dh
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+0.8 
+
+1.0 
+
+Train accuracy 
+
+Validation accuracy Figure 3. Dependence of reconstruction accuracy on the latent dimension dz and the hidden-layer size dh. (a) Reconstruction accuracy A versus dz with dh = 64. (b) Reconstruction accuracy A versus dh with dz = 14. Each point shows the mean over five independent training runs with di ff erent random seeds. Error bars indicate the standard deviation. Lines connecting the points are drawn as a guide to the eye. overfitting. Accordingly, we use ( dz, dh) = (14 , 64) as the representative configuration in the following analyses of latent-space structure and FMQA optimization. 
+
+> Structure preservation in the latent space
+
+Here, we evaluate to what extent the binary latent space learned by the bAE (with the standard setting ( dz, dh) = (14 , 64)) preserves the structure of the original TSP solution space. As baselines, we consider rank-based log /gray encoding, in which tours are first mapped to a rank-based representation and then binary encoded, as well as random label encoding, in which bit assignments are given randomly (Precise definitions of these encodings are provided in Methods). If proximity in the latent Hamming space is consistent with proximity in the original tour space, the resulting search landscape becomes smoother, which is expected to facilitate exploration by an Ising machine. To quantitatively assess this structure-preservation property, we compare the encodings using three complementary metrics: the Spearman rank correlation of distances ρSpearman , the neighborhood distance characteristic L(m) under small bit flips, and the local optimum ratio rLocal .We first examine how well the global distance structure of the solution space is preserved. Specifically, we compute the Spearman rank correlation coe ffi cient ρSpearman between the edge distance dEdge in the original tour space and the Hamming distance dHamming in the binary latent space (see Methods for definitions). As shown in Fig. 4(a), the bAE exhibits the highest positive correlation among all methods, indicating that it best preserves the relative ordering of "near" and "far" tours in the latent space. Rank-based log /gray encoding achieves a higher correlation than random label encoding but remains inferior to the bAE, while random label encoding yields a correlation close to zero, implying that the global structure is almost entirely destroyed. For random label encoding, the reported values are averaged over multiple encodings generated with di ff erent random seeds. Next, we evaluate local neighborhood structure, which directly a ff ects search e ffi ciency. Since Ising machines perform energy-landscape-based exploration, it is desirable that small moves in the binary space correspond to small modifications in the original solution space. To quantify this property, we use the neighborhood distance characteristic L(m), which measures how much the tour distance changes when transitioning to a point obtained by flipping m bits in the binary space (see Methods). As shown in Fig. 4(b), random label encoding yields consistently large L(m) with little dependence on m indicating a weak relationship between binary distance and tour distance. Rank-based log /gray encodings show a similar trend. In contrast, for the bAE, L(m) increases as m increases. This m dependence is largely absent in random label encoding and is more pronounced than in rank-based log /gray encodings over the range of m considered. Finally, we evaluate local structure from the perspective of the prevalence of local optima. We define a binary solution 
+
+z as a local optimum if flipping any single bit does not improve the objective value, and we define the local optimum ratio 
+
+rLocal as the fraction of such solutions in the entire space (see Methods). A higher rLocal implies a landscape with more dead ends, which is disadvantageous for annealing-based search. As shown in Fig. 4(c), random label encoding exhibits the highest local optimum ratio (mean 0 .1156), indicating that approximately 10% of solutions are local optima. Rank-based log and gray encodings yield smaller values (0 .0472 and 0 .0571, respectively) but still exceed that of the bAE. The bAE achieves the lowest         
+
+> 4/14 Log Gray Random bAE
+> Encoding Method
+> 0.00
+> 0.02
+> 0.04
+> 0.06
+> 0.08
+> 0.10
+> 0.12
+> 0.14
+> Spearman 123
+> m
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> L(m)
+> Log
+> Gray
+> Random
+> bAE Log Gray Random bAE
+> Encoding Method
+> 0.00
+> 0.05
+> 0.10
+> 0.15
+> rLocal
+> 0.0472
+> 0.0571
+> 0.1156
+> 0.0218
+
+Figure 4. Comparison of structure preservation in the binary space for the bAE, rank-based log /gray encoding, and random label encoding. (a) Spearman rank correlation coe ffi cient between the edge distance in the original tour space and the Hamming distance in the binary space. (b) Neighborhood distance characteristic L(m), which measures the change in tour distance induced by flipping m bits in the binary space. (c) Local optimum ratio rLocal , i.e., the fraction of binary solutions that are local optima under single-bit flips. local optimum ratio (mean 0 .0218), indicating that the latent landscape contains relatively few local optima. This result is consistent with the improved neighborhood continuity observed in Fig. 4(b). Overall, these results demonstrate that the bAE learns a latent binary representation that is more suitable for search than handcrafted encodings, not only in terms of global distance-order consistency (Spearman correlation) but also in terms of local continuity under small bit flips and a reduced prevalence of local optima. 
+
+Solution-space compression enhances feasibility and search efficiency in FMQA 
+
+We next examine how the structure-preserving latent space learned by the bAE translates into practical optimization performance within the FMQA cycle. In FMQA, a factorization machine (FM) is trained on previously evaluated solutions and their objective values, and the trained FM is cast as a QUBO and optimized by an Ising machine to propose new candidate solutions. Therefore, if a latent representation induces a search-friendly landscape, performance improvements should appear as (i) faster progress toward high-quality candidates (higher search e ffi ciency) and (ii) more stable generation of feasible solutions in constrained problems (higher feasibility). To quantify optimization performance, we use the approximation ratio R with respect to the exact optimum (see Methods), where smaller values indicate better solutions and faster decreases in R across iterations indicate more e ffi cient search. Figure 5(a) shows the evolution of R over FMQA iterations. Random label encoding exhibits only modest improvement, with 
+
+R remaining high throughout the search. Rank-based log /gray encoding performs better than random label encoding, yet it is consistently inferior to the bAE both in convergence speed and in the final attainable ratio. In contrast, the bAE rapidly reduces R from early iterations and reaches R ≈ 1 with substantially fewer iterations. This indicates that iterative optimization combining FM-based quadratic approximation and Ising machine search operates most e ff ectively on the bAE-induced latent landscape. We further evaluate feasibility in constrained optimization using the feasible-sample probability PFeasible , defined as the fraction of raw Ising machine outputs that satisfy the constraints before any post-processing (see Methods). This metric directly reflects how strongly feasibility is internalized by the representation. Figure 5(b) shows PFeasible for each method. random label encoding yields PFeasible ≈ 0.6. Rank-based Log and Gray Encodings produce even lower PFeasible values and exhibit noticeable instance-to-instance variability, indicating unstable feasibility. In sharp contrast, the bAE achieves PFeasible = 1.0 in all trials, meaning that the search produces only feasible tours throughout the optimization process. Taken together, these results demonstrate that solution-space compression via the bAE improves FMQA in two com-plementary ways: it accelerates search (a faster decrease in R) and robustly guarantees feasibility in constrained problems (PFeasible = 1.0), thereby stabilizing and enhancing the overall FMQA cycle. 
+
+## Discussion 
+
+In this study, we have quantitatively elucidated why the bAE +FMQA framework functions e ff ectively in combinatorial optimization, focusing on two key aspects: structure preservation in the latent space and solution-space compression. Rather than merely demonstrating performance gains, we explicitly connected geometric properties of the learned binary latent representation to downstream search behavior. Specifically, we showed that the bAE can faithfully encode feasible TSP tours into a compact binary latent space while maintaining high reconstruction fidelity (Fig. 2). More importantly, the learned latent 
+
+> 5/14
+
+0 100 200 300 400 
+
+> Iteration
+
+1.0 
+
+1.1 
+
+1.2 
+
+1.3 
+
+1.4 
+
+1.5    
+
+> R
+> Log
+> Gray
+> Random
+> bAE Log Gray Random bAE
+> Encoding Method
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+0.8 
+
+1.0 
+
+> PFeasible  0.4312
+> 0.4012
+> 0.5900
+> 1.0000
+
+Figure 5. Optimization performance of bAE +FMQA. (a) Approximation ratio R as a function of FMQA iterations, where 
+
+R ≈ 1 indicates reaching the exact optimum. (b) Feasible-sample probability PFeasible , defined as the fraction of raw Ising machine outputs that satisfy the constraints before any post-processing. Error bars indicate mean ± standard deviation over problem instances. space exhibits superior structure preservation compared with handcrafted encodings, both in terms of global distance-order consistency, as measured by the Spearman rank correlation, and local neighborhood continuity under small bit flips, as captured by the neighborhood distance characteristic L(m) (Fig. 4(a,b)). The reduced local optimum ratio observed for the bAE (Fig. 4(c)) further indicates that the induced energy landscape in the latent space is relatively smooth, with fewer dead ends that can trap annealing-based search. These geometric properties directly translate into improved optimization behavior within the FMQA cycle. When combined with FM-based quadratic approximation and Ising machine search, the bAE-induced latent representation leads to a faster reduction in the approximation ratio R and achieves the exact optimum with fewer iterations (Fig. 5(a)). At the same time, feasibility is dramatically improved: the bAE consistently achieves a feasible-sample probability 
+
+PFeasible = 1.0, meaning that all raw Ising machine outputs correspond to valid tours without requiring post-processing (Fig. 5(b)). This stands in sharp contrast to random and rank-based log /gray encodings, which exhibit both lower feasibility and substantial instance-to-instance variability. These results suggest that at least two mechanisms are crucial for the success of bAE +FMQA. The first is structure preservation in the latent space. In handcrafted encodings such as random label encoding, even a single-bit flip can induce a large and essentially random change in the original solution, destroying locality and resulting in a rugged energy landscape with many local optima. Since Ising machines explore solutions by following the energy landscape defined by a QUBO, such mismatch between binary neighborhoods and meaningful solution similarity is inherently disadvantageous. In contrast, the bAE achieves the highest distance-rank correlation and the best neighborhood continuity, indicating that local moves in the latent space correspond more reliably to local modifications in the original tour space. This alignment enables the FM surrogate model to provide informative guidance and allows annealing-based search to proceed more smoothly. The second mechanism is solution-space compression. In our setting, the bAE is trained exclusively on feasible solutions, which implicitly folds the feasible region of the original solution space into a compact latent manifold. As a result, candidate points sampled in the latent space are highly likely to decode into feasible solutions. The fact that PFeasible = 1.0 is achieved throughout the optimization process suggests that feasibility is e ff ectively internalized into the representation itself, rather than being enforced by explicit penalties or post-processing. By contrast, random label encoding yields a feasible-sample probability comparable to the fraction of feasible points in the original binary space, indicating that little feasibility information is captured by the encoding. Importantly, this improvement cannot be attributed solely to dimensionality reduction. Simply reducing the number of bits does not guarantee either feasibility or e ffi cient search, as evidenced by the inferior performance of handcrafted encodings with comparable compression rates. Instead, both compression and structure preservation must be simultaneously satisfied for FMQA to function e ff ectively in constrained optimization problems. From a broader perspective, our study is deliberately positioned at a small-scale and interpretable setting. The goal is not to claim immediate scalability to large TSP instances, but rather to isolate and analyze the mechanisms by which bAE +FMQA succeeds. By exhaustively characterizing the relationship between the original solution space and the learned latent geometry, we provide interpretable evidence linking reconstruction fidelity, distance preservation, neighborhood continuity, and downstream optimization performance. 
+
+> 6/14
+
+These findings o ff er practical guidance for the design of latent representations in QUBO-based black-box optimization. Beyond reconstruction accuracy alone, desirable representations should preserve distance orderings, maintain locality under small bit flips, and reduce the prevalence of local optima in the induced energy landscape. Future work should investigate how such geometric properties can be encouraged through architectural choices, training objectives, or inductive biases tailored to specific problem structures and constraints. In addition, clarifying the relationship between training data size, diversity, and the resulting latent geometry remains an important open question. Overall, by making the latent representation itself interpretable and actionable, this study advances understanding of how learned binary embeddings can systematically improve feasibility and search e ffi ciency in surrogate-based optimization with Ising machines. 
+
+## Methods 
+
+This section describes the problem setting, data generation procedure, handcrafted baseline encodings, training of the binary autoencoder (bAE), evaluation metrics for latent-space structure, and the optimization protocol based on FMQA. 
+
+> TSP instance and tour representation
+
+To analyze the behavior of the bAE +FMQA framework in an interpretable manner, we consider the traveling salesman problem (TSP) as a representative constrained combinatorial optimization task. We focus on a small-scale setting with the number of cities fixed to L = 8. City coordinates {ri}Li=1 are independently sampled from a uniform distribution over the unit square [0 , 1] × [0 , 1]. The distance between cities i and j is defined as the Euclidean distance di j = ∥ri − r j∥2. A tour is represented as an ordered sequence of cities π = (π1, . . . , π L), and the objective function to be minimized is given by 
+
+f (π) =
+
+> L
+
+X
+
+> t=1
+
+dπt,π t+1 , πL+1 ≡ π1. (1) To remove rotational symmetry, the starting city π1 is fixed in the representation, resulting in ( L − 1)! feasible tours. Reverse-order tours are not identified and are treated as distinct solutions for simplicity of analysis. The training dataset for the bAE is constructed by uniformly sampling Ntotal feasible tours from this solution set. The dataset is split into training and validation subsets with an 4 :1 ratio to evaluate reconstruction performance. Owing to the small problem size, the exact optimal tour length f ⋆ can be computed by exhaustive enumeration and is used as a reference for optimization-performance metrics. In practical applications, the amount of available training data depends strongly on problem size, constraint structure, and data-generation mechanisms. Establishing a generally su ffi cient dataset size is therefore beyond the scope of this study. Instead, we prioritize eliminating underfitting due to data scarcity and analyze latent-space structure and downstream optimization behavior under conditions where the model performance is su ffi ciently saturated. Specifically, we exploit the finiteness of the L = 8 TSP solution space and train the bAE using a relatively large dataset ( Ntotal = 5000). 
+
+> Binary autoencoder (bAE)
+
+We employ a binary autoencoder (bAE) to map a feasible tour π to a low-dimensional binary latent variable z ∈ { 0, 1}dz and to reconstruct a tour ˆπ from z. An autoencoder (AE) 27 is an unsupervised neural network that compresses input data into a latent space and is trained to reconstruct the input from the latent representation. AEs whose latent variables are explicitly binary are often referred to as binary AEs (bAEs) 24 . In our setting, the goal of the bAE is to learn a compact binary representation that is aligned with the manifold of feasible solutions. Following prior work, we implement a sequence-to-sequence (Seq2Seq) model based on the Gated Recurrent Unit (GRU) 28 .Since a TSP tour is naturally represented as a sequence (permutation) whose length depends on the number of cities L, a recurrent encoder–decoder architecture provides a convenient and interpretable baseline. Let Enc (·) and Dec (·) denote the encoder and decoder, respectively: 
+
+z = Enc( π) ∈ { 0, 1}dz , (2) ˆπ = Dec( z) ∈ { 1, 2, · · · , L}L. (3) Here dz is the latent dimension, and we aim for dz ≪ L2 (for L = 8, L2 = 64), i.e., a substantially more compact representation than the original two-way one-hot tour matrix. A tour is represented as an ordered city sequence π = (π1, . . . , π L). At each time step t, we encode the city index πt as a one-hot vector xt := onehot( πt). The encoder processes the input sequence {xt}Lt=1 with a GRU: 
+
+ht = GRU( xt, ht−1). (4) 
+
+> 7/14
+
+From the final hidden state hL, a fully connected layer with a sigmoid activation produces a continuous vector p ∈ [0 , 1] dz :
+
+p = σ(Wh L + b), (5) where W and b are trainable parameters and σ(·) is the element-wise sigmoid function. To obtain a binary latent vector, we apply stochastic thresholding: 
+
+zi = step( pi − ξi), ξi ∼ U(0 , 1) , (6) where step (·) is the Heaviside step function and U(0 , 1) denotes the uniform distribution. We denote the above pipeline (GRU 
+
+→ sigmoid → stochastic binarization) as Enc( ·) in Eq. (2). The decoder reconstructs a tour sequence from z using another GRU. First, the latent vector is mapped to the initial hidden state: 
+
+h0 = Winit z + binit . (7) At each time step t, the hidden state is updated by 
+
+ht = GRU( ˜ xt−1, ht−1), ˜xt−1 =
+
+
+
+xt−1 (training with teacher forcing) ˆxt−1 (inference) (8) where ˆxt−1 is the one-hot vector corresponding to the previously predicted city. A linear layer produces a score vector ut ∈ RL:
+
+ut = W0 ht + b0, (9) and the predicted distribution is obtained by 
+
+pt = softmax( ut). (10) During inference, we choose the most likely city at each step: ˆπt = arg max  
+
+> i∈{ 1,..., L}
+
+pt,i, (11) and define ˆ xt = onehot(ˆ πt). We denote the entire mapping z 7 → ˆπ as Dec( ·) in Eq. (3). To train the bAE, we uniformly sample Ntotal feasible tours from the TSP solution space and split them into training and validation sets with Ntrain and Nvalid samples, respectively. 
+
+LMSE = 1
+
+Ntrain 
+
+> Ntrain
+
+X
+
+> n=1
+
+1
+
+L
+
+> L
+
+X
+
+> t=1
+> L
+
+X
+
+> i=1
+
+p(n) 
+
+> t,i
+
+− x(n)
+
+> t,i
+
+2 . (12) Since the binarization in Eq. (6) is non-di ff erentiable, we adopt the straight-through estimator 29 . In backpropagation, we approximate the gradient through the step function by 
+
+∂LMSE 
+
+∂pi
+
+B ∂LMSE 
+
+∂zi
+
+, (13) where LMSE is defined in Eq. (12). 
+
+Baseline encodings 
+
+To assess the e ff ectiveness of the latent representations learned by the bAE, we compare them with several handcrafted binary encodings. The purpose of this comparison is to evaluate how well a binary representation preserves the neighborhood structure of the original solution space. Accordingly, we restrict our comparison to encodings that map a TSP tour directly to a binary vector. We consider three representative baselines: rank-based Log, rank-based gray, and random label. Rank based Log achieves high compression but does not explicitly preserve geometric neighborhood relations. Rank based Gray enforces algebraic locality by ensuring that adjacent ranks di ff er by a single bit. Random Label is expected to destroy the original structure. All three encodings reduce the original TSP representation, which would require L2 = 64 binary variables in a two-way one-hot formulation, to the minimum number of bits B required to represent all feasible tours. In our setting, the number 
+
+> 8/14
+
+of feasible tours is ( L − 1)!, and thus the required bit length is given by B = ⌈log 2(L − 1)! ⌉ = 13. Consequently, all baseline encodings represent tours as binary vectors of length B = 13. Conventional encodings such as one-hot representations are excluded from this comparison, as they correspond to the original uncompressed representation rather than a compressed binary encoding. Below, we describe each baseline encoding in detail. Rank-based Log encoding represents a permutation using the information-theoretically minimal number of bits based on its lexicographic rank. Specifically, a tour π with L cities is mapped to an integer R(π) ∈ { 0, 1, . . . , (L − 1)! − 1} using the Lehmer code (factorial number system) 30 . This integer is then converted into a B-bit binary vector: 
+
+z = bin B
+
+ R(π), (14) where bin B(·) denotes the B-bit binary representation. While this encoding achieves maximal compression e ffi ciency, numerical proximity in lexicographic rank does not necessarily correspond to geometric similarity between tours, such as shared edges. Rank-based Gray encoding applies a Gray code transformation to the lexicographic rank R(π). In contrast to standard binary representations, Gray codes ensure that adjacent integers di ff er by exactly one bit. The encoding is defined as 
+
+z = gray B
+
+ R(π), gray( R) = R ⊕ (R ≫ 1) , (15) where ⊕ denotes bitwise XOR and ≫ denotes the right shift. If lexicographically adjacent permutations were also geometrically similar, this encoding would preserve local neighborhood structure. However, such correspondence is not guaranteed for permutations. As a structure-destroying baseline, we also consider Random Label encoding. In this scheme, each feasible tour π is assigned a unique random integer label, which is then converted into a B-bit binary vector. This procedure is equivalent to randomly permuting the coordinates of the solution space and is therefore expected to completely destroy any meaningful neighborhood or distance structure. For all handcrafted encodings, decoding is performed by mapping a binary vector z back to an integer rank R(π) and reconstructing the corresponding tour. Since the representable integer range 2 B generally exceeds ( L − 1)!, decoded values satisfying R(π) ≥ (L − 1)! are treated as invalid codes and are regarded as constraint violations during optimization and evaluation. 
+
+> QUBO approximation on latent space using factorization machine
+
+Using the bAE or the baseline encodings described above, each feasible TSP tour π is mapped to a binary vector z ∈ { 0, 1}dbin ,where dbin = dz for the bAE and dbin = B for the handcrafted encodings. If the tour length f (π) can be approximated as a function defined on this latent space, the optimization problem can be reformulated as a QUBO whose variables are only the latent binary variables z. This enables direct optimization using an Ising machine. In this study, we adopt factorization machine (FM) 17 as the surrogate model for approximating the objective function on the latent space. An FM is a regression model that represents first-order terms and all pairwise interactions of the input variables through inner products of low-rank factor vectors. This formulation naturally induces a quadratic form for binary inputs. Specifically, for a latent binary vector z ∈ { 0, 1}dbin , the FM approximates the tour length as 
+
+fFM (z) = w0 +
+
+> dbin
+
+X
+
+> i=1
+
+wizi +
+
+X 
+
+> i<j
+
+⟨vi, v j⟩ziz j. (16) Since the latent variables zi are binary, Eq. (16) is isomorphic to a QUBO energy function of the form E(z) = Pi Qii zi +
+
+Pi< j Qi j ziz j + const . Indeed, by identifying Qii = wi and Qi j = ⟨vi, v j⟩ for i < j, the trained FM parameters directly define the linear and quadratic coe ffi cients of the corresponding QUBO, with the constant term given by w0.
+
+> Factorization Machine with Quantum Annealing
+
+We now describe the hybrid optimization algorithm that integrates solution-space compression by the bAE (or baseline encodings) with objective-function approximation using FM, and performs optimization via an Ising machine. This framework is referred to as FMQA. Given a trained bAE or a handcrafted encoding, FMQA proceeds through an iterative optimization cycle. At the beginning of the process, a small set of feasible solutions and their corresponding objective values is prepared as an initial dataset Dinit .Each solution is encoded into a binary vector z using the selected encoding scheme. Using the encoded dataset (z(m), f (π(m))) , an FM surrogate model is trained to approximate the objective function on the latent space, as described in the previous subsection. The learned FM parameters define a QUBO, which is then provided to an Ising machine to generate candidate solutions by sampling low-energy configurations. The binary samples output by the Ising machine are decoded back into candidate tours in  
+
+> 9/14 Table 1.
+
+Hyperparameter settings for the binary autoencoder (bAE) and the factorization machine (FM). Model Parameter Value Search range bAE Architecture GRU Fixed Hidden dimension dh 64 16 - 256 Latent dimension dz 14 13 - 16 Number of encoder /decoder layers 2 Fixed Learning rate 0.001 Fixed Number of epochs 2000 Fixed FM Rank k 8 Fixed Learning rate 0.01 Fixed Number of epochs 1000 Fixed Initial dataset size Ninit 100 Fixed the original solution space using the corresponding decoding rule of the encoding scheme. The decoded solutions are evaluated using the true objective function, and the resulting pairs are added to the dataset. This expanded dataset is then used to retrain the FM, and the procedure is repeated. Formally, the FMQA optimization cycle consists of the following steps: 1. Prepare an initial dataset Dinit consisting of a small number of solutions and their objective values. 2. Encode each solution into a binary vector using the trained bAE or a baseline encoding. 3. Train an FM surrogate model on the encoded dataset. 4. Construct a QUBO from the trained FM and sample candidate solutions using an Ising machine. 5. Decode the sampled binary vectors into candidate solutions in the original space. 6. Evaluate the decoded solutions and add them to the dataset. 7. Repeat steps 2 - 6 until a termination criterion is satisfied. 
+
+> Settings
+
+The hyperparameter settings for the bAE and the FM are summarized in Table 1. The architectural choices and training parameters were determined through the hyperparameter search described in the Results, and the selected configuration was used for all subsequent analyses and optimization experiments. For parameter updates, we used AdamW 31 . To optimize the QUBO constructed by the FM on the latent space, we used a quantum annealing machine, D-Wave Advantage system 6.4 . The annealing time was fixed to 20 μs (default setting), and when minor embedding onto the hardware graph was required, we used the automatic embedding provided by the system. 
+
+> Sample acceptance and post-processing in FMQA
+
+In FMQA, samples generated by the Ising machine are sequentially decoded, and the resulting solutions are added to the training dataset to advance the optimization process. However, indiscriminately accepting infeasible solutions or solutions that duplicate existing data can degrade the quality and diversity of the training set, leading to poorer generalization of the FM surrogate model and ine ffi cient exploration. To address this issue, we impose two conditions on each sample generated during the optimization cycle: (i) whether the decoded solution satisfies the problem constraints, and (ii) whether it is distinct from the existing dataset. If both conditions are satisfied, the solution is directly added to the dataset. Otherwise, post-processing procedures described below are applied. 
+
+> Handling of new samples in FMQA
+
+This subsection describes how binary samples output by the Ising machine are post-processed when they do not correspond to valid tours after decoding. For each encoding scheme, we define a decoding post-processing rule that guarantees the final output is always a valid tour (i.e., a permutation of cities). Specifically, we apply: (i) rank wrapping for rank-based encodings (Log and Gray), (ii) nearest-neighbor substitution for Random Label encoding, and (iii) deterministic repair for the bAE-based decoding. For Log and Gray encodings, the binary string is decoded into an integer rank r, which is then mapped to a permutation (tour). Since the decoded rank may fall outside the valid range, we apply a wrapping operation 
+
+rwrap = r mod Ncodes , (17) 
+
+> 10/14
+
+and decode using rwrap . Here, Ncodes denotes the total number of feasible tours, which for a TSP with L cities (with rotational symmetry fixed) is given by 
+
+Ncodes = (L − 1)! . (18) This procedure ensures that a valid tour is always returned, even when the decoded rank is out of range. In Random Label encoding, the binary string is decoded into an integer label ℓ, which is then mapped back to a tour using a lookup table. When the decoded label is not present in the table, we compute the Hamming distance to all registered codes and substitute the tour corresponding to the nearest neighbor 
+
+ℓ∗ = arg min 
+
+> ℓ′∈C pool
+
+dHamming (ℓ, ℓ ′). (19) Here, Cpool denotes the fixed set of binary codes corresponding to all feasible tours used to define the Random Label encoding. If multiple nearest neighbors exist, one is selected randomly. This operation can be interpreted as projecting an unseen label onto the closest known tour in the binary space. For the bAE, the binary vector is passed through the decoder to obtain a city sequence. The decoded output may violate constraints due to duplicated or missing cities. In such cases, we apply a deterministic repair procedure consisting of two steps: (i) removing duplicated elements and out-of-range indices while preserving their order, and (ii) appending missing cities in ascending order. This guarantees construction of a valid permutation of length L.
+
+> Handling duplicate solutions in FMQA
+
+This subsection describes how FMQA handles decoded solutions that duplicate existing entries in the dataset. After decoding, each candidate tour is checked against the current dataset. If it is not a duplicate, it is directly added. When duplication is detected, we perform a local search around the decoded tour to generate a new candidate. Specifically, we apply neighborhood operations consisting of (i) 2-opt moves, which remove two edges and reconnect the tour by reversing a subpath, and (ii) city-swap moves, which exchange the positions of two cities. These operations are attempted up to a maximum of 50 trials. If a newly generated tour is not present in the dataset, it is accepted and added. If all attempts fail to produce a novel solution, the sample is discarded. This procedure prevents the dataset from collapsing onto a small set of repeated solutions and helps maintain diversity, thereby stabilizing FM training and improving exploration e ffi ciency in FMQA. 
+
+Evaluation Metrics 
+
+To comprehensively evaluate the proposed framework, we employ the following metrics, which quantify reconstruction fidelity, structural preservation of the solution space, landscape smoothness, and optimization performance. 
+
+> Reconstruction loss
+
+The reconstruction loss measures how accurately the bAE reproduces the input tour representation. It is defined as the mean squared error (MSE) between the ground-truth one-hot sequence {xt}Lt=1 derived from the input tour π and the probability distributions {pt}Lt=1 output by the decoder: 
+
+LMSE = 1
+
+Ndata 
+
+> Ndata
+
+X
+
+> n=1
+
+1
+
+L
+
+> L
+
+X
+
+> t=1
+> L
+
+X
+
+> i=1
+
+p(n) 
+
+> t,i
+
+− x(n)
+
+> t,i
+
+2 . (20) 
+
+> Reconstruction accuracy
+
+Reconstruction accuracy is defined as the fraction of input tours that are perfectly reconstructed after decoding. A decoded tour is regarded as correct only if it exactly matches the input tour. Even a single mismatch is counted as incorrect. The reconstruction accuracy is given by 
+
+A = Naccurate 
+
+Ndata 
+
+. (21) where Naccurate denotes the number of perfectly reconstructed tours. 
+
+> Rank correlation coefficient
+
+To assess how well an encoding preserves the global structure of the solution space, we evaluate the rank correlation between distances in the original TSP space and distances in the corresponding binary representation. Specifically, for a pair of tours π(a)
+
+and π(b), we compute the edge distance d(a,b)Edge in the solution space and the normalized Hamming distance d(a,b)Hamming between 
+
+> 11/14
+
+their binary representations z(a) and z(b). Let dbin denote the bit length of the binary representation ( dbin = dz for the bAE and 
+
+dbin = B for handcrafted encodings). The normalized Hamming distance is defined as 
+
+d(a,b)Hamming = 1
+
+dbin 
+
+> dbin
+
+X
+
+> q=1
+
+z(a) 
+
+> q
+
+− z(b) 
+
+> q
+
+. (22) The edge set of a tour π = (π1, . . . , π L) is defined as 
+
+E(π) : = {πi, π i+1} i = 1, . . . , L , πL+1 = π1, (23) and the edge distance between two tours is given by 
+
+d(a,b)Edge = 1 − 1
+
+L Eπ(a) ∩ E π(b) . (24) Let DH =  d(a,b)Hamming 
+
+ and DE =  d(a,b)Edge 
+
+ denote the lists of pairwise Hamming distances and edge distances, respectively, computed over randomly sampled tour pairs. We compute the Spearman rank correlation coe ffi cient between DH and DE as 
+
+ρSpearman = corr(rank( DH), rank( DE)) . (25) Here, rank( ·) denotes ranking with averaged ties, and corr( ·, ·) denotes the Pearson correlation. 
+
+> Neighborhood distance characteristic
+
+To quantify the smoothness of the energy landscape induced by an encoding, we analyze how small perturbations in the latent space a ff ect the decoded solution. For an evaluation tour π, its latent binary code z = Enc (π) ∈ { 0, 1}dbin is obtained. We then generate neighboring codes z′ by flipping m randomly selected bits such that dHamming (z, z′) = m. Each z′ is decoded into a tour 
+
+π′ = Dec (z′). When π′ is feasible, we compute the edge distance dEdge (π, π′). Repeating this process over multiple samples, we define 
+
+L(m) = Eπ
+
+hEz′ : dHamming (z,z′)=m
+
+dEdge (π, Dec( z′)) i . (26) 
+
+> Local optimum ratio
+
+To evaluate whether search in the latent space tends to be trapped by local optima, we measure the proportion of local optima among all possible solutions. A binary configuration z is defined as a local optimum if flipping any single bit does not improve the objective value: 
+
+z is a local optimum ⇐⇒ ∀ z′ ∈ N (z), E(z′) ≥ E(z), (27) where N(z) denotes the set of Hamming-1 neighbors of z. For the 8-city TSP considered in this study, all (8 − 1)! = 5040 feasible tours can be enumerated, allowing exact identification of local optima. The local optimum ratio is defined as 
+
+rLocal = Nlocal 
+
+Nall 
+
+, (28) where Nlocal is the number of local optima and Nall = 5040 is the total number of feasible tours. 
+
+> Approximation ratio
+
+To evaluate optimization performance, we use the approximation ratio R with respect to the known optimal tour length f ∗. Let 
+
+f denote the best objective value obtained during the optimization process. The approximation ratio is defined as 
+
+R = ff ∗ . (29) Since the TSP is a minimization problem, R ≥ 1, and values closer to 1 indicate better solutions. 
+
+> Feasible-sample probability
+
+In constrained combinatorial optimization, it is crucial that feasible solutions are generated consistently during the search process. We therefore define the feasible-sample probability PFeasible as the fraction of raw samples output by the Ising machine that satisfy the TSP constraints (i.e., form valid tours) before any post-processing. Let Nsamp be the total number of samples generated by the Ising machine and NFeasible the number of feasible ones. Then 
+
+PFeasible = NFeasible 
+
+Nsamp 
+
+. (30) A higher value of PFeasible indicates that the search remains closer to the feasible region and avoids ine ffi cient exploration caused by constraint violations. 
+
+> 12/14
+
+## References 
+
+1. Yarkoni, S., Raponi, E., Bäck, T. & Schmitt, S. Quantum annealing for industry applications: Introduction and review. 
+
+Reports on Prog. Phys. 85 , 104001 (2022). 
+
+2. Matsumori, T., Taki, M. & Kadowaki, T. Application of QUBO solver using black-box optimization to structural design for resonance avoidance. Sci. Rep. 12 , 12143 (2022). 
+
+3. Kanai, H., Yamashita, M., Tanahashi, K. & Tanaka, S. Annealing-assisted column generation for inequality-constrained combinatorial optimization problems. IEEE Access (2024). 
+
+4. Takahashi, K. et al. Eff ectiveness of cardinality-return weighted maximum independent set approach for financial portfolio optimization. arXiv preprint arXiv:2510.23310 (2025). 
+
+5. Nawa, K., Suzuki, T., Masuda, K., Tanaka, S. & Miura, Y. Quantum annealing optimization method for the design of barrier materials in magnetic tunnel junctions. Phys. Rev. Appl. 20 , 024044 (2023). 
+
+6. Kadowaki, T. & Nishimori, H. Quantum annealing in the transverse Ising model. Phys. Rev. E 58 , 5355 (1998). 
+
+7. Das, A. & Chakrabarti, B. K. Colloquium: Quantum annealing and analog quantum computation. Rev. Mod. Phys. 80 ,1061–1081 (2008). 
+
+8. Tanaka, S., Tamura, R. & Chakrabarti, B. K. Quantum spin glasses, annealing and computation (Cambridge University Press, 2017). 
+
+9. Tanahashi, K., Takayanagi, S., Motohashi, T. & Tanaka, S. Application of Ising machines and a software development for Ising machines. J. Phys. Soc. Jpn. 88 , 061010 (2019). 
+
+10. Hauke, P., Katzgraber, H. G., Lechner, W., Nishimori, H. & Oliver, W. D. Perspectives of quantum annealing: Methods and implementations. Reports on Prog. Phys. 83 , 054401 (2020). 
+
+11. Mohseni, N., McMahon, P. L. & Byrnes, T. Ising machines as hardware solvers of combinatorial optimization problems. 
+
+Nat. Rev. Phys. 4, 363–379 (2022). 
+
+12. Chakrabarti, B. K., Leschke, H., Ray, P., Shirai, T. & Tanaka, S. Quantum annealing and computation: challenges and perspectives. Philos. Transactions Royal Soc. A 381 , 20210419 (2023). 
+
+13. Kitai, K. et al. Designing metamaterials with quantum annealing and factorization machines. Phys. Rev. Res. 2, 013319 (2020). 
+
+14. Inoue, T. et al. Towards optimization of photonic-crystal surface-emitting lasers via quantum annealing. Opt. Express 30 ,43503–43512 (2022). 
+
+15. Nakano, M., Seki, Y., Kikuchi, S. & Tanaka, S. SWIFT-FMQA: Enhancing factorization machine with quadratic-optimization annealing via sliding window. IEEE Access 14 , 10977–10990 (2026). 
+
+16. Tamura, R. et al. Black-box optimization using factorization and Ising machines. arXiv preprint arXiv:2507.18003 (2025). 
+
+17. Rendle, S. Factorization machines. In 2010 IEEE International conference on data mining , 995–1000 (IEEE, 2010). 
+
+18. Rendle, S. Factorization machines with libfm. ACM Transactions on Intell. Syst. Technol. (TIST) 3, 1–22 (2012). 
+
+19. Koshikawa, S., Hosaka, A. & Yoshida, T. E ffi cient bit labeling in factorization machines with annealing for traveling salesman problem. Sci. Rep. 15 , 26910 (2025). 
+
+20. Kingma, D. P. & Welling, M. Auto-encoding variational bayes. arXiv preprint arXiv:1312.6114 (2013). 
+
+21. Gómez-Bombarelli, R. et al. Automatic chemical design using a data-driven continuous representation of molecules. ACS central science 4, 268–276 (2018). 
+
+22. Kusner, M. J., Paige, B. & Hernández-Lobato, J. M. Grammar variational autoencoder. In International conference on machine learning , 1945–1954 (PMLR, 2017). 
+
+23. Jin, W., Barzilay, R. & Jaakkola, T. Junction tree variational autoencoder for molecular graph generation. In International conference on machine learning , 2323–2332 (PMLR, 2018). 
+
+24. Baynazarov, R. & Piontkovskaya, I. Binary autoencoder for text modeling. In Conference on Artificial Intelligence and Natural Language , 139–150 (Springer, 2019). 
+
+25. Tucs, A. et al. Quantum annealing designs nonhemolytic antimicrobial peptides in a discrete latent space. ACS Med. Chem. Lett. 14 , 577–582 (2023). 
+
+> 13/14
+
+26. Mao, Z., Matsuda, Y., Tamura, R. & Tsuda, K. Chemical design with gpu-based Ising machines. Digit. Discov. 2,1098–1103 (2023). 
+
+27. Hinton, G. E. & Salakhutdinov, R. R. Reducing the dimensionality of data with neural networks. Science 313 , 504–507 (2006). 
+
+28. Cho, K. et al. Learning phrase representations using RNN encoder-decoder for statistical machine translation. arXiv preprint arXiv:1406.1078 (2014). 
+
+29. Bengio, Y., Léonard, N. & Courville, A. Estimating or propagating gradients through stochastic neurons for conditional computation. arXiv preprint arXiv:1308.3432 (2013). 
+
+30. Lehmer, D. H. Teaching combinatorial tricks to a computer (1960). 
+
+31. Loshchilov, I. & Hutter, F. Decoupled weight decay regularization. arXiv preprint arXiv:1711.05101 (2017). 
+
+## Acknowledgements 
+
+This work was partially supported by the Japan Society for the Promotion of Science (JSPS) KAKENHI (Grant Number JP23H05447), the Council for Science, Technology, and Innovation (CSTI) through the Cross-ministerial Strategic Innovation Promotion Program (SIP), “Promoting the application of advanced quantum technology platforms to social issues” (Funding agency: QST), Japan Science and Technology Agency (JST) (Grant Number JPMJPF2221). In addition, this work is partially based on results obtained from a project, JPNP23003, commissioned by the New Energy and Industrial Technology Development Organization (NEDO). S. Tanaka wishes to express their gratitude to the World Premier International Research Center Initiative (WPI), MEXT, Japan, for their support of the Human Biology-Microbiome-Quantum Research Center (Bio2Q). T. A. and M. Y. thank Keita Takahashi for insightful discussions and valuable suggestions that helped improve this work. Finally, they also thank the MITOU Target project for providing a development environment for annealing machines, and its project managers, Ryo Tamura and Kotaro Tanahashi, for meaningful discussions and comments. We further thank Yosuke Mukasa for technical support and helpful feedback as a technical advisor. 
+
+## Author contributions statement 
+
+T. A. implemented the model, conducted the simulations, and analyzed the results. S. T. managed and supervised the research. M. Y. and S. T. contributed to the discussion on the conceptualization, methodology, results, and implications. All authors reviewed the manuscript. 
+
+## Additional information 
+
+Competing interests 
+
+The authors declare no competing interests. 
+
+## Data Availability 
+
+The datasets used in our study are available from the corresponding author upon reasonable request.

@@ -1,0 +1,1597 @@
+Title: Active Value Querying to Minimize Additive Error in Subadditive Set Function Learning
+
+URL Source: https://arxiv.org/pdf/2602.23529v1
+
+Published Time: Mon, 02 Mar 2026 01:11:42 GMT
+
+Number of Pages: 25
+
+Markdown Content:
+# Active Value Querying to Minimize Additive Error in Subadditive Set Function Learning 
+
+Martin ˇ Cerný ∗
+
+Charles University Prague, Czechia 
+
+cerny@kam.mff.cuni.cz 
+
+David Sychrovský ∗
+
+Charles University Prague, Czechia 
+
+sychrovsky@kam.mff.cuni.cz 
+
+Filip Úradník ∗
+
+Charles University Prague, Czechia 
+
+uradnik@kam.mff.cuni.cz 
+
+Jakub ˇ Cerný 
+
+Columbia University New York, USA 
+
+jakub.cerny@columbia.edu 
+
+## Abstract 
+
+Subadditive set functions play a pivotal role in computational economics (especially in combinatorial auctions), combinatorial optimization or artificial intelligence applications such as interpretable machine learning. However, specifying a set function requires assigning values to an exponentially large number of subsets in general, a task that is often resource-intensive in practice, particularly when the values derive from external sources such as retraining of machine learning models. A simple omission of certain values introduces ambiguity that becomes even more significant when the incomplete set function has to be further optimized over. Motivated by the well-known result about inapproximability of subadditive functions using deterministic value queries with respect to a multiplicative error, we study a problem of approximating an unknown subadditive (or a subclass of thereof) set function with respect to an additive error – i. e., we aim to efficiently close the distance between minimal and maximal completions. Our contributions are threefold: (i) a thorough exploration of minimal and maximal completions of different classes of set functions with missing values and an analysis of their result-ing distance; (ii) the development of methods to minimize this distance over classes of set functions with a known prior, achieved by disclosing values of additional subsets in both offline and online manner; and (iii) empirical demonstrations of the algorithms’ performance in practical scenarios. 
+
+## 1 Introduction 
+
+Set function optimization comes into play whenever we need to optimize over subsets of elements from a larger ground set, where adding more inputs to a fixed subset has (possibly) non-linear additional benefits depending on the other elements. Its applications span diverse fields, including combinatorial auctions [ 9, 14 , 15 ], supply chain management [ 31 ], communication networks [ 35 ], logistics and resource allocation [ 27 ], or environmental agreements [ 21 ]. For efficient optimization, we often rely on an oracle access to evaluate function values. However, describing a set function for n items in general requires 2n values – one for each possible subset. It is natural to ask whether a reasonable approximation of such functions can be obtained with significantly less information while allowing for some controlled loss in accuracy, particularly when the function exhibits structural properties often required by the application, such as subadditivity. 
+
+> ∗
+
+Equal contribution (shared first authorship). Preprint. 
+
+> arXiv:2602.23529v1 [cs.LG] 26 Feb 2026
+
+Subadditive functions appear in a variety of applications, particularly in economics, where they capture the absence of complementarities between items. For example, a buyer’s valuation is subadditive if the value of acquiring two sets of items together does not exceed the sum of their separate values. Such valuation models are common in combinatorial auctions and have been studied extensively [ 15 , 14 ]. Subadditive functions represent the most general class in a hierarchy of complement-free valuations, which includes more restrictive classes such as submodular func-tions [ 26 ]. Beyond economics, subadditivity also arises in areas such as risk modeling, where it reflects the principle that diversification does not increase overall risk [ 2], or algorithm design, where subadditive cost functions are used in facility location and network design problems [37]. The problem of finding efficient (subadditive) set function approximations, typically using a small number of set value queries, has been studied from various angles. Perhaps the most developed is the literature on Probably Mostly Approximately Correct (PMAC) learning, a PAC-style passive learning model from existing datasets. Initial work in this area showed strong impossibility results for learning general submodular functions under PMAC guarantees [ 5, 6]. In response, subsequent research has focused on identifying subclasses of functions, such as coverage, self-bounding, and XOS functions, that allow more favorable learning outcomes [ 17 , 19 , 4]. Some approaches leverage structural properties such as bounded curvature or decision tree representations [ 18 ], while others exploit connections to Fourier analysis of Boolean functions [ 20 ]. An approach more closely related to ours, due to its active nature, comes from the literature on preference elicitation. In this setting, the learner actively queries an agent to uncover its valuation or preference function, often with the goal of making efficient decisions in combinatorial problems. This, typically, does not require to recover the function for every set. Early work showed that, under certain assumptions, preference elicitation can be done in polynomial time using value or comparison queries [ 24 , 42 ]. Other works have focused on the query complexity of such models under structural assumptions, such as substitutability or submodularity [ 25 ], or considered minimizing the number of queries needed to approximate the preference function accurately [ 11 ]. Besides value queries, some works have also considered demand queries as a more powerful alternative [ 41 ]. In contrast to preference elicitation, another line of work aims to approximate valuation functions everywhere, providing guarantees on the accuracy of the approximation for all subsets. Some papers develop succinct representations, such as 
+
+α-sketches [ 22 , 3 ]. Others study notions of approximate modularity to measure how close a function is to modular and derive corresponding approximation results [12, 16]. For the majority of algorithmic works above, the number of queries being “small” is defined by asymptotics in terms of the size of the ground set n. For our contributions, we adopt colloquial, but often times more practically useful meaning of “small”, meaning “small enough” (e.g., say, in single or lower double digits). This is motivated by a fact that in practice, acquiring even a single value for a single subset can be a resource-intensive endeavor. Take, for instance, the realm of machine learning, where determining the value of a feature subset in the already well established explainable-AI algorithm SHAP [ 28 ] corresponds to retrainingf: tohle neni pravda an entire (or a significant portion of the) model, consuming time and computational resources. Similarly, in the corporate world, estimating an employee’s contribution to collective performance may facilitate their fair evaluation [ 30 ], but obtaining the value of a “subset” may involve the intricate process of rearranging teams of employees. Secondly, a significant amount of work approximates a set function within a multiplicative factor. Multiplicative approximations are often preferred when the identified set function is later used in approximation algorithms with relative performance guarantees. However, Badanidiyuru et al . [3] prove the following negative result: if a deterministic algorithm can identify an approximate set function of every subadditive function using O(poly( n)) value queries, then the multiplicative factor is of order Ω( n1−ϵ) for every ϵ > 02. Instead, in this paper we address the following question: 
+
+Given a budget of k value queries, which subsets should we query to find a approximate set function with minimal total additive error across all sets ?Additive error bounds can be useful in different kinds of settings. Consider, for instance, the SHAP framework, where one seeks to estimate each feature’s contribution to a set function, i.e., how “valuable” a feature is. More broadly, in cooperative game theory, players lacking precise information about subset (coalition) values may overestimate their individual contributions, leading to unrealistic 
+
+> 2We remark that our approach, minimizing additive error, gives similar multiplicative bounds, see Section 5.
+
+2demands that can exceed the total value of the grand coalition [ 40 ]. This mismatch is seen when companies overprice data or employees seek inflated wages. Such gaps reflect a divergence between perceived and feasible outcomes. In this work, we aim to minimize this divergence, defined as the distance between two extremal completions of the partial set function. To do so, we assume an external principal, such as a manager or ML engineer, who controls which subset values are revealed, subject to a fixed query budget. Each query is assumed to have equal cost, making the principal’s sole goal to reduce divergence as efficiently as possible. While we do not specify how to handle residual divergence, we assume lower divergence is generally preferred. The main contribution of this paper is the study of tight completions for various subclasses of subadditive functions, which allow the principal to reduce divergence more effectively. Leveraging these tighter completions, we develop algorithms for selecting which subsets to query, in both offline and online settings. Although the subproblems involved are exponential in nature and computationally intensive, their decomposable structure makes them amenable to parallelization. As discussed earlier, in many practical applications, reducing the number of queries may be more valuable than limiting (relatively cheap) computational cost. Finally, our experimental results demonstrate the typical reduction in divergence that can be achieved and highlight the benefits of informed subset selection compared to baseline naive strategies. 
+
+## 2 Preliminaries and Problem Formulation 
+
+Let us begin by defining basic notions we operate with. 
+
+Definition 1. A set function f : 2 N → R assigns values to subsets of the ground set N . We say f is 
+
+subadditive if ∀S, T ⊆ N, S ∩ T = ∅, f (S) + f (T ) ≥ f (S ∪ T ). We denote the set of subadditive functions by Sn.
+
+To model a scenario when acquiring (or storing) all 2n values proves to be cost-prohibitive, and only selected values are known, we introduce an incomplete set function (f, K), where K ⊆ 2N denotes the set of subsets where the values are known. Expanding the set K then models the acquisition of new information about the initially unknown (yet well-defined) values. The set K can be hence seen as a “masking set”, acting as a filter applied to a complete function. Assuming additional properties of the underlying set function f , i.e., f belonging to a class Cn of set functions on ground set n, one can impose constraints on values of S / ∈ K , even in the absence of the exact knowledge. For reasons outlined in the introduction, we focus on subclasses of subadditive set functions Sn. To bound set 
+
+Cn, and thus also all values of S / ∈ K , it is necessary to know at least the minimal information K0,defined as K0 := {∅ , N } ∪ {{ i} | i ∈ N }.
+
+Definition 2. Let (f, K), K0 ⊆ K be an incomplete set function. Then g is a Cn-extension of (f, K)
+
+if g ∈ Cn and ∀S ∈ K : f (S) = g(S). We say (f, K) is Cn-extendable if it has an Cn-extension and we denote the set of Cn-extensions by Cn(f, K).
+
+Sets of Cn extensions studied in this text form a compact subset of R2n
+
+, therefore, each unknown value of any S can be bounded by a closed real interval. The bounds of these intervals can be captured by the lower/upper completion functions. 
+
+Definition 3. Let (f, K), K0 ⊆ K be an Cn-extendable incomplete set function. We call f K, f K
+
+Cn-lower and Cn-upper functions of (f, K) if for every g ∈ Cn(f, K), and for every S ⊆ N , it holds 
+
+f K(S) ≤ g(S) ≤ f K(S). Further, these functions are Cn-tight , if additionally ∀S / ∈ K , there are 
+
+Cn-extensions g, g such that g(S) = f K(S) and g(S) = f K(S).
+
+Different classes Cn might have different tight upper/lower functions and will be of focus of the next section. We write f K[Cn], f K[Cn] to stress this relation to Cn when needed. The “size” of the set of extensions Cn(f, K) represents the amount of uncertainty arising from only knowing values of f in 
+
+K. We call the distance of the lower and the upper functions the divergence , characterizing on the amount of uncertainty in an additive sense. 
+
+Definition 4. Let f ∈ Cn and ∥ · ∥ be a set function norm. The Cn-divergence of f and K induced by ∥ · ∥ is a function ∆f : 2 2N \K 0 → R defined as ∆f (Cn, K) := f K0∪K [Cn] − f K0∪K [Cn] .
+
+3We use ∆f (K) when it is obvious from context we talk about a specific Cn-divergence. It follows trivially from the properties of norms that the divergence is non-negative. Furthermore, it is zero if and only if ∀S ⊆ N : f K(S) = f K(S), or equivalently, when there is just a single extension. Since the set functions on a ground set N can be regarded as elements of a vector space R2n
+
+, we may use any vector norm as a divergence inducing norm. In the reminder of this text, we shall focus on divergences induced by absolute norms, i.e. those, where the norm of x is equal to the norm of 
+
+|x|. These include all lp-norms as well as many others. Since the divergence is non-negative, this restriction is without loss of generality. In addition, it has the following properties: 
+
+Proposition 1. Let f ∈ Sn, Cn ⊆ Sn and (αf + β)( S) := αf (S) + P 
+
+> i∈S
+
+βi. The Cn-divergence is 1. monotonically non-increasing, i.e., ∆f (K) ≥ ∆f (L) for K ⊆ L ⊆ 2N \ K 0,2. subadditive, i.e., ∆f (K) + ∆ f (L) ≥ ∆f (K ∪ L ) for K, L ⊆ 2N \ K 0 such that K ∩ L = ∅,3. normalizable, i.e., ∆αf +β (K) = α · ∆f (K) for α > 0, βi ∈ R for i ∈ N .
+
+Large divergence indicates high uncertainty in missing values. As more is known about the underlying function, the divergence shrinks, becoming zero when there is a single Cn-extension. Our goal is to reduce divergence as much as possible using a limited number of value queries. To formalize this, we assume the presence of a principal , tasked with selecting which subsets of N to query in order to minimize divergence. The principal has domain expertise, modeled as a prior distribution over possible functions. For instance, in medicine, a doctor may choose drug combinations based on clinical experience; similarly, a machine learning engineer may prioritize features using past knowledge. We assume each instance is drawn from a known prior F3. In short, the principal knows the prior but not the specific instance. Subset selection can then proceed in one of two modes: 
+
+Definition 5 (Value Querying Problems) . Let t ∈ N, F, supp F ⊆ Cn be a distribution on a class of subadditive set functions and ∆f be a Cn-divergence. Then K∗ 
+
+> t
+
+⊆ 2N \ K 0 is a solution of 
+
+• offline principal’s problem of size t if K∗ 
+
+> t
+
+∈ arg min K⊆ 2N \K 0,|K| =t {Ef ∼F [∆ f (K)] }, or 
+
+• online principal’s problem of size t if K∗ 
+
+> t
+
+∈ arg min Kt {Ef ∼F [∆ f (Kt)] } , where Kt =
+
+Kt−1 ∪ { St}, St ∈ 2N \ K t−1 and Kt−1 is a solution to the problem of size t − 1.
+
+## 3 Upper and Lower Completions for Classes of Subadditive Functions 
+
+In this section, we derive upper and lower completions (or bounds) for several key subclasses of subadditive set functions. Tighter bounds yield smaller divergences and thus better approximation guarantees. We focus on three major classes: subadditive monotone functions; fractionally subadditive (XOS) functions, central to assignment and auction settings; and a subclass of SCMM functions with applications in machine learning [ 10 , 38 ]. For subadditive monotone functions, we provide a new characterization for non-negative functions, clarifying their relation to XOS. We also derive tighter completions, along with a more computationally efficient (but slightly looser) alternative. All derived bounds form a hierarchy of increasingly tight completions, based on progressively stronger assumptions: from subadditive ( Sn), to subadditive monotone ( SAM n), to XOS, and finally SCMM (SCMM n). Within SCMM, we give bounds for concave additive ( CA n) and symmetric submodular (SS n) functions. We have SS n ⊊ CA n ⊊ SCMM n ⊊ XOS n ⊊ SAM n ⊊ S n. Since all bounds are tight, each step gives a tighter enclosure of completions: 
+
+∆f (SS n, K) ≤ ∆f (CA n, K) ≤ ∆f (XOS n, K) ≤ ∆f (SAM n, K) ≤ ∆f (Sn, K).
+
+These inequalities may not always be strict, but examples show that using a bound from a superclass can lead to significantly worse results. Throughout, we assume K0 ⊆ K for each (f, K), and that 
+
+(f, K) is Cn-extendable when constructing Cn-upper and Cn-lower functions, for our results to hold.   
+
+> 3Assuming the true function lies in Fensures divergence behaves well: each new value narrows the set of consistent extensions, and the bounds converge to the true function. If not, the bounds may become inconsistent (e.g., lower exceeding upper), rendering divergence ill-defined.
+
+43.1 Subadditive functions 
+
+For the class of subadditive functions Sn, following results by Masuya and Inuiguchi [29] , the 
+
+Sn-tight upper function f K of (f, K) is a (complete) set function given by 
+
+f K[Sn]( S) := min S1,...,S k ∈K , S  
+
+> iSi=S, S i∩Sj=∅
+
+Xki=1 f (Si), (1) and the Sn-tight lower function of (f, K) is f K[Sn]( S) := max T ∈K :S⊆T
+
+ f (T ) − f K(T \ S) .
+
+Proposition 2. Functions f K[Sn] and f K[Sn] are Sn-tight upper and lower functions. 
+
+3.2 Subadditive monotone functions 
+
+Subadditive monotone set functions are part of the hierarchy of complement-free functions and are among the most widely studied classes of set functions. The monotonicity property captures the straightforward idea that adding more elements to a set never lowers its value. This is crucial in models where extra resources, agents, or items are never a disadvantage—such as in production or cooperative scenarios. 
+
+Definition 6 (Subadditive monotone function) . Set function f : 2 N → R is subadditive monotone if it is subadditive and further f (S) ≤ f (S ∪ i) for S ⊆ N and i ∈ N \ S. We denote such functions on a ground set of size n by SAM n.
+
+The SAM n-upper tight function has the following form: 
+
+f K[SAM n]( S) := min S1,...,S k ∈K , S 
+
+> iSi⊇S
+
+Xki=1 f (Si). (2) Note the similarity with (1) – the difference lies in Si being disjoint and their union being exactly S. The SAM n-lower function is then defined as f K[SAM n]( S) := max max Y ∈K ,Y ⊆S f (Y ), max X∈K ,S ⊆X
+
+f (X) − f K[SAM n]( X \ S) .
+
+Proposition 3. f K[SAM n] and f K[SAM n] are SAM n-tight upper and SAM n-lower functions. 
+
+This refinement for Sn increases computational complexity. To address this, we propose alternative 
+
+SAM n-upper and SAM n-lower functions that trade off tightness for computational tractability. These approximations can be refined iteratively, starting from the Sn-tight upper function. Each iteration alternates between enforcing monotonicity (potentially violating subadditivity) and restoring subadditivity (possibly breaking monotonicity). The process stops when changes fall below a threshold or a maximum number of iterations is reached. The full procedure is detailed in Algorithm 1 (Appendix B). Once the SAM n-upper function is computed, the SAM n-lower function can be computed using f K[SAM n]. We show that 
+
+Proposition 4. Algorithm 1 produces a SAM n-upper function. 
+
+Once we learn that function (f, K) lies not only in Sn but also in SAM n, we can learn more about its values. This idea is reflected in Sn-divergence and SAM n-divergence based on the Sn-tight and 
+
+SAM n-tight upper functions we defined. The following result holds for divergences with l1-norm. 
+
+Proposition 5. There is a SAM n (f, K) such that ∆f (SAM n, K) = 0 , while ∆f (Sn, K) grows at least exponentially in n.
+
+3.3 Fractionally subadditive functions 
+
+Fractionally subadditive (or XOS ) functions are defined as the maximum of a collection of additive set functions. This representation reduces storage from 2n values down to n × k values, where k is the number of additive functions. Moreover, any subadditive function can be approximated by an XOS function up to a logarithmic factor, further increasing the importance in applications [15]. 
+
+Definition 7. A set function f : 2 N → R is XOS function, if there are additive set functions a1, . . . , a s
+
+such that f (S) = max i=1 ,...,s ai(S). We denote such functions on ground set of size n by XOS n.
+
+XOS functions are a subclass of subadditive functions, and when based on non-negative additive functions, they are also subadditive and monotone. We present an XOS n-tight upper function that 5refines the Sn-tight bound, and under non-negativity, also improves upon the SAM n-tight bound. This result relies on a key property of XOS functions, explaining their alternative name: fractionally subadditive .
+
+Proposition 6. A set function f is XOS if and only if for every collection {αi, T i}ki=1 with αi > 0 and 
+
+Ti ⊆ N such that for every S ⊆ N , it holds P 
+
+> j∈Ti
+
+αi ≥ 1 for all j ∈ S and f (S) ≤ Pki=1 αif (Ti).
+
+Following from Proposition 6, and based on the constructions of Sn-tight upper function, one can derive the bound f K[XOS n]( S) := min {αi,T i}ki=1 ∈M (S)
+
+P αif (Ti) for every S ⊆ N , where the set 
+
+M (S) = {{ αi, T i}ki=1 | Ti ∈ K , P 
+
+> i:j∈Ti
+
+αi ≥ 1, ∀j ∈ S}.
+
+Proposition 7. Function f K[XOS n] is XOS n-tight upper function. 
+
+We do not derive any special lower bound; however, one can, once again, rely on the construction of 
+
+f K[Sn], substituting the SAM n-tight upper function with the XOS n-tight upper function. To further understand the relation between SAM n and XOS n, we characterize the set of SAM n functions. To the best of or knowledge, this characterization is not presented anywhere else. 
+
+Proposition 8. A set function f : 2 N → R is subadditive monotone if and only if it holds for any 
+
+S1, . . . , S k such that S ⊆ Ski=1 Si, f (S) ≤ Pki=1 f (Si).
+
+This characterization is equivalent to restricting to sets S1, . . . , S k that satisfy Si ∩ Sj = ∅. This shows that the class differs from subadditive set functions only in the condition ∪iSi ⊆ S; for subadditive functions, the stronger condition ∪iSi = S must hold. Moreover, similarly to the relation of Snand SAM nfunctions, preferring XOS n-tight over SAM n-tight upper function might result in a huge difference in the divergence. 
+
+Proposition 9. There is an XOS n (f, K) such that f K[SAM n] − f K[XOS n] = 2 k for any k ∈ R+.
+
+3.4 SCMM functions 
+
+SCMM functions decompose a submodular objective into simpler concave and additive components, retaining the “diminishing returns” property. They were motivated by intractability of general submodular minimization for large combinatorial problems arising in machine learning [38, 10]. 
+
+Definition 8. A set function f : 2 N → R is SCMM if f (S) = P 
+
+> i
+
+gi(ai(S)) + a±(S) for every 
+
+S ⊆ N , where ai : 2 N → R+ are nonnegative additive functions, gi : [0 , a i(N )] → R are non-decreasing concave functions with ϕi(0) = 0 and a± : 2 N → R is an additive function. We denote such functions on ground set of size n by SCMM n.
+
+SCMM form a strict subset of submodular functions, thus also of XOS functions. In deriving upper and lower completions, we focus on symmetric submodular functions and their slight generalization, which we call concave additive and which were introduced in [1]. 
+
+3.4.1 Symmetric submodular functions 
+
+Cardinality-based symmetric submodular functions are studied because they capture the principle of diminishing returns while depending only on subset sizes. Their simple structure facilitates efficient algorithmic solutions in combinatorial optimization. Note that in the literature, the term symmetric submodular can also refer to a different property where f (S) = f (N \ S) [34]. 
+
+Definition 9. A set function f : 2 N → R is symmetric submodular if there is a monotone concave 
+
+g : [0 , |N |] → R such that f (S) = g(|S|). We denote such functions on ground set of size n by SS n.
+
+The idea of establishing the SS n-tight lower and upper functions is to keep track of the known values of g and to consider linear approximations of the function g. From concavity of g, we know that no value can lie below this approximation. In a similar manner, the upper bound on subset S is determined a minimum of linear approximations given by pairs of subsets, both either larger, or smaller than S. Once again, from concavity, the value of S cannot lie above these approximations. An illustration of this property is shown in Figure 2 in Appendix A.1. Also, due to their technical nature, the analytical derivations of the bounds are also provided in Appendix A.1. 
+
+Proposition 10. There exist explicit formulas for SS n-tight upper and lower functions. 
+
+63.4.2 Concave additive functions 
+
+We conclude this section by introducing concave additive functions, a slight generalization of symmet-ric submodular functions originally studied in [ 1]. These functions naturally arise in applications such as capital budgeting under uncertainty (capturing investor risk aversion), competitive facility location (modeling cannibalization effects), and combinatorial auctions (representing bidders’ decreasing marginal valuations). Their special structure facilitates efficient solutions to large-scale discrete optimization problems. 
+
+Definition 10. A set function f : 2 N → R is concave additive if there exist a concave increasing 
+
+g : R → R and an additive a : 2 N → R such that f (S) = g(a(S)) . We denote such functions on a ground set of size n by CA n.
+
+Earlier works showed that these functions are submodular if and only if the additive function a is either non-negative or non-positive [ 1 ]. Furthermore, they are monotone (and thus belong to our hierarchy) if g is non-negative on R+. In practical scenarios, the additive component a is often explicitly known or can be bounded based on problem specifics. Consider an incomplete set function (f, K) with f ∈ CA n, and let there be known bounds a and a
+
+on the additive function a, where without loss of generality a ≥ 0. Lower and upper bounds on fK
+
+can be constructed via linear interpolation using the known function values from K. The idea behind these bounds closely follows the approach used for symmetric submodular functions, extending the interpolation concept to accommodate the more general additive structure. Explicit formulas for these interpolation-based bounds are somewhat technical and hence provided in the appendix. 
+
+Proposition 11. There exist explicit formulas for CA n-tight lower and upper functions. 
+
+## 4 Computing Optimal Subsets to Query 
+
+With tighter upper and lower completions at hand, we now present three methods to approximately solve the optimal value querying problems. Each method is designed to incorporate these bounds directly; plugging in a specific pair of bounds yields a version tailored to the class those bounds represent. Further details are in Appendix E. 
+
+4.1 Offline algorithms 
+
+For the offline problem we introduce two methods – O FFLINE OPTIMAL and O FFLINE GREEDY .Both rely on the same input: a probability distribution F over a given class of set functions we derived bounds for, number of subsets we can query t, and number of samples κ to estimate the expected divergence. The O FFLINE OPTIMAL method aims to find a subset of size t from 2N \K 0 that minimizes the expected divergence E[∆ f ] under F. For each such candidate subset, the algorithm approximates the expectation by drawing κ samples from F, calculating the corresponding divergence 
+
+∆f for each sample, and averaging the results to obtain the mean. The subset with the smallest estimated expected divergence is selected as the solution. This method is formalized as Algorithm 2 in Appendix C. The optimality of this approach depends on the quality of the estimation of the divergence, which, to our advantage, improves exponentially with the number of samples. 
+
+Proposition 12. Let F be a distribution of bounded set functions with compact support. Then the probability that the solution returned by OFFLINE OPTIMAL is not an optimal solution of the offline principal’s problem is in OF,n (e−κ).
+
+The O FFLINE GREEDY method is then a computationally simpler alternative to O FFLINE OPTIMAL .At each step, this method selects the next subset St that, when added to the existing trajectory {Si}t−1 
+
+> i=1
+
+,minimizes the expected divergence. Again, the expected divergence is approximated by drawing 
+
+κ samples from the distribution F, calculating the corresponding divergences, and averaging the results. This approach iteratively builds the solution by greedily selecting the subset that minimizes the expected divergence at each step, hence it cannot perform better than O FFLINE OPTIMAL . It is formalized as Algorithm 3 in Appendix D. We have the following complexity result: 
+
+Proposition 13. Let T∆(n) be the time of computing the divergence. In our case, T∆(n) is O(2 2n)
+
+in the standard model and O(n) in a parallel model with Ω(2 n) processors. Then, in the standard model, OFFLINE OPTIMAL ∈ Θ κ 2n−n−2
+
+> t
+
+T∆(n) and OFFLINE GREEDY ∈ Θ κ(2 n−n)tT ∆(n). In 
+
+7a parallel model with Ω 23n processors, OFFLINE OPTIMAL ∈ O  κ 2n−n−2
+
+> t
+
+T∆(n) and OFFLINE 
+
+GREEDY ∈ O (tT ∆(n)κ).
+
+A natural question is under which conditions the local greedy search yields a “good” solution. It is known that, if the optimized function is supermodular, the locally optimal steps are guaranteed to yield a (1 − 1/e )-approximation of the global optimum [ 32 , Proposition 3.4]. As long as the size of the ground set is sufficiently small, the divergence for Snand SS nare among these functions: 
+
+Proposition 14. Let n ≤ 4 and Cn ∈ { Sn, SS n}. If f ∈ Cn, then the Cn- divergence ∆f with 
+
+l1-norm is supermodular. 
+
+The primary reason this result holds is that, for n ≤ 4, there are relatively few supermodularity conditions to consider, which, in case of Sn-divergence are not at all affected by revealing coalitions and in case of SS n-divergence, these conditions are easy to analyze. We believe a similar conclusion can be drawn for the other function classes and their bounding functions discussed in the previous section. However, as a consequence of a known result from cooperative game theory [40]: 
+
+Proposition 15. Let n ≥ 5 and f ∈ Sn. If there exist i, j, k, l ∈ N such that g(ij ) ≤ g(jk ) ≤
+
+g(kl ) ≤ 0, where g(S) = f (S) − P 
+
+> i∈S
+
+f ({i}), and  2n−3 − n + 2  g(kl ) < g (ij ), then the 
+
+Sn-divergence with l1-norm is not supermodular. 
+
+Note that while similar conclusions to the one in Proposition 14 might be drawn for other classes, this is not the case for Proposition 15. The complexity of our approach when n ≥ 5 prevents us from immediately generalizing the result. SS n-divergence may hence be supermodular even when n ≥ 5.However, minimizing the SS n-divergence has a straightforward solution: if the querying budget is n,querying one subset value for each subset size ensures that the SS n-divergence is zero. 
+
+4.2 Online algorithm 
+
+Compared to the offline setting, solving the online problem is substantially more challenging. A key difficulty is that the algorithm must compute (or approximate) a restriction of F consistent with previously observed values—hard to do when access to F could be limited to sampling. To address this, we use reinforcement learning, specifically proximal policy optimization (PPO) [ 36 ], an online method that selects actions (subsets) based on past rewards. At each step τ ≤ t, PPO selects a new subset Sτ informed by the previous trajectory {Si}τ −1 
+
+> i=1
+
+. The reward, which the algorithm aims to maximize, is defined as the negative expected divergence averaged over this trajectory. 
+
+## 5 Empirical Evaluation 
+
+We evaluate our algorithms on 3 distributions on different subclasses of subadditive functions. We outline the setup and benchmarks here; exact formulations, implementation details, and extended results are provided in the relevant appendices. The (uniform) distributions are: • submod-neg (n): Distribution over monotonically decreasing submodular functions with values in [−1, 0] , obtained by negating increasing supermodular functions as in [40, 8]. • xos-6 (n): Distribution over XOS functions formed by taking the pointwise maximum of six random additive functions, each defined by singleton values drawn uniformly from (0 , 1) .• sam-covg (n): Distribution over functions from combinatorial optimization, particularly set cover problems, defined as f (S) = S 
+
+> i∈S
+
+Xi , generated by randomly sampling Xi ⊆ [2 n].
+
+Experimental Setup. We test the distributions with n ∈ { 5, 10 }. For n = 10 , the exhaustive nature of O FFLINE OPTIMAL renders it computationally infeasible, so we only report results for O FFLINE 
+
+GREEDY . submod-neg (n) is not SAM nand therefore uses the Sn-divergence, while xos-6 (n) and 
+
+sam-covg (n) use the tighter SAM n-divergence. We train PPO over 3 million steps, sampling 6·2048 
+
+trajectories per iteration and optimizing for 10 epochs each round. Input values f (S) are normalized as described in Appendix H. Offline algorithms use κ = 90 samples to estimate expected divergence. All experiments were conducted on an AMD EPYC 7532 cluster (2.4 GHz, 18 CPUs) in Python 3. For example, O FFLINE GREEDY took 1 min to complete all 25 steps for n = 5 and 20 h for n = 10 , while solving the same instances took O FFLINE OPTIMAL 43 h ( n = 5 ). Each figure also contains a simple 
+
+RANDOM strategy, which selects subsets uniformly at random. Further details are in Appendix E. Results are shown in Figure 1. A notable observation is that even the R ANDOM baseline performs reasonably well, indicating that the considered distributions exhibit significant internal structure. 80 10 20                  
+
+> 0
+> 10
+> 20
+> Divergence
+> submod-neg (5)
+> 010 20
+> 2
+> 4
+> 6
+> xos-6 (5)
+> 010 20
+> 20
+> 40
+> 60
+> 80
+> sam-covg (5)
+> 010 20
+> 0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1·10 3
+> Steps
+> Divergence
+> submod-neg (10 )
+> 010 20
+> 1.5
+> 2
+> 2.5
+> 3
+> 3.5·10 2
+> Steps
+> xos-6 (10 )
+> 010 20
+> 4
+> 6
+> ·10 3
+> Steps
+> sam-covg (10 )
+> OFFLINE GREEDY OFFLINE OPTIMAL PPO RANDOM
+
+Figure 1: Comparison of divergence across algorithmic steps for various algorithms, showcasing (left) submod-neg (n), (center) xos-6 (n), and (right) sam-covg (n) distributions, n ∈ { 5, 10 }.This structure allows for accurate approximations from only a few observed values. The O FFLINE 
+
+GREEDY , while still efficient to implement, substantially improves upon R ANDOM . As n increases, random samples become less informative, amplifying the advantage of sets selected more deliberately by the remaining algorithms. For n = 5 , O FFLINE GREEDY performs nearly as well as O FFLINE 
+
+OPTIMAL , suggesting that it is close to optimal. PPO exploits the information from previous queries to make targeted decisions, achieving slightly lower divergence than O FFLINE GREEDY 
+
+and occasionally outperforming O FFLINE OPTIMAL . For n = 10 , however, PPO fails to generalize effectively and underperforms O FFLINE GREEDY . We attribute this to the exponential action space and high-dimensional continuous observations, which pose significant learning challenges. The relative gains of O FFLINE GREEDY and PPO over R ANDOM are most pronounced on 
+
+submod-neg (n). This mirrors findings in cooperative games [ 40 ], where an analogous divergence measure was reduced significantly using only the largest subset values across a wide range of n,further supporting that informed selection can approach optimality for structured set functions. Table 1: Approximation α minimizing multiplicative error on sam-covg (n) of CDSA (fA, f KA ),revealed queried values (f KA
+
+, f KA ), and O FFLINE GREEDY (f KO
+
+, f KO ) with the same budget. Distribution F # Queried α(fA, f KA ) α(f KA
+
+, f KA ) α(f KO
+
+, f KO )
+
+sam-covg (5) 10.61 1.89 1.78 1.44 
+
+sam-covg (8) 25.42 2.06 2.01 1.88 
+
+sam-covg (10 ) 42.41 2.28 2.24 2.23 
+
+Lastly, we test whether our algorithm can construct effective α-sketches of SAM nfunctions. These approximate f from below via fA ≤ f , minimizing α(fA, f ) = max S fA(S)  
+
+> f(S)
+
+, which is equivalent to minimizing the multiplicative error, unlike our original additive error objective. We compare against the Cohavi–Dobzinski Sketching Algorithm (CDSA) [ 13 ], which guarantees α ∈ ˜O(√n)
+
+for submodular monotone functions. For each function f ∼ F , CDSA queries a set of subsets 
+
+KA and builds fA. We then run O FFLINE GREEDY with the same budget tA = |K A| to produce a comparable set KO . In Table 1, we report the ratios α(fA, f KA ), α(f KA
+
+, f KA ), and α(f KO
+
+, f KO )
+
+on sam-covg (n). In all tested scenarios, O FFLINE GREEDY achieves the tightest approximation ratio under the same query budget. Additional results are in Appendix G. 96 Conclusion 
+
+In this paper, we study strategies for efficiently mitigating uncertainty within incomplete set functions. We introduce the concept of the “set function divergence”, which quantifies the size of the set of possible extensions of a partial set function. We show fundamental properties of the set function divergence that enables us to compute it more efficiently for different subclasses of subadditive functions. We focus on reducing the set function divergence through well-informed queries about the unknown values within the incomplete set function, effectively constructing a representation tailored to capture a maximum information about the function in both online and offline fashion. Our findings indicate that our approach significantly outperforms random queries and approaches optimality. 
+
+## Acknowledgments 
+
+The authors would like to thank Martin Loebl and Milan Hladík for their insightful comments. This work was supported by Charles Univ. project UNCE 24/SCI/008, CoSP Project grant no. 823748 and by the grant P403-22-11117S of the Czech Science Foundation. The authors were supported by the Charles University Grant Agency (GAUK 206523). Computational resources were supplied by the project "e-Infrastruktura CZ" (e-INFRA LM2018140) provided within the program Projects of Large Research, Development and Innovations Infrastructures. 
+
+## References 
+
+[1] Shabbir Ahmed and Alper Atamtürk. 2011. Maximizing a class of submodular utility functions. 
+
+Mathematical Programming, Series A 128 (2011), 149–169. https://doi.org/10.1007/ s10107-009-0298-1 
+
+[2] Philippe Artzner, Freddy Delbaen, Jean-Marc Eber, and David Heath. 1999. Coherent Mea-sures of Risk. Mathematical Finance 9, 3 (1999), 203–228. https://doi.org/10.1111/ 1467-9965.00068 
+
+[3] Ashwinkumar Badanidiyuru, Shahar Dobzinski, Hu Fu, Robert Kleinberg, Noam Nisan, and Tim Roughgarden. 2012. Sketching valuation functions. In Proceedings of the twenty-third annual ACM-SIAM symposium on Discrete Algorithms . SIAM, 1025–1035. [4] Maria Florina Balcan, Florin Constantin, Satoru Iwata, and Lei Wang. 2012. Learning Valuation Functions. In Proceedings of the 25th Annual Conference on Learning Theory (COLT) (JMLR: Workshop and Conference Proceedings, Vol. 23) . 1–24. [5] Maria-Florina Balcan and Christopher Harvey. 2011. Learning submodular functions. In 
+
+Proceedings of the 43rd Annual ACM Symposium on Theory of Computing (STOC) . ACM, 793–802. [6] Maria-Florina Balcan and Nicholas JA Harvey. 2010. Submodular functions: Learnability, structure, and optimization. arXiv preprint arXiv:1008.2159 (2010). [7] F. L. Bauer, J. Stoer, and C. Witzgall. 1961. Absolute and monotonic norms. Numer. Math. 3(1961), 257–264. [8] Gleb Beliakov. 2022. On Random Generation of Supermodular Capacities. IEEE TRANSAC-TIONS ON FUZZY SYSTEMS 30, 1 (2022), 293–295. https://doi.org/10.1109/TFUZZ. 2020.3036699 
+
+[9] Kshipra Bhawalkar and Tim Roughgarden. 2011. Welfare guarantees for combinatorial auctions with item bidding. In Proceedings of the twenty-second annual ACM-SIAM symposium on Discrete Algorithms . SIAM, 700–709. [10] Jeff A. Bilmes, Rishabh K. Iyer, Kaiyuan Li, and Stefanie Jegelka. 2017. Deep Submodular Functions. arXiv preprint arXiv:1611.09010 (2017). https://www.researchgate.net/ publication/313157229_Deep_Submodular_Functions 
+
+[11] Avrim Blum, Jeffrey Jackson, Tuomas Sandholm, and Martin Zinkevich. 2004. Preference Elicitation and Query Learning. Journal of Machine Learning Research 5 (2004), 649–667. 10 [12] Flavio Chierichetti, Abhimanyu Das, Anirban Dasgupta, and Ravi Kumar. 2015. Approximate modularity. In 2015 IEEE 56th Annual Symposium on Foundations of Computer Science . IEEE, 1143–1162. [13] Keren Cohavi and Shahar Dobzinski. 2017. Faster and Simpler Sketches of Valuation Functions. 
+
+ACM Transactions on Algorithms 13, 3 (2017), 30:1–30:9. https://doi.org/10.1145/ 3039871 Originally posted as arXiv:1407.7269 (2014). [14] Shahar Dobzinski, Noam Nisan, and Michael Schapira. 2005. Approximation algorithms for combinatorial auctions with complement-free bidders. In Proceedings of the thirty-seventh annual ACM symposium on Theory of computing . 610–618. [15] Uriel Feige. 2006. On maximizing welfare when utility functions are subadditive. In Proceedings of the thirty-eighth annual ACM symposium on Theory of computing . 41–50. [16] Uriel Feige, Michal Feldman, and Inbal Talgam-Cohen. 2017. Approximate modularity revisited. In Proceedings of the 49th Annual ACM SIGACT Symposium on Theory of Computing . 1028– 1041. [17] Vitaly Feldman and Pravesh Kothari. 2014. Learning Coverage Functions and Private Release of Marginals. In Proceedings of the 27th Annual Conference on Learning Theory (COLT) (JMLR: Workshop and Conference Proceedings, Vol. 35) . 1–24. [18] Vitaly Feldman, Pravesh Kothari, and Jan Vondrák. 2013. Representation, approximation and learning of submodular functions using low-rank decision trees. In Conference on Learning Theory . PMLR, 711–740. [19] Vitaly Feldman, Pravesh K. Kothari, and Jan Vondrák. 2017. Tight Bounds on ℓ1 Approximation and Learning of Self-Bounding Functions. In Proceedings of the 28th International Conference on Algorithmic Learning Theory (ALT) (Proceedings of Machine Learning Research, Vol. 76) .1–20. [20] Vitaly Feldman and Jan Vondrák. 2013. Optimal bounds on approximation of submodular and XOS functions by juntas. In Proceedings of the 14th ACM Conference on Electronic Commerce (EC) . ACM, 417–434. [21] Michael Finus. 2008. Game theoretic research on the design of international environmen-tal agreements: insights, critical remarks, and future challenges. International Review of environmental and resource economics 2, 1 (2008), 29–67. [22] Michel X Goemans, Nicholas JA Harvey, Satoru Iwata, and Vahab Mirrokni. 2009. Approxi-mating submodular functions everywhere. In Proceedings of the twentieth annual ACM-SIAM symposium on Discrete algorithms . SIAM, 535–544. [23] Wassily Hoeffding. 1963. Probability Inequalities for Sums of Bounded Random Variables. J. Amer. Statist. Assoc. 58, 301 (1963), 13–30. http://www.jstor.org/stable/2282952 
+
+[24] Benoît Hudson and Tuomas Sandholm. 2003. Using Value Queries in Combinatorial Auctions. In Proceedings of the 4th ACM Conference on Electronic Commerce (EC) . ACM, 226–227. 
+
+https://doi.org/10.1145/779928.779971 
+
+[25] Sebastien M. Lahaie and David C. Parkes. 2004. Applying Learning Algorithms to Prefer-ence Elicitation . Technical Report. 180–188 pages. https://doi.org/10.1145/988772. 988800 
+
+[26] Benny Lehmann, Daniel Lehmann, and Noam Nisan. 2001. Combinatorial auctions with de-creasing marginal utilities. In Proceedings of the 3rd ACM conference on Electronic Commerce .18–28. [27] Sebastián Lozano, Placido Moreno, Belarmino Adenso-Díaz, and Encarnacion Algaba. 2013. Cooperative game theory approach to allocating benefits of horizontal cooperation. European Journal of Operational Research 229, 2 (2013), 444–452. 11 [28] Scott M Lundberg and Su-In Lee. 2017. A Unified Approach to Interpreting Model Predictions. In Advances in Neural Information Processing Systems 30 , I. Guyon, U. V. Luxburg, S. Bengio, H. Wallach, R. Fergus, S. Vishwanathan, and R. Gar-nett (Eds.). Curran Associates, Inc., 4765–4774. http://papers.nips.cc/paper/ 7062-a-unified-approach-to-interpreting-model-predictions.pdf 
+
+[29] S. Masuya and M. Inuiguchi. 2016. A fundamental study for partially defined cooperative games. Fuzzy Optimization Decision Making 15, 1 (2016), 281–306. [30] Kevin R Murphy and Jeanette N Cleveland. 1995. Understanding performance appraisal: Social, organizational, and goal-based perspectives . Sage. [31] Mahesh Nagarajan and Greys Soši´ c. 2008. Game-theoretic analysis of cooperation among supply chain agents: Review and extensions. European journal of operational research 187, 3 (2008), 719–745. [32] G.L. Nemhauser, L.A. Wolsey, and M.L. Fisher. 1978. An analysis of approximations for maximizing submodular set functions I. Mathematical Programming 14 (1978), 265–294. [33] Bezalel Peleg and Peter Sudhölter. 2007. Introduction to the Theory of Cooperative Games .Springer. https://doi.org/10.1007/978-3-540-72945-7 
+
+[34] Maurice Queyranne. 1998. Minimizing symmetric submodular functions. Mathematical Programming 82 (1998), 3–12. https://doi.org/10.1007/BF01585863 
+
+[35] Walid Saad, Zhu Han, Mérouane Debbah, Are Hjorungnes, and Tamer Basar. 2009. Coalitional game theory for communication networks. Ieee signal processing magazine 26, 5 (2009), 77–97. [36] John Schulman, Filip Wolski, Prafulla Dhariwal, Alec Radford, and Oleg Klimov. 2017. Proxi-mal Policy Optimization Algorithms. CoRR abs/1707.06347 (2017). http://arxiv.org/ abs/1707.06347 
+
+[37] David B. Shmoys, Éva Tardos, and Karen Aardal. 1997. Approximation Algorithms for Facility Location Problems. Proceedings of the 29th Annual ACM Symposium on Theory of Computing (STOC) (1997), 265–274. https://doi.org/10.1145/258533.258602 
+
+[38] Peter Stobbe and Andreas Krause. 2010. Efficient Minimization of Decomposable Submodular Functions. arXiv preprint arXiv:1010.5511 (2010). https://doi.org/10.48550/arXiv. 1010.5511 
+
+[39] Richard S. Sutton and Andrew G. Barto. 2014. Reinforcement Learning: An Introduction . https://inst.eecs.berkeley.edu/~cs188/sp20/assets/files/ SuttonBartoIPRLBook2ndEd.pdf 
+
+[40] Filip Úradník, David Sychrovský, Jakub ˇ Cerný, and Martin ˇ Cerný. 2024. Reducing Optimism Bias in Incomplete Cooperative Games. In Proceedings of the 23rd International Conference on Autonomous Agents and Multiagent Systems . 1847–1855. [41] Hanrui Zhang and Vincent Conitzer. 2020. Learning the Valuations of a k-demand Agent. In 
+
+International Conference on Machine Learning . PMLR, 11066–11075. [42] Martin A. Zinkevich, Avrim Blum, and Tuomas Sandholm. 2003. On Polynomial-Time Prefer-ence Elicitation with Value Queries. In Proceedings of the 4th ACM Conference on Electronic Commerce (EC) . ACM, 176–185. https://doi.org/10.1145/779928.779949 
+
+12 A Proofs of Results 
+
+Proposition 1. Let f ∈ Sn, Cn ⊆ Sn and (αf + β)( S) := αf (S) + P 
+
+> i∈S
+
+βi. The Cn-divergence is 1. monotonically non-increasing, i.e., ∆f (K) ≥ ∆f (L) for K ⊆ L ⊆ 2N \ K 0,2. subadditive, i.e., ∆f (K) + ∆ f (L) ≥ ∆f (K ∪ L ) for K, L ⊆ 2N \ K 0 such that K ∩ L = ∅,3. normalizable, i.e., ∆αf +β (K) = α · ∆f (K) for α > 0, βi ∈ R for i ∈ N .Proof. Let ˆK = K ∪ K 0, ˆL = L ∪ K 0 such that K ⊆ L . From the definition of the upper and the lower extension, for T ⊆ N , it follows 
+
+f ˆK(T ) ≥ f ˆL(T ) and f ˆL(T ) ≥ f ˆK(T ),
+
+or equivalently f ˆK − f ˆK ≥ f ˆL − f ˆL ≥ 0. Now the Cn-divergence is monotonically non-increasing (1.) as long as the norm satisfies 0 ≤ x ≤ y =⇒ |x| ≤ | y|. In [ 7], it is showed this holds if 
+
+∥x∥ = ∥| x|∥ . Further, from non-negativity and 1., subadditivity follows. Finally, we have 
+
+∆αf +β (K) = αf + βK0∪K − αf + βK0∪K = α f K0∪K − f K0∪K = α · ∆f (K).
+
+Proposition 2. Functions f K[Sn] and f K[Sn] are Sn-tight upper and lower functions. Proof. The first part of the proposition is equivalent to Theorem 1 in [ 29 ] with a slight distinction that Theorem 1 deals with superadditivity instead of subadditivity. The second part follows from Theorem 3 in [ 29 ], which states (when translated to subadditivity) that any set function defined for a non-empty set T ⊆ N as 
+
+f S (T ) := 
+
+(
+
+f K[Sn]( T ) S ⊆ T, f K[Sn]( T ) S̸ ⊆ T, (3) is an Sn-extension of (f, K). For S / ∈ K , choose g = f N and g = f S .
+
+Proposition 3. f K[SAM n] and f K[SAM n] are SAM n-tight upper and SAM n-lower functions. Proof. First, let us show g(S) ≤ f [SAM n]( S) for every SAM n-extension g. Denote S∗ 
+
+> 1
+
+, . . . , S ∗
+
+> k
+
+subsets achieving minimum 4 of 
+
+min   
+
+> S1,...,S k∈K S
+> iSi⊇Sk
+
+X
+
+> i=1
+
+f (Si).
+
+We construct T ∗ 
+
+> 1
+
+, . . . , T ∗ 
+
+> k
+
+satisfying the following conditions: 
+
+(1) T ∗ 
+
+> i
+
+⊆ S∗ 
+
+> i
+
+, (2) T ∗ 
+
+> i
+
+∩ T ∗ 
+
+> j
+
+= ∅, (3) [ T ∗ 
+
+> i
+
+= S. 
+
+From (1) , and monotonicity of g, we get g(T ∗ 
+
+> i
+
+) ≤ g(S∗ 
+
+> i
+
+) = f (S∗ 
+
+> i
+
+) and from (2) , (3) , we get 
+
+g(S) ≤ Pki=1 g(T ∗ 
+
+> i
+
+), which together imply g(S) ≤ f [SAM n]( S). We construct T ∗ 
+
+> 1
+
+, . . . , T ∗ 
+
+> k
+
+in two steps. First we construct T1, . . . , T k as 
+
+Ti := S∗ 
+
+> i
+
+\
+
+S∗ 
+
+> i
+
+∩
+
+> k
+
+[
+
+> j=i+1
+
+S∗
+
+> j
+
+ (4) and then 
+
+T ∗ 
+
+> i
+
+= Ti ∩ S. (5) One could view (4) as a process, where we start with S∗ 
+
+> 1
+
+and construct T1 by eliminating all elements which are present in an intersection with any other set S∗ 
+
+> i
+
+. For constructing T2, elements from S∗ 
+
+> 1
+
+∩S∗
+
+> 2
+
+remain in the intersection, as these are not present in T1. The same idea is applied to every Ti. It is obvious from the construction that Ti ⊆ S∗ 
+
+> i
+
+and Ti ∩ Tj = ∅. However, it holds S Ti = S S∗ 
+
+> i
+
+,
+
+> 4
+
+We note these subsets might not be uniquely defined, however, this fact does not violate our proof. 
+
+13 which might violate (3) . This condition is further achieved by construction in (5) , while preserving the previous two. Now, let us prove f [SAM n] ∈ SAM n(f, K), which concludes it is a SAM n-tight. The monotonicity follows, as for S ⊆ T ⊆ N , we have 
+
+min   
+
+> S1,...,S k∈K S
+> iSi⊇Sk
+
+X
+
+> i=1
+
+f (Si) ≤ min  
+
+> S1,...,S ℓ∈K S
+> iSi⊇Tℓ
+
+X
+
+> i=1
+
+f (Si)
+
+and the subadditivity also holds as for any S, T ⊆ N , S ∩ T = ∅, we have 
+
+min   
+
+> X1,...,X k∈K S
+> iXi⊇S∪Tk
+
+X
+
+> i=1
+
+f (Xi) ≤ min  
+
+> S1,...,S ℓ∈K S
+> iSi⊇Sℓ
+
+X
+
+> i=1
+
+f (Si) + min  
+
+> T1,...,T m∈K S
+> iTi⊇Tm
+
+X
+
+> i=1
+
+f (Ti),
+
+as any S1, . . . , S ℓ, T 1, . . . , T m might be viewed as one of X1, . . . , X k.Next, we proceed with showing f K[SAM n]( S) ≤ g(S) for every SAM n-extensions g. Notice 
+
+g(A) ≥ g(A ∪ B) − g(B), which for A ∪ B = X ∈ K yields 
+
+g(A) ≥ f (X) − g(X \ A) ≥ f (X \ A) − f K[SAM n]( X \ A). (6) Therefore, f K[SAM n]( A) ≥ max X∈K 
+
+> A⊆X
+
+f (X) − f K[SAM n]( X \ A). Further, for Y ∈ K , Y ⊆ S, it holds f (Y ) ≤ g(S), therefore f K[SAM n]( S) ≥ max Y ∈K ,Y ⊆S f (S), which concludes the proof. 
+
+Proposition 4. Algorithm 1 produces a SAM n-upper function. Proof. The initial bound, function f0 is Sn-upper function, therefore, it is necessarily also SAM n-upper function. Now assume fk−1 is SAM n-upper function. Now if f ′
+
+> k
+
+(S) < f k−1(S) for some 
+
+S ⊆ N , it means there is X ⊆ S satisfying 
+
+fk−1(S) > f k−1(X) + fk−1(X \ S).
+
+Any SAM n-extension g is bounded by SAM n-tight upper function f K, therefore, from subadditivity, 
+
+g(S) ≤ g(X) + g(X \ S) ≤ f K(X) + f K(X \ S) ≤ fk−1(X) + fk−1(X \ S).
+
+We see that by refining fk−1(S) to f ′
+
+> k
+
+(S) = min X⊆S fk−1(X) + fk−1(S \ X), we do not get below any SAM n-extension, thus f ′
+
+> k
+
+(S) is SAM n-upper function. Similarly, if fk(S) < f ′
+
+> k
+
+(S), there is 
+
+T ⊆ N, S ⊆ T such that fk(S) > f ′
+
+> k
+
+(T ). Again, since for every SAM n-extension g, it holds from monotonicity 
+
+g(S) ≤ g(T ) ≤ f K(T ) ≤ f ′(T ),
+
+there is no violation in setting fk(S) = min T,S ⊆T f ′
+
+> k
+
+(S), thus fk is also SAM n-upper function. 
+
+Proposition 5. There is a SAM n (f, K) such that ∆f (SAM n, K) = 0 , while ∆f (Sn, K) grows at least exponentially in n.Proof. The result holds for (f, K) where K = K0 and f (N ) = f (i) = 1 for every i ∈ N . The set of 
+
+SAM n-extensions contains only a single set function g, for which g(S) = 1 for every S ⊆ N . Thus, we have 
+
+f K[SAM n]( S) = f K[SAM n]( S) = 1 for every S ⊆ N
+
+and consequently, SAM n-divergence is zero. For the set of Sn-extensions, the Sn-tight upper function is less restrictive: f K(Sn, S ) = |S| for every S / ∈ K . The difference in Sn-divergence and SAM n-divergence with l1-norm is at least the difference between the Sn-tight upper and SAM n-tight upper functions f K[Sn] − f K[SAM n], which is n−1X
+
+> s=2
+
+ns
+
+
+
+(s − 1) ≥
+
+> n−1
+
+X
+
+> s=2
+
+ns
+
+
+
+= 2 n − n − 2.
+
+14 Proposition 6. A set function f is XOS if and only if for every collection {αi, T i}ki=1 with αi > 0 and 
+
+Ti ⊆ N such that for every S ⊆ N , it holds P 
+
+> j∈Ti
+
+αi ≥ 1 for all j ∈ S and f (S) ≤ Pki=1 αif (Ti).Proof. Showing that every XOS function is fractionally subadditive is immediate from the definition. For the opposite implication, one has to use the duality of linear programming. The details can be found in [15]. 
+
+Proposition 7. Function f K[XOS n] is XOS n-tight upper function. Proof. The fact that g(S) ≤ f K[XOS n]( S) for every S ⊆ N is immediate and follows similar idea as in the proof of Proposition 3. To show the bound is tight, consider for S ⊆ N any collection {αi, S i} such that P 
+
+> i:j∈Si
+
+αi ≥ 1 for every j ∈ S. Now we can express 
+
+> k
+
+X
+
+> i=1
+
+αif K[XOS n]( Si) = 
+
+> k
+
+X
+
+> i=1
+> ki
+
+X
+
+> j=1
+
+αiβj f (Sij ). (7) For γij = αiβj , it holds for every k ∈ S that P 
+
+> i,j :k∈Sij
+
+γi,j ≥ 1, thus 
+
+f K(S) = min  
+
+> αi,S i
+> Si∈K P
+> i:j∈Siαi≥1
+> ∀j∈S
+
+αif (Si) ≤
+
+> k
+
+X
+
+> i=1
+> ki
+
+X
+
+> j=1
+
+γij f (Sij ) = 
+
+> k
+
+X
+
+> i=1
+
+αif K(Si). (8) 
+
+Proposition 8. A set function f : 2 N → R is subadditive monotone if and only if it holds for any 
+
+S1, . . . , S k such that S ⊆ Ski=1 Si, f (S) ≤ Pki=1 f (Si).
+
+Proof. One can readily see that the conditions of subadditivity and submodularity are among con-ditions from the statement. Any other condition in the statement can be further derived from 
+
+SAM nconditions. Consider a partition (with some of the sets possibly empty) of S into T1, . . . , T k
+
+satisfying Ti ⊆ Si for every i. From subadditivity, f (S) ≤ Pki=1 f (Ti), which is from monotonicity smaller or equal to Pki=1 f (Si).
+
+Proposition 9. There is an XOS n (f, K) such that f K[SAM n] − f K[XOS n] = 2 k for any k ∈ R+.Proof. Let N = {1, 2, 3, 4}, K = 2 N \ { S ⊆ N | | S| = 3 } and f ∈ XOS n being defined by additive functions • a{i} = 2 kei,• a{i,j,k } = 1 /2( ei + ej + ek),• aN = 2 k/2( e1 + e2 + e3 + e4),where k ∈ R+. It follows f ({i}) = f ({i, j }) = 2 k, f ({i, j, k }) = 32 2k and f (N ) = 2 · 2k+1 . now 
+
+f K[SAM n] = 2 · 2k, while f K[XOS n] = 32 2k.
+
+A.1 Completions for SS n-functions and CA n-functions 
+
+For S ⊆ N , denote S as the smallest set in K that is larger in size than S and S as the largest set in K
+
+that is smaller in size than S, formally S = arg min T ∈K, |S|≤| T | |T | and S = arg max T ∈K ,|T |≤| S| |T |.Now the value of subset S for the lower function lies on the red line as in Figure 2a. Analytically, it can be expressed as 15 f K[SS n]( S) := 
+
+(f (T ) if ∃T ∈ K , |T | = |S|,f (|S|) + (|S|−| S|)( f (S)−f (S))  
+
+> |S|−| S|
+
+otherwise. (9) In a similar manner, the upper bound on subset S is determined a minimum of linear approxi-mations given by pairs of subsets, both either larger, or smaller than S. Once again, from con-cavity, the value of S cannot lie above these approximations, represented as green lines in Fig-ure 2b. Formally, for every S ⊆ denote pairs S1, S2 and S3, S4 as S1 = arg min T ∈K, |S|<|T | |T |
+
+and S2 = arg min T ∈K, |S1|<|T | |T | and similarly S4 = arg max T ∈K ,|T |<|S| |T | and S3 =arg max T ∈K ,|T |<|S4| |T |. The SS n-tight upper function is then defined for S as f K[SS n]( S) = f (T )
+
+if ∃T ∈ K , |T | = |S| and otherwise 
+
+f K[SS n]( S) = min 
+
+
+
+f (|S1|) + (|S| − | S1|)( f (S2) − f (S1)) 
+
+|S2| − | S1| ,f (|S3|) + (|S| − | S3|)( f (S4) − f (S3)) 
+
+|S4| − | S3|
+
+
+
+(10)    
+
+> g(0)
+> g(1)
+> g(3) g(4) g(5)
+> f(S)
+
+(a) The red lines depict the lower completion given by the known values on g, i.e., the lower bound on unknown values is given by the red lines.    
+
+> g(0)
+> g(1)
+> g(3) g(4) g(5)
+> f(S)
+
+(b) Similarly, the green lines depict the upper bounds given the known values on g. The upper completion is a minimum over the green lines. 
+
+Figure 2: An illustration of lower and upper completions for a function f (T ) = g(|T |) with an unknown subset S, such that |S| = 1 .
+
+Proposition 10. There exist explicit formulas for SS n-tight upper and lower functions. Proof. It follows from the construction described above that f K[SS n] and f K[SS n] are SS n-upper and SS n-lower functions, respectively. Any function f ′ of the form f ′(S) = g(|S|) that satisfies either f ′(S) > f K[SS n]( S) or f ′(S) < f K[SS n]( S) cannot maintain the concavity of g at the same time. The tightness of these bound functions follows from two key observations: 1. The SS n-lower function is actually an SS n-extension. The concave function corresponding to the SS n-lower function is represented by the red lines in Figure 2a. 2. The value of the SS n-upper function for a set S such that ∄T ∈ K , |T | = |S| is attained for a function where g is constructed as a combination of the red lines for the lower completion and the green lines for the upper completion in the segment corresponding to S.The formal proof is omitted for the sake of brevity but follows directly from the construction and properties of SS n-upper and SS n-lower functions. 
+
+Proposition 11. There exist explicit formulas for CA n-tight lower and upper functions. Proof. The result can be proved in a similar way as Proposition 10. A CA n-extension f ′ with a value of coalition S / ∈ K outside the range [f K[SS n]( S), f K[SS n]( S)] would be in contradiction with concavity of the corresponding function g. The way to prove this is to consider coalitions S, S ,16 and S1, . . . , S 4 for which f K[SS n]( S), resp. f K[SS n]( S) is attained and consider the behaviour of g,resp. f ′ on any chain of known coalition extending these. 
+
+A.2 Proof of the Sampling Bound Proposition 12. Let F be a distribution of bounded set functions with compact support. Then the probability that the solution returned by OFFLINE OPTIMAL is not an optimal solution of the offline principal’s problem is in OF,n (e−κ).Proof. Let S∗ = {S∗ 
+
+> i
+
+}ti=1 be the true optimal solution. For brevity, denote the set of viable solutions as 
+
+V =
+
+n
+
+S ∈ 22N \K 0 | |S| = t
+
+o
+
+.
+
+Let ˆ∆ be the empirical value of the divergence as seen by O FFLINE OPTIMAL , and ∆ the true value (the true expectation over all f ∼ F ). For our proof, we will need to find the maximum difference between divergences of two samples 
+
+M = sup  
+
+> S∈V
+> f,g ∈supp F
+
+|∆f (S) − ∆g (S)| .
+
+observe that this value is bounded, since we assume that F is bounded over a compact support. Now, let S = {Si}ti=1 be a non-optimal solution, which means that ∆( S) > ∆( S∗). We denote the midpoint between their divergences as mS = ∆( S)+∆( S∗)2 . Our aim is now to upper-bound the probability that O FFLINE OPTIMAL sees a lower divergence of S than that of S∗. If this has happened, that means that either ˆ∆( S) ≤ m or ˆ∆( S∗) ≥ m (or possibly both). We thus want to upper-bound the probability of the event 
+
+A(S) = ˆ∆( S) ≤ m ∨ ˆ∆( S∗) ≥ m. 
+
+By union-bound, we have 
+
+Pr[ A(S)] ≤ Pr 
+
+h ˆ∆( S) ≤ m
+
+i
+
++ Pr 
+
+h ˆ∆( S∗) ≥ m
+
+i
+
+.
+
+Define δ = m − ∆( S∗). By Hoeffding’s inequality [23], 
+
+Pr 
+
+h ˆ∆( S) ≤ m
+
+i
+
+= Pr 
+
+h ˆ∆( S) − ∆( S) ≤ − δ
+
+i
+
+≤ Pr 
+
+h
+
+κ · ˆ∆( S) − κ · ∆( S) ≥ κ · δ
+
+i
+
+≤ 2 exp 
+
+
+
+− 2δ2κ2
+
+κM 
+
+
+
+= 2 exp 
+
+
+
+− 2δ2κM
+
+
+
+.
+
+Note that ˆ∆( S) is an average over κ samples, so κ · ˆ∆( S) is a sum. Similarly for S∗,
+
+Pr 
+
+h ˆ∆( S∗) ≥ m
+
+i
+
+= Pr 
+
+h ˆ∆( S∗) − ∆( S∗) ≥ δ
+
+i
+
+≤ Pr 
+
+h
+
+κ · ˆ∆( S∗) − κ · ∆( S∗) ≥ κ · δ
+
+i
+
+≤ 2 exp 
+
+
+
+− 2δ2κ2
+
+κM 
+
+
+
+= 2 exp 
+
+
+
+− 2δ2κM
+
+
+
+.
+
+We get 
+
+Pr[ A(S)] ≤ 4 exp 
+
+
+
+− 2δ2κM
+
+
+
+.
+
+To prove the proposition, we must bound the probability that O FFLINE GREEDY chooses incorrectly, in other words, the probability that A(S) happens for any S. To make our job easier, we do not consider only the S of size t, but of all sizes. This just gives a looser upper bound, not dependent on 
+
+t. Also, define δ = min 
+
+n ∆( S)−∆( S∗)2 | S ∈ V , ∆( S) > ∆( S∗)
+
+o
+
+. We reach 
+
+Pr[( ∃S ∈ V )( A(S))] ≤ X
+
+> S∈V
+
+Pr[( A(S))] ≤ X
+
+> S∈V
+
+4 exp 
+
+
+
+− 2δ2 
+
+> S
+
+κM
+
+
+
+≤ 22n
+
+4 exp 
+
+
+
+− 2δ2κM
+
+
+
+∈ O (e−κ),
+
+which is what we wanted to prove. 17 A.3 Time Complexity of O FFLINE OPTIMAL and O FFLINE GREEDY 
+
+Proposition 13. Let T∆(n) be the time of computing the divergence. In our case, T∆(n) is O(2 2n)
+
+in the standard model and O(n) in a parallel model with Ω(2 n) processors. Then, in the standard model, OFFLINE OPTIMAL ∈ Θ κ 2n−n−2
+
+> t
+
+T∆(n) and OFFLINE GREEDY ∈ Θ κ(2 n−n)tT ∆(n). In a parallel model with Ω 23n processors, OFFLINE OPTIMAL ∈ O  κ 2n−n−2
+
+> t
+
+T∆(n) and OFFLINE 
+
+GREEDY ∈ O (tT ∆(n)κ).Proof of OFFLINE GREEDY , standard model. First, we sample κ functions (we assume sampling of a single game takes O(2 n), i.e., constant time for each subset). The algorithm then iterates over t
+
+timesteps. In each timestep, we compute the arg min , which translates to going over all viable subset structures, of which there are 2n − n − 2. For each subset, we compute the divergence in each sample, reaching κ · T∆(n). Putting it all together, we get the required time complexity. 
+
+Proof of OFFLINE OPTIMAL , standard model. The algorithm iterates over κ samples, for each sample it computes the divergence for every possible subset structure of size t. The number of possible subset structures of size t is  2n−n−2
+
+> t
+
+. The time complexity of computing the di-vergence is T∆(n). Therefore, the time complexity of the O FFLINE OPTIMAL algorithm is 
+
+Θ
+
+
+
+κ ·  2n−n−2
+
+> t
+
+ · T∆(n)
+
+
+
+.
+
+Proof of T∆ in the standard model. In the standard model, the main component of computing the divergence is the upper and lower function computation: for each subset S ⊆ N , where S / ∈ K , we have to consider all its subsets. Hence, we reach the O 22n time complexity. 
+
+Proof of T∆ in a parallel model. In the parallel model, we can perform all the computations for all subsets simultaneously, however, we then need to somehow compute the minimum for each, and then sum them up. Both can be done logarithmically, which in our case means O(log 2 n) = O(n).
+
+Proof of parallel model. First observe that the bound we gave for O FFLINE OPTIMAL is the same as in the standard model. The proof given above works as an upper bound on time complexity in a parallel model, while allowing us to use the improved T∆ bound. For O FFLINE GREEDY , assuming we have Ω 23n processors, we can even compute the divergence for all the O(2 n) subsets S ⊆ N we wish to add to Kt at once, which allows us to improve the time complexity by a factor of (2 n − n).
+
+A.4 Concavity of Divergence 
+
+Before we prove Proposition 14, we need to prepare several lemmas. In the rest of this appendix, we abuse the notation in the following sense. We write i instead of {i}, ij instead of {i, j } and S instead of {S}. As we prove Proposition 14 for Snand SS nseparately, write in the rest of the appendix simply 
+
+f K, f K when Sn and SS nare obvious from the context. 
+
+Lemma 1. Let K0 ⊆ K ⊆ 2N \ S and f ∈ Sn. Then ∀T ∈ 2N
+
+f K[Sn]( T ) ≤ f K∪ S [Sn]( T ) and f K[Sn]( T ) ≥ f K∪ S [Sn]( T ).
+
+Proof. By definition of the lower function, a larger set of known subsets can only increase the value of the lower function. Consequently, the upper function cannot increase if the set of known values becomes larger. 
+
+Lemma 2. Let K0 ⊆ K ⊆ 2N , S ∈ 2N \ K , and T ∈ 2N . Then 
+
+T ⊊ S =⇒ f K[Sn]( T ) = f K∪ S [Sn]( T ),
+
+and 
+
+S ⊊ T =⇒ f K[Sn]( T ) = f K∪ S [Sn]( T ).
+
+18 Proof. As T ⊊ S, revealing f (S) does not appear in any partition of T , thus f K(T ) = f K∪ S (T ).The value of T for f K, resp. f K∪ S is given by considering maximum over X ∈ K , T ⊆ X. As 
+
+S ⊊ T , it does not appear as a possible X. The only possibility for the change of the upper value would be that by revealing S, we get f K∪ S (X \T )̸ = f K(X \T ) for some X. This means S ⊆ X \T ,but this is not possible as S ⊊ T .
+
+Lemma 3. Let K0 ⊆ K ⊆ 2N \ S and T ∈ 2N , such that ∅̸ = S ∩ T , S̸ ⊆ T and T̸ ⊆ S. Then 
+
+f K[Sn]( T ) = f K∪ S [Sn]( T ), and f K[Sn]( T ) = f K∪ S [Sn]( T ).
+
+Proof. Follows immediately from the definition of the upper/lower functions. The divergence ∆f of a subadditive function f is supermodular, if for every ˆK ⊆ 2N \ (K0 ∪ S ∪ Z),it holds 
+
+∆f ( ˆK ∪ S ∪ Z) − ∆f ( ˆK ∪ S) ≥ ∆f ( ˆK ∪ Z) − ∆f ( ˆK). (11) Denote K = ˆK ∪ K 0. By definition of the divergence and the fact that |f K(T ) − f K(T )| =
+
+f K(T ) − f K(T ), the submodularity condition can be rewritten as 
+
+X 
+
+> T∈2N
+
+
+
+f L∪ Z (T ) − f L∪ Z (T ) − f L(T ) + f L(T )
+
+
+
+≥
+
+X 
+
+> T∈2N
+
+
+
+f K∪ Z (T ) − f K∪ Z (T ) − f K(T ) + f K(T )
+
+
+
+.
+
+where L = K ∪ S.To prove Proposition 1, we show an even stronger condition holds, i.e., ∀T ∈ 2N
+
+f K∪ S∪Z (T ) − f K∪ S∪Z (T ) − f K∪ S (T ) + f K∪ S (T ) ≥
+
+f K∪ Z (T ) − f K∪ Z (T ) − f K(T ) + f K(T ). (12) For T ∈ K ∪ S, condition (12) holds for any superadditive f : 2 N → R with N of arbitrary size. To see this, notice f K∪ S∪Z (T ) = f K∪ S∪Z (T ) and f K∪ S (T ) = f K∪ S (T ), thus (12) reduces to 
+
+f K∪ S (T ) − f K∪ S (T ) ≤ f K(T ) − f K(T ).
+
+This inequality follows from Lemma 1. For the sake of clarity, we split the rest of the proof into two lemmas based on the size of N .
+
+Proposition 14. Let n ≤ 4 and Cn ∈ { Sn, SS n}. If f ∈ Cn, then the Cn- divergence ∆f with 
+
+l1-norm is supermodular. Proof for n = 3 and Sn. Since, only subsets of size 2 are possibly unknown, their lower and upper bounds do not change when another subset of size 2 is revealed. Thus, for K0 ⊆ K ⊆ 2N \ { S, Z }
+
+and T / ∈ K ∪ S, it holds 
+
+f K∪ S∪Z (T ) − f K∪ S∪Z (T ) = f K∪ S (T ) − f K∪ S (T )
+
+and similarly 
+
+f K∪ Z (T ) − f K∪ Z (T ) = f K(T ) − f K(T ),
+
+which means (12) holds. 
+
+Proposition 14. Let n ≤ 4 and Cn ∈ { Sn, SS n}. If f ∈ Cn, then the Cn- divergence ∆f with 
+
+l1-norm is supermodular. Proof for n = 4 and Sn. To prove (12) for K0 ⊆ K ⊆ 2N \ { S, Z } and T / ∈ K ∪ S, we distinguish several cases based on the relation between Z and T . All of the cases follow a similar pattern. 19 1. Z ⊊ T :Since |N | = 4 and Z, T are unknown in K ∪ S, they must be of form Z = {i, j } and 
+
+T = {i, j, k }. By Lemma 2, f K∪ Z (T ) = f K(T ) and f K∪ S∪Z (T ) = f K∪ S (T ), thus (12) reduces to 
+
+f K∪ S∪Z (T ) − f K∪ S (T ) ≥ f K∪ Z (T ) − f K(T ).
+
+For a contradiction, suppose the converse holds. As, by Lemma 1, f K∪ S∪Z (T ) −
+
+f K∪ Z (T ) ≥ 0, this means f K∪ Z (T ) > f K(T ), which leads, by Lemma 1, to a con-tradiction. 2. T ⊊ Z: Similarly to the first case, we have T = {i, j }, Z = {i, j, k } and by Lemma 2, (12) reduces to 
+
+f K∪ S (T ) − f K∪ S∪Z (T ) ≥ f K(T ) − f K∪ Z (T ).
+
+For a contradiction, suppose the converse holds. It means f K(T ) > f K∪ Z (T ), which by Lemma 1 leads to a contradiction. 3. Z = T : It holds f K∪ S∪Z (T ) = f K∪ S∪Z (T ) and f K∪ Z (T ) = f K∪ Z (T ), thus (12) reduces to 
+
+f K(T ) − f K(T ) ≥ f K∪ S (T ) − f K∪ S (T )
+
+which holds by Lemma 1. In this case, Z = {i, j }, T = {k, ℓ } and (12) reduces to 
+
+f K∪ S (T ) − f K∪ S∪Z (T ) ≥ f K(T ) − f K∪ Z (T )
+
+as f K∪ S∪Z (T ) = f K∪ S (T ) and f K∪ Z (T ) = f K(T ). For a contradiction, if < holds, similarly to previous cases, f K(T ) > f K∪ S (T ), a contradiction with Lemma 1. 4. Z ∩ T̸ = ∅ and Z̸ ⊆ T and T̸ ⊆ Z: By Lemma 3, condition (12) reduces to 0 ≥ 0.The proof of Proposition 14 for SS nfunctions follows the same argument as in the case of Snfunctions, except that some steps simplify. We conclude the appendix with the proof of Corollary 15. We note this proof is a modification of Proposition 6 in [40]. 
+
+Proposition 15. Let n ≥ 5 and f ∈ Sn. If there exist i, j, k, l ∈ N such that g(ij ) ≤ g(jk ) ≤
+
+g(kl ) ≤ 0, where g(S) = f (S) − P 
+
+> i∈S
+
+f ({i}), and  2n−3 − n + 2  g(kl ) < g (ij ), then the 
+
+Sn-divergence with l1-norm is not supermodular. Proof. We use the easily derived result, which states that the Sn-divergence of (N, w ) is supermodular if and only if the Sn-divergence of (N, v ) is supermodular. We focus on the divergence of (N, v ) as this makes our analysis simple and at the same time, the condition easy to check. The supermodularity condition for the divergence is 
+
+∆(N,v )( ˆK ∪ S ∪ Z) − ∆(N,v )( ˆK ∪ S) ≥ ∆(N,v )( ˆK ∪ Z) − ∆(N,v )( ˆK), (13) where ˆK ⊆ 2N \ K 0, which can be rewritten as 
+
+X 
+
+> T⊆N
+
+ v ˆK∪ S∪Z (T ) − v ˆK∪ S∪Z (T ) − v ˆK∪ S (T ) + v ˆK∪ S (T ) ≥
+
+X 
+
+> T⊆N
+
+ v ˆK∪ Z (T ) − v ˆK∪ Z (T ) − v ˆK(T ) + v ˆK(T ) . (14) We obtain the result by setting K = K0 ∪ {{ j, k }} , S = {i, j }, and Z = {k, l }. Denote v(ij ) = 
+
+v(jk ) − ε and v(kl ) = v(jk ) + δ for some ε, δ ≥ 0. For these values, we investigate each of the terms separately. Let 
+
+LT = vK∪ S∪Z (T ) − vK∪ S∪Z (T ) − vK∪ S (T ) + vK∪ S (T ), (15) 
+
+RT = vK∪ Z (T ) − vK∪ Z (T ) − vK(T ) + vK(T ). (16) 20 In the reminder of the proof, we distinguish different cases based on the relation of T and {i, j, k, l }
+
+for all T ∈ 2N \ K 0.1. {i, j, k, l } ⊆ T ⊊ N :Using Lemma 2, we get 
+
+LT = vK∪ S (T ) − vK∪ S∪Z (T ),RT = vK(T ) − vK∪ Z (T ),
+
+where 
+
+LT = v(jk ) − ε − v(jk ) + ε − v(jk ) − δRT = v(jk ) − v(jk ) = 0 .
+
+It holds LT = RT − v(jk ) − δ = RT − v(kl ).2. {i, j, k, l } ⊆ N \ T :In this case, the upper bound on v(T ) is unaffected by the knowledge of S, Z , so 
+
+LT = vK∪ S∪Z (T ) − vK∪ S (T ),RT = vK∪ Z (T ) − vK(T ).
+
+Since the only superset of T in K ∪ S ∪ Z is N , the lower bound reduces to 
+
+vL(T ) = v(N ) − vL(N \ T ),
+
+for every L ∈ {K , K ∪ S, K ∪ Z, K ∪ S ∪ Z}. Thus 
+
+LT = vK∪ S (N \ T ) − vK∪ S∪Z (N \ T ),RT = vK(N \ T ) − vK∪ Z (N \ T ).
+
+Further, {i, j, k, l } ⊆ N \ T , which reduces this case to the previous one, thus LT =
+
+RT − v(jk ) − δ = RT − v(kl ).3. S = T :In this case, since vL(T ) = vL(T ) = v(T ) if T ∈ L for every L ∈ {K , K ∪ S, K ∪ Z, K ∪ 
+
+S ∪ Z} we get 
+
+LT = 0 ,RT = vK∪ Z (T ) − vK(T ) = vK(N \ T ) − vK∪ Z (N \ T ) = 0 .
+
+Thus LT = RT holds. 4. Z = T :In this case, by the fact that vL(T ) = vL(T ) = v(T ) if T ∈ L , it holds 
+
+LT = vK∪ S (T ) − vK∪ S (T ),RT = vK(T ) − vK(T ).
+
+Since S̸ ⊆ T , it holds vK∪ S (T ) = vK(T ), we can rewrite 
+
+LT = vK∪ S (T ) = v(N ) − vK∪ S (N \ T ) = v(N ) − v(ij ),RT = vK(T ) = v(N ) − vK(N \ T ) = v(N ).
+
+Since v(ij ) ≤ 0, LT ≥ LT + v(ij ) = RT .5. ∅̸ = Z ∩ T, Z ̸ ⊆ T , and T̸ ⊆ Z or ∅̸ = S ∩ T, S ̸ ⊆ T , and T̸ ⊆ S:By Lemma 3, one immediately arrives at LT = RT = 0 .A necessary condition for supermodularity of the Sn-divergence is 
+
+X 
+
+> T⊆N
+
+(LT − RT ) ≥ 0. (17) 21 If the sum is negative, the Sn-divergence is thus not supermodular. In the sum, the only coalitions that matter are those from cases one, two, and four. Specifically, in terms one and two, LT − RT ≤ 0,thus case four has to compensate for these in order for supermodularity to be satisfied. Specifically, sum in (17) is equal to 
+
+X 
+
+> T⊆N
+
+(LT − RT ) = ( c1(n) + c2(n)) v(kl ) − v(ij ),
+
+where c1(n) = 2 n−4 − 1 and c2(n) = 2 n−4 − n + 3 is the number of terms satisfying conditions 1 and 2, respectively. Thus, supermodularity is violated, if 
+
+ 2n−3 − n + 2  v(kl ) < v (ij ).
+
+The coefficient for v(kl ) is equal to 1, 4, 11 , 26 , . . . for n = 5 , 6, 7, 8, . . . and the sequence can be shown to be increasing. 
+
+## B Computing bounds for SAM nfunctions 
+
+ALGORITHM 1: NUMERICAL APPROACH TO COMPUTING SAM n -UPPER FUNCTION 
+
+Input: incomplete set function (f, K) ∈ SAM n, number of steps t, iteration change limit ε
+
+foreach S ⊆ N do 
+
+f0(S) ← min S1,...,S k ∈K ,S i∩Sj =∅,S 
+
+> iSi=S
+
+Pki=1 f (Si)
+
+f0(S) ← min S⊆T f0(T )
+
+end for k ← 1 to t do for s ← n to 1 do foreach S ⊆ N, |S| = s do 
+
+f ′
+
+> k
+
+(S) ← min X⊆S fk−1(X) + fk−1(X \ S)
+
+fk(S) ← min S⊆T f ′
+
+> k
+
+(T )
+
+end end if max S⊆N |fk(S) − fk−1(S)| < ε then return fk
+
+end end return ft
+
+## C Pseudocode for O FFLINE OPTIMAL 
+
+## D Pseudocode for O FFLINE GREEDY 
+
+## E Algorithm Specifications 
+
+Oracle and Offline Algorithms Greedy strategies are computationally straightforward compared to their optimal counterparts. A single step using a greedy approach demands O(g · 2n) time for a single sample. Here, g represents the time required to compute the divergence. On the other hand, optimal algorithms prove to be computationally intensive due to the necessity of examining every sequence of actions, that is, every subset of 2N . For each sample, the time complexity amounts to O(g · 22n
+
+). Despite our efforts to parallelize the computation where possible, given our available resources, we were only able to compute the complete optimal strategies for set function on ground sets of size up to 5. The computation for ground set of size 5 took roughly 300 hours. We estimate, that to compute the optimal strategies for ground set of size 6, for all steps, would take over 100 years. 22 ALGORITHM 2: OFFLINE OPTIMAL 
+
+Input: distribution of subadditive functions F, number of steps t, number of samples κ
+
+K ← 2N \ K 0
+
+G ← {} // trajectories & their E[∆] 
+
+for S ⊆ K : |S| = t do // each trajectory 
+
+μ ← 0
+
+for j ∈ { 1, . . . , κ } do // approx. E[∆] 
+
+f ∼ F 
+
+μ ← μ + ∆ f (S)
+
+end 
+
+μ ← μ/κ G [S] ← μ
+
+end 
+
+{Si}ti=1 ← arg min S⊆K :|S| =t G [S]
+
+return {Si}ti=1 
+
+ALGORITHM 3: OFFLINE GREEDY 
+
+Input: distribution of subadditive functions F, number of steps t, number of samples κ
+
+if t > 1 then 
+
+{Si}t−1 
+
+> i=1
+
+← OFFLINE GREEDY (F, t − 1)
+
+end 
+
+K ← 2N \ (K0 ∪ { Si}t−1 
+
+> i=1
+
+)
+
+G ← {} // trajectories & their E[∆] 
+
+for S ∈ K do // each trajectory 
+
+μ ← 0
+
+for j ∈ { 1, . . . , κ } do // approx. E[∆] 
+
+f ∼ F 
+
+μ ← μ + ∆ f ({Si}t−1 
+
+> i=1
+
+∪ { S})
+
+end 
+
+μ ← μ/κ G [S] ← μ
+
+end 
+
+St ← arg min S∈K G [S]
+
+return {Si}ti=1 
+
+The online variants are easier to parallelize, since each sample can be computed and evaluated independently, in contrast to the offline variants, where all the samples need to be computed, put together, averaged, and then finally evaluated. When estimating the expectation with respect to F, we used κ = 90 samples. 
+
+Reinforcement Learning We apply reinforcement leaning [ 39 ] to approximate the optimal strategy of the online principal’s problem. Namely, we use the Proximal policy optimization (PPO) [ 36 ]. We want to find a strategy of the principal which efficiently minimizes the average divergence. As such, we train PPO to minimize the divergence 
+
+r(Kτ −1, S τ ) = −∆f (Kτ −1 ∪ { Sτ }),
+
+at every step, which provides a stronger learning signal compared to the final reward. This is equivalent to training over a distribution of the online principal’s problems with uniformly distributed size t.In our implementation, we parametrize both actor and critic of the PPO algorithm with a two-layer fully-connected neural network with 64 hidden units and ReLU activation each. To optimize the surrogate PPO objective, we used the Adam optimizer. The rest of the hyperparameteres can be found in Table 2. 23 Table 2: Hyperparameters used during training. Parameter Value Description 
+
+α 3 · 10 −4 Learning rate 
+
+β 0 Entropy regularization 
+
+γ 0.99 Reward discounting rate 
+
+λ 0.95 Generalized advantage estimate 
+
+ε 0.2 Surrogate clip range 
+
+B 5 · 10 4 Rollout buffer size 
+
+M 0.5 Max gradient norm 
+
+ne 10 Number of training epochs 
+
+Random Algorithm The R ANDOM algorithm is computationally simple, requiring only O(g) time to compute a single sample. As such, it took only a few minutes to compute for ground sets of size 5. We again used κ = 90 samples to approximate the expectation and the standard error of the mean. 
+
+## F Oracle algorithms 
+
+Following are the pseudocodes of O RACLE algorithms discussed in Section ?? .
+
+ALGORITHM 4: ORACLE OPTIMAL 
+
+Input: characteristic function f ∈ Sn, number of steps t
+
+K ← 2N \ K 0
+
+{Si}ti=1 ← arg min S⊆K :|S| =t ∆f (K0 ∪ S )
+
+return {Si}ti=1 
+
+ALGORITHM 5: ORACLE GREEDY 
+
+Input: characteristic function f ∈ Sn, number of steps t
+
+if t > 1 then 
+
+{Si}t−1 
+
+> i=1
+
+← ORACLE GREEDY (f, t − 1)
+
+end 
+
+K ← 2N \ (K0 ∪ { Si}t−1 
+
+> i=1
+
+)
+
+St ← arg min S∈K ∆f (K0 ∪ { Si}t−1 
+
+> i=1
+
+∪ { S})
+
+return {Si}ti=1 
+
+## G Additional Results 
+
+Let us present more results — specifically regarding the class of k-budget functions. A function f is 
+
+k-budget ≡
+
+f (S) = min {k, |S|} .
+
+Let us denote the distribution over k-budget functions with k ∈ { 1, . . . , n } chosen uniformly at random as k-budget (n).Since these functions are submodular, we can use the Cohavi–Dobzinski Sketching Algorithm (CDSA) [ 13 ] for comparison regarding α-sketching. See Table 3 for the results. Note that we keep the notation consistent with that in Table 1 in Section 5. We further offer the results of all our approaches similar to Figure 1 in Figure 3. 24 Table 3: Approximation α minimizing multiplicative error on sam-covg (n) of CDSA (fA, f KA ),revealed queried values (f KA
+
+, f KA ), and O FFLINE GREEDY (f KO
+
+, f KO ) with the same budget. Distribution F # Queried α(fA, f KA ) α(f KA
+
+, f KA ) α(f KO
+
+, f KO )
+
+k-budget (5) 3.72 2.58 2.02 1.88 
+
+k-budget (8) 6.88 4.19 2.86 2.47 
+
+k-budget (10 ) 8.91 5.18 3.33 2.90                
+
+> 0510 15 20 25
+> 0
+> 10
+> 20
+> Steps
+> Divergence
+> k-budget (5)
+> 0510 15 20 25
+> 0
+> 500
+> 1,000
+> 1,500
+> 2,000
+> Steps
+> k-budget (10 )
+> RANDOM PPO OFFLINE OPTIMAL OFFLINE GREEDY
+
+Figure 3: Comparison of divergence across algorithmic steps for various algorithms, showcasing the 
+
+k-budget (n) distribution for n ∈ { 5, 10 }.
+
+## H Normalization 
+
+In our application, it is convenient to transform a set function f by an affine mapping such that after the transformation, the values of the singletons are equal to 0 and the value of the ground set is equal to ±1. After such transformation, the minimal information K0 is trivial. Formally, let α > 0 and β ∈ Rn such that 
+
+g(S) = α · f (S) + X
+
+> i∈S
+
+βi. (18) By considering 
+
+βi = f ({i})
+
+f (N ) − P 
+
+> i∈N
+
+f ({i}) and α = 1
+
+f (N ) ,
+
+we achieve the desired transformation. Proposition 1 describes the effect on the divergence when such a transformation is applied. 
+
+Observation 1. The Sn-divergence ∆ satisfies 
+
+∆αf +β (K) = α · ∆f (K) (19) 
+
+where α > 0, (αv + β)( S) := αv (S) + P 
+
+> i∈N
+
+βi and βi ∈ R for i ∈ N .Proof. It is a standard result [33] that f ∈ Sn =⇒ αf + β ∈ Sn. From these two results, we have 
+
+∆αf +β (K) = αf + βK0∪K − αf + βK0∪K 
+
+= α f K0∪K − f K0∪K 
+
+= α · ∆f (K).
+
+25

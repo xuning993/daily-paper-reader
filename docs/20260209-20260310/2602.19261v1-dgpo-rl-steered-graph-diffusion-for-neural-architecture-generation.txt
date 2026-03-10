@@ -1,0 +1,436 @@
+Title: DGPO: RL-Steered Graph Diffusion for Neural Architecture Generation
+
+URL Source: https://arxiv.org/pdf/2602.19261v1
+
+Published Time: Tue, 24 Feb 2026 02:04:36 GMT
+
+Number of Pages: 7
+
+Markdown Content:
+# DGPO: RL-Steered Graph Diffusion for Neural Architecture Generation 
+
+Aleksei Liuliakov , Luca Hermes , Barbara Hammer 
+
+Machine Learning Group, Bielefeld University, Germany 
+
+{aliuliakov |lhermes |bhammer }@techfak.uni-bielefeld.de 
+
+This work has been submitted to the IEEE for possible publication. Copyright may be transferred without notice, after which this version may no longer be accessible. 
+
+Abstract —Reinforcement learning fine-tuning has proven ef-fective for steering generative diffusion models toward desired properties in image and molecular domains. Graph diffusion models have similarly been applied to combinatorial structure generation, including neural architecture search (NAS). However, neural architectures are directed acyclic graphs (DAGs) where edge direction encodes functional semantics such as data flow-information that existing graph diffusion methods, designed for undirected structures, discard. We propose Directed Graph Pol-icy Optimization (DGPO), which extends reinforcement learning fine-tuning of discrete graph diffusion models to DAGs via topo-logical node ordering and positional encoding. Validated on NAS-Bench-101 and NAS-Bench-201, DGPO matches the benchmark optimum on all three NAS-Bench-201 tasks (91.61%, 73.49%, 46.77%). The central finding is that the model learns transferable structural priors: pretrained on only 7% of the search space, it generates near-oracle architectures after fine-tuning, within 0.32 percentage points of the full-data model and extrapolating 7.3 percentage points beyond its training ceiling. Bidirectional control experiments confirm genuine reward-driven steering, with inverse optimization reaching near random-chance accuracy (9.5%). These results demonstrate that reinforcement learning-steered discrete diffusion, once extended to handle directionality, provides a controllable generative framework for directed combinatorial structures. 
+
+Index Terms —Neural architecture search, graph diffusion, reinforcement learning, directed acyclic graphs 
+
+I. I NTRODUCTION 
+
+Diffusion models have emerged as powerful generative frameworks for learning complex distributions, with recent ex-tensions to graph-structured data [1] enabling direct generation of molecular graphs and other combinatorial objects. Rein-forcement learning (RL) fine-tuning steers pretrained diffusion models toward desired properties: DDPO [2] introduced this for image generation, and GDPO [3] extended it to molecular graphs. In the graph domain, however, these methods have been limited to undirected structures. Many important domains involve directed acyclic graphs (DAGs): neural architectures encode data flow through di-rected edges, causal networks represent asymmetric dependen-cies, and computational workflows specify ordered execution. In such graphs, edge direction encodes functional semantics that is destroyed by symmetric treatment. Neural architecture search (NAS) [4], [5] - a combinatorial optimization problem over DAG-structured networks - exemplifies this challenge: existing generative approaches either condition generation on target accuracy [6] or build on graph diffusion models designed for undirected structures [1], forgoing directional information. Extending RL-steered discrete diffusion to DAGs requires respecting and reconstructing this directional struc-ture. We propose Directed Graph Policy Optimization (DGPO), extending GDPO [3], a graph diffusion RL fine-tuning frame-work, to directed acyclic graphs via topological node ordering and positional encoding. This enables the discrete diffusion process to respect directionality while preserving the reward-driven steering mechanism of the underlying framework. We validate DGPO on two public NAS benchmarks, NAS-Bench-101 [7] and NAS-Bench-201 [8], achieving competitive architecture generation that reaches the NB201 benchmark optimum on all three tasks (91.61%, 73.49%, and 46.77%). We find that the model can acquire transferable structural priors: pretrained on only 7% of the search space, it generates near-oracle architectures after RL fine-tuning, within 0.32 percentage points of the full-data model and extrapolating up to 7.3pp beyond its training ceiling. We provide additional evidence for reward-driven steering via bidirectional control, where inverting the reward signal drives generation toward near random-chance accuracy (9.5%), and we also show how the framework extends to multi-objective reward formulations. Our contributions are: 1) Methodological: DGPO extends GDPO to directed acyclic graphs via topological node ordering and po-sitional encoding, enabling controllable generation of DAG-structured objects. 2) Empirical (primary): We show evidence that the result-ing model learns transferable structural priors: a model trained on only 7% of the NAS search space generates near-oracle architectures after RL fine-tuning (within 0.32pp), with up to +7.3pp extrapolation beyond its training ceiling. 3) Empirical (supporting): We provide additional evi-dence for the steering mechanism through bidirectional control (inverse reaches near random chance at 9.5%) and show extension to multi-objective reward formula-tions. Code and pretrained models will be released upon accep-tance. 
+
+> arXiv:2602.19261v1 [cs.LG] 22 Feb 2026
+
+II. R ELATED WORK 
+
+Graph diffusion models. Diffusion models have been extended to graph-structured data through both discrete and continuous formulations [9]. DiGress [1] introduced discrete denoising diffusion for graphs, applying categorical noise transitions to node and edge attributes with a graph transformer denoiser. Autoregressive variants [10] generate graphs sequen-tially but sacrifice parallelism. DGPO builds on DiGress as its discrete diffusion backbone. 
+
+RL fine-tuning of diffusion models. Reinforcement learn-ing can steer pretrained diffusion models toward desired properties by framing denoising as a Markov decision pro-cess [11]. DDPO [2] introduced this approach for image generation, optimizing human preference scores via policy gradients. DPOK [12] adds KL regularization for text-to-image alignment. GDPO [3] adapts the framework to molecular graph generation using reward-weighted denoising trajecto-ries. These methods operate on undirected structures (images, molecules); DGPO extends the GDPO framework to directed acyclic graphs. 
+
+Neural architecture search. NAS has been addressed through RL controllers [4], evolutionary algorithms [13], dif-ferentiable relaxations such as DARTS [14], and predictor-based methods including BANANAS [15]. Generative ap-proaches learn to directly produce architectures: D-VAE [16] uses variational autoencoders for directed graph generation, DiffusionNAG [17] applies diffusion models for task-guided generation, AG-Net [18] uses autoregressive generation with a learned surrogate, and GraphPNAS [19] learns distributions over high-performing architectures. DiNAS [6] conditions a graph diffusion model on target accuracy to generate ar-chitectures directly. DGPO differs from conditioning-based approaches by steering the generation distribution via RL fine-tuning, enabling capabilities beyond accuracy targeting: bidi-rectional control, out-of-distribution discovery from filtered data, and multi-objective optimization. We extend an existing RL fine-tuning framework (GDPO) to a structurally different graph class (DAGs), rather than proposing a new RL algorithm or diffusion architecture. The contribution lies in enabling RL-steered discrete diffusion for directed combinatorial structures and providing empirical evidence for transferable structural priors in the resulting generative model. III. M ETHOD 
+
+We first review the discrete diffusion and RL fine-tuning foundations that DGPO builds on, then present our extension to directed acyclic graphs. 
+
+A. Preliminaries 
+
+Discrete graph diffusion. DiGress [1] defines a discrete diffusion process over graphs G = (X, E) with categor-ical node attributes X ∈ {1, . . . , a }n and edge attributes 
+
+E ∈ {0, 1, . . . , b }n×n. The forward process progressively corrupts G0 via transition matrices QXt and QEt over T
+
+steps, producing a sequence G0, G1, . . . , GT . The reverse process, parameterized by a denoising network φθ , predicts the clean graph G0 from the noisy input Gt at each step [20]. Graphs are generated by sampling GT from the noise prior and iteratively denoising. 
+
+Reinforcement learning fine-tuning of diffusion models. 
+
+GDPO [3] formulates the denoising process as a T -step Markov decision process: the state is st = ( GT −t, T −t),the action is at = GT −t−1, the policy πθ is the denoising model, and a sparse reward r(G0) is assigned only to the final generated graph. The objective is to maximize expected reward 
+
+Eτ ∼πθ [r(G0)] over denoising trajectories τ = ( GT , . . . , G0).DDPO [2] introduced this MDP framing for image diffusion; GDPO extends it to molecular graphs using an eager policy gradient that directly optimizes ∇θ log pθ (G0 | Gt) at each timestep, reducing gradient variance compared to the standard REINFORCE estimator [3]. 
+
+B. DGPO: Extending GDPO to Directed Acyclic Graphs 
+
+GDPO was developed for undirected molecular graphs where edge semantics are symmetric. In directed acyclic graphs (DAGs) - neural architectures, causal networks, com-putational workflows - edge direction encodes functional se-mantics such as data flow or causation. Treating directed edges as symmetric destroys this information. We propose Directed Graph Policy Optimization (DGPO), which extends GDPO to DAGs via three components. 
+
+Topological node ordering. Before diffusion, we apply a topological ordering σ to the DAG nodes: nodes are renum-bered such that i < j implies no edge from j to i. This canonical ordering encodes directional structure into node indices. The adjacency matrix of a topologically ordered DAG is strictly upper-triangular, so edge direction is fully captured by the node ordering. 
+
+Positional encoding. We augment each node’s features with a positional encoding vector pi reflecting its topological position in the ordering [21]. This provides the denoiser 
+
+φθ with explicit positional information during the reverse process, enabling it to reconstruct directed edges from the noisy intermediate graph. 
+
+DAG recovery. At generation time, the diffusion model produces a full adjacency matrix. We recover a valid DAG by extracting the upper-triangular portion (given the topological ordering) and masking the diagonal. This projection guarantees acyclicity by construction. Together, topological node ordering and positional encoding enable the DiGress backbone and GDPO fine-tuning frame-work - designed for undirected graphs - to handle DAGs without modifying the diffusion or RL architectures. The ex-tension is domain-agnostic: any DAG-structured combinatorial problem can be addressed by providing an appropriate reward signal. 
+
+C. Training Objective 
+
+Following GDPO [3], the DGPO training objective is a reward-weighted cross-entropy loss over denoising trajectories with advantage normalization: 
+
+LDGPO (θ) = 1
+
+K
+
+> K
+
+X
+
+> k=1
+
+T
+
+|T k|
+
+X
+
+> t∈T k
+
+ˆAk · L CE 
+
+ φθ (G(k) 
+
+> t
+
+), G(k)0
+
+, (1) where K is the number of trajectories per batch, Tk is a uniformly sampled subset of timesteps for trajectory k, and the cross-entropy decomposes over nodes and edges: 
+
+LCE = X
+
+> i
+
+CE (xi, ˆxi) + λ X
+
+> i,j
+
+CE (eij , ˆeij ). (2) The advantage estimate normalizes the reward signal: 
+
+ˆAk = clip 
+
+ rk − ¯rσr
+
+, −5, 5
+
+
+
+, (3) where ¯r and σr are the running mean and standard deviation of the reward. This closely follows a REINFORCE-style policy gradient with a learned baseline. The reward signal admits several formulations: single-objective ( r(G0) = normalized validation accuracy), inverse (−r(G0) for mechanism validation), and multi-objective (P 
+
+> i
+
+wi · ri(G0) for compound tasks). 
+
+D. Two-Phase Training 
+
+Phase 1: Pretraining. The diffusion model is trained on the benchmark architecture distribution using the standard cross-entropy loss. This phase learns the structural grammar of the search space - valid node types, connectivity patterns, and size distributions. 
+
+Phase 2: RL fine-tuning. Starting from the pretrained checkpoint, the model is fine-tuned using the DGPO objec-tive (1). Layer freezing (75% of parameters) stabilizes training and prevents catastrophic forgetting; gradient accumulation compensates for the small batch sizes required by online reward evaluation. This phase shifts the generation distribu-tion toward the reward signal while preserving the structural validity learned in Phase 1. IV. E XPERIMENTS 
+
+A. Experimental Setup 
+
+Benchmarks. We evaluate on NAS-Bench-101 (NB101) [7] and NAS-Bench-201 (NB201) [8]. NB101 contains 423,624 unique architectures represented as directed acyclic graphs with up to seven nodes and 21 possible edges, evaluated on CIFAR-10. NB201 defines a cell-based search space of 15,625 architectures evaluated on three tasks: CIFAR-10, CIFAR-100, and ImageNet-16-120. 
+
+Model architecture. DGPO uses a DiGress backbone [1] with eight Transformer layers, T =800 diffusion steps, and a cosine noise schedule. We augment each node with atopological positional encoding that captures its position in the DAG ordering (Section III-B). At generation time, valid DAGs are recovered via upper-triangular projection of the generated adjacency matrix. 
+
+Training protocol. Training follows a two-phase procedure. Phase 1 pretrains the diffusion model on the full benchmark architecture distribution using cross-entropy loss. Phase 2                    
+
+> TABLE I COMPARISON WITH SOTA NAS METHODS . M AX VALIDATION ACCURACY
+> (%) ON NB101 AND NB201. P RIOR RESULTS FROM [6] ( MEAN OVER 10
+> RUNS ); DGPO: MEAN ±STD OVER 3SEEDS (NB101) / DETERMINISTIC
+> API LOOKUP (NB201). * = BENCHMARK OPTIMUM . DGPO USES ∼2KQUERIES ;OTHER METHODS USE 150–192.
+
+Method NB101 NB201 Val (%) Val C-10 C-100 IN-16 Optimum 95.06 91.61 73.49 46.77 Random Search 94.31 91.12 72.08 45.97 Reg. Evol. 94.47 – – –Bayesian Opt. 94.57 91.54 73.26 46.43 BANANAS 94.73 91.56 73.49* 46.65 AG-Net 94.90 91.60 73.49* 46.64 DiNAS 94.98 91.61* 73.49* 46.66 
+
+DGPO 94 .50 ±0.02 91.61* 73.49* 46.77* 
+
+applies RL fine-tuning (RL-FT) for 60 epochs with batch size K=15 , learning rates of 7×10 −7 (NB101) and 5×10 −7
+
+(NB201), 75% layer freezing, and AdamW optimization. The training objective is a REINFORCE-style policy gradient with advantage normalization (Section III-C). 
+
+Evaluation protocol. All experiments use three seeds (42, 123, 456); results are reported as mean ± std. Each evaluation draws 300 architectures from the current model. NB101 and NB201 results are obtained via benchmark API lookup. 
+
+Baselines. We compare against two internal baselines: 
+
+random search (uniform sampling from the search space) and pretrained-only sampling (generation from the pretrained diffusion model without RL-FT). External comparisons with prior NAS methods are presented in Section IV-B. 
+
+B. Baseline Results 
+
+DGPO steers DAG generation toward high-accuracy archi-tectures on both NB101 and NB201. Fig. 1 shows training dynamics over RL-FT epochs: validation accuracy increases over training on both benchmarks while mean reward rises in tandem, with narrow ±1σ bands across three seeds suggesting stable convergence. Fig. 2 illustrates the underlying mechanism: RL-FT pro-gressively shifts the generated architecture distribution toward higher accuracy, concentrating probability mass in the high-performing region. Table I compares DGPO against published NAS methods. On NB201, DGPO matches the benchmark optimum on all three datasets: 91.61% (CIFAR-10), 73.49% (CIFAR-100), and 46.77% (ImageNet-16-120), surpassing DiNAS [6] on ImageNet-16-120 (46.77% vs 46.66%). On NB101, DGPO achieves 94.50%, competitive with established methods but be-low DiNAS (94.98%). On NB101, several established methods achieve similar accuracy levels within a narrow range; DGPO’s distinctive value on this benchmark lies in the controllable distribution steering demonstrated in Sections IV-C and IV-D. The additional query cost ( ∼2k vs 150–192) reflects the online RL paradigm: rather than a fixed-budget search, DGPO fine-tunes the generative distribution itself. This distribution-level steering enables the capabilities demonstrated in the 0 10 20 30 40 50 
+
+RL-FT Epoch 
+
+0.7 
+
+0.8 
+
+0.9 
+
+1.0 
+
+1.1 
+
+1.2 
+
+> Validation Accuracy
+
+NB101 (a) 
+
+Validation Accuracy 
+
+Pretrained-Only 
+
+Random Search 
+
+Mean Reward 
+
+0 20 40 60 80 
+
+RL-FT Epoch 
+
+0.84 
+
+0.86 
+
+0.88 
+
+0.90 
+
+0.92 
+
+> Validation Accuracy
+
+NB201 (CIFAR-10) (b) 
+
+Validation Accuracy 
+
+Pretrained-Only 
+
+Random Search 
+
+Mean Reward 
+
+0.2 
+
+0.4 
+
+0.6 
+
+0.8 
+
+1.0 
+
+1.2 
+
+> Mean Reward
+
+0.76 
+
+0.78 
+
+0.80 
+
+0.82 
+
+0.84 
+
+0.86 
+
+0.88 
+
+0.90 
+
+> Mean Reward
+
+Fig. 1. Training dynamics of DGPO on (a) NB101 and (b) NB201 (CIFAR-10): validation accuracy (solid, left axis) and mean reward (dashed, right axis) over RL-FT epochs, with ±1σ bands across 3 seeds. Horizontal lines: random search and pretrained-only baselines. Both metrics converge reliably, confirming that RL fine-tuning steers the generation distribution toward higher-quality architectures. 0.84 0.86 0.88 0.90 0.92 0.94 0.96 
+
+Validation Accuracy 
+
+> Ep 0 (n=300)
+> Ep 20 (n=300)
+> Ep 30 (n=300)
+> Ep 40 (n=300)
+
+NB101 (a) 
+
+> Sample
+> Mean
+> Top-5
+
+0.80 0.82 0.84 0.86 0.88 0.90 0.92 0.94 0.96 
+
+Validation Accuracy 
+
+> Ep 0 (n=300)
+> Ep 5 (n=300)
+> Ep 10 (n=300)
+> Ep 15 (n=300)
+> Ep 20 (n=300)
+
+NB201 (CIFAR-10) (b) 
+
+> Sample
+> Mean
+> Top-5
+
+Fig. 2. Distribution of generated architectures over RL-FT epochs on (a) NB101 and (b) NB201 (CIFAR-10). Each strip shows 300 sampled architectures (dots) at a given epoch, with mean accuracy (diamond) and top-5 architectures (stars). As training progresses (bottom to top), the mean and overall sample density shift markedly toward higher accuracy, demonstrating that RL fine-tuning reshapes the generative distribution rather than merely selecting isolated high performers. Single seed (42); n=300 samples per epoch. 
+
+following sections - bidirectional control, out-of-distribution discovery, and multi-objective optimization - which are not available to conditioning-based methods. 
+
+C. Transferable Structural Priors 
+
+Does the generative model learn compositional structural priors, or does it merely memorize the training distribution? To answer this, we filter the pretraining data to architectures below a quality threshold T , removing all high-accuracy instances, and then apply RL-FT to the filtered model. Specif-ically, we retain only architectures with validation accuracy below T =0 .87 on NB101 (7% of data; ∼30k of 423k) and below T =0 .85 on NB201 (29%; ∼4,500 of 15,625). Out-of-distribution (OOD) architectures - those with validation accuracy above T - are entirely absent from the filtered pretraining set. 
+
+Filtered vs full pretraining. Table II compares RL-FT results starting from the filtered versus full pretrained model. On NB101, the filtered model achieves 94.18%, only 0.32 percentage points below the full model’s 94.50%. On NB201, the filtered model reaches 91.71%, within noise of the full model (91.70%). Removing 93% of training data costs only 0.32pp in generation quality on NB101 and is negligible on NB201, indicating that weak-region data suffices for acquiring structural priors. 
+
+OOD architecture discovery. The filtered model generates architectures far above its training ceiling. Fig. 3 (top row) visualizes this: the filtered pretrained distribution (middle strip) TABLE II RL-FT ON FULL VS FILTERED PRETRAINING : MAX VALIDATION ACCURACY (MEAN ± STD , 3 SEEDS ). F ILTERED MODELS ARE PRETRAINED EXCLUSIVELY ON ARCHITECTURES BELOW THRESHOLD T (NB101:                       
+
+> T=0 .87 , 7% OF DATA ; NB201: T=0 .85 , 29%). F ILTERED PRETRAINING LOSES ONLY 0.32 PP ON NB101 AND IS WITHIN NOISE ON NB201. Method NB101 NB201 (C-10) Full Pretrain 94.50 ±0.02 91.70 ±0.02 Filtered Pretrain 94.18 ±0.33 91.71 ±0.02
+
+clusters below T , but after RL-FT (top strip) the distribution recovers to resemble the full pretrained reference (bottom strip) - despite never having seen above-T architectures during pretraining. The bottom row tracks the threshold crossing rate (percentage of generated samples with accuracy ≥T ) over RL-FT epochs. On NB101, the filtered model starts at ∼21% above T and climbs to ∼99% after RL-FT. On NB201, it starts at ∼9% and reaches ∼99%. 
+
+Per-seed consistency. Across all three seeds, the OOD discovery rate is 100% on both benchmarks: every seed gen-erates architectures above T after RL-FT. On NB101, the best generated architecture reaches 94 .27 ± 0.11% , extrapolating 
+
++7.27pp above the training ceiling, with a mean crossing rate of 67 .7 ± 3.2% . On NB201, the best architecture reaches 
+
+91 .68 ± 0.06% , matching the benchmark oracle, with crossing rate 79 .2 ± 1.7% and an OOD lift of 0.77 ± 0.02 (OOD architectures are 77% more likely to appear among the top-performing generated samples). 
+
+Interpretation. These results provide evidence for compo-sitional generalization in the diffusion model: pretraining on weak architectures captures local structural motifs - connectiv-ity patterns, operation combinations - that, when recombined under RL-FT guidance, produce high-quality architectures absent from the training set. The model extrapolates beyond its training support by recombining learned primitives, not by memorizing successful configurations. We use filtering as a controlled stress test; the threshold T is fixed before RL-FT and not tuned post hoc. 
+
+D. Steering Versatility 
+
+Bidirectional control. The same RL-FT framework steers generation in either direction, validating that the reward signal drives genuine structure–performance learning rather than ex-ploitation of the pretraining distribution. Fig. 4 shows forward (maximize accuracy) and inverse (minimize accuracy) DGPO trajectories. The forward trajectory rises above the expected best-of-batch under random sampling ( E[max(15)] , computed via bootstrap with K=10 ,000 resamples). Negating the reward signal causes the model to generate progressively worse archi-tectures: the inverse trajectory converges toward near random-chance accuracy (9.51% on NB101, 9.71% on NB201; chance is 10% for 10-class classification). This provides evidence against explanations where the model merely exploits the pretraining distribution: with a negated reward, the same model is driven toward architectures it was not encouraged to generate during pretraining. On NB201, one of three seeds temporarily lingers near a secondary basin ( ∼59%), while others reach the floor, suggest-ing bimodal structure in the inverse optimization landscape. All seeds reach the global minimum during training; the wider error band reflects basin transitions rather than method failure. 
+
+Multi-objective steering. We extend DGPO to multi-objective (MO) optimization on NB201 by using a compound reward: the weighted sum of normalized validation accuracies on CIFAR-10, CIFAR-100, and ImageNet-16-120. MO-DGPO improves all three tasks simultaneously, with the composite reward increasing by 26%. The Pareto hypervolume reaches 0.9901, matching the union of three separate single-task runs. MO-DGPO achieves comparable front quality in a single joint run, demonstrating that the RL-FT framework generalizes nat-urally from single-task to multi-objective formulations without architectural changes. An adversarial weight configuration (negative weight on CIFAR-10) reveals strong task correlation in the NB201 search space: penalizing one task simultaneously degrades others. This confirms the known correlation structure in NB201 and illustrates that DGPO can probe task relationships via reward engineering. V. C ONCLUSION 
+
+We presented DGPO, extending RL-steered discrete graph diffusion to directed acyclic graphs via topological node or-dering and positional encoding. Validated on NAS-Bench-101 and NAS-Bench-201, DGPO achieves competitive architecture generation and provides evidence of transferable structural pri-ors: a model pretrained on only weak-region data can generate near-oracle architectures after RL fine-tuning. Bidirectional control and multi-objective steering further support the view that the reward signal drives structure–performance learning. The approach incurs higher query cost than conditioning-based methods, reflecting the online RL paradigm, and has been validated on NAS benchmarks only; generalization to other DAG domains remains to be demonstrated. Promising directions include reducing the query budget through offline RL or sample reuse strategies, scaling to open-ended search spaces such as NAS-Bench-301, and applying DGPO to other directed combinatorial domains including circuit design and causal discovery. REFERENCES [1] C. Vignac, I. Krawczuk, A. Siraudin, B. Wang, V. Cevher, and P. Frossard, “DiGress: Discrete denoising diffusion for graph gener-ation,” International Conference on Learning Representations (ICLR) ,2023. [2] K. Black, M. Janner, Y. Du, I. Kostrikov, and S. Levine, “Training diffusion models with reinforcement learning,” International Conference on Learning Representations (ICLR) , 2024. [3] Y. Liu, C. Du, T. Pang, C. Li, M. Lin, and W. Chen, “Graph diffu-sion policy optimization,” Advances in Neural Information Processing Systems , vol. 37, pp. 9585–9611, 2024. [4] B. Zoph and Q. V. Le, “Neural architecture search with reinforce-ment learning,” International Conference on Learning Representations (ICLR) , 2017. [5] C. White, M. Safari, R. Sukthanker, B. Ru, T. Elsken, A. Zela, D. Dey, and F. Hutter, “Neural architecture search: Insights from 1000 papers,” 2023, arXiv preprint arXiv:2301.08727. 0.75 0.80 0.85 0.90 0.95 
+
+Validation Accuracy 
+
+> Full pretrain (n=300)
+> Filtered (ep 0) (n=300)
+> RL-FT (ep 60) (n=300)
+
+NB101 (T=0.87) (a) 
+
+> Sample
+> Mean
+> Top-5
+
+0.65 0.70 0.75 0.80 0.85 0.90 0.95 
+
+Validation Accuracy 
+
+> Full pretrain (n=300)
+> Filtered (ep 0) (n=300)
+> RL-FT (ep 40) (n=156)
+
+NB201 (T=0.85) (b) 
+
+> Sample
+> Mean
+> Top-5
+
+0 10 20 30 40 50 60 
+
+RL-FT Epoch 
+
+0
+
+20 
+
+40 
+
+60 
+
+80 
+
+100 
+
+> Crossing Rate (%)
+
+NB101 (c) 
+
+> Filtered RL-FT
+> Full Pretrain
+
+0 10 20 30 40 50 60 
+
+RL-FT Epoch 
+
+0
+
+20 
+
+40 
+
+60 
+
+80 
+
+100 
+
+> Crossing Rate (%)
+
+NB201 (d) 
+
+> Filtered RL-FT
+> Full Pretrain
+
+Fig. 3. OOD architecture discovery on (a, c) NB101 ( T =0 .87 ) and (b, d) NB201 ( T =0 .85 ). Top: distribution comparison - full pretrain (reference), filtered pretrain (epoch 0), and RL-FT (final epoch). Shaded region marks OOD architectures above T . Bottom: threshold crossing rate over RL-FT epochs. After pretraining on only sub-threshold architectures, RL-FT recovers above-threshold generation, demonstrating transferable structural priors. Single seed (42) for distributions; crossing rates are 3-seed aggregates. [6] S. Asthana, J. Conrad, C. Debus, and M. G¨ otz, “Multi-conditioned graph diffusion for neural architecture search,” Transactions on Machine Learning Research (TMLR) , 2024. [7] C. Ying, A. Klein, E. Real, E. Christiansen, K. Murphy, and F. Hutter, “NAS-Bench-101: Towards reproducible neural architecture search,” 
+
+Proceedings of the 36th International Conference on Machine Learning (ICML) , 2019. [8] X. Dong and Y. Yang, “NAS-Bench-201: Extending the scope of reproducible neural architecture search,” International Conference on Learning Representations (ICLR) , 2020. [9] W. Fan, C.-Y. K. Liu, Y. Liu, J. Li, H. Li, H. Liu, J. Tang, and Q. Li, “Generative diffusion models on graphs: Methods and applications,” 
+
+arXiv preprint arXiv:2302.02591 , 2023. [10] L. Kong, J. Cui, H. Sun, Y. Zhuang, B. A. Prakash, and C. Zhang, “Autoregressive diffusion model for graph generation,” in International Conference on Machine Learning (ICML) , 2023. [11] M. Uehara, Y. Zhao, T. Biancalani, and S. Levine, “Understanding reinforcement learning-based fine-tuning of diffusion models: A tutorial and review,” arXiv preprint arXiv:2407.13734 , 2024. [12] Y. Fan, O. Watkins, Y. Du, H. Liu, M. Ryu, C. Boutilier, P. Abbeel, M. Ghavamzadeh, K. Lee, and K. Lee, “DPOK: Reinforcement learning for fine-tuning text-to-image diffusion models,” Advances in Neural Information Processing Systems (NeurIPS) , 2023. [13] E. Real, A. Aggarwal, Y. Huang, and Q. V. Le, “Regularized evolution for image classifier architecture search,” AAAI Conference on Artificial Intelligence , 2019. [14] H. Liu, K. Simonyan, and Y. Yang, “DARTS: Differentiable architecture search,” International Conference on Learning Representations (ICLR) ,2019. [15] C. White, W. Neiswanger, and Y. Savani, “BANANAS: Bayesian opti-mization with neural architectures for neural architecture search,” AAAI Conference on Artificial Intelligence , 2021. [16] M. Zhang, S. Jiang, Z. Cui, R. Garnett, and Y. Chen, “D-VAE: A variational autoencoder for directed acyclic graphs,” Advances in Neural Information Processing Systems (NeurIPS) , 2019. [17] S. An, H. Lee, J. Jo, S. Lee, and S. J. Hwang, “DiffusionNAG: Task-guided neural architecture generation with diffusion models,” arXiv preprint arXiv:2305.16943 , 2023. [18] J. Lukasik, S. Jung, and M. Keuper, “Learning where to look – generative NAS is surprisingly efficient,” in European Conference on Computer Vision (ECCV) , 2022. [19] M. Li, J. Y. Liu, L. Sigal, and R. Liao, “GraphPNAS: Learning distribution of good neural architectures via deep graph generative models,” arXiv preprint arXiv:2211.15155 , 2022. [20] J. Austin, D. D. Johnson, J. Ho, D. Tarlow, and R. van den Berg, “Struc-0 10 20 30 40 50 
+
+RL-FT Epoch 
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+0.8 
+
+1.0 
+
+1.2 
+
+> Val Accuracy
+
+NB101 (a) 
+
+DGPO ( )
+
+Inverse ( )
+
+Random E[max(15)] 
+
+Random E[min(15)] 
+
+0 20 40 60 80 
+
+RL-FT Epoch 
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+0.8 
+
+> Val Accuracy
+
+NB201 (CIFAR-10) (b) 
+
+DGPO ( )
+
+Inverse ( )
+
+Random E[max(15)] 
+
+Random E[min(15)] Fig. 4. Bidirectional steering on (a) NB101 and (b) NB201 (CIFAR-10): forward (maximize, ↑) and inverse (minimize, ↓) DGPO trajectories over RL-FT epochs, with ±1σ bands (3 seeds). Dashed/dotted lines: expected max/min of random batches ( N =15 , bootstrap K=10 ,000 ). The inverse trajectory converges to near random-chance accuracy ( ∼9.5%), supporting reward-driven distribution steering. tured denoising diffusion models in discrete state-spaces,” Advances in Neural Information Processing Systems (NeurIPS) , 2021. [21] V. P. Dwivedi and X. Bresson, “A generalization of transformer networks to graphs,” AAAI Workshop on Deep Learning on Graphs , 2021.

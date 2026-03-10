@@ -1,0 +1,478 @@
+Title: Tensor Network Generator-Enhanced Optimization for Traveling Salesman Problem
+
+URL Source: https://arxiv.org/pdf/2602.20175v1
+
+Published Time: Wed, 25 Feb 2026 01:00:44 GMT
+
+Number of Pages: 11
+
+Markdown Content:
+# Tensor Network Generator-Enhanced Optimization for Traveling Salesman Problem 
+
+Ryo Sakai ∗
+
+JIJ Inc., 3-3-6 Shibaura, Minato-ku, Tokyo, 108-0023, Japan 
+
+Chen-Yu Liu †
+
+Graduate Institute of Applied Physics, National Taiwan University, Taipei, Taiwan 
+
+We present an application of the tensor network generator-enhanced optimization (TN-GEO) framework to address the traveling salesman problem (TSP), a fundamental combinatorial opti-mization challenge. Our approach employs a tensor network Born machine based on automati-cally differentiable matrix product states (MPS) as the generative model, using the Born rule to define probability distributions over candidate solutions. Unlike approaches based on binary en-coding, which require N 2 variables and penalty terms to enforce valid tour constraints, we adopt a permutation-based formulation with integer variables and use autoregressive sampling with mask-ing to guarantee that every generated sample is a valid tour by construction. We also introduce a 
+
+k-site MPS variant that learns distributions over k-grams (consecutive city subsequences) using a sliding window approach, enabling parameter-efficient modeling for larger instances. Experimental validation on TSPLIB benchmark instances with up to 52 cities demonstrates that TN-GEO can outperform classical heuristics including swap and 2-opt hill-climbing. The k-site variants, which put more focus on local correlations, show better results compared to the full-MPS case. 
+
+I. INTRODUCTION 
+
+Quantum computing has emerged as a transforma-tive technology, offering significant potential to enhance computational performance across various domains, par-ticularly in combinatorial optimization [1, 2]. Among these challenges, the traveling salesman problem (TSP) stands out due to its conceptual simplicity and com-putational complexity. Given a set of N cities with pairwise distances dij , the TSP asks for a permutation 
+
+p = ( p1, p 2, . . . , p N ) of the city indices that minimizes the total tour length 
+
+D(p) =  
+
+> N−1
+
+X
+
+> i=1
+
+dpi,p i+1 + dpN ,p 1 . (1) The problem is NP-hard [1], and the number of feasible solutions, ( N − 1)! /2 for symmetric instances, grows fac-torially with the number of cities. By leveraging unique quantum phenomena such as superposition and entangle-ment, quantum computing holds the promise of address-ing such combinatorial explosions more effectively than traditional classical methods. The current era of noisy intermediate-scale quantum (NISQ) [3] technologies faces significant challenges, par-ticularly due to the constraints imposed by the lim-ited number of qubits available on quantum devices. Quantum-inspired approaches [4, 5], in particular those based on tensor networks, offer tractable classical im-plementations that retain the mathematical framework of quantum mechanics—such as Born rule probabilities and wave function amplitudes—while providing tunable   
+
+> ∗r.sakai@j-ij.com
+> †d10245003@g.ntu.edu.tw
+
+expressiveness through the bond dimension, which con-trols the degree of entanglement the model can repre-sent. Among these, tensor network generator-enhanced optimization (TN-GEO) [6] has emerged as a promis-ing framework, initially developed to address portfolio optimization problems within the realm of binary op-timization. Practical aspects of GEO 1 have been an-alyzed in ref. [7]; the generalization capabilities of the underlying tensor network Born machine—namely, the ability to generate unseen valid samples with lower cost than the training data—have been formally character-ized in ref. [8]; and the framework has been success-fully applied to various problems including the multi-knapsack problem [9] and industrial-scale production planning [10]. This approach exemplifies the potential of quantum-inspired techniques to tackle complex computa-tional challenges, even in the absence of fully developed quantum hardware. Most quantum and quantum-inspired TSP solvers [11, 12] use binary encoding with N 2 variables. This means embedding a solution space that is originally of N ! per-mutations into a vastly expanded space of 2 N 2
+
+, the ma-jority of which consists of invalid states that do not sat-isfy the constraints. Penalty terms are then required to steer the optimization toward feasible solutions, which can create a rugged energy landscape. Strategies to mit-igate the N 2 scaling include path-slicing approaches that decompose the tour into smaller subproblems [13]. An alternative is integer encoding, which avoids the N 2 ex-pansion by construction and has been explored within  
+
+> 1In the original paper, it is stated that any generative model (not limited to tensor networks) can be used in the GEO framework, so GEO is a wider concept compared to TN-GEO. In this paper, however, we do not notationally distinguish TN-GEO from GEO in a strict sense.
+> arXiv:2602.20175v1 [cs.LG] 12 Feb 2026
+
+2GEO for the knapsack problem [9]. For TSP, however, an additional mechanism is needed to enforce the per-mutation constraint—simply using integer variables does not prevent a city from being visited more than once. More broadly, learning and generating permutations is a known challenge for generative models [14, 15]. As in the original TN-GEO work [6], we employ a matrix product state (MPS) Born machine [16] as the generative model, but represent tours as sequences of N
+
+integer-valued variables, with the MPS directly model-ing distributions over city indices. To enforce valid per-mutations, we employ an autoregressive sampling proce-dure with masking: at each position, the model samples from the conditional distribution over remaining unvis-ited cities, guaranteeing that every generated sample is a valid tour without rejection sampling or post-selection. This choice is particularly well suited to MPS-based mod-els: with N integer sites, consecutive positions in the MPS chain correspond to consecutive cities in the tour, so the local correlations that MPS captures with finite bond dimension align directly with the local structure of TSP solutions. In contrast, a binary encoding would inflate the chain to N 2 sites, diluting these local correlations and forcing the model to spend capacity learning to suppress the exponentially many invalid configurations. For con-strained sampling in tensor networks, related approaches include symmetry-embedded MPS [17, 18], constrained MPS architectures [19], and projection layers that filter out invalid permutations [20]. The alignment between MPS chain structure and tour sequence raises a natural question: how much of the tour does the model need to capture at once? We investi-gate this through a k-site MPS variant that learns dis-tributions over k-grams—consecutive subsequences of k
+
+cities—rather than entire tours. Our experimental re-sults reveal that moderate values of k (4–8) consistently outperform both smaller ( k = 2) and full ( k = N ) mod-els, suggesting that near-optimal TSP tours are largely determined by local geometric patterns among consecu-tive cities. The remainder of this paper is organized as follows. Section II describes the GEO iterative optimization framework and the tensor network Born machine. Sec-tion III presents experimental results on TSPLIB in-stances. Section IV concludes with a discussion of future directions.  
+
+> II. METHOD
+
+We first review the overall GEO iterative optimiza-tion scheme, then describe the Born machine generative model and their key components.  
+
+> A. Generator-Enhanced Optimization framework
+
+GEO [6] is an iterative framework that uses genera-tive models to solve combinatorial optimization prob-lems. The key idea is to train a generative model to produce candidate solutions that are likely to have low cost, then use these samples to further refine the model. The framework operates as illustrated in fig. 1. We sum-marize the workflow in algorithm 1 for reproducibility. Note that, in this simplified presentation, every gener-ated sample is evaluated by the cost function, omitting a weighting technique introduced in the original GEO framework [6] that is unnecessary for TSP (see below). 
+
+Algorithm 1 Generator-Enhanced Optimization [6]                                                        
+
+> Require: Cost function C, generative model G, temperature
+> T, number of iterations niters
+> Ensure: Best solution found
+> 1: Generate initial population Pof candidate solutions
+> 2: Evaluate cost C(x) for each x∈ P
+> 3: x∗←arg min x∈P C(x)
+> 4: for t= 1 to niters do
+> 5: Construct finite-temperature softmax distribution:
+> Q(x)∝exp( −C(x)/T )
+> 6: Train Gto approximate Qby minimizing negative log-likelihood
+> 7: Sample new candidates Sfrom trained G
+> 8: Evaluate cost C(x) for each x∈ S
+> 9: P ← P ∪ S
+> 10: if min x∈S C(x)< C (x∗)then
+> 11: x∗←arg min x∈S C(x)
+> 12: end if
+> 13: end for
+> 14: return x ∗
+
+This iterative refinement progressively focuses the search on promising regions of the solution space, with the generative model learning increasingly refined rep-resentations of good solutions. This loop shares a con-ceptual similarity with reinforcement learning: the gen-erative model plays the role of a policy that produces candidate solutions, the cost function provides a reward signal, and the softmax surrogate constructs an improved target distribution from which the policy is updated. Note that, in the original paper, it is claimed that GEO can be used to boost the performance of other solvers. In our current study, however, we exclusively use GEO as a standalone solver, meaning that we always start from a randomly sampled initial distribution. Furthermore, in the original standalone mode, a key design goal was to minimize the number of cost function evaluations, mo-tivated by applications where the objective function is expensive to evaluate ( e.g. , training a neural network or running a physical simulation). For TSP, however, eval-uating the tour length is simply a summation of pairwise distances, so it is computationally inexpensive compared to the MPS training and sampling steps. We therefore evaluate the cost for every generated sample, as there is no practical benefit to reducing the number of cost eval-3
+
+FIG. 1. Schematic picture of GEO for TSP. The framework iteratively refines a generative model by training on a softmax-weighted distribution of candidate solutions. At each iteration, the model generates new samples that are biased toward lower-cost tours. 
+
+uations in this setting. 
+
+B. Softmax surrogate with temperature scheduling 
+
+For optimization within the GEO framework, we train the generative model to match a softmax surrogate dis-tribution constructed from the observed costs. Given a dataset of tours {p(i)} with corresponding lengths {D(i)},the target distribution is 
+
+Qi = e−D(i)/T 
+
+P 
+
+> j
+
+e−D(j)/T , (2) where T is a temperature hyperparameter. Lower tem-peratures concentrate probability mass on lower-cost so-lutions, creating a sharper distribution that emphasizes the best solutions in the current population. The model parameters (tensor elements) are optimized to minimize the negative log-likelihood 
+
+L = − X
+
+> i
+
+Qi log P (p(i)), (3) where P (p(i)) is the model probability of observing p(i).This training objective encourages the model to assign higher probability to tours with shorter distances. In the original GEO paper [6], the temperature was held constant throughout optimization. Here, to balance exploration and exploitation across iterations, we employ an exponential temperature schedule 
+
+T (t) = Tinit 
+
+ Tfinal 
+
+Tinit 
+
+(t−1) /(niters −1) 
+
+, (4) where t is the current iteration (1-based) and where 
+
+Tinit > T final are the initial and final temperatures. Early iterations use higher temperatures, allowing the model to learn from a broader distribution of solutions (ex-ploration). As iterations progress, the temperature de-creases, causing the softmax distribution to concentrate more sharply on the best solutions found so far (exploita-tion) 2.
+
+C. Tensor Network Born Machine 
+
+A tensor network Born machine is a generative model that uses tensor networks to represent probability dis-tributions via the Born rule from quantum mechanics. The key idea is to parameterize a wave function Ψ( x)using a tensor network, and interpret the squared ampli-tude |Ψ( x)|2 as the (unnormalized) probability of observ-ing configuration x. Recent theoretical analysis shows that MPS-based models occupy a favorable regime be-tween trainability and expressiveness, avoiding the bar-ren plateaus that affect more complex quantum cir-cuits [21]. In this work, we employ the MPS to represent the wave function [16] 3. While the original TN-GEO framework operates on binary vectors encoding portfolio selections, a direct binary encoding for TSP would require N 2 vari-ables, expanding the solution space to 2 N 2
+
+despite only 
+
+N ! valid tours. This means the majority of configurations represent invalid ones, typically handled through penalty terms [1]. Instead, we represent a TSP tour as a sequence    
+
+> 2This cooling schedule may appear similar to simulated annealing, but the role of temperature differs between the two. In simulated annealing, the temperature controls the acceptance probability of cost-increasing moves during a Markov chain walk; lowering it reduces the probability of accepting cost-increasing moves and confines the search to local neighborhoods. In GEO, the temper-ature shapes the target distribution from which the generative model learns: lowering it sharpens the training signal so that the model concentrates on higher-quality solutions. Note also that the softmax surrogate in GEO inherently requires a temperature parameter, so some form of temperature scheduling—including a constant temperature as a trivial special case—is always present.
+> 3Prior to ref. [16], MPS was used for classification tasks in a pio-neering work [22].
+
+4of N integer-valued variables x = ( x1, x 2, . . . , x N ), where each xk ∈ { 0, 1, . . . , N − 1} indicates which city is visited at position k. Then the MPS is constructed with physical dimension N at each site, allowing it to directly model distributions over city indices. Note that the MPS itself can assign non-zero amplitude to invalid configurations; the restriction to valid permutations is enforced during sampling through masking (see the next subsection for details). The MPS wave function is given by Ψ( x) = X
+
+> {α}
+
+A[1]  
+
+> x1,α 1
+
+A[2]  
+
+> α1,x 2,α 2
+
+· · · A[N ]  
+
+> αN−1,x N
+
+, (5) where A[k] are rank-3 tensors (rank-2 for boundary ten-sors) and αk are virtual bond indices with dimension χ.The bond dimension χ controls the expressiveness of the MPS: larger χ allows the model to capture more complex correlations in the data. The probability of a configuration x is given by the Born rule 
+
+P (x) = |Ψ( x)|2
+
+Z , (6) where the normalization factor is defined by 
+
+Z = X
+
+> x′
+
+|Ψ( x′)|2. (7) A key advantage of Born machines over energy-based models such as Boltzmann machines [23] is that samples can be generated directly from the Born rule probabili-ties via perfect sampling [24], without requiring iterative procedures like Markov chain Monte Carlo or Gibbs sam-pling. In the TSP case, however, we need additional tech-niques to sample only valid permutations, as explained in the next subsection.  
+
+> D. Autoregressive sampling of permutations
+
+A key advantage of the MPS structure is that it en-ables efficient autoregressive sampling. By bringing the MPS into right-canonical form, the right environment be-comes trivially an identity, so we can efficiently sample each variable sequentially from left to right, with the con-ditional probability of xk given previously sampled values computed exactly. For TSP applications, we require samples to be valid permutations—each city must appear exactly once. We achieve this through autoregressive sampling with mask-ing: at each position k, we compute the conditional prob-abilities over all N cities via the Born rule, mask out cities that have already been selected, and sample from the re-maining valid options. This ensures that every generated sample is a valid TSP tour without requiring rejection sampling or post-selection. The sampling procedure is summarized in algorithm 2. 
+
+Algorithm 2 Autoregressive sampling with masking                                                                           
+
+> Require: Right-canonical MPS tensors {A[k]}Nk=1
+> Ensure: Valid permutation ( x1, . . . , x N)
+> 1: L←(1 ,0, . . . , 0) T∈Rχ▷Left environment vector
+> 2: U ← ∅ ▷Set of visited cities
+> 3: for k= 1 to Ndo
+> 4: Cj,α ←P
+> βLβA[k]
+> β,j,α for all j, α ▷Contract left environment
+> 5: pj← ∥ Cj∥2=P
+> α|Cj,α |2for all j▷Born rule probability (using the canonical property)
+> 6: pj←0 for all j∈ U ▷Mask used cities
+> 7: pi←pi/P
+> jpjfor all i▷Normalize
+> 8: xk←sample from distribution p
+> 9: Lα←Cxk,α for all α▷Update left environment
+> 10: U ← U ∪ { xk}
+> 11: end for
+> 12: return (x1, . . . , x N)
+
+This approach shares the goal of pointer net-works [14]—generating valid permutations by sequen-tially selecting from remaining elements—but uses a fun-damentally different mechanism: Born rule probabilities from tensor contractions rather than attention weights. Learning and generating permutations is typically chal-lenging for generative models [14, 15], but the MPS struc-ture with masked autoregressive sampling naturally han-dles this constraint 4.  
+
+> E. GEO with k-site MPS
+
+The full N -site MPS described above uses one tensor per position in the tour, requiring N tensors each with physical dimension N . For larger problem instances, this can become computationally expensive. Exploiting the TSP’s symmetric problem structure, we introduce a more parameter-efficient variant: the k-site MPS, where k < N .Instead of learning the joint distribution over entire tours, the k-site MPS learns distributions over k-grams— consecutive subsequences of k cities. For example, with 
+
+k = 2, the model learns edge distributions (pairs of con-secutive cities); with k = 4, it learns distributions over 4-city path segments. Given full tours from the softmax surrogate distri-bution, we extract all overlapping k-grams as training data. Thus a tour ( x1, x 2, . . . , x N ) yields N training sam-ples: ( x1, . . . , x k), ( x2, . . . , x k+1 ), . . . , ( xN −1, . . . , x k−2), (xN , . . . , x k−1). During sampling, we use a sliding window approach. The model maintains a context of the most recent k − 1cities visited. For the first k − 1 positions, standard left-to-right contraction is used. For subsequent positions,  
+
+> 4Alternative approaches construct MPS with built-in symmetry constraints that guarantee zero amplitude on invalid configura-tions [17–19].
+
+5the left environment is rebuilt from the context window (last k − 1 sampled cities) before contracting with the final tensor of the k-site MPS. After sampling each city, the context window slides by dropping the oldest city and appending the newly sampled one. The k-site MPS offers a parameter-efficiency trade-off: smaller k requires fewer tensors ( k instead of N ) but captures only local k-city correlations. Larger k cap-tures longer-range dependencies but approaches the full model’s complexity. When k = N , this reduces to the full tour generation described earlier. In the result section, we will show that intermediate values of k can provide good solutions with reduced computational cost, espe-cially for larger TSP instances. 
+
+III. RESULTS A. Experimental setup 
+
+We evaluate TN-GEO on benchmark instances from TSPLIB [25], ranging from 14 to 52 cities 5.For the softmax surrogate, we use rank-based weight-ing where tours are weighted by exp( −rank /T ) with temperature scaled by population size, and duplicate tours (ties) are removed before weighting. The usual way to train MPS Born machines is a DMRG-based one [16, 22, 26, 27]. In this paper, however, we train Born machines by using the automatic differentiation tech-nique for tensor networks [28]. The details of the training and a rough comparison with the DMRG-based approach are shown in appendix A. Unless otherwise stated, we use the full ( k = N ) MPS Born machine for GEO. If tour length is shown, it is normalized by the longest distance among the cities for each instance. 
+
+B. Bond dimension dependence of distribution quality 
+
+Before presenting optimization results, we examine how well the MPS Born machine learns a given softmax-weighted distribution. Figure 2 shows the distribution of sampled tour lengths for different bond dimensions                            
+
+> 5The instance sizes are bounded by the memory footprint of auto-matic differentiation through the MPS. During backpropagation, intermediate activations at each of the Nsites must be retained, leading to a temporary memory cost proportional to B×χ2×N,where Bis the training batch size and χis the bond dimension. With χ= 128 and B= 2 14 , this easily exceeds O(1GB), lim-iting the full MPS to instance sizes ∼50. The k-site variant alleviates this bottleneck by replacing Nwith kin the scaling, making it applicable to larger instances within the same memory budget. Minibatch training could further mitigate the memory constraint, but we do not pursue this direction in the current study for simplicity.
+
+on the ulysses16 instance. The initial random popula-tion shows a misplaced (larger cost) distribution, while the softmax-weighted target concentrates probability on shorter tours. As bond dimension increases from 4 to 128, the MPS samples progressively better approximate the target distribution, demonstrating that bond dimen-sion controls the model’s capacity to represent complex probability distributions over permutations. This confirms that larger bond dimensions lead to higher-quality samples, which can be crucial for the opti-mization performance. Note, however, that one does not need to strictly stick to the large-bond-dimension regime in TN-GEO in terms of balancing exploration and ex-ploitation. Of course, too poor a Born machine would yield a nearly uniform distribution, so expressiveness of MPS is mandatory to some extent. See also ref. [7] for the relationship between expressiveness and exploration ability. 
+
+FIG. 2. Effect of bond dimension on sampling quality for ulysses16. Tour length distributions are shown for the ini-tial random population, the softmax-weighted target distribu-tion, and MPS samples at bond dimensions ∈ { 4, 16 , 64 , 128 }.Higher bond dimensions enable the MPS to better approxi-mate the target distribution. All distributions consist of 2 16 
+
+samples. 
+
+C. Optimization results on TSPLIB instances 
+
+In this subsection, we show optimization results on TSPLIB instances. For comparison, we include two clas-sical hill-climbing heuristics: swap local search and 2-opt local search. Both start from a sequential tour (1 , 2, . . . , N ) and terminate when no improving move exists. For details, we provide pseudocodes of the al-gorithms in appendix B. We choose these local search heuristics as baselines because they share a key struc-tural feature with the MPS-based generative model: they exploit local correlations among cities. Swap modifies a 6tour by exchanging two city positions, while 2-opt re-verses a contiguous segment; both operate on short-range neighborhoods of the current tour. Similarly, the MPS Born machine—and especially the k-site variant intro-duced in sec. II E—captures correlations among consec-utive cities in the tour sequence. Comparing TN-GEO against these local-move heuristics therefore isolates the advantage of learning local structure from data via a generative model, as opposed to searching through lo-cal neighborhoods greedily. Note, however, that these heuristics are not intended as competitive TSP solvers; in practice, such local moves can be far more powerful when embedded within metaheuristic frameworks such as simulated annealing or multi-start methods. We employ temperature scheduling with Tinit = 0 .1and Tfinal = 0 .0001 over the GEO iterations. Note that this parameter is multiplied by the number of distinct samples at each iteration, as explained in sec. III A. Here-after, the bond dimension of the MPS Born machine is set to 128 regardless of the problem sizes. In any case, the optimization starts from 2 16 random initial tours. At each iteration, 2 14 samples are drawn by the finite-temperature softmax surrogate for training, and 2 16 new samples are generated from the trained MPS. We first demonstrate TN-GEO on two representative instances: ulysses16 (16 cities) and att48 (48 cities). Fig-ure 3 shows how the tour length distribution evolves across GEO iterations for ulysses16, progressively con-centrating on shorter tours. Figure 4 compares the con-vergence of best tour length for both instances. For ulysses16, TN-GEO reaches the known optimal solution within 8 iterations and outperforms the classical heuris-tics. For att48, although the progressive improvement over iterations and superiority to the classical heuristics are common with the smaller ulysses16, it converges af-ter a relatively large number of iterations. Moreover, the att48 result is not exactly optimal. Figure 5 visualizes the best tours found by TN-GEO. We can observe that TN-GEO can eliminate tour cross-ings even when it cannot reach the optimum for att48. Table I summarizes the performance across various TSPLIB instances. All values are reported as the gap to the known optimal tour length (%), where lower is better. In the table, we include both the full N -site MPS and the k-site variants with k ∈ { 2, 4, 8}, where the num-ber of iterations is fixed to 64 across all instances 6. As shown in sec. II E, the k-site variants are fed N times more training samples compared to the full TN-GEO for a given distribution of tours. An option is to reduce the number of tours for the k-site variants to match the vol-ume of training data to that in the full TN-GEO. In this section, however, we do not take such a prescription, to   
+
+> 6Note that the performance of GEO can monotonically improve with an increasing number of iterations thanks to its reinforce-ment learning nature. In the table, however, we use the specific choice for simplicity.
+> FIG. 3. Evolution of tour length distribution across GEO iterations for ulysses16. The distribution progressively shifts toward shorter tour lengths as iterations proceed.
+
+keep the diversity of training tours consistent between the models. For small instances (burma14, ulysses16, ulysses22), all TN-GEO variants including the most compact k = 2 model find the optimal tour. For larger instances (att48, eil51, berlin52), while the k = 2 and the full TN-GEO start struggling to converge to the optimal, the k = 4 and 
+
+k = 8 TN-GEOs consistently achieve the optimal tour, outperforming both classical heuristics. This demon-strates the superiority of the moderate k-site models to the too poor k = 2 and the too rich (full) models: given the limited bond dimensions, focusing only on k-grams is more efficient despite discarding the long-range rela-tionships among cities owing to its reduced parameter space. This result suggests, in a sense, that rough models perform exploration over the solution space better than well-tuned models [7]. While the general phenomenon—that moderate ex-pressiveness can outperform full expressiveness under limited bond dimension—is a property of the exploration-exploitation trade-off in GEO, the particular value of k
+
+that performs best reflects the correlation structure of the problem. For TSP, good tours are largely characterized by their local geometric structure: which cities should appear as consecutive neighbors. The success of mod-erate k indicates that learning good k-grams is sufficient to reconstruct near-optimal tours, consistent with the ge-ometric locality of TSP. For combinatorial optimization problems where solution quality depends on longer-range correlations, a larger k would be expected to be neces-sary. Notably, while the solution quality of swap and 2-opt heuristics gets almost monotonically worse with increas-ing instance size, the TN-GEO’s results are relatively sta-ble in this range. Also, even for the larger half instances, TN-GEO performs comparably to or better than the 2-7  
+
+> FIG. 4. Convergence of best tour length for ulysses16 (left, 16 cities) and att48 (right, 48 cities). TN-GEO converges to or near the optimal solution, outperforming both swap and 2-opt heuristics.
+> FIG. 5. Best tours found for ulysses16 (left three) and att48 (right three). For comparison, the tours that are found by the swap and 2-opt heuristics are also shown.
+
+opt results.  
+
+> IV. CONCLUSION
+
+This study presents a tensor network Born machine approach for solving the TSP within the generator-enhanced optimization framework. Key components are threefold. First, we autoregressively sample permuta-tions with masking: by computing Born rule probabil-ities and masking previously selected cities, the MPS directly generates valid permutations without rejection sampling or post-selection. Second, by utilizing the sym-metry that the TSP has, we introduced the k-site MPS variant for TN-GEO, a parameter-efficient approach that learns distributions over k-grams using a sliding window, enabling scaling to larger instances by trading off model expressiveness for computational efficiency. Third, we employed temperature scheduling: exponential temper-ature scheduling in the softmax surrogate helps GEO converge to a better point by balancing exploration and exploitation. On the implementation side, the MPS is trained via automatic differentiation [28] rather than the conventional DMRG-based approach, enabling global up-dates of all tensor elements through gradient-based opti-mization. Experimental results on TSPLIB instances demon-strate that TN-GEO can outperform classical hill-climbing heuristics (swap and 2-opt). In particular, moderate k-site models consistently outperform the full MPS, indicating that near-optimal tours are largely de-termined by local geometric correlations among consec-utive cities—precisely the type of correlations that the MPS chain structure is well suited to capture. Although our experiments are limited to instances with up to 52 cities, the solution quality of TN-GEO remains relatively stable across this range. This finding is consistent with observations in other GEO applications: Vodovozova et al. [9] similarly found that reduced model expressiveness can improve GEO per-formance for the multi-knapsack problem, but also re-ported that MPS struggles at larger scales where long-8                                          
+
+> TABLE I. Gap to optimal tour length (%) on TSPLIB instances. Best result per instance in bold. While the swap and the 2-opt results are deterministic, TN-GEO results can fluctuate per trial. In this table, however, we show only single-run results for TN-GEO. Values are shown to 3 significant figures. Instance Swap 2-opt k= 2 k= 4 k= 8 full burma14 7.1% 3.76% 0% 0% 0% 0%
+> ulysses16 0.933% 0.787% 0% 0% 0% 0%
+> ulysses22 21.6% 1.47% 0% 0% 0% 0%
+> att48 26.7% 3.45% 6.67% 0% 0% 6.13% eil51 30% 4.93% 3.05% 0% 0% 3.99% berlin52 29.3% 16.5% 3.9% 0% 0% 4.18%
+
+range correlations become essential. Our TSP results present the converse—because good tours are governed by local geometry, the limited correlation range of MPS is not a bottleneck but rather a useful inductive bias. To-gether with the strong encoding dependence observed in production planning applications [10], these findings sug-gest that the effectiveness of MPS-based GEO hinges on the alignment between the problem’s correlation struc-ture and the MPS chain encoding. It is worth noting that a primary motivation for quantum-inspired approaches in machine learning has been the entanglement structure of quantum states, which underpins the expressiveness of tensor network models. Our results, together with those of ref. [7], suggest a nuanced picture: within the GEO framework, restricting expressiveness can be beneficial for exploring the solution space, as an overly expressive model may concentrate too quickly on a narrow region. This does not diminish the importance of entanglement-based expressiveness in general, but it does highlight that the interplay between model capacity and optimization dynamics deserves careful consideration. This work highlights the versatility of tensor network methods for combinatorial optimization. Compared to purely quantum Born machines, classical tensor networks allow flexible sampling schemes that can enforce hard constraints exactly, reducing or eliminating the reliance on penalty terms [1]. Future work may extend this approach to related scheduling and routing problems where tensor network methods have been analyzed [29]. In the original pa-per [6], it is claimed that one of the advantages of GEO is a reduced number of cost function evaluations that can be achieved by a weighting technique for training sam-ples. This feature is beneficial for problems where evalu-ation of the cost function is a bottleneck. For TSP, how-ever, the cost function evaluation is simply a summation of pairwise distances and thus inexpensive, so evaluating every sample explicitly does not harm the optimization process. Applying GEO to problems with expensive cost functions, where the evaluation-efficient nature of GEO can be fully leveraged, would be an interesting direction for future work. 
+
+> ACKNOWLEDGMENTS
+
+This work was performed for the Council for Science, Technology and Innovation (CSTI), Cross-ministerial Strategic Innovation Promotion Program (SIP), “Pro-moting the application of advanced quantum technology platforms to social issues” (Funding agency: QST). 
+
+> Appendix A: Automatically Differentiable MPS Born Machine
+
+In this work, the MPS Born machine is implemented using JAX [30] for automatic differentiation (AD), en-abling gradient-based optimization of the MPS tensors without manually deriving gradients (see also ref. [28]). The MPS consists of N tensors {A[k]}Nk=1 (or k ten-sors for the k-site variant). Each tensor A[k] has shape (χ, d k, χ ), where χ is the bond dimension and dk is the physical dimension (number of cities, for TSP) at site k.For boundary tensors, the external bond dimension is 1. The tensors are initialized with random values. In this work, we exclusively use real-valued tensors to construct MPS. They are right-canonicalized upon calculating the negative log-likelihood (NLL) and sampling. Given training data (tours weighted by the softmax surrogate), the model is trained by minimizing the NLL, as shown in algorithm 3. 
+
+Algorithm 3 Automatically differentiable MPS training                                        
+
+> Require: Training tours {p(i)}with weights {Qi}, learning rate η, tolerance ϵ
+> Ensure: Trained MPS tensors {A[k]}
+> 1: Initialize MPS tensors {A[k]}randomly
+> 2: Initialize optimizer state
+> 3: repeat
+> 4: Right-canonicalize tensors via QR decomposition
+> 5: Compute NLL: L=−P
+> iQilog P(p(i))
+> 6: Compute gradient: ∇{A[k]}Lvia AD
+> 7: Update tensors using AdamW: A[k]←A[k]−η·
+> AdamW( ∇)
+> 8: until NLL improvement < ϵ for consecutive iterations
+> 9: return {A[k]}
+
+The gradient is computed automatically using JAX’s 9
+
+grad function, and we use the AdamW optimizer [31] in Optax [32] with learning rate η = 0 .1. Throughout this paper, we set the convergence tolerance to ϵ = 10 −4.Sampling follows algorithm 2, proceeding autoregres-sively from left to right. At each position, the left envi-ronment is contracted with the current tensor, Born rule probabilities are computed while masking previously se-lected cities, and the new city is sampled. We compare this AD training approach with DMRG-style local optimization, which sweeps through pairs of adjacent tensors and performs updates via simple gra-dient descent of the merged tensor plus singular value decomposition (SVD) to retain the MPS structure. Figures 6 and 7 show the NLL and bipartite entangle-ment entropy trajectories during training on ulysses16. For the training, we have prepared 2 16 random TSP tours and selected them with replacement through the finite-temperature softmax surrogate, as in the first step of the GEO workflow. On the DMRG side, we count an itera-tion by consecutive right and left sweeps, and, to make it consistent with DMRG as much as possible, we define an iteration of AD update by two global updates. The bipartite entanglement entropy is defined by 
+
+S = − X
+
+> i
+
+pi log pi, (A1) where 
+
+pi = s2
+
+> i
+
+P 
+
+> j
+
+s2
+
+> j
+
+(A2) and where {si} are the singular values obtained from SVD of the merged tensor M(i,j ),(k,l ) =
+
+P 
+
+> a
+
+A[N/ 2−1]  
+
+> i,j,a
+
+A[N/ 2]  
+
+> a,k,l
+
+at the middle cut. This quantity char-acterizes the entanglement structure of the learned quan-tum state. Although the optimization strategies differ fundamentally—DMRG performs local updates with SVD truncation while AD globally updates the tensor elements using gradients—both methods achieve similar final NLL values and entropy profiles. The convergence to similar entropy values suggests that both methods find MPS representations with comparable correlation structure, despite taking different optimization paths. In the main body of this paper, we entirely use the AD approach expecting that the global update strategy is more suitable for our case, where the target distribu-tion dynamically changes as the iteration step proceeds. The AD approach has an advantage in terms of com-putational complexity too, since the complexity of back-propagation does not exceed that of forward calculation. In other words, the complexity of the AD update is de-termined by consecutive QR decompositions to make the MPS right-canonical and by the calculation of NLL. This is less expensive than the DMRG update that involves site-by-site SVDs. Note that these comparisons are not strict benchmark-ing. Since the optimization policies are drastically differ-ent from each other, the meaning of e.g. learning rate cannot be the same between the two methods. Indeed, the speed of convergence in terms of the number of itera-tions is not monotonic; they just depend on the situation.    
+
+> FIG. 6. Comparison of NLL convergence between DMRG and AD training on ulysses16 for different bond dimensions. Both methods achieve similar final NLL values despite their different optimization strategies. Convergence tolerance is 10 −4.
+> FIG. 7. Bipartite entanglement entropy during training for DMRG and AD methods. Both methods converge to similar entropy values, indicating comparable quantum state struc-ture. Convergence tolerance is 10 −4.
+> Appendix B: Hill-Climbing Heuristics
+
+In the main body of the paper, we compare TN-GEO against two classical hill-climbing heuristics for TSP. To ensure reproducibility, in this section we describe the ex-act procedure for both methods. The first one is swap local search, which starts from a sequential tour and iteratively improves it by swapping 10 pairs of cities, as shown in algorithm 4. 
+
+Algorithm 4 Swap local search 
+
+Require: Distance matrix d, number of cities N
+
+Ensure: Locally optimal tour  
+
+> 1:
+
+x ← [0 , 1, 2, . . . , N − 1]  
+
+> 2:
+
+L∗ ← tour length of x 
+
+> 3:
+
+repeat  
+
+> 4:
+
+improved ← False  
+
+> 5:
+
+for i = 0 to N − 2 do  
+
+> 6:
+
+for j = i + 1 to N − 1 do  
+
+> 7:
+
+x′ ← x with cities at positions i and j swapped  
+
+> 8:
+
+L′ ← tour length of x′ 
+
+> 9:
+
+if L′ < L ∗ then  
+
+> 10:
+
+x ← x′, L∗ ← L′ 
+
+> 11:
+
+improved ← True  
+
+> 12:
+
+break both loops  
+
+> 13:
+
+end if  
+
+> 14:
+
+end for  
+
+> 15:
+
+end for  
+
+> 16:
+
+until improved = False  
+
+> 17:
+
+return x 
+
+This is a first-improvement strategy; the search restarts immediately upon finding an improving move, converging to a local optimum where no single swap can improve the solution. The second heuristic is 2-opt local search, which also starts from a sequential tour but improves it by revers-ing segments rather than swapping individual cities, as shown in algorithm 5. 
+
+Algorithm 5 2-opt local search 
+
+Require: Distance matrix d, number of cities N
+
+Ensure: Locally optimal tour  
+
+> 1:
+
+x ← [0 , 1, 2, . . . , N − 1]  
+
+> 2:
+
+L∗ ← tour length of x 
+
+> 3:
+
+repeat  
+
+> 4:
+
+improved ← False  
+
+> 5:
+
+for i = 0 to N − 3 do  
+
+> 6:
+
+for j = i + 2 to N − 1 do  
+
+> 7:
+
+if i = 0 and j = N − 1 then  
+
+> 8:
+
+continue ▷ Skip trivial reversal  
+
+> 9:
+
+end if  
+
+> 10:
+
+x′ ← x with segment [ i + 1 , j ] reversed  
+
+> 11:
+
+L′ ← tour length of x′ 
+
+> 12:
+
+if L′ < L ∗ then  
+
+> 13:
+
+x ← x′, L∗ ← L′ 
+
+> 14:
+
+improved ← True  
+
+> 15:
+
+break both loops  
+
+> 16:
+
+end if  
+
+> 17:
+
+end for  
+
+> 18:
+
+end for  
+
+> 19:
+
+until improved = False  
+
+> 20:
+
+return x 
+
+The 2-opt move removes edges ( xi, x i+1 ) and ( xj , x j+1 )and adds edges ( xi, x j ) and ( xi+1 , x j+1 ). This is partic-ularly effective at removing edge crossings, as a reversal can untangle crossed edges. The algorithm converges to a 2-optimal tour where no segment reversal can improve the solution. Both heuristics are deterministic and fast, but they are prone to local optima. Their solutions serve as baselines for comparing TN-GEO’s ability to find globally better solutions. 
+
+[1] A. Lucas, Front. Phys. 2, 5 (2014), arXiv:1302.5843 [cond-mat.stat-mech]. [2] A. Abbas et al. , (2023), arXiv:2312.02279 [quant-ph]. 11 
+
+[3] K. Bharti et al. , Rev. Mod. Phys. 94 , 015004 (2022), arXiv:2101.08448 [quant-ph]. [4] J. M. Arrazola, A. Delgado, B. R. Bardhan, and S. Lloyd, Quantum 4, 307 (2020), arXiv:1905.10415 [quant-ph]. [5] E. Tang, in 51st Annual ACM SIGACT Sympo-sium on Theory of Computing (2019) p. 217–228, arXiv:1807.04271 [cs.IR]. [6] J. Alcazar, M. G. Vakili, C. B. Kalayci, and A. Perdomo-Ortiz, Nat. Commun. 15 , 2761 (2024), arXiv:2101.06250 [quant-ph]. [7] J. Gardiner and J. Lopez-Piqueres, (2024), arXiv:2412.19780 [cs.LG]. [8] K. Gili, M. Mauri, and A. Perdomo-Ortiz, Phys. Rev. Applied 21 , 044032 (2024), arXiv:2201.08770 [cs.LG]. [9] Y. Vodovozova, A. Awasthi, C. Jones, J. Doetsch, K. Wintersperger, F. Krellner, and C. A. Riofr´ ıo, (2025), arXiv:2502.04928 [cs.LG]. [10] W. P. Banner, S. B. Hadiashar, G. Mazur, T. Menke, M. Ziolkowski, K. Kennedy, J. Romero, Y. Cao, J. A. Grover, and W. D. Oliver, (2023), arXiv:2305.02179 [quant-ph]. [11] H.-P. Chiang, Y.-H. Chou, C.-H. Chiu, S.-Y. Kuo, and Y.-M. Huang, Soft Comput. 18 , 1771–1781 (2014). [12] S. Jain, Frontiers in Physics 9 (2021), 10.3389/fphy.2021.760783. [13] C.-Y. Liu, H. Matsuyama, W.-h. Huang, and Y. Ya-mashiro, (2024), arXiv:2407.13616 [quant-ph]. [14] O. Vinyals, M. Fortunato, and N. Jaitly, in Advances in Neural Information Processing Systems , Vol. 28 (Curran Associates, Inc., 2015) arXiv:1506.03134 [stat.ML]. [15] G. Mena, D. Belanger, S. Linderman, and J. Snoek, in International Conference on Learning Representations 
+
+(2018) arXiv:1802.08665 [stat.ML]. [16] Z.-Y. Han, J. Wang, H. Fan, L. Wang, and P. Zhang, Phys. Rev. X 8, 031012 (2018), arXiv:1709.01662 [cond-mat.stat-mech]. [17] J. Lopez-Piqueres, J. Chen, and A. Perdomo-Ortiz, Mach. Learn.: Sci. Technol. 4, 035009 (2023), arXiv:2211.09121 [quant-ph]. [18] J. Lopez-Piqueres and J. Chen, SciPost Phys. 18 , 192 (2025), arXiv:2405.09005 [math.NA]. [19] H. Nakada, K. Tanahashi, and S. Tanaka, Quantum 9,1799 (2025), arXiv:2409.01699 [cond-mat.stat-mech]. [20] A. Mata Ali, I. P. Delgado, and A. M. F. de Leceta, (2023), arXiv:2311.14344 [quant-ph]. [21] S. Herbst, I. Brandi´ c, and A. P´ erez-Salinas, (2025), arXiv:2512.24801 [quant-ph]. [22] E. Stoudenmire and D. J. Schwab, Adv. Neural Inf. Pro-cess. Syst. 29 , 4799 (2016), arXiv:1605.05775 [stat.ML]. [23] D. H. Ackley, G. E. Hinton, and T. J. Sejnowski, Cogn. Sci. 9, 147 (1985). [24] A. J. Ferris and G. Vidal, Phys. Rev. B 85 , 165146 (2012), arXiv:1201.3974 [cond-mat.str-el]. [25] G. Reinelt, ORSA journal on computing 3, 376 (1991). [26] S. R. White, Phys. Rev. Lett. 69 , 2863 (1992). [27] S. R. White, Phys. Rev. B 48 , 10345 (1993). [28] H.-J. Liao, J.-G. Liu, L. Wang, and T. Xiang, Phys. Rev. X 9, 031041 (2019), arXiv:1903.09650 [cond-mat.str-el]. [29] A. Mata Ali, I. P. Delgado, B. G. Markaida, and A. M. F. de Leceta, (2023), arXiv:2311.10433 [quant-ph]. [30] J. Bradbury, R. Frostig, P. Hawkins, M. J. Johnson, C. Leary, D. Maclaurin, G. Necula, A. Paszke, J. Vander-Plas, S. Wanderman-Milne, and Q. Zhang, “JAX: com-posable transformations of Python+NumPy programs,” (2018). [31] I. Loshchilov and F. Hutter, in International Conference on Learning Representations (2019) arXiv:1711.05101 [cs.LG]. [32] DeepMind, I. Babuschkin, K. Baumli, A. Bell, S. Bhu-patiraju, J. Bruce, P. Buchlovsky, D. Budden, T. Cai, A. Clark, I. Danihelka, A. Dedieu, C. Fantacci, J. God-win, C. Jones, R. Hemsley, T. Hennigan, M. Hes-sel, S. Hou, S. Kapturowski, T. Keck, I. Kemaev, M. King, M. Kunesch, L. Martens, H. Merzic, V. Miku-lik, T. Norman, G. Papamakarios, J. Quan, R. Ring, F. Ruiz, A. Sanchez, L. Sartran, R. Schneider, E. Sezener, S. Spencer, S. Srinivasan, M. Stanojevi´ c, W. Stokowiec, L. Wang, G. Zhou, and F. Viola, “The DeepMind JAX Ecosystem,” (2020).

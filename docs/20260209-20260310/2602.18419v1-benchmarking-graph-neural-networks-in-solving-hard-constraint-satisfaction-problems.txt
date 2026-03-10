@@ -1,0 +1,1973 @@
+Title: Benchmarking Graph Neural Networks in Solving Hard Constraint Satisfaction Problems
+
+URL Source: https://arxiv.org/pdf/2602.18419v1
+
+Published Time: Mon, 23 Feb 2026 01:55:08 GMT
+
+Number of Pages: 31
+
+Markdown Content:
+# Benchmarking Graph Neural Networks in Solving Hard Constraint Satisfaction Problems 
+
+## G. Skenderi 1,2 , L. Buffoni 3, F. D’Amico 4,5 , D. Machado 4,5,6 , R. Marino 3, M. Negri 4,5 ,F. Ricci-Tersenghi 4,5,7 , C. Lucibello 1,2 , and M. C. Angelini 4,7 1Department of Computing Sciences, Bocconi University, Milan, Italy 
+
+> 2
+
+## Bocconi Institute for Data Science and Analytics (BIDSA) 
+
+> 3
+
+## Department of Physics and Astronomy and INFN, University of Florence 
+
+> 4
+
+## Dipartimento di Fisica, Sapienza Universit` a di Roma 
+
+> 5
+
+## CNR - Nanotec, unit` a di Roma, P.le Aldo Moro 5, 00185 Rome, Italy 
+
+> 6
+
+## Department of Theoretical Physics, Physics Faculty, University of Havana. CP10400, La Habana, Cuba 
+
+> 7
+
+## INFN, sezione di Roma1, P.le Aldo Moro 5, 00185 Rome, Italy February 23, 2026 
+
+Abstract 
+
+Graph neural networks (GNNs) are increasingly applied to hard optimization problems, often claiming superiority over classical heuristics. However, such claims risk being unsolid due to a lack of standard benchmarks on truly hard instances. From a statistical physics perspective, we propose new hard benchmarks based on random problems. We provide these benchmarks, along with performance results from both classical heuristics and GNNs. Our fair comparison shows that classical algorithms still outperform GNNs. We discuss the challenges for neural networks in this domain. Future claims of superiority can be made more robust using our benchmarks, available at https://github.com/ArtLabBocconi/RandCSPBench .
+
+# 1 Introduction 
+
+Constraint satisfaction problems (CSPs), a specific subset of optimization problems, play a central role in many fields of scientific research and technological applications. A CSP is defined by a set of variables and a set of constraints, the goal being to determine whether there exists a satisfying assignment for the variables that solves all the constraints ( decision problem ) and eventually to find such an assignment ( assignment problem ). In recent years, machine learning (ML) methdos, and in particular graph neural networks (GNNs) [1], have been widely applied both as end-to-end solvers [2–20] or as guides for heuristic moves in traditional solvers [21, 22]. Despite this surge of activity, there is still no well-defined, unified benchmark for comparing ML-based approaches with classical heuristic algorithms. As a result, many newly proposed methods are evaluated on only a small number of instances drawn from different datasets. This lack of standardization weakens the scientific rigor of the evaluations, making many performance claims difficult to interpret or compare [23–27]. However, the problem of identifying classes of hard problems was already faced in the 90s to assess performances of algorithms for optimization problems [28]. By analyzing ensembles of random instances of a given problem [29, 30], researchers in statistical physics were able to discover and characterize various phase transitions that alter the geometry of the solution space. These transitions provide insight into how hard an instance of a problem is likely to be. They appear at well-defined values of some parameters, and influence the behavior of classical heuristic algorithms [31–36]. In particular, the emergence of a glassy energy landscape has been shown to hinder the performance of Monte Carlo algorithms. Similarly, the appearance of frozen solutions poses significant obstacles for even the most advanced message-passing algorithms [37]. At the same time, simpler heuristics, such as greedy methods or gradient-descent-like algorithms, may fail even before the phase transitions take place. 1
+
+> arXiv:2602.18419v1 [cond-mat.dis-nn] 20 Feb 2026
+
+In light of these findings, a natural question arises: Are neural solvers subject to the same structural barriers that affect classical heuristic algorithms, or do they exhibit fundamentally different failure modes? 
+
+Recently, it has been shown that classical heuristic algorithms can work in different regimes de-pending on how the running time is scaled with the problem size [38]. How does the performance of a neural solver scale with its size? 
+
+In this paper, we address the above questions by introducing new benchmarks inspired by the statistical physics framework. A recent work [39] introduced a dataset aimed at comparing ML approaches to CSPs. The dataset is organized into three difficulty levels, defined primarily by problem size, and the proposed evaluation framework is specifically tailored to GNN-based solvers for satisfiability problems. By contrast, our dataset not only includes problems of varying sizes, but also exploit a notion of incremental hardness, linked to problem-specific parameters, such as the connectivity of the underlying graphs. As a result, our benchmark provides a richer and more diverse set of instances, systematically organized to enable a more fine-grained and meaningful evaluation of algorithmic performance as a function of problem difficulty. Our new dataset focuses on two well-known CSPs, the K-SAT problem and the q-coloring (q-col) problem and we compare different classical algorithms with GNN-based SAT solvers. The K-SAT problem asks whether there exists an assignment of N Boolean variables that satisfies a conjunction of M clauses (constraints), where each clause is a disjunction of exactly K literals, and each literal corresponds to a variable or its negation. In the random K-SAT problem, every clause contains K randomly chosen literals, corresponding to different variables. The random q-col problem asks for an assignment of colors to the N nodes of an undirected Erd˝ os-Renyi random graph with mean degree c (thus, the number of constraints is M = cN/ 2). Each node must be assigned one of q possible colors, under the constraint that no two neighboring nodes have the same color. Varying control parameters α = M/N in K-SAT and c in q-col, it has been shown that the structure of the solution space undergoes a series of phase transitions. As α or c increases, the uniform measure over the space of satisfying assignments breaks up into an exponential number of pure states at the clustering transition αd(K) or cd(q), and subsequently condenses onto a subexponential number of dominant states at the condensation transition αc(K) or cc(q) [32]. Finally, there is a sharp transition between satisfiable and unsatisfiable phases at the satisfiability threshold αs(K) or 
+
+cS (q). All thresholds depend only on K or q in the limit N → ∞ . These phase transitions have been rigorously established in [40]. By tuning such parameters, we can generate ensembles of instances with varying levels of difficulty and assess the algorithmic performance across different regimes of problem hardness. For K = 3 in the K-SAT problem, αd = αc and the split of the space of solution is of a different type [41], and the same happens for the q-col problem for q = 3. In the statistical mechanics language, the case K ≥ 4 ( q ≥ 4) is described by the 1-step replica symmetry breaking (1RSB) theory while for K = 3 ( q = 3) 1RSB theory is not enough and one should probably use a full-RSB theory [42, 34]. Both problems, with K = 3 and K ≥ 4 are NP-hard; however, while classical algorithms can find a satisfiable assignment for a typical instance of the random problem quite near to αs in the K = 3 case [43], for K ≥ 4, approaching closely αs seems impossible with existing algorithms. Unfortunately, previous works applying ML tools to K-SAT ( q-col) problems mainly focused on the K = 3 ( q = 3) case, while new algorithms should be tested also on the difficult cases 
+
+K > 3 ( q > 3). Our dataset is innovative in this sense, including both 4-SAT and 5-col instances. Among classical algorithms we analyze: Monte Carlo algorithms, such as Simulated Annealing (SA); Message Passing (MP) algorithms with decimation, such as Belief Propagation (BP) for q-col and Survey Propagation (SP) for K-SAT; Local Search algorithms, like Focused Metropolis Search (FMS). Among the available GNN-based solvers in the literature, we focus on NeuroSAT and QuerySAT [4, 44] for K-SAT and a Physics-Inspired GNN [45] with a recurrent update (rPI-GNN) for q-col. Furthermore, we train QuerySAT on the SAT-reduced col problems, in order to make observations across problems and architectures. These architectures represent well-known paradigms for the two specific CSPs we consider in this work, and are among the most well-known approaches in the respective literatures. In particular, NeuroSAT has been featured as the only SAT-specific solver in the recent benchmark paper of Li et al. [39], and QuerySAT provides a natural extension to this architecture. On the other hand, PI-GNNs have experienced a growing research interest in combinatorial optimization [23]. Therefore, we use a particular instantiation of these models for the q-coloring problem. Last but not least, all the aforementioned architectures have problem-specific designs, but they are based on well-established and common deep learning design principles, which greatly helps our analysis. In this way, we are able to focus mostly on the algorithm class without worrying excessively about the choice and tuning of hyperparameters. The 2full details on the implementation of all the algorithms are reported in Sec. A 
+
+# 2 Results 
+
+## 2.1 Benchmark datasets 
+
+Our benchmark comprises instances for two canonical classes of CSPs: K-SAT and q-col. We consider K ∈ { 3, 4} and q ∈ { 3, 5} to systematically explore increasing levels of complexity. Each instance is designed for the assignment problem. If no solution is found, algorithms are expected to return the configuration that minimizes the total energy (i.e., the number of unsatisfied constraints). For both K-SAT and q-col problems, we sample parameters across critical regions. In particular, the clause-to-variable ratio α for SAT (and constraint density c for coloring) is chosen to span several values around the satisfiability threshold. This selection ensures a mixture of satisfiable and unsatisfiable instances of varying hardness. The specific parameter ranges and satisfiability thresholds are: 
+
+• α ∈ [3 , 5] with ∆ α = 0 .1 for 3-SAT ( αs = 4 .267), 
+
+• α ∈ [8 , 10] with ∆ α = 0 .1 for 4-SAT ( αs = 9 .931), 
+
+• c ∈ [3 .32 , 4.94] with ∆ c = 0 .18 for 3-coloring ( cs = 4 .687), 
+
+• c ∈ [9 .9, 13 .5] with ∆ c = 0 .4 for 5-coloring ( cs = 13 .669). The core datasets use variable sizes N ∈ { 16 , 32 , 64 , 128 , 256 }. For every ( N, α ) combination, 1600 training and 400 testing instances are created for 3-SAT, while for 4-SAT we generate only 800 training and 200 testing instances, due to the increased instance sizes. To assess the ability of neural solvers to generalize beyond the training regime, we provide an additional test set of out-of-distribution (OOD) instances with larger sizes (512 ≤ N ≤ 16384) while using the same α values as the in-distribution test dataset. The OOD test dataset is mainly intended as a challenge for the community. The generation of q-col instances follows a similar design philosophy but is performed using a separate pipeline. As with the SAT data, q and c are chosen to explore easy and hard phases of the problem. Additional details regarding the dataset generation process are provided in Sec. A. The total sizes of the training datasets are ntot = 168000 (3-SAT), ntot = 84000 (4-SAT), 
+
+ntot = 80000 (3-col), ntot = 80000 (5-col). See Sec. A.5 for other statistics of the datasets. 
+
+## 2.2 Scaling of times with the size 
+
+We analyze the performances of the algorithms described in sec. A.3 and A.4 on the benchmark dataset described in Sec. 2.1. The results crucially depend on the choice of the running time. As noted by the QuerySAT authors [6], increasing the number of iterations in recurrent neural solvers can lead to significant performance gains. This aligns with recent research on increasing test-time compute to enhance the reasoning capabilities of large language models [46], including recursion-based strategies [47]. Building on this idea, we take a step further by scaling the computing times with the problem size. It is already known that SA and FMS reach larger algorithmic thresholds when they are run on timescales growing with the problem size [38]. For this reason, in this work we run SA (resp. FMS) with a maximum number of time-steps t = 1000 N (resp. t = 100 N ) for K-SAT and t = 1000 N
+
+(resp. t = 625 N ) for q-col. The constant in the linear scaling between t and N is chosen to have the same maximum wall-clock running time for both algorithms, as seen in Sec. 2.5. Please notice that 
+
+t = O(N ) implies a wall-clock running time growing as O(N 2), as every step takes O(N ) operations. Also, message-passing algorithms are run for a number of steps scaling with N : indeed, at every decimation step, we fix just one variable, thus requiring N decimation steps. Analogously, we run GNNs for a number of iterations that scales with N only at test-time. In Fig. 1, we plot the probability of finding a satisfying assignment for the 3-SAT problem as a function of α for both supervised and unsupervised NeuroSAT GNN model in three different scenarios by performing: (a) a small fixed number (32) of iterations; (b) a large fixed number (512) of iterations; (c) linearly scaling the number of iterations with the problem size as 2 N . The linear scaling returns results equivalent to taking a large number of fixed iterations, as 512 is not smaller than 2 N for all the sizes studied. However, it will become the best option for large N values (we have verified that this is true also for QuerySAT). 33.00 3.25 3.50 3.75 4.00 4.25 4.50 4.75 5.00 
+
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> P
+> N=16
+> N=32
+> N=64
+> N=128
+> N=256
+
+(a) Supervised, 32 iter 3.00 3.25 3.50 3.75 4.00 4.25 4.50 4.75 5.00  
+
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> P
+> N=16
+> N=32
+> N=64
+> N=128
+> N=256
+
+(b) Supervised, 512 iter 3.00 3.25 3.50 3.75 4.00 4.25 4.50 4.75 5.00  
+
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> P
+> N=16
+> N=32
+> N=64
+> N=128
+> N=256
+
+(c) Supervised, 2 N iter 3.00 3.25 3.50 3.75 4.00 4.25 4.50 4.75 5.00 
+
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> P
+> N=16
+> N=32
+> N=64
+> N=128
+> N=256
+
+(d) Unsupervised, 32 iter 3.00 3.25 3.50 3.75 4.00 4.25 4.50 4.75 5.00  
+
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> P
+> N=16
+> N=32
+> N=64
+> N=128
+> N=256
+
+(e) Unsupervised, 512 iter 3.00 3.25 3.50 3.75 4.00 4.25 4.50 4.75 5.00  
+
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> P
+> N=16
+> N=32
+> N=64
+> N=128
+> N=256
+
+(f) Unsupervised, 2 N iter 
+
+Figure 1: Probability of finding a satisfying assignment to 3-SAT problems as a function of α = M/N 
+
+with the supervised (top row) and unsupervised (bottom row) NeuroSAT GNN model. To validate claims regarding the importance of scaling the inference time message-passing iterations of GNNs with the problem size ( N ), we test the model in three different scenarios by performing a small number of fixed iterations (left), a large number of fixed iterations (center), and linearly scaling the number of iterations with the problem size (right). The figure shows that the linear scaling procedure produces excellent results. It is worth noting that with the scaling, inference time is handled more consistently (by definition). For instance, using 512 iterations takes significantly longer for smaller sizes compared to employing linear scaling. Finally, it is clear to see that training an unsupervised model produces much better results compared to the supervised case. 4SAT K = 3; S ↑ K = 4; S ↑ K = 3; RE ↓ K = 4; RE ↓                                                    
+
+> NeuroSAT 84.48 47.52 0.0072 0.0028 QuerySAT 92.38 66.57 0.0068 0.0027
+> FMS 99.98 95.15 0.0061 0.0032 SA 98.75 82.61 0.0063 0.0027 SP + dec. 82.28 60.02 --
+> col q= 3; S ↑q= 5; S ↑q= 3; RE ↓q= 5; RE ↓
+> rPI-GNN 92.41 68.68 0.0190 0.0231 QuerySAT 58.86 7.85 0.0229 0.0275 FMS 99.76 80.73 0.0170 0.0178
+> SA 90.17 74.54 0.0185 0.0232 BP + dec. 78.40 45.19 0.0652 0.0638
+
+Table 1: Score (S) and Residual Energy (RE) reached by each algorithm . The Score is the ratio of solved instances over the satisfiable ones in the test dataset ( N ≤ 256 and any α or c values). An instance is considered satisfiable if at least one of the analyzed algorithms found a solution (see Sec. A.5). The ratio of sat instances n sat /ntot are 28656/42000 (3-SAT), 19806/21000 (4-SAT), 11750/20000 (3-col), and 9184/20000 (5-col). RE is the average of the intensive energy computed on instances for which the algorithm is not finding a solution. The running steps are 1000 N for SA, 100 N for FMS in the K-SAT problem, and 1000 N for SA, 625 N for FMS in the q-col problem, with each step involving N attempted single-variable updates. The number of recurrent iterations is 2 N
+
+for NeuroSAT and QuerySAT. Best results are in bold. RE values for the SP algorithm are missing because SP sometimes does not converge on hard instances, and in this case it does not output a configuration of the variables (see Sec. A.3.3 for details). From Fig. 1, it is also clear that the supervised NeuroSAT solver has very poor performance with respect to the unsupervised one. For this reason, in the following, we will only show results for the unsupervised NeuroSAT, using the linear scaling t = 2 N .
+
+## 2.3 Comparisons of performances of different algorithms at fixed size 
+
+In Fig. 2 we look at the probability of finding a satisfiable assignment using different algorithms at a fixed size N of the problem, changing the parameter α (c) for the K-SAT ( q-col) problem with 
+
+K = 3 , 4 ( q = 3 , 5). We focus on two sizes: N = 256, the largest in the training set, and N = 1024, for which the GNNs are used out-of-distribution, to check their generalization power. The best algorithm for both SAT and col problems is FMS. GNNs can reach good performances for N = 256 in the 3-SAT and 3-col problems; however, their performances deteriorate for N = 1024, because they are used out-of-distribution. They also rapidly deteriorate when applied to hard problems such as the 4-SAT and the 5-col for which classic algorithms are the most competitive ones. In Table 1, we list the score reached by each algorithm, defined as the percentage of solved instances over the satisfiable ones. The considered instances are all the ones in the testing dataset, in the whole range of α (c) for the K-SAT ( q-col) problem with K = 3 , 4 ( q = 3 , 5) for all sizes up to N = 256. The score computed on higher N is reported in the Supplementary Information. The score provides a glance at algorithms’ performances, but there are many other important features to consider: the scaling of running times with problem size, the power of generalization out-of-distribution, and the algorithmic threshold that we will analyze in the following sections. In Table 1, we also list the residual energy for all algorithms, defined as the number of non-satisfied constraints divided by the number of constraints M , averaged over instances in the test set for which the algorithm did not find a solution. This is a measure complementary to the score. Let’s look at MP algorithms as an example: they are good algorithms in terms of the score, but once they stop working, they return a mostly random configuration, thus resulting in a high residual energy. 
+
+## 2.4 Extracting algorithmic thresholds 
+
+In analogy to the satisfiability threshold that concentrates in the large N limit, for each algorithm and problem, an algorithmic threshold, αalg or calg , can be defined such that in the large size limit only for α < α alg the chosen algorithm finds a solution with high probability for a typical instance of the random problem. For the first time, we attempt to estimate algorithmic thresholds also for GNNS. For this purpose, we use standard procedures from statistical physics: looking at the sat probabil-ity as a function of α (or c) for different sizes, and supposing that this probability in the infinite-size limit becomes a step function with a jump in αalg (or calg ), we estimate the algorithmic threshold from the crossing of the curves corresponding to different sizes. An alternative determination of the algorithmic threshold based on the crossing of residual energy, that gives analogous results, is reported in the Supplementary Information. Different situations could arise, all shown in Fig. 3. The easy situation is when, for N large enough, the curves with different N values cross at the same point 53.00 3.25 3.50 3.75 4.00 4.25 4.50 4.75 5.00 
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+0.8 
+
+1.0 
+
+> P
+
+FMS 
+
+NeuroSAT 
+
+QuerySAT 
+
+SA 
+
+SP (a) 3-SAT N = 256 3.00 3.25 3.50 3.75 4.00 4.25 4.50 4.75 5.00 
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+0.8 
+
+1.0 
+
+> P
+
+FMS 
+
+NeuroSAT 
+
+QuerySAT 
+
+SA 
+
+SP (b) 3-SAT N = 1024 8.00 8.25 8.50 8.75 9.00 9.25 9.50 9.75 10.00 
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+0.8 
+
+1.0 
+
+> P
+
+FMS 
+
+NeuroSAT 
+
+QuerySAT 
+
+SA 
+
+SP 
+
+(c) 4-SAT N = 256 8.00 8.25 8.50 8.75 9.00 9.25 9.50 9.75 10.00 
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+0.8 
+
+1.0 
+
+> P
+
+FMS 
+
+NeuroSAT 
+
+QuerySAT 
+
+SA 
+
+SP (d) 4-SAT N = 1024 3.4 3.6 3.8 4.0 4.2 4.4 4.6 4.8 5.0 
+
+c
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+0.8 
+
+1.0 
+
+> P
+
+BP 
+
+FMS 
+
+SA 
+
+rPI-GNN 
+
+QuerySAT 
+
+(e) 3-col N = 256 3.4 3.6 3.8 4.0 4.2 4.4 4.6 4.8 5.0 
+
+c
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+0.8 
+
+1.0 
+
+> P
+
+BP 
+
+FMS 
+
+SA 
+
+rPI-GNN 
+
+QuerySAT (f) 3-col N = 1024 10.0 10.5 11.0 11.5 12.0 12.5 13.0 13.5 
+
+c
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+0.8 
+
+1.0 
+
+> P
+
+BP 
+
+FMS 
+
+SA 
+
+rPI-GNN 
+
+QuerySAT 
+
+(g) 5-col N = 256 10.0 10.5 11.0 11.5 12.0 12.5 13.0 13.5 
+
+c
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+0.8 
+
+1.0 
+
+> P
+
+BP 
+
+FMS 
+
+SA 
+
+rPI-GNN 
+
+QuerySAT (h) 5-col N = 1024 
+
+Figure 2: Probability of finding a satisfiable assignment using different algorithms at fixed size ( N = 256 on the left and N = 1024 on the right) for the K-SAT ( K = 3 , 4) and q-col ( q = 3 , 5) problems. We focus on two sizes: N = 256 is the largest size in the training set, and N = 1024, which is out-of-distribution, to check the generalization power. 63.00 3.25 3.50 3.75 4.00 4.25 4.50 4.75 5.00 
+
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> P
+> N=16
+> N=32
+> N=64
+> N=128
+> N=256
+> N=512
+> N=1024
+> N=2048
+> Alg. Threshold
+
+(a) QuerySAT (3-SAT) 8.00 8.25 8.50 8.75 9.00 9.25 9.50 9.75 10.00  
+
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> P
+> N=128
+> N=256
+> N=512
+> N=1024
+> N=2048
+> N=4096
+> N=8192
+> N=16384
+> Alg. Threshold
+
+(b) SP (4-SAT) 3.25 3.50 3.75 4.00 4.25 4.50 4.75 5.00  
+
+> c
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> P
+> N=128
+> N=256
+> N=512
+> N=1024
+> N=2048
+> N=4096
+
+(c) rPI-GNN (3-col) 
+
+Figure 3: Estimation of the algorithmic threshold in the large size limit for different algorithms and problems, indicated in the label under the panel. The left panel shows the easy situation, when crossings of curves for different sizes take place at the same point (apart from small finite-size corrections), and the crossing point corresponds to the algorithmic threshold in the large 
+
+N limit. Instead, in the central and the right panels, we report more difficult situations, where the crossings are not present or happen very close to boundaries ( P = 0 or P = 1). In the latter cases, the curves measured at finite N provide a bound to the algorithmic threshold in the large N limit. Data in the central panel provide a lower bound, while those in the right panel provide an upper bound. 
+
+SAT K = 3 K = 4 NeuroSAT 3.8 ≲ 8.1 QuerySAT 4.1 9.1 FMS 4.2 9.8 
+
+SA 4.1 9.5 SP + dec. 4.2 9.7 
+
+col q = 3 q = 5 rPI-GNN ≲ 4.0 ≲ 11.4 QuerySAT ≲ 3.48 ≲ 10 FMS 4.4 13.0 
+
+SA 4.2 12.6 BP + dec. ≳ 4.4 ≳ 12.4 Table 2: Algorithmic threshold for different algorithms By definition, the algorithmic thresh-old is computed taking the limit of large N . In this limit, Neural Solvers behave much worse than classical algorithms, especially in the hard 1RSB problems (4-SAT and 5-col). FMS is the algorithm that has the best algorithmic thresholds. (apart from small finite size corrections), and this identifies a well-defined algorithmic threshold in the large N limit (see left panel in Fig. 3). The difficult situations arise when the crossings happen very close to one of the boundaries (see the central panel in Fig. 3, with crossing very close to P = 0) or are completely absent from data (see right panel in Fig. 3). In these cases, the curves that move rightwards (resp. leftwards) increasing N as in the central (resp. right) panel just provide a lower (resp. upper) bound to the algorithmic threshold in the large N limit. In particular, performances of SP solving random 4-SAT improve increasing N and an estimate for the algorithm threshold is still possible (vertical dashed line), while performances of rPI-GNN in solving random 5-col degrades a lot increasing N , and the estimate is impossible in this case. Performing such analysis for all the tested algorithms on the benchmark instances, we obtain the values of αalg reported in Table 2. We do not pretend to extract algorithmic thresholds with extreme precision; the interested reader can find more accurate estimates for the classic algorithms in the referenced papers. We just put two significant digits because they are enough to compare the different algorithms. The main message of Table 2 is that, even if GNN can solve efficiently instances of small sizes, when moving towards larger sizes their performances severely degrade. As a consequence, their algorithmic threshold is much lower than the ones of classical algorithms. This is particularly true in the harder cases K = 4 and q = 5, while differences are smaller in the easier cases K = 3 and q = 3. Thus using only the latter for a comparison (as it has been done in the literature) is not very meaningful. 
+
+## 2.5 Comparison of running times for different algorithms 
+
+Finally, we have measured the (average) wall-clock running time of the different algorithms and report them in Table 3. It is worth stressing that neural solvers like NeuroSAT and QuerySAT require a time for training which is much larger than the time to solve an instance once trained. For NeuroSAT, this training 7SAT K = 3 K = 4 NeuroSAT 14.57 24.91 QuerySAT 134.43 322.53 FMS 1.83 3.80 SA 1.82 13.04 SP + dec. 2.61 3.06 col q = 3 q = 5 rPI-GNN 61.44 107.91 QuerySAT 4.95 24.89 FMS 0.006 0.02 
+
+SA 65.62 88.06 BP + dec. 56.70 441.50 Table 3: Average running times (in seconds) for different algorithms over 400 instances with 
+
+N = 1024 variables. For neural solvers, we report the testing time. We fix α = 4 .1 for 3-SAT, 
+
+α = 9 .4 for 4-SAT, c = 3 .68 for 3-col and c = 11 .1 5-col. For K-SAT, we ran the algorithms using Lenovo Hardware AMD Ryzen Threadripper PRO 5975WX 32-Cores with 251 GB of RAM. For q-col, we ran the rPI-GNN using the NVIDIA Tesla V100 SXM2 32G GPU and QuerySAT on NVIDIA TITAN RTX GPU, while all other algorithms were run on a single CPU Intel Xeon Gold 6248 2.5G. time is approximately 37min/epoch on 3SAT and 19 min/epoch on 4SAT, while for QuerySAT it is approximately 27min/epoch on 3SAT and 17 min/epoch on 4SAT. The difference in time is motivated by the fact that, as previously mentioned in Section 2.1, the 4SAT dataset is half the size of the 3SAT dataset, and the increase in k can be easily bypassed through available GPU memory. Moreover, rPI-GNN (as its original version PI-GNN) requires a new training for each sample: for this reason, its computing time is much higher than other standard neural solvers. At test-time, we fix a number of message-passing iterations of t = 2 N for all neural solvers. Classical heuristics algorithms do not need any training, and their running times are essentially fixed by the schedule we have chosen for the maximum number of iterations: t = 100 N in SAT problems and t = 625 N in col problems for FMS, and t = 1000 N for SA, both in SAT and col problems. However, we noticed a difference between FMS and SA: while SA finds the solution (or the optimal configuration) close to the end of the run, FMS may find a solution much earlier (this is the reason why the actual running time reported in Table 3 is so much shorter than the others). 
+
+# 3 Discussion 
+
+In this paper, we have introduced a new benchmark based on two well-known CSPs, K-SAT and 
+
+q-col, with the following key features: 
+
+• Controlled complexity variation through parameters K, α (K-SAT), q, c (q-col) and different problem sizes N ;
+
+• Consistent training/test splits with reproducible generation; 
+
+• Compatibility with standard CSP formats (e.g., DIMACS CNF for SAT). This structured benchmark enables systematic evaluation and comparison of CSP solvers across varying complexity levels and generalization demands. Using this benchmark, we compared clas-sical algorithms with newer GNN-based solvers. Our experiments revealed that supervised GNNs underperform, leading us to focus on unsupervised approaches. Inspired by recent literature, we trained neural solvers for a fixed number of iterations while we let the testing time scaling linearly with the problem size N , confirming that this is necessary to prevent performance degradation as N grows (a requirement also observed in classical algorithms). Please note that fundamental limitations for running GNN on random instances hold when the depth of GNN does not scale with graph size, from the presence of the overlap gap property phase transition [48]. However, when GNN are used for a time that scales with N , as in this work, the hypothesis of ref. [48] are no more valid. Our numerical tests show that, while neural solvers perform comparably to classical methods for easier problems (3-SAT and 3-col), their performance declines significantly for harder problems (4-SAT and 5-col). This aligns with known geometric transitions in the solution space that hinder algorithmic efficiency. Classical algorithms still deal better with this obstacle. When developing a new NN algorithm, it is thus crucial to test it on these harder problems. Another key point is the scaling of performances with N . Notably, the PI-GNNs from ref. [45] do not employ traditional training; instead, their weights are optimized per-instance, resembling 8classical optimizers. While this approach has merits, it sacrifices one of GNNs’ key advantages: fast inference after a single training phase. Consequently, PI-GNNs face scalability challenges at large 
+
+N . On the other side, NeuroSAT and QuerySAT can be trained in a reasonable time just for small sizes ( N ≤ 256), and their performances clearly degrade when used in testing out-of-distribution. In contrast, classical algorithms exhibit stable performance regardless of N : this is a key feature that newly designed NN should obtain. Given the substantial room for improvement in GNN-based CSP solving, we include large-N
+
+instances (up to N = 16384) in our released dataset, along with results from FMS and SP (the best-performing classical solvers in our study). We hope these resources will encourage future work toward neural solvers that match or surpass classical performance. 
+
+# 4 Data and Code availability 
+
+Dataset generators and data download links are provided at the official public repository of the project https://github.com/ArtLabBocconi/RandCSPBench . Implementations of all the algo-rithms used in the paper, either in Python, C++ or Julia, are also provided. 
+
+# Acknowledgments 
+
+We acknowledge financial support from the following MUR PNRR projects funded by the Eu-ropean Union - NextGenerationEU: ThermoQT (Project No. SOE0000098); PRIN 2022 PNRR, Project P20229PBZR, CUP B53D23028410001 and CUP J53D23016170001, Mission 4, Component C2, Investment 1.1; Project PE0000013-FAIR; “National Centre for HPC, Big Data and Quantum Computing - HPC”, Project CN 00000013, CUP B83C22002940006, NRP Mission 4 Component 2 Investment 1.4; computational infrastructure DARIAH.IT, PON Project code PIR01-00022, Na-tional Research Council of Italy. 
+
+# References 
+
+[1] Scarselli, F.; Gori, M.; Tsoi, A. C.; Hagenbuchner, M.; Monfardini, G. The graph neural network model. IEEE transactions on neural networks 2008 , 20 , 61–80. [2] Holden, S. B. Machine Learning for Automated Theorem Proving: Learning to Solve SAT and QSAT. Foundations and Trends ® in Machine Learning 2021 , 14 , 807–989, Publisher: Now Publishers, Inc. [3] Shi, Z.; Li, M.; Liu, Y.; Khan, S.; Huang, J.; Zhen, H.-L.; Yuan, M.; Xu, Q. Satformer: Transformer-based unsat core learning. 2023 IEEE/ACM International Conference on Computer Aided Design (ICCAD). 2023; pp 1–4. [4] Selsam, D.; Lamm, M.; B¨ unz, B.; Liang, P.; Dill, D. L.; De Moura, L. Learning a SAT solver from single-bit supervision. 7th International Conference on Learning Representations, ICLR 2019 2019 , 1–11, arXiv: 1802.03685. [5] Li, M.; Shi, Z.; Lai, Q.; Khan, S.; Xu, Q. DeepSAT: An EDA-Driven Learning Framework for SAT. 2022; http://arxiv.org/abs/2205.13745 , arXiv:2205.13745 [cs]. [6] Ozolins, E.; Freivalds, K.; Draguns, A.; Gaile, E.; Zakovskis, R.; Kozlovics, S. Goal-Aware Neural SAT Solver. 2022 International Joint Conference on Neural Networks (IJCNN). 2022; pp 1–8, arXiv:2106.07162 [cs]. [7] Yan, Z.; Li, M.; Shi, Z.; Zhang, W.; Chen, Y.; Zhang, H. Addressing Variable Dependency in GNN-based SAT Solving. 2023; http://arxiv.org/abs/2304.08738 , arXiv:2304.08738 [cs]. [8] Sun, Z.; Yang, Y. Difusco: Graph-based diffusion solvers for combinatorial optimization. Ad-vances in neural information processing systems 2023 , 36 , 3706–3731, arXiv:2302.08224 [cs]. [9] Freivalds, K.; Kozloviˇ cs, S. Denoising Diffusion for Sampling SAT Solutions. NeurIPS 2022 Workshop on Score-Based Methods. 2022; arXiv:2212.00121 [cs]. 9[10] Duan, H.; Vaezipoor, P.; Paulus, M. B.; Ruan, Y.; Maddison, C. Augment with care: Con-trastive learning for combinatorial problems. International Conference on Machine Learning. 2022; pp 5627–5642, arXiv:2202.08396 [cs]. [11] Achlioptas, D.; Daswaney, A.; Papakonstantinou, P. A. Arbitrarily Large Labelled Random Satisfiability Formulas for Machine Learning Training. arXiv preprint arXiv:2211.15368 2022 ,[12] Karalias, N.; Loukas, A. Erdos goes neural: an unsupervised learning framework for combina-torial optimization on graphs. Advances in Neural Information Processing Systems 2020 , 33 ,6659–6672, arXiv: 2006.10643. [13] Joshi, C. K.; Cappart, Q.; Rousseau, L.-M.; Laurent, T. Learning the travelling salesperson problem requires rethinking generalization. Constraints 2022 , 27 , 70–98. [14] Cameron, C.; Chen, R.; Hartford, J.; Leyton-Brown, K. Predicting Propositional Satisfiability via End-to-End Learning. Proceedings of the AAAI Conference on Artificial Intelligence 2020 ,
+
+34 , 3324–3331, Number: 04. [15] Gasse, M.; Ch´ etelat, D.; Ferroni, N.; Charlin, L.; Lodi, A. Exact combinatorial optimization with graph convolutional neural networks. Advances in Neural Information Processing Systems 
+
+2019 , 32 .[16] Li, Z.; Chen, Q.; Koltun, V. Combinatorial optimization with graph convolutional networks and guided tree search. Advances in Neural Information Processing Systems 2018 , 2018-Decem ,539–548, arXiv: 1810.10659. [17] Li, Z.; Si, X. Nsnet: A general neural probabilistic framework for satisfiability problems. Ad-vances in Neural Information Processing Systems 2022 , 35 , 25573–25585, arXiv:2211.03880 [cs]. [18] Cappart, Q.; Ch´ etelat, D.; Khalil, E. B.; Lodi, A.; Morris, C.; Veliˇ ckovi´ c, P. Combinatorial optimization and reasoning with graph neural networks. Journal of Machine Learning Research 
+
+2023 , 24 , 1–61. [19] Kotary, J.; Fioretto, F.; Van Hentenryck, P.; Wilder, B. End-to-End Constrained Optimization Learning: A Survey. Proceedings of the Thirtieth International Joint Conference on Artificial Intelligence, IJCAI-21. 2021; pp 4475–4482, Survey Track. [20] Bengio, Y.; Lodi, A.; Prouvost, A. Machine learning for combinatorial optimization: a method-ological tour d’horizon. European Journal of Operational Research 2021 , 290 , 405–421. [21] Ciarella, S.; Trinquier, J.; Weigt, M.; Zamponi, F. Machine-learning-assisted Monte Carlo fails at sampling computationally hard problems. Machine Learning: Science and Technology 2023 ,
+
+4, 010501. [22] Wang, W.; Hu, Y.; Tiwari, M.; Khurshid, S.; McMillan, K.; Miikkulainen, R. Neuroback: Im-proving CDCL SAT solving using graph neural networks. The Twelfth International Conference on Learning Representations. 2024; pp 1–9. [23] Schuetz, M. J.; Brubaker, J. K.; Katzgraber, H. G. Combinatorial optimization with physics-inspired graph neural networks. Nature Machine Intelligence 2022 , 4, 367–377. [24] Boettcher, S. Inability of a graph neural network heuristic to outperform greedy algorithms in solving combinatorial optimization problems. Nature Machine Intelligence 2023 , 5, 24–25. [25] Angelini, M. C.; Ricci-Tersenghi, F. Modern graph neural networks do worse than classical greedy algorithms in solving combinatorial optimization problems like maximum independent set. Nature Machine Intelligence 2023 , 5, 29–31. [26] Schuetz, M. J.; Brubaker, J. K.; Katzgraber, H. G. Reply to: Inability of a graph neural net-work heuristic to outperform greedy algorithms in solving combinatorial optimization problems. 
+
+Nature Machine Intelligence 2023 , 5, 26–28. [27] Schuetz, M. J.; Brubaker, J. K.; Katzgraber, H. G. Reply to: Modern graph neural networks do worse than classical greedy algorithms in solving combinatorial optimization problems like maximum independent set. Nature Machine Intelligence 2023 , 5, 32–34. 10 [28] Cheeseman, P. C.; Kanefsky, B.; Taylor, W. M.; others Where the really hard problems are. Ijcai. 1991; pp 331–337. [29] Kirkpatrick, S.; Selman, B. Critical behavior in the satisfiability of random boolean expressions. 
+
+Science 1994 , 264 , 1297–1301. [30] Selman, B.; Mitchell, D. G.; Levesque, H. J. Generating hard satisfiability problems. Artificial intelligence 1996 , 81 , 17–29. [31] Monasson, R.; Zecchina, R.; Kirkpatrick, S.; Selman, B.; Troyansky, L. Determining computa-tional complexity from characteristic ‘phase transitions’. Nature 1999 , 400 , 133–137. [32] Krzakala, F.; Montanari, A.; Ricci-Tersenghi, F.; Semerjian, G.; Zdeborov´ a, L. Gibbs states and the set of solutions of random constraint satisfaction problems. Proceedings of the National Academy of Sciences 2007 , 104 , 10318–10323. [33] Ricci-Tersenghi, F.; Semerjian, G. On the cavity method for decimated random constraint sat-isfaction problems and the analysis of belief propagation guided decimation algorithms. Journal of Statistical Mechanics: Theory and Experiment 2009 , 2009 , P09001. [34] Mezard, M.; Montanari, A. Information, physics, and computation ; Oxford University Press, 2009. [35] Marino, R.; Kirkpatrick, S. Hard optimization problems have soft edges. Scientific Reports 
+
+2023 , 13 , 3671. [36] Angelini, M. C.; Ricci-Tersenghi, F. Limits and performances of algorithms based on simulated annealing in solving sparse hard inference problems. Physical Review X 2023 , 13 , 021011. [37] Zdeborov´ a, L. Statistical Physics of Hard Optimization Problems. Acta Physica Slovaca 2009 ,
+
+59 , 169–303. [38] Angelini, M.; Avila-Gonz´ alez, M.; D’Amico, F.; Machado, D.; Mulet, R.; Ricci-Tersenghi, F. Algorithmic thresholds in combinatorial optimization depend on the time scaling. arXiv preprint arXiv:2504.11174 2025 ,[39] Li, Z.; Guo, J.; Si, X. G4SATBench: Benchmarking and Advancing SAT Solving with Graph Neural Networks. 2023; http://arxiv.org/abs/2309.16941 , arXiv:2309.16941 [cs]. [40] Ding, J.; Sly, A.; Sun, N. Proof of the satisfiability conjecture for large k. Annals of Mathematics 
+
+2022 , 196 , 1 – 388. [41] Montanari, A.; Ricci-Tersenghi, F.; Semerjian, G. Clusters of solutions and replica symmetry breaking in random k-satisfiability. Journal of Statistical Mechanics: Theory and Experiment 
+
+2008 , 2008 , P04004. [42] M´ ezard, M.; Parisi, G.; Virasoro, M. A. Spin glass theory and beyond: An Introduction to the Replica Method and Its Applications ; World Scientific Publishing Company, 1987; Vol. 9. [43] Marino, R.; Parisi, G.; Ricci-Tersenghi, F. The backtracking survey propagation algorithm for solving random K-SAT problems. Nature Communications 2016 , 7, 12996. [44] Ozolins, E.; Freivalds, K.; Draguns, A.; Gaile, E.; Zakovskis, R.; Kozlovics, S. Goal-aware neural SAT solver. 2022 International Joint Conference on Neural Networks (IJCNN). 2022; pp 1–8. [45] Schuetz, M. J. A.; Brubaker, J. K.; Zhu, Z.; Katzgraber, H. G. Graph coloring with physics-inspired graph neural networks. Phys. Rev. Res. 2022 , 4, 043131. [46] Snell, C.; Lee, J.; Xu, K.; Kumar, A. Scaling llm test-time compute optimally can be more effective than scaling model parameters. arXiv preprint arXiv:2408.03314 2024 ,[47] Geiping, J.; McLeish, S.; Jain, N.; Kirchenbauer, J.; Singh, S.; Bartoldson, B. R.; Kailkhura, B.; Bhatele, A.; Goldstein, T. Scaling up Test-Time Compute with Latent Reasoning: A Recurrent Depth Approach. 2025 ,[48] Gamarnik, D. Barriers for the performance of graph neural networks (GNN) in discrete random structures. Proceedings of the National Academy of Sciences 2023 , 120 , e2314092120. 11 [49] Mertens, S.; M´ ezard, M.; Zecchina, R. Threshold values of random K-SAT from the cavity method. Random Structures & Algorithms 2006 , 28 , 340–373. [50] Zdeborov´ a, L.; Krzakala, F. Phase transitions in the coloring of random graphs. Physical Review E 2007 , 76 , 031131. [51] Biere, A.; Faller, T.; Fazekas, K.; Fleury, M.; Froleyks, N.; Pollitt, F. CaDiCaL 2.0. Computer Aided Verification - 36th International Conference, CAV 2024, Montreal, QC, Canada, July 24-27, 2024, Proceedings, Part I. 2024; pp 133–152. [52] Lemos, H.; Prates, M.; Avelar, P.; Lamb, L. Graph colouring meets deep learning: Effective graph neural network models for combinatorial problems. 2019 IEEE 31st International Con-ference on Tools with Artificial Intelligence (ICTAI). 2019; pp 879–885. [53] Kirkpatrick, S.; Gelatt, C. D.; Vecchi, M. P. Optimization by Simulated Annealing. Science 
+
+1983 , 220 , 671–680. [54] Eglese, R. Simulated annealing: A tool for operational research. European Journal of Opera-tional Research 1990 , 46 , 271–281. [55] Guilmeau, T.; Chouzenoux, E.; Elvira, V. Simulated Annealing: a Review and a New Scheme. 2021 IEEE Statistical Signal Processing Workshop (SSP). 2021; pp 101–105. [56] Zdeborov´ a, L.; Krzakala, F. Generalization of the cavity method for adiabatic evolution of Gibbs states. Physical Review B—Condensed Matter and Materials Physics 2010 , 81 , 224205. [57] Krzakala, F.; Zdeborov´ a, L. Performance of simulated annealing in p-spin glasses. Journal of Physics: Conference Series. 2013; p 012022. [58] Budzynski, L.; Ricci-Tersenghi, F.; Semerjian, G. Biased landscapes for random constraint satisfaction problems. Journal of Statistical Mechanics: Theory and Experiment 2019 , 2019 ,023302. [59] Angelini, M. C.; Ricci-Tersenghi, F. Monte Carlo algorithms are very effective in finding the largest independent set in sparse random graphs. Phys. Rev. E 2019 , 100 , 013302. [60] Angelini, M. C.; Ricci-Tersenghi, F. Limits and Performances of Algorithms Based on Simulated Annealing in Solving Sparse Hard Inference Problems. Phys. Rev. X 2023 , 13 , 021011. [61] Metropolis, N.; Rosenbluth, A. W.; Rosenbluth, M. N.; Teller, A. H.; Teller, E. Equation of State Calculations by Fast Computing Machines. The Journal of Chemical Physics 1953 , 21 ,1087–1092. [62] Seitz, S.; Alava, M.; Orponen, P. Focused local search for random 3-satisfiability. Journal of Statistical Mechanics: Theory and Experiment 2005 , 2005 , P06006. [63] Aurell, E.; Gordon, U.; Kirkpatrick, S. Comparing Beliefs, Surveys, and Random Walks. Ad-vances in Neural Information Processing Systems. 2004. [64] Alava, M.; Ardelius, J.; Aurell, E.; Kaski, P.; Krishnamurthy, S.; Orponen, P.; Seitz, S. Cir-cumspect descent prevails in solving random constraint satisfaction problems. Proceedings of the National Academy of Sciences 2008 , 105 , 15253–15257. [65] Papadimitriou, C. On Selecting a Satisfying Truth Assignment. Proceedings of the 32nd IEEE Symposium on the Foundations of Computer Science. 1991; p 163–169. [66] M´ ezard, M.; Parisi, G.; Zecchina, R. Analytic and Algorithmic Solution of Random Satisfiability Problems. Science 2002 , 297 , 812–815. [67] Braunstein, A.; M´ ezard, M.; Zecchina, R. Survey propagation: An algorithm for satisfiability. 
+
+Random Structures & Algorithms 2005 , 27 , 201–226. [68] Parisi, G. On the Probabilistic Approach to the Random Satisfiability Problem. Theory and Applications of Satisfiability Testing. Berlin, Heidelberg, 2004; pp 203–213. [69] Maneva, E.; Mossel, E.; Wainwright, M. J. A new look at survey propagation and its general-izations. J. ACM 2007 , 54 , 17–es. 12 [70] Marino, R. Learning from survey propagation: a neural network for MAX-E-3-SAT. Machine Learning: Science and Technology 2021 , 2, 035032. [71] Pearl, J. Reverend bayes on inference engines: A distributed hierarchical approach. Proceedings American Association of Artificial Intelligence National Conference on AI, 1982 , 133–136. [72] Krzakala, F.; Montanari, A.; Ricci-Tersenghi, F.; Semerjian, G.; Zdeborov´ a, L. Gibbs states and the set of solutions of random constraint satisfaction problems. Proceedings of the National Academy of Sciences 2007 , 104 , 10318–10323. [73] Montanari, A.; Ricci-Tersenghi, F.; Semerjian, G. Solving Constraint Satisfaction Problems through Belief Propagation-guided decimation. CoRR 2007 , abs/0709.1667 .[74] Biere, A.; Heule, M.; van Maaren, H. Handbook of satisfiability ; IOS press, 2009; Vol. 185. [75] Selsam, D.; Lamm, M.; B¨ unz, B.; Liang, P.; de Moura, L.; Dill., D. L. Learning a SAT solver from single-bit supervision. Proceedings of the 7th International Conference on Learning Rep-resentations. 2019. [76] Ba, J. L.; Kiros, J. R.; Hinton, G. E. Layer normalization. arXiv preprint arXiv:1607.06450 
+
+2016 ,[77] Hochreiter, S.; Schmidhuber, J. Long short-term memory. Neural computation 1997 , 9, 1735– 1780. [78] M´ ezard, M.; Parisi, G. A replica analysis of the travelling salesman problem. Journal De Physique 1986 , 47 , 1285–1296. [79] Franz, S.; Leone, M.; Ricci-Tersenghi, F.; Zecchina, R. Exact Solutions for Diluted Spin Glasses and Optimization Problems. Physical Review Letters 2001 , 87 , 127209. [80] Hamilton, W.; Ying, Z.; Leskovec, J. Inductive Representation Learning on Large Graphs. Advances in Neural Information Processing Systems. 2017. [81] Pugacheva, D.; Ermakov, A.; Lyskov, I.; Makarov, I.; Zotov, Y. Enhancing GNNs Performance on Combinatorial Optimization by Recurrent Feature Update. 2024; https://arxiv.org/abs/ 2407.16468 .[82] Ioffe, S.; Szegedy, C. Batch normalization: accelerating deep network training by reducing in-ternal covariate shift. Proceedings of the 32nd International Conference on International Con-ference on Machine Learning - Volume 37. 2015; p 448–456. [83] Krzakala, F.; Zdeborov´ a, L. Hiding quiet solutions in random constraint satisfaction problems. 
+
+Physical review letters 2009 , 102 , 238701. [84] Chavas, J.; Furtlehner, C.; Mezard, M.; Zecchina, R. Survey-propagation decimation through distributed local computations. J Stat Mech 2005 , 2005 .[85] Braunstein, A.; Zecchina, R. Learning by Message Passing in Networks of Discrete Synapses. 
+
+Physical Review Letters 2006 , 96 .[86] Dall’Asta, L.; Ramezanpour, A.; Zecchina, R. Entropy landscape and non-Gibbs solutions in constraint satisfaction problems. Physical Review E 2008 , 77 .[87] Fey, M.; Lenssen, J. E. Fast graph representation learning with PyTorch Geometric. arXiv preprint arXiv:1903.02428 2019 ,[88] Falcon, W.; The PyTorch Lightning team PyTorch Lightning. 2019; https://github.com/ Lightning-AI/lightning .[89] Zhuang, J.; Tang, T.; Ding, Y.; Tatikonda, S. C.; Dvornek, N.; Papademetris, X.; Duncan, J. Adabelief optimizer: Adapting stepsizes by the belief in observed gradients. Advances in neural information processing systems 2020 , 33 , 18795–18806. 13 A Methods 
+
+## A.1 The random K-SAT and q-col problems 
+
+The random-K-SAT problem, the prototype of CSPs, asks whether there exists an assignment of 
+
+N Boolean variables that satisfies at the same time M given clauses (constraints). Each instance of the problem is specified by a formula consisting of a conjunction of M clauses, where each clause is a disjunction of literals i.e., a variable or its negation. In the K-SAT problem, every clause contains exactly K literals: ( x1 ∨ ¬ x3 ∨ x7) is an example of a clause for a 3-SAT problem, where xi, i = 1 , 2..., N are the N Boolean variables, and we indicate with ¬xi their negation. The clustering, condensation and satisfiability threshold values for K = 3 and K = 4 are respectively: 
+
+αd(3) = αc(3) = 3 .86, αs(3) = 4 .267; αd(4) = 9 .38, αc(4) = 9 .547, αs(4) = 9 .931 [41, 49]. One can introduce the following cost or energy function associated with the K-SAT problem: 
+
+EK−SAT ({x}) = 
+
+> M
+
+X
+
+> a=1
+
+Y
+
+> i∈∂a
+
+ 1 + Jia · (−1) xi
+
+2
+
+
+
+, (1) where with i ∈ ∂a we indicate all the nodes i that enter in the a-th clause, Jia = 1 if xi enters the clause a as it is and Jia = −1 if xi enters the clause a negated. Many optimization algorithms described in the following section will try to minimize this energy function. The random q-col problem asks for an assignment of colors to the N nodes of an undirected random graph (regular or Erd˝ os-Renyi) with finite (average) degree c. Each node must be assigned one of q possible colors, under the constraint that no two neighboring nodes share the same color. The minimum number of colors qmin needed to properly color a graph is called the chromatic number. For any connectivity larger than the satisfiability one c > c S (q), the chromatic number is greater than q for any typical instance. The exact values of the thresholds for a Poissonian random graph, at 
+
+q = 3 and q = 5 are: cd(3) = cc(3) = 4, cS (3) = 4 .687, cd(5) = 12 .837, cc(5) = 13 .23, cS (5) = 13 .669 [50]. Similarly to the K-SAT problem, we can introduce an energy, or cost function, also for the 
+
+q-col problem: 
+
+Eq−col ({x}) = X
+
+> (i,j )∈E
+
+δxixj , (2) where xi indicates the color assigned to node i and can take integer values in the interval [1 , q ], and the sum runs over the set E of all the edges of the graph. Again, many algorithms will try to minimize this energy function when trying to solve the q-col problem. 
+
+## A.2 Dataset 
+
+A.2.1 K-SAT 
+
+Random K-SAT instances are generated using a custom implementation that constructs formulas in Conjunctive Normal Form (CNF). Each CNF instance is defined by N Boolean variables and 
+
+M = round( αN ) clauses, where α is the clause-to-variable ratio. Each clause contains K literals, generated by sampling K distinct variables uniformly at random from the N available. Each selected variable is independently negated with probability 0 .5, ensuring an unbiased distribution of positive and negative literals. We note that this method of generation allows duplicate clauses in a formula. However, in the large N limit, if M is proportional to N , the probability of having a duplicated clause goes to zero. For the K-SAT problem we built a training and a testing set. The values of α for the instances in both the training and the test set are α ∈ [3 , 5] with ∆ α = 0 .1 for 3-SAT and α ∈ [8 , 10] with ∆α = 0 .1 for 4-SAT. In the training set, for each of the 21 values of α when K = 3 (respectively K =4), we generated 1600 (respectively 800) instances for each value of N ∈ { 16 , 32 , 64 , 128 , 256 }. To ensure reproducibility, we use stable pseudo-random number generators seeded with a combination of a base seed and the variable size N .For each instance on the training set we also include the solution given by a SAT solver (CaDi-CaL [51]). The GNN analyzed in this paper are trained on these training sets, either in a supervised or unsupervised way. In the test set for each of the 21 values of α when K = 3 (respectively K = 4), we generated 400 (respectively 200) instances for each value of N ∈ { 16 , 32 , 64 , 128 , 256 }: these instances are the one used to generate Figg. 1, 2 and to compute score and residual energy of Table 1. Instructions on 14 how to obtain the training and the test datasets with sizes up to N = 256 are provided at GitHub repository of the project. In the GitHub repository, we also added the results of the evaluation for all the analyzed algorithms on this test dataset. However, as explained in sec. 2.4, it is important to test the effectiveness of an algorithm in the large size limit. For this reason, in the test set we also included instances with the same chosen values of α and with N ∈ { 512 , 1024 , 2048 , 4096 , 8192 , 16384 } for both K = 3 and K = 4. We will call these instances the Out-of-distribution (OOD) instances. All instances can be built with the released code in the GitHub repository. We used these OOD instances (or part of it, for some algorithms) to evaluate the algorithmic thresholds in Tab. 2 and Fig. 3. We also evaluated the score for the chosen algorithms on part of this dataset, reporting it in the Supplementary information. These OOD instances are mainly intended as a challenge for the community: a good newly proposed GNN should be able to reach results comparable with (or even better than) what is obtained by classical algorithms on this dataset. For the whole OOD test set, we include in the repository the results of FMS, the best algorithm we analyzed so far, as a comparison for future developed algorithms. 
+
+A.2.2 q-coloring 
+
+To build the q-col training and testing datasets, we follow the statistical physics community, i.e., we build random graphs with some essential features [50]. The ensemble of graphs considered in this work is defined by the statistics of the average connectivity c = 2 MN , M being the number of undirected edges and N the number of nodes. Such statistics should not depend on N . The connectivities considered do not increase with N , so that c = O(1). The graphs are sparse, and they possess a tree-like local structure. More precisely, we considered the case of Erd˝ os–R´ enyi ensemble with fixed M , G(N, M ): M links are assigned uniformly at random between couples of nodes, without repetitions. After the edges are assigned, the connectivity is exactly c = 2 MN . We remark that there are  (N 
+
+> 2
+
+)
+
+> M
+
+ possible graphs that can be constructed, and we extract graphs from this ensemble with uniform probability. Our analysis is performed using the value of c as the control parameter. As in the K-SAT case, we create a training dataset with sizes up to N = 256 while the testing dataset contains also higher OOD sizes. For both the training and test set we include graphs with values of average connectivity of nodes 
+
+c ∈ [3 .32 , 4.94] with ∆ c = 0 .18 for 3-col and c ∈ [9 .9, 13 .5] with ∆ c = 0 .4 for 5-col. In the training set for each value of c when q = 3 (respectively q = 5), we generated 1200 instances for each value of N ∈ { 16 , 32 , 64 , 128 , 256 }. We do not furnish solutions for this training set, because we only used unsupervised learning protocols. For the test set, for each value of c when q = 3 (respectively q = 5), we generated 400 instances for each value of in-distribution N ∈ { 16 , 32 , 64 , 128 , 256 } and for each OOD N ∈ { 512 , 1024 , 2048 , 4096 , 8192 , 16384 }, which were used to evaluate algorithm performance on large-scale problems. All instances can be built with the released code. As already explained, we focused on the assignment problem. Some previous works also focused on the decision problem, finding some nonphysical predictions, with GNN predicting colorable graphs with a given q while the chromatic number of that particular instance was larger than q [52]. To avoid these contradicting outputs, the performances of the different algorithms on the dataset will be compared only on the assignment problem, both for K-SAT and q-col. 
+
+## A.3 Classical Heuristics Algorithms 
+
+A.3.1 Simulated Annealing 
+
+Simulated Annealing (SA) is a standard way to use Monte Carlo Markov Chains (MCMC) to solve combinatorial optimization problems [53]. With more than 40 years of history, SA has many variants [54, 55] and has been applied to several combinatorial optimization problems [53, 56–60]. The goal of a generic MCMC is to sample configurations x of the variables in the problem following the Gibbs measure P (x) = e−βE (x)/Z . Here, Z is a normalization factor and β is a nonnegative parameter. In physics, Z is known as the partition function, and β is the inverse of temperature T (β = 1 /T ). In the scenario of combinatorial optimization, E(x) is the cost function to minimize in order to find solutions of the problem. The corresponding energy functions for the 
+
+K-SAT and the q-col problems are reported in eqs. (1), (2). The MCMC is at the core of the SA algorithm in combinatorial optimization for a simple reason: in the limit β → ∞ (zero temperature), solutions become exponentially dominant minima of the Gibbs measure. Thus, the correct sampling at T = 0 would be equivalent to a uniform sampling of 15 solutions. However, this is not always an easy task. Most cost functions in relevant combinatorial optimization problems display rugged landscapes that would trap a zero-temperature MCMC in local minima before accessing actual solutions. To overcome this problem, it is convenient to accept a certain level of noise (finite β or T > 0) at the beginning of the landscape’s exploration. The key in SA is the selection of a schedule to decrease the temperature, i.e. , the noise, from an initial level T0 to a final value Tn where one hopes to find solutions. The so-called cooling schedule consists of a sequence T0 > T 1 > . . . > T n. At each temperature Tk, one or more steps of the regular MCMC are performed. When consecutive temperatures in the schedule are close enough, one aims to always sample from a Gibbs measure that gradually concentrates toward solutions. In this work, we used a cooling schedule with constant temperature steps. Although this tra-ditional design [53] might not be optimal, we preferred it for its simplicity while expecting the algorithmic transitions not to strongly depend on our choice. The reader might find the following pseudo-code useful to complement our description: 
+
+Algorithm 1 Simulated Annealing  
+
+> 1:
+
+Set a random initial x0 
+
+> 2:
+
+Choose a number of steps n 
+
+> 3:
+
+Set a cooling schedule T0 > T 1 > . . . > T n, with Tk = T0(1 − k/n ) 
+
+> 4:
+
+for k = 0 , . . . , n do  
+
+> 5:
+
+Take N Metropolis steps at Tk 
+
+> 6:
+
+end for  
+
+> 7:
+
+return Final cost Ef and final configuration xn
+
+The Metropolis step [61] is defined as follows: when the algorithm is visiting a configuration x,a site i is randomly selected and a new x′
+
+> i
+
+̸ = xi is proposed uniformly at random among all possible choices. In particular, in the K-SAT problem, the proposed move changes the variable to the other possible value, while in the q-col problem a new color among the q − 1 different ones is randomly proposed. Then, this change is accepted with probability: 
+
+r(x → x′) = 
+
+(
+
+1 if ∆ E(x → x′) ≤ 0
+
+e−β ∆E(x→x′) if ∆ E(x → x′) > 0 (3) where ∆ E(x → x′) = E(x′) − E(x) and x′ is identical to the configuration x in all sites but the i-th. Notice that by running the SA for a fixed value of n we get a linear-time algorithm since we perform N simple Metropolis steps at each temperature. Following the ideas in Ref. [38], we explored several superlinear time scalings to enhance the performance of SA. We used quadratic scalings where one increases n linearly with the system size N . The resulting real running times still make SA faster or at least competitive with the rest of the algorithms in this work. 
+
+A.3.2 Focused Metropolis Search 
+
+Focused Metropolis Search (FMS) is a member of the family of stochastic local search algorithms tailored for random K-SAT. Introduced in Ref. [62], FMS achieves performances similar to the best versions of the well-known WalkSAT algorithm [63, 62], solving 4-SAT instances in linear time even beyond the condensation transition [64]. Once fed with an initial assignment of the variables, the algorithm proceeds as follows. First, it selects an unsatisfied clause uniformly at random among all unsatisfied clauses produced by the cur-rent assignment. Second, it chooses a variable xi inside that clause also uniformly at random. FMS evaluates the possibility of flipping xi using the well-known Metropolis rule: If the flip diminishes the total energy E, it is accepted; if it increases E by an amount ∆ E, it is accepted with probability 
+
+η∆E . As for the Simulated Annealing algorithm, the corresponding energy functions for the K-SAT and the q-col problems are the ones reported in eqs. (1), (2). After looking back at the Metropolis rates as presented in eq. (3), one sees that η = e−β is another way to parameterize the level of noise in the dynamics. When η = 0 (which corresponds to β → ∞ ), we have a greedy dynamics that never goes up in energy. The other extreme η = 1 corresponds to what is known as random WalkSAT [65], where all flips are accepted. The algorithmic parameter η must be tuned to achieve optimal results while guaranteeing a balance between exploration and exploitation moves. Following the literature, we choose the values 
+
+η = 0 .37 for 3-SAT [62] and η = 0 .293 for 4-SAT [64]. As for the running times, we selected quadratic 16 scalings t = AN 2 with different coefficients A, obtaining outstanding performances when A is large enough. In K-SAT instances, we used A = 100, guaranteeing that FMS’s maximum wall-clock time is comparable to that of the other classical heuristics for K-SAT in Table 1, taking SA with 
+
+t = 1000 N 2 as reference. FMS is easily adaptable to other combinatorial optimization problems. Here, we also introduce FMS for the q-col of random graphs in what is, to our knowledge, its first implementation for a problem other than K-SAT. The procedure is essentially the same. First, we choose an unsatisfied edge, connecting two nodes with the same color, uniformly at random. Then, one of these two nodes is randomly selected, and we propose a new color for it among all q − 1 possibilities. The new color is accepted using the Metropolis rule with noise η, as before. Being this the first implementation for q-col, there are no previous results on the optimal noise 
+
+η to use. After a non-exhaustive exploration, we choose η = 0 .37 for q = 3 and η = 0 .25 for q = 5. For the same reason as with K-SAT, we ran FMS for a time that scales with the system size as 
+
+t = 625 N 2. This gives a maximum wall-clock time comparable to what we obtained applying SA to 
+
+q-col with t = 1000 N 2.To compute the scores in Table 1, we needed to identify as many satisfiable instances as we could. Since FMS is the best-performing algorithm in our testing datasets for K-SAT and for q-col, we ran it for longer times to enhance its capacity to solve instances, paying the price of impractically long wall-clock times. Its solutions with the time scaling t = 1000 N 2 are responsible for most of the instances we could identify as satisfiable. 
+
+A.3.3 The Survey Propagation Algorithm for K-SAT 
+
+The Survey Propagation algorithm (SP) is a heuristic message passing algorithm. It was developed by Mezard, Parisi, and Zecchina [66] from the assumption of one-step replica symmetry breaking and the cavity method of spin glasses. SP works on the factor graph with the underlying CNF formula. While for small N , SP has convergence issues due to the presence of short loops in the graphs, for larger N , SP is conjectured to work better because cycles in the graph are of average length O(log N ). Such large cycles allow, from a practical point of view, to consider large graphs as locally tree-like. The presence and absence of these loops, respectively, at small and large sizes, is exactly the reason for the quite small score reported in Table 1, computed on relatively small instances N ≤ 256 and for the large algorithmic threshold reported in Table 2, computed on large instance sizes. A detailed description of the Survey Propagation algorithm can be found in [66, 67]. Here, we summarize it. Broadly speaking, SP exchanges messages between the N variables and M clauses in order to guess the value that each variable needs to be set to satisfy all clauses. More precisely, a message of SP, called a survey, passed from one function node a to a variable node i (connected by an edge) is a real number ηa→i ∈ [0 , 1]. The messages have a probabilistic interpretation under the assumption that SP runs over a tree-like factor graph, which is true in the large N limit. In particular, the message ηa→i corresponds to the probability that the clause a sends a warning to variable i, telling which value the variable i should adopt to satisfy itself [68, 69]. The iterative equations of SP are: 
+
+s∓ 
+
+> j→a
+
+=
+
+1 − Y
+
+> b∈∂∓
+> ja
+
+(1 − ηb→j )
+
+Y
+
+> b∈∂±
+> ja
+
+(1 − ηb→j )
+
+s0 
+
+> j→a
+
+=
+
+ Y 
+
+> b∈∂j\a
+
+(1 − ηb→j )
+
+
+
+ηa→i = Y
+
+> j∈∂a\i
+
+" s−
+
+> j→a
+
+s− 
+
+> j→a
+
++ s+ 
+
+> j→a
+
++ s0
+
+> j→a
+
+#
+
+;(4) where the symbol ∂a defines the set of variables nodes connected with the functional node a, i.e., the variable in clause a, and the symbol ∂i defines the set of functional nodes connected with the variable node i, i.e., the set of clauses where the literal xi, or ¬xi, appears. The cardinality of the set ∂i is the degree of a variable node i, i.e., the number of links connected to it, and is defined with 
+
+ni. The set ∂i is composed of two subsets, namely ∂+ 
+
+> i
+
+, which contains the functional nodes where the variable node i appears not negated, and ∂− 
+
+> i
+
+, which contains the functional nodes where the variable node i appears negated. Obviously, the relation ∂i = ∂+ 
+
+> i
+
+∪ ∂− 
+
+> i
+
+holds. 17 With the symbol ∂+ 
+
+> ia
+
+(respectively ∂−
+
+> ia
+
+) we define the set of functional nodes containing the variable node i, excluding the functional node a itself, satisfied (respectively not satisfied) when the variable i is assigned to satisfy clause a. In other words, if the variable xi is not negated in the clause a, then the ∂+ 
+
+> ia
+
+is the set of functional nodes containing the variable node i, excluding the functional node a itself, where the variable xi appears not negated, while ∂− 
+
+> ia
+
+is the set of functional nodes containing the variable node i, where the variable xi appears negated, ¬xi. In contrast, if the variable xi is negated in the clause a, then the ∂+ 
+
+> ia
+
+is the set of functional nodes containing the variable node i, excluding the functional node a itself, where the variable xi appears negated, while 
+
+∂− 
+
+> ia
+
+is the set of functional nodes containing the variable node i, where the variable xi appears not negated. SP is a local algorithm that takes as input a CNF formula of a random SAT Problem, and it performs a message-passing procedure to obtain convergence of the messages. More precisely, we are given a random initialization to all messages, and at each iteration, each message is updated following eq. (4). SP runs until all messages satisfy a convergence criterion: the iteration is halted at the first time t∗ when no message has changed by more than ϵ, a fixed small number, over the last iteration. If this convergence criterion is not satisfied after tmax iterations, SP stops and returns a failure output [70]. Once a convergence of all messages ηa→i is found, SP computes the marginals for each variable i:
+
+S− 
+
+> i
+
+= π− 
+
+> i
+
+(1 − π+ 
+
+> i
+
+)1 − π+ 
+
+> i
+
+π−
+
+> i
+
+, S+ 
+
+> i
+
+= π+ 
+
+> i
+
+(1 − π− 
+
+> i
+
+)1 − π+ 
+
+> i
+
+π−
+
+> i
+
+, S0 
+
+> i
+
+= 1 − S− 
+
+> i
+
+− S+ 
+
+> i
+
+, (5) where: 
+
+π± 
+
+> i
+
+= 1 − Y
+
+> b∈∂±
+> i
+
+(1 − ηb→i). (6) The SP marginal S+ 
+
+> i
+
+(S− 
+
+> i
+
+) represents the probability that the variable i must be forced to take the value xi = 1( xi = 0), conditional on the fact that it does not receive a contradictory message, while 
+
+S0 
+
+> i
+
+provides the information that the variable i is not forced to take a particular value. Once all the SP marginals have been computed, the decimation strategy can be applied. This subroutine is called Survey-Inspired Decimation (SID). Decimating a variable node i means fixing the variable to 1 or 0 depending on the SP marginals, removing all satisfied functional nodes and the variable node i from the factor graph, and removing all the literals from the clauses that have not been satisfied by the fixing. We select the variable node i to decimate as the variable with the maximum bias bi = 1 − min( S− 
+
+> i
+
+, S + 
+
+> i
+
+). Decimated the variable node i, the SP algorithm tries to find out a new state of convergence and uses decimation again until one of these three different outcomes appears: (i) a contradiction is found, then the algorithm returns exit failure; (ii) SP does not find a convergence, then the algorithm returns exit failure; (iii) all the messages converge to a trivial fixed point, i.e., all the messages are equal to 0. In our analysis, the outcome (ii) has been removed, and the decimation procedure continues until (i) or (iii) appears. Only when case (iii) appears, the algorithm calls WalkSAT, because the residual formula should be easy to treat. WalkSAT then tries to solve the residual formula and eventually builds the complete solution of the problem. Different from the other analyzed algorithms, SP is implemented in such a way that it does not output a low-energy solution to the problem when case (i) is encountered. This is a limitation of the present implementation of SP. Each SP iteration requires O(N ) operations, which yields O(N t max ), where tmax is the maximum time allowed for finding a convergence, i.e., a big constant. In the implementation described above, the SID has a computational complexity of O(tmax N 2 log N ), where the N log N comes from the sorting of the biases. This can be reduced to O(N t max (log N )2) by noticing that fixing a single variable does not affect the SP messages significantly. Consequently, SP can be called every N δ 
+
+decimation step by selecting a fraction of variables at each decimation step. In our analysis, we set 
+
+δ = 0 .00125, which allows the algorithm to remain quadratic up to size N = 2048. For sizes greater than N = 2048, the fraction is still small enough to speed up the algorithm without compromising its efficiency. The efficiency of the algorithm recalled above can be improved by introducing a backtracking strategy. We refer to [43] and references therein for a complete explanation of this strategy. 18 A.3.4 Message Passing algorithms for q-col 
+
+Given the q-col energy in eq. (2), the interaction between nearest neighbors xi and xj is associated to a Boltzmann weight ψij (xi, x j ) ∝ e−βδ xixj and the cavity equations read [71] 
+
+ηi→j (xi) = 1
+
+Zi→j
+
+Y
+
+> k∈∂i \j
+
+[1 − (1 − e−β )ηk→i(xi)] (7) where Zi→j is a normalization term that ensures Pqsi=1 ηi→j (xi) = 1. We are interested in the problem of perfect coloring that correspond to the limit β → ∞ of cavity equations 
+
+ηi→j (xi) = 1
+
+Zi→j
+
+Y
+
+> k∈∂i \j
+
+[1 − ηk→i(xi)] (8) Given an instance of the q-col problem, so a graph G(V, E ) and the number q of available colors, we initialize random normalized cavity messages ηi→j (xi) and we update them with eq. (8). A single update of all messages for each node of the graph is one Belief Propagation (BP) step. We repeat BP steps until convergence or a maximum time. In the BP algorithms for coloring, we considered convergence achieved if the sum of all absolute differences of all cavity messages ηi→j (si)between two iterations is lower than a threshold ϵ = 10 −7. The maximum number of iterations was fixed at 10 3, so a fixed number for all N . At the end of the procedure, we can compute the distribution of marginals for each node of the graph 
+
+ηi(xi) = 1
+
+Zi
+
+Y
+
+> j∈∂i
+
+ηj→i(xi) (9) and we need a procedure to assign a color to each node. One procedure is Decimation, analogous to the decimation procedure used for the SP algorithm in the K-SAT problem, while in the Supple-mentary Information we also test the Reinforcement procedure, that results to be less efficient. The Decimation procedure consists in fixing the color of some variables after the convergence of BP procedure, according to the obtained marginals, producing a new coloring problem on the subgraph of non-fixed variables. For more details and variants see [72] and [73]. In this work, we used the so-called maximum rule : after BP procedure on the starting graph of 
+
+Nt=0 = N nodes, we select the most polarized node that is the one with the biggest value of a marginal ηi(xi). We fix node i to that color xi, and we enforce ηj (xi) and ηj→k(xi) to be zero from now on if j is a neighbour of i. Then, we remove node i from equations, and we repeat the BP procedure for the subgraph of Nt − 1 nodes until Nt = 1. It is possible that after some decimation assignments, we arrive at a situation in which for a given variable i the marginals for all colors have been fixed to zero. In such cases, it means that the decimation algorithm will not find a solution to the problem with zero errors; we assign a random color to node i and we continue the algorithm, in such a way to minimize the number of errors of the algorithm. In this way, we need N decimation assignments to fix all nodes, and each assignment requires a time proportional to N , meaning that decimation has a time complexity O(N 2). It is possible to fix a number of nodes proportional to N with each decimation assignment to decrease time complexity to O(N ), but we find that the ability of the algorithm to obtain solutions with zero error drastically decreases in this case 
+
+## A.4 GNNs 
+
+Graph Neural Networks (GNNs) encompass a group of artificial neural networks that can learn a representation of graph data by locally aggregating the information present within said structures. They implement appropriate inductive biases that enforce geometric properties that are natural to a graph, compared to normal Neural Networks. A prime example of such a property that is also important for our purposes is learning graph-level functions that are invariant to the ordering of the nodes. Concretely, for two isomorphic graphs (that have the same number of nodes, edges, and connectivity), the output of the learned function should be identical. To describe these architectures, it is useful to provide some additional details and notation regarding graph data. A graph G can be defined as a tuple G = ( V, E ) where V is the set of nodes, with a cardinality |V | = N , and E ⊂ V × V is the set of edges. It is common for graphs to have node features, i.e., attributes associated with each node X ∈ RN × d. The same can be true for edge 19 features. The structure of a graph is usually represented through an adjacency matrix A ∈ RN ×N ,where Aij ̸ = 0 indicates that nodes vi and vj are connected with a weight Aij and Aij = 0 otherwise. In the case of unweighted and undirected connections, the adjacency matrix is binary and symmetric, i.e., A ∈ { 0, 1}N ×N . For exposition purposes, we will focus on the latter, but GNNs defined in this setting can be easily extended to deal with other connectivity structures, such as the ones describing CSP problems, which will be detailed later. A GNN layer can be compactly described in matrix form through the following equation: 
+
+X(k) = σ(AX (k−1) W (k)), (10) where W (k) represents the weights of the k-th layer, and σ(·) is an (optional) pointwise nonlinearity. This is, of course, a simplified and general representation that can be modified in different ways. Common examples include learnable adjacency matrices, where the adjacency matrix A(k) is layer-dependent, or modified shift operators (instead of simply multiplying by A). The above operation can be written in a message-passing form that provides a clear understanding of the nature of these learning algorithms: 
+
+x(k) 
+
+> i
+
+= θ(k)
+
+x(k−1)  
+
+> i
+
+, M
+
+> j∈S1(i)
+
+ϕ(k) 
+
+x(k−1)  
+
+> i
+
+, x (k−1)  
+
+> j
+
+, e ji 
+
+ , (11) where x(k) 
+
+> i
+
+denotes node features of node xi in layer k, eji denotes (optional) edge features from node j to node i, L denotes a differentiable permutation invariant function (e.g., sum, mean, min, or max), S1(i) denotes the 1-hop neighbors of node i, and ϕ, θ denote differentiable and (optionally) nonlinear functions such as Multi Layer Perceptrons (MLPs). 
+
+GNNs as SAT solvers. GNNs are of interest as SAT solvers because any given SAT problem formalized through a CNF formula can be translated into a bipartite, undirected graph [74]. Due to the NP-completeness of the SAT problem, solutions to other CSP problems can be solved through these networks by reducing the problem of interest (such as q-col) into a SAT problem and then building the corresponding bipartite graph. A bipartite graph is one whose vertices are partitioned into two separate and non-overlapping sets V and V ′, and every edge connects a vertex in V to one in V ′. Given a SAT problem with N variables and M clauses, we consider a bipartite graph formulation represented through a {0, 1}2N ×M incidence matrix. An edge in such a graph indicates the presence of a literal in a clause. Concurrent work in GNN benchmarking for SAT problems refers to this structure as a Literal-Clause Graph (LCG) [39]. Following this structure, the authors of [39] provide the following general message-passing scheme: 
+
+h(k) 
+
+> c
+
+= UPD 
+
+
+
+AGG 
+
+> l∈S1(c)
+
+n 
+
+MLP 
+
+
+
+h(k−1) 
+
+> l
+
+o 
+
+, h (k−1) 
+
+> c
+
+
+
+,h(k) 
+
+> l
+
+= UPD 
+
+
+
+AGG 
+
+> c∈S1(l)
+
+n 
+
+MLP 
+
+
+
+h(k−1) 
+
+> c
+
+o 
+
+, h (k−1)  
+
+> ¬l
+
+, h (k−1) 
+
+> l
+
+
+
+,
+
+(12) where hl and hc are d-dimensional embedding for every literal and clause node respectively, MLP is the multi-layer perception, UPD( ·) is the update function, and AGG( ·) is the aggregation function. In the following subsections we provide the specific implementations of these equations which we use as neural solvers. 
+
+A.4.1 NeuroSAT 
+
+In NeuroSAT [75], the authors propose to operate on the LCG graph and parametrize the model using two (learnable) vectors ( Linit , Cinit ), three multilayer perceptrons ( Lmsg , Cmsg , Lvote ) and two layer-norm LSTMs [76, 77] ( Lu, Cu). At every time step t, a matrix L(t) ∈ R2N ×d contains the embedding for the literals and a matrix C(t) ∈ RM ×d contains the embedding for the clauses initialized by tiling Linit and Cinit respectively. The LSTM hidden states for Lu and Cu are given by L(t) 
+
+> h
+
+∈ R2N ×d and C(t) 
+
+> h
+
+∈ RM ×d, both initialized to zero. Finally, let Flip be the operator that takes the matrix L and swaps each row of L with the row corresponding to the literal’s negation. A single iteration of NeuroSAT consists of applying the following message passing updates: (C(t+1) , C (t+1)  
+
+> h
+
+) = Cu([ C(t) 
+
+> h
+
+, M ⊤Lmsg (L(t))]) (L(t+1) , L (t+1)  
+
+> h
+
+) = Lu([ L(t) 
+
+> h
+
+, Flip( L(t)), M Cmsg (C(t+1) )]) (13) 20 After T iterations, L(T ) 
+
+> ∗
+
+= Lvote (L(T )) ∈ R2N is computed, which contains a single scalar for each literal that can be thought of as the literal’s vote. It is easy to see the correspondences between eqs. (13) and (12). To train the network, we use both supervised and unsupervised loss functions. In the supervised case, for a given SAT problem ρ we first average over the literals to get variable-level votes ˆ y(T ) 
+
+> ρ
+
+=
+
+L(T ) 
+
+> ∗
+
+∈ RN and then minimize the binary cross-entropy loss between the predicted assignment ˆ y(T )
+
+> ρ
+
+and the true assignment y(T ) 
+
+> ρ
+
+, given by a SAT solver: 
+
+LSup = − 1
+
+N
+
+> N
+
+X
+
+> i=1
+
+h
+
+y(T ) 
+
+> ρi
+
+log(ˆ y(T ) 
+
+> ρi
+
+) + (1 − y(T ) 
+
+> ρi
+
+) log(1 − ˆy(T ) 
+
+> ρi
+
+)
+
+i
+
+. (14) The unsupervised loss function on the other hands is defined as in [44]: 
+
+Vc(x) = 1 − Y
+
+> i∈∂c +
+
+(1 − xi) Y
+
+> i∈∂c −
+
+xi,
+
+LUnsup (x) = − log 
+
+Y 
+
+> c∈ρ
+
+Vc(x)
+
+
+
+= − X
+
+> c∈ρ
+
+log ( Vc(x)) ,
+
+(15) where ∂c + and ∂c − are the sets of variables (in positive and negative form respectively) that occur in the clause c of the problem ρ. This loss can be though of as an energy function that reaches 0 only when the prediction x is a satisfying assignment, thus its minimization can help to construct a possible satisfying assignment without supervision. We would like to conclude this subsection by stating that the loss function in eq. (15) is the same one used to train the QuerySAT model [44], which will be described in the following subsection. 
+
+A.4.2 QuerySAT 
+
+One issue with NeuroSAT [75] is that the model only produces one assignment, which is then used to evaluate the loss at training time. Therefore, the feedback on properly minimizing the problem’s energy only comes implicitly from the negative gradient of the training loss during backpropagation. In contrast, QuerySAT [44] is designed to iteratively refine its solution by producing assignments multiple times and receiving explicit feedback in the form of loss values or gradients. Specifically, QuerySAT is a step-wise recurrent neural network-based SAT solver that operates iteratively. At each step, it generates a query by proposing variable assignments, evaluates the query using the unsupervised loss function in eq. (15), and updates its internal state based on the evaluation results. Throughout the iterative process, QuerySAT produces a target solution that integrates information from all queries performed so far. The query mechanism is defined as follows: (q, h ) = N N A(sr )
+
+e = loss (q)(sr+1 , l ) = N N B (h, e, ∇q e)
+
+L = loss (l),
+
+where N N A is the first network layer that generates the query q and hidden state h from the current state sr . The query is evaluated using an unsupervised loss function, producing evaluation results e. The second layer, N N B , processes h, e, and (optionally) the gradient ∇q e to update the state sr+1 and produce the output logits l, which are subsequently used to compute the final loss 
+
+L. An interesting feature of this framework is that the same loss function can be used for query evaluation and model training, but the two can also differ. In the original implementation and our benchmarking experiments, we use the unsupervised loss in eq. (15) for both query evaluation and model training. Leveraging the query mechanism along with the unsupervised loss function serves two key pur-poses: (a) when queried with integer variable assignments, it provides feedback on the satisfiability status of the proposed solution; (b) when queried with fractional (real-valued) assignments, it uncov-ers structural insights about the problem instance. This functionality allows QuerySAT to extract comprehensive information about the problem’s underlying structure, semantics, and solutions. In conclusion, QuerySAT is a more advanced version of NeuroSAT, with the difference between the two being the aforementioned query mechanism (when both models are trained in an unsupervised fashion). We conclude this section by stating that the original code provided by the authors [44] did 21 not function on SAT-reduced q-coloring problems for reasons we were not able to figure out. This being the case, we had to reimplement the architecture using the same framework as NeuroSAT [39]. Additional details on our implementation can be found in sec. 7 of the Supplementary Information. 
+
+A.4.3 rPI-GNN 
+
+The canonical problem in statistical physics consists in finding the properties of a highly dimensional system with N variables x = {x1, x 2, . . . , x N } for which one knows the shape of the energy E(x), provided that N is large and that the possible configurations of the variables follow the Boltzmann distribution P (x) = exp( −βE (x)) /Z . The solution should be found in general for any value of the parameter β, which is the inverse of the physical temperature. Having this in mind, the most common approach in physics to combinatorial optimization prob-lems is to define a suitable energy, or cost function, and consider the zero temperature limit of the Boltzmann distribution. This line of reasoning has given several theoretical [78, 66, 79, 50, 32] and more practical [53, 67, 43] applications. More recently, this has also extended to the design of new machine learning algorithms. The Refs. [23, 45] introduced physically-inspired graph neural network (PI-GNN) to solve classical combinatorial optimization problems such as maximum cut and q-col. The q-col, already described in Section A.1, is defined over a simple graph. Each variable xi is associated with the node of index i and can take all the integer values between 0 and q − 1, and the usual choice for the energy function is the one in eq. (2). The algorithm in Ref. [45] uses a graph neural network to assign values to the variables xi
+
+while aiming to optimize the energy E(x). Similarly to the aforementioned GNN-based models, this is done by following the node feature update eq. (12) and then using a readout layer that outputs predictions for the variables. The difference is that the energy function used for training is a soft version of eq. (2), where each variable is encoded in L1-normalized vectors vi ∈ [0 , 1] q with continuous components vai (a = 1 , . . . , q ), defined as: 
+
+L(v) = J X
+
+> ⟨ij ⟩
+
+vi · vj (16) To recover hard assignments for the variables, the model’s output is passed to the argmax function, i.e., xi = argmax a vai .In general, the design for the GNN in Ref. [45] admits κ layers, although in practice they always use κ = 2. At each layer k there is a learnable node embedding hki , with k = 0 , . . . , κ − 1 and 
+
+i = 1 , . . . , N . The vector h0 
+
+> i
+
+is set initially at random and then also updated during the learning process. During the learning process, hki also changes with time, which justifies the use of a new index in the notation hki ≡ hk,t i . This is the embedding for the i-th vertex of the graph, at the k-th layer in the GNN, obtained after t iterations of the learning process. The authors of Ref. [45] recommend the GraphSAGE architecture [80] for the network’s layers. The outputs of the last aggregation step hκ,t i are set to have dimension q, and the application of a softmax function vi(t) = softmax hκ,t i ensures the normalization of the vectors vi(t). A dropout operation follows all the other aggregation steps. Although the original work on the PI-GNN highlights some promising results of this model, a recent independent preprint [81] introduced a crucial modification to the design that captured our attention. They concluded that the addition of a recurrence mechanism between the outputs of the last aggregation hκ,t i and the embedding in the first layer h0,t +1  
+
+> i
+
+noticeably improves the performance of the algorithm. Their algorithm is named QRF-GNN (QUBO-based Graph Neural Network with a Recurrent Feature). The reader can see our own direct comparison between the original PI-GNN and the QRF-GNN in the supplementary information. Unfortunately, the authors of Ref. [81] did not provide access to their code, so we had to implement our version. We will refer to it as recurrent PI-GNN (rPI-GNN). There should be very few differences between the rPI-GNN and the QRF-GNN, but we cannot be sure about some details since we limited ourselves to interpreting and trying to follow a pseudo-code provided in Ref. [81]. The one small modification that we are aware of is discussed in detail below. In practice, we simply added the recurrence mechanism to the original code published for the original PI-GNN [45], with GraphSAGE layers. We also optimized the computation of the energy in eq. (2), with positive impact on running times. To help the interested readers in the process of building their own program, we give here the pseudo-code for the network’s forward pass (see the Algorithm 2). 22 Algorithm 2 Forward propagation of the rPI-GNN at time t 
+
+> 1:
+
+Input:  
+
+> 2:
+
+G: the graph to color  
+
+> 3:
+
+ri: fixed initial features for all i = 1 , . . . , N  
+
+> 4:
+
+h2,t i : output of the last forward pass  
+
+> 5:
+
+h0,t +1  
+
+> i
+
+← [ri h2,t i ], for all i = 1 , . . . , N  
+
+> 6:
+
+for i = 1 , . . . , N do  
+
+> 7:
+
+nt+1  
+
+> ∂i
+
+← A1MEAN 
+
+  {h0,t +1  
+
+> j
+
+, ∀j ∈ ∂i}  
+
+> 8:
+
+nt+1  
+
+> i
+
+← θ  W 1 · [h0,t +1  
+
+> i
+
+nt+1  
+
+> ∂i
+
+]  
+
+> 9:
+
+ut+1  
+
+> ∂i
+
+← A1POOL 
+
+  {h0,t +1  
+
+> j
+
+, ∀j ∈ ∂i}  
+
+> 10:
+
+ut+1  
+
+> i
+
+← θ  W 2 · [h0,t +1  
+
+> i
+
+ut+1  
+
+> ∂i
+
+]  
+
+> 11:
+
+end for  
+
+> 12:
+
+{nt+1  
+
+> i
+
+} ← BN 1  {nt+1  
+
+> i
+
+}  
+
+> 13:
+
+{ut+1  
+
+> i
+
+} ← BN 2  {ut+1  
+
+> i
+
+}  
+
+> 14:
+
+for i = 1 , . . . , N do  
+
+> 15:
+
+h1,t +1  
+
+> i
+
+← θ(nt+1  
+
+> i
+
++ ut+1  
+
+> i
+
+) 
+
+> 16:
+
+h1,t +1  
+
+> i
+
+← DROPOUT   h1,t +1 
+
+> i
+
+ 
+
+> 17:
+
+h2,t +1  
+
+> ∂i
+
+← A2MEAN 
+
+  {h1,t +1  
+
+> j
+
+, ∀j ∈ ∂i}  
+
+> 18:
+
+h2,t +1  
+
+> i
+
+← θ  W 3 · [h1,t +1  
+
+> i
+
+h2,t +1  
+
+> ∂i
+
+]  
+
+> 19:
+
+end for  
+
+> 20:
+
+return {h2,t +1  
+
+> i
+
+}
+
+where 
+
+• ri is a random vector with Gaussian components and dimension dr .
+
+• [ab ] is the concatenation of the vectors a and b
+
+• ∂i is the neighborhood of the node i in the graph G.
+
+• A1MEAN (·) and A2MEAN (·) perform the mean aggregation, and A1POOL (·) performs pool aggre-gation [80]. Each, with its own learnable parameters, receives a set of vectors and returns one aggregated vector. 
+
+• W 1, W 2, and W 3 are weight matrices whose components are also learnable. 
+
+• BN 1(·) and BN 2(·) perform batch normalization and also introduce learnable parameters [82]. 
+
+• θ(·) is a non-linear function. In our case, we used the RELU. 
+
+• nt+1  
+
+> i
+
+, ut+1  
+
+> i
+
+, nt+1  
+
+> ∂i
+
+, ut+1  
+
+> ∂i
+
+, and h2,t +1  
+
+> ∂i
+
+, are auxiliary vectors, and the operation nt+1  
+
+> i
+
++ ut+1  
+
+> i
+
+is an element-wise sum of their components. 
+
+• DROPOUT( ·) indicates the well-known dropout operation. In fact, the only difference between the QRF-GNN and our rPI-GNN should be in the structure of the fixed inputs ri. They tried several configurations and recommend setting ri as a combination of random and pagerank inputs [81]. For simplicity, we decided to take only random inputs, guided also by the results in Ref. [81], which suggest that this detail is not of crucial importance. The hyperparameters were chosen as in Ref. [81]: dimension of the random input dr = 10; dimension of the hidden layer dh = 50; dropout dout = 0 .5; learning rate lr = 0 .014. Notice that the training process of the rPI-GNN is done independently for each instance of the problem. In this aspect, the rPI-GNN is more similar to classical algorithms, such as simulated annealing, than to traditional neural networks. There is no train/test scheme. Instead, the algorithm runs until it finds a solution or reaches a maximum number of epochs. To obtain the best performance we could from the rPI-GNN, we chose to scale the maximum number of epochs nep max with the system size N . Indeed, as the graphs become larger, the rPI-GNN needs more epochs to converge to the solution. The Supplementary information contains some evidence that suggests scaling the number of epochs at least linearly with the number of nodes N .Therefore, for all N , we use the scaling nep max = 100 N .23 A.5 Computation of the Score 
+
+In order to compute the per-algorithm Scores (S) reported in Table 1, we proceed as follows. For each instance of any problem in the test set, we run all our algorithms, with hyperparameters as reported in Table 1. Moreover, we also run longer runs of FMS for both SAT and COL, with 1000N and 6250N iterations, respectively. We classify an instance as satisfiable if any of these algorithms finds a solution (i.e. a zero energy configuration). We call nsat the number of satisfiable instances for each problem. For the in-distribution ( N ≤
+
+256) test dataset, nsat is reported, along with the total number of instances, in Table 4. 
+
+ntot nsat 
+
+3-SAT 42000 28656 4-SAT 21000 19806 3-col 20000 11750 5-col 20000 9184 Table 4: The total number of instances and the number of satisfiable ones for each (in-distribution, 
+
+N ≤ 256) test dataset. The Score for each algorithm is then computed as the number of instances for which the algorithm finds a solution, divided by nsat . In other words, the Score is the fraction of satisfiable instances that the algorithm is able to solve. 
+
+# B Supplementary Information for ”Benchmarking Graph Neu-ral Networks in Solving Hard Constraint Satisfaction Prob-lems” 
+
+## B.1 Algorithmic thresholds from the crossing of the residual energy 
+
+In the main text, we performed our analysis for the performances and the algorithmic thresholds of different algorithms, mainly looking at the probability of success. In this appendix, we show that one can indeed perform the same analysis also looking at the average extensive energy of the best configuration found for each instance by the algorithm: this energy will be 0 if the algorithm finds a solution, while it is larger than 0 otherwise. In Fig. 4 we show the results for the average extensive energy found by different algorithms for fixed sizes of the problem N = 256 and N = 1024, analogously to what is shown in Fig. 1 of the main text for the success probability. Again, one can extract the algorithmic threshold for each algorithm looking at the crossing of the extensive energy curves at different sizes (see ref. [38] for a careful determination of the algorithmic threshold using the extensive energy for the SA algorithm in the K-SAT problem) 
+
+## B.2 Score values for larger N problems 
+
+In the main text we have shown the score and the residual energy computed on the in-distribution testing set. In this section, in table 5 we show the score and the residual energy computed on the out-of-distribution testing set, that comprehends instances of sizes N ∈ { 512 , 1024 , 2048 , 4096 , 8192 , 16384 }.While we do not expect the GNNs reaching good results because they are used in this case out of distribution, we believe that the results of classical algorithms on these sizes can be a good bench-mark for future neural solvers developed for solving these problems at large sizes, going beyond the actual state-of-the-art. 
+
+## B.3 Performance of classical algorithms for larger problems 
+
+In Fig. 5 we show the behaviour of SP and FMS for large size instances, for SAT and col problems. In particular, we show the probability of success of the algorithms and the average intensive energy for sizes N ∈ { 4096 , 8192 , 16384 }. In the large N limit it is easy to extract the algorithmic threshold from these data because the probability of success tends to a step function while the intensive energy is strictly zero below the algorithmic threshold. SP and FMS are the best algorithms among the ones that we tested in this work and their performances do not degrade going at large N (in the case of SP 24 3.00 3.25 3.50 3.75 4.00 4.25 4.50 4.75 5.00 
+
+10 2
+
+10 1
+
+10 0
+
+10 1
+
+> E
+
+FMS 
+
+NeuroSAT 
+
+SA 
+
+QuerySAT (a) 3-SAT N=256 3.00 3.25 3.50 3.75 4.00 4.25 4.50 4.75 5.00 
+
+10 2
+
+10 1
+
+10 0
+
+10 1
+
+> E
+
+FMS 
+
+NeuroSAT 
+
+SA 
+
+QuerySAT (b) 3-SAT N=1024 8.00 8.25 8.50 8.75 9.00 9.25 9.50 9.75 10.00 
+
+10 2
+
+10 1
+
+10 0
+
+> E
+
+FMS 
+
+NeuroSAT 
+
+SA 
+
+QuerySAT 
+
+(c) 4-SAT N=256 8.00 8.25 8.50 8.75 9.00 9.25 9.50 9.75 10.00 
+
+10 2
+
+10 1
+
+10 0
+
+10 1
+
+> E
+
+FMS 
+
+NeuroSAT 
+
+SA 
+
+QuerySAT (d) 4-SAT N=1024 3.4 3.6 3.8 4.0 4.2 4.4 4.6 4.8 5.0 
+
+c
+
+10 2
+
+10 1
+
+10 0
+
+10 1
+
+> E
+
+BP 
+
+FMS 
+
+SA 
+
+rPI-GNN 
+
+QuerySAT 
+
+(e) 3col N=256 3.4 3.6 3.8 4.0 4.2 4.4 4.6 4.8 5.0 
+
+c
+
+10 2
+
+10 1
+
+10 0
+
+10 1
+
+10 2
+
+> E
+
+BP 
+
+FMS 
+
+SA 
+
+rPI-GNN 
+
+QuerySAT (f) 3col N=1024 10.0 10.5 11.0 11.5 12.0 12.5 13.0 13.5 
+
+c
+
+10 2
+
+10 1
+
+10 0
+
+10 1
+
+10 2
+
+> E
+
+BP 
+
+FMS 
+
+SA 
+
+rPI-GNN 
+
+QuerySAT 
+
+(g) 5col N=256 10.0 10.5 11.0 11.5 12.0 12.5 13.0 13.5 
+
+c
+
+10 2
+
+10 1
+
+10 0
+
+10 1
+
+10 2
+
+> E
+
+BP 
+
+FMS 
+
+SA 
+
+rPI-GNN 
+
+QuerySAT (h) 5col N=1024 
+
+Figure 4: Average extensive energy of the best proposed configuration using different algorithms at fixed size ( N = 256 on the left and N = 1024 on the right) for the K-sat ( K = 3 , 4) and q-coloring ( q = 3 , 5) problems. We focus on two sizes: N = 256 is the largest size in the training set, and N = 1024, which is out-of-distribution, to check the generalization power of GNN. 25 SAT K = 3; S ↑ K = 4; S ↑ K = 3; RE ↓ K = 4; RE ↓                                                    
+
+> NeuroSAT 84.48 47.52 0.0032 0.0009 QuerySAT 92.838 66.57 0.0028 0.0005 FMS 99.98 95.15 0.0028 0.0002
+> SA 98.75 82.61 0.0025 0.0005 SP + dec. 82.28 60.2 --
+> col q= 3; S ↑q= 5; S ↑q= 3; RE ↓q= 5; RE ↓
+> QuerySAT 58.86 7.85 0.0028 0.0060 rPI-GNN 92.49 73.21 0.0046 0.0020 FMS 99.96 98.07 0.0027 0.0007
+> SA 90.25 79.45 0.0031 0.0011 BP + dec. 78.47 48.17 0.0414 0.0353
+
+Table 5: Score (S) and Residual Energy (RE) reached by each algorithm for large N . The score in this case is the percentage of solved instances over the sat ones in the out-of-distribution dataset ( N = 512 and N = 1024, for all α or c values). An instance is considered sat if at least one among the analyzed algorithms found a solution. The ratio of sat instances n sat /ntot for the various problems is 10480/16800 (3-SAT), 9940/12400 (4-SAT), 6284/8000 (3-col) 7196/8000 (5-col). The running steps are 1000 N for SA, 100 N for FMS in the K-SAT problem, and 1000 N for SA, 625 N for FMS in the q-col problem. The number of recurrent iterations is 2 N for NeuroSAT and QuerySAT. Best results are in bold. the performances increase with the size of the problem). For these values of N the GNNs analyzed in this work do not reach such good results because they are used in this case out of distribution. However we reported the results of classical algorithms on these sizes because we believe they could be a good benchmark for future neural solvers developed for solving these problems at large sizes, going beyond the actual state-of-the-art. 
+
+## B.4 Different scalings of solving times with problem size 
+
+In this appendix, we provide evidence that the typical running times for finding solutions to hard CSP may scale differently with the problem size N , depending on the parameter α or c, controlling the hardness of the problem. Evidence for this claim has already been published in Ref. [38] for the SA algorithm. Here, we strengthen such a claim by showing data for the FMS algorithm solving random 5-coloring problems and providing a more direct and clear analysis. While the data presented in the main text has been obtained by running the solving algorithms for a maximum number of iterations, here we present data obtained by running the FMS algorithm without any time limitation. This is a crucial aspect: on the one hand, without time limitations, we are sure to measure the right time to solutions; on the other hand, we would be in trouble running such a limitless algorithm on an instance which is unsat/uncol, i.e. without any zero energy configuration (as the algorithm would never stop). We solve the latter problem by using planted 
+
+instances [83], which are as hard as the random instances, but possess at least one solution, the one planted at the time of generating the instance. We check a posteriori that the solutions found by FMS are orthogonal to the planted one in the large N limit, implying the FMS algorithm has not exploited the presence of the planted solution in the range of values of c we have explored. One more difference with the data presented in the main text is the number of instances. Here we use 10 , 000 instances for any chosen value of c to reduce the statistical uncertainty on the mea-surements. In Fig. 6, we plot the typical time, measured as the number of iterations, required by FMS to find a solution in random 5-coloring problems. One iteration is defined as N attempts to update a single variable. We plot the logarithm of the typical (i.e. median) time, after having checked that it coincides with the average over instances of log( t), with t being the time each run takes to find a solution. We have chosen 3 values of the connectivity c = 12 .5, 13.0, and 13.5, corresponding to different hardness regimes. For c = 12 .5 we are in the easy phase (for the FMS algorithm, but not for other algorithms), and the time to find a solution converges in the large N limit to a constant, indicated by the horizontal line in the figure. The curve interpolating the data, taking finite-size corrections into account, is 8.07 − 48 .4 N −0.56 .For c = 13 .0 we are very close to the algorithmic threshold, and now the time to solve the problem needs to be scaled with the problem size. The best fitting curve that interpolates the data, including finite-size corrections, is 0 .92 log( N ) + 3 .125 − 6.41 exp( −pN/ 68 .6). The asymptotic scaling log( ttyp ) ∼ 0.92 log( N ) =⇒ ttyp ∼ N 0.92 suggests that scaling running times linearly with 
+
+N , as done in the present work, is optimal to reach this regime of values of c (which would be unreachable without scaling running time with problem size). Finally, for c = 13 .5 we are in the regime where super-polynomial times are required to find a solution. The data are well fitted by a simple power law, implying a growth of typical running times 26 3.00 3.25 3.50 3.75 4.00 4.25 4.50 4.75 5.00 
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+0.8 
+
+1.0 
+
+> P
+
+N=4096 
+
+N=8192 
+
+N=16384 (a) SP on 3-SAT - Solving probability 3.00 3.25 3.50 3.75 4.00 4.25 4.50 4.75 5.00 
+
+10 0
+
+10 1
+
+10 2
+
+10 3
+
+10 4
+
+> E
+
+N=4096 
+
+N=8192 
+
+N=16384 (b) SP on 3-SAT - Extensive energy 8.00 8.25 8.50 8.75 9.00 9.25 9.50 9.75 10.00 
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+0.8 
+
+1.0 
+
+> P
+
+N=4096 
+
+N=8192 
+
+N=16384 
+
+(c) SP on 4-SAT - Solving probability 8.00 8.25 8.50 8.75 9.00 9.25 9.50 9.75 10.00 
+
+10 1
+
+10 2
+
+10 3
+
+10 4
+
+> E
+
+N=4096 
+
+N=8192 
+
+N=16384 (d) SP on 4-SAT - Extensive energy 3.4 3.6 3.8 4.0 4.2 4.4 4.6 4.8 5.0 
+
+c
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+0.8 
+
+1.0 
+
+> P
+
+N=4096 
+
+N=8192 
+
+N=16384 
+
+(e) FMS on 3-COL - Solving probability 3.4 3.6 3.8 4.0 4.2 4.4 4.6 4.8 5.0 
+
+c
+
+10 0
+
+10 1
+
+10 2
+
+> E
+
+N=4096 
+
+N=8192 
+
+N=16384 (f) FMS on 3-COL - Extensive energy 10.0 10.5 11.0 11.5 12.0 12.5 13.0 13.5 
+
+c
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+0.8 
+
+1.0 
+
+> P
+
+N=4096 
+
+N=8192 
+
+N=16384 
+
+(g) FMS on 5-COL - Solving probability 10.0 10.5 11.0 11.5 12.0 12.5 13.0 13.5 
+
+c
+
+10 1
+
+10 0
+
+10 1
+
+10 2
+
+> E
+
+N=4096 
+
+N=8192 
+
+N=16384 (h) FMS on 5-COL - Extensive energy 
+
+Figure 5: Solving probability and corresponding extensive energy for the FMS and SP algorithms on problems with large values of N .27 36912 15 200 400 800 1600 3200 6400 0.931 N 0.415 
+
+# 0.92 log( N )
+
+> log( ttyp ) ≈ 〈 log( t)〉
+
+# N
+
+c=13.5 c=13.0 c=12.5 Figure 6: Typical number of iterations required by the FMS algorithm to find a solution to random 5-coloring problems at different values of the average connectivity c.like ttyp ∼ exp(0 .931 N 0.415 ). The results presented in this appendix provide direct and strong evidence that running times to find solutions in hard CSP cannot be kept constant and need to be scaled with the problem size if one wants to approach the algorithmic threshold and find solutions even in the hard regime. 
+
+## B.5 Other results for PI-GNN 
+
+This appendix includes some numerical results to support our choices for the implementation of the rPI-GNN (see subsection 3.4.3 of the main text). First, the Fig. 7 compares the performances of the original PI-GNN [45] and the rPI-GNN in the 3-coloring problem. As in the main text, the graphs are sampled from the Erd¨ os-Renyi ensemble and the training is done independently for each one of them. As pointed out in Ref. [81], the recurrence mechanism considerably improves the performance of the model. On the other hand, the Fig. 8 shows that the number of epochs needed to solve the 3-coloring increases with the system size N . The behavior of the large systems indicates a polynomial growth with a power that depends on the connectivity. These results lead us to scale the maximum number of epochs (nep max ), after which the rPI-GNN halts, linearly with N . We used the law nep max = 100 N
+
+for all system sizes. 
+
+## B.6 Reinforcement algorithm 
+
+Reinforcement algorithm, introduced in [84] consists in a modification of BP procedure itself, which will naturally produce greatly polarized marginals from which it is straightforward to assign colors to nodes. We modify the Belief Propagation eq. (8) in the main text inserting reinforcement fields μi(xi) to each node 
+
+μi(xi) = Y
+
+> k∈∂i
+
+[1 − ηk→i(xi)] 
+
+ηi→j (xi) = μi(xi)(1 −γt)
+
+Zi→j
+
+Y
+
+> k∈∂i \j
+
+[1 − ηk→i(xi)] (17) where we have already written reinforcement fields in the limit β −→ ∞ . γt changes during iterations as γt = γt/dt , with γ = 1 − ϵ being ϵ a small, positive constant and dt = O(1), and t the BP step we have arrived during iteration. We found γ = 0 .99 and dt = 10 the best choice we have tried during preliminary tests. What matters is that the effect of those fields μi is smoothly increased during BP iterations, some different implementations of time scheduling can be found in [85] and [86]. 28 0     
+
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1
+> 2.5 33.5 44.5 5
+> q=3
+> cd
+> P(sol) c
+> PI-GNN N=128
+> PI-GNN N=256
+> rPI-GNN N=128
+> rPI-GNN N=256
+
+Figure 7: Comparison between the original PI-GNN and the recurrent version rPI-GNN in the 3-coloring problem. Each instance is defined over an Erd¨ os-R´ enyi graph with mean connectivity c. The figure shows the fraction of solved instances for different mean connectivities and two system sizes: 
+
+N = 128 and N = 256. The models are trained only once for each graph, with a single initial choice of the fixed random input (see Algorithm 2 in the Main text). Each point was obtained analyzing the results of between 50 (for large c) and 400 (for small c) different graphs. The dynamical spin-glass transition is known to occur at cd = 4. When t = 0, (1 − γt) is zero and reinforcement fields have no effect. Then during BP iterations their effect increases, polarizing cavity messages up to a point where all marginals are all approximately 0 or 1, and we consequently assign colors to variables. Since we are running BP procedure only once, fixing a maximum iteration time, γ and dt , the time complexity is O(N ) due to ∝ N updates for each BP step. The results of the reinforcement algorithm in this setting are reported in Fig. 9. One can see that the performances are not good compared with other analyzed algorithms. Moreover, the curves of the probability of success move towards left when N is growing at variance with other good algorithms like SA, FMS or QuerySAT for which the curves cross at the algorithmic threshold for different sizes. This is probably due to the fact that the reinforcement algorithm, as introduced in this section is run for a time that scales linearly with N , while for any other algorithm analyzed in this paper, we let the time scaling quadratically with the system size. To use Reinforcement with a quadratic scaling it is not sufficient to run it for a maximum iteration time that scales with N . In fact, the behaviour of the algorithm is mainly controlled by the parameters γ and dt : given chosen values for γ and dt , the algorithm will produce polarized marginals after a certain average iteration time T (γ, dt ), while running it for a longer time does not improve the results. If one wants to run Reinforcement for a time that scales quadratically with the system size, one should use size dependent parameters γ(N ) and dt (N ) such that T (γ(N ), dt (N )) = O(N ). This is outside the focus of this paper, for this reason we did not include the Reinforcement algorithm in the main text. 
+
+## B.7 QuerySAT for coloring 
+
+As mentioned in the main manuscript, the original QuerySAT implementation did not work on SAT reductions of our q-coloring problems. The solver would output null solutions and was not able to minimize the training loss for a variety of different hyperparameters which we tested. We decided therefore to re-implement the model under the G4SATBench framework [39] which relies on PyTorch-Geometric [87] and PyTorch-Lightning [88], same as for NeuroSAT. We tried to stay as faithful as possible to the original implementation, using same feature initialization scheme, optimizer, loss normalization and gradient query mechanism. Due to the original code being written in the first version of TensorFlow, there are naturally some disparities, with the biggest one being in the gradient clipping procedure. Namely, the authors of QuerySAT use the AdaBelief optimizer [89], whose early TensorFlow implementation provides an automatic dynamic clipping procedure that can be used during training. This functionality was discontinued and not implemented in modern PyTorch versions, which are the ones we utilize, so we rely on norm-based gradient clipping, as done for NeuroSAT. Given that the gradients are also used for the queries, this can alter training 29 1000   
+
+> 10000
+> 100000
+> 1×10 6
+> 100 1000 10000
+> q=3 nep
+> N
+> c=3.50
+> c=3.68
+> c=3.86
+> ~ N 0.69
+> ~ N 1.08
+> ~ N 1.31
+
+Figure 8: Average number of epochs ( nep ) needed to find a solution in the 3-coloring problem for different system sizes N . Both axes are in logarithmic scale. Each instance is defined over an Erd¨ os-R´ enyi graph with mean connectivity c. The figure shows the results for three connectivities: c = 3 .5, 3.68, and 3 .86. The models are trained only once for each graph, with a single initial choice of the fixed random input (see Algorithm 2 of the main text). The lines are fitted only to the data points with N ≥ 1024 and the polynomial growths have exponents 0 .691 ±0.015, 1 .08 ±0.02, and 1 .31 ±0.02 for the mean connectivities c = 3 .5, 3 .68, and 3 .86, respectively. The results are averaged over 400 instances ( N ≤ 8192), or at least 10 (for N = 32768, c = 3 .86). The statistics is performed only on instances that were solved by the algorithm, which is not a problem since the rPI-GNN solves almost all the studied instances when c ≤ 3.86 dynamics, but we decided to not look into this aspect for the sake of simplicity. The complete implementation details can be found in our repository. As shown in the main manuscript, our modern implementation is able to extract solutions on the SAT reductions of our q-coloring problems, thereby being more successful than the original implementation. Nevertheless, performances are quite poor, which seems to indicate that there is more room for research in the effectiveness of neural SAT solvers when dealing with reductions of other CSPs in SAT form. We believe this is a promising avenue for future work. 30 3.00 3.25 3.50 3.75 4.00 4.25 4.50 4.75 5.00 
+
+C
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+0.8 
+
+1.0 
+
+> P
+
+Q=3 coloring, reinforcement 
+
+N=32 
+
+N=64 
+
+N=128 
+
+N=256 
+
+N=512 
+
+N=1024 
+
+N=2048 
+
+N=4096 
+
+N=8192 3.00 3.25 3.50 3.75 4.00 4.25 4.50 4.75 5.00 
+
+C
+
+10 2
+
+10 1
+
+10 0
+
+10 1
+
+10 2
+
+10 3
+
+> E
+
+Q=3 coloring, reinforcement 
+
+N=32 
+
+N=64 
+
+N=128 
+
+N=256 
+
+N=512 
+
+N=1024 
+
+N=2048 
+
+N=4096 
+
+N=8192 10.0 10.5 11.0 11.5 12.0 12.5 13.0 
+
+C
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+0.8 
+
+1.0 
+
+> P
+
+Q=5 coloring, reinforcement 
+
+N=32 
+
+N=64 
+
+N=128 
+
+N=256 
+
+N=512 
+
+N=1024 
+
+N=2048 
+
+N=4096 
+
+N=8192 10.0 10.5 11.0 11.5 12.0 12.5 13.0 
+
+C
+
+10 1
+
+10 0
+
+10 1
+
+10 2
+
+10 3
+
+> E
+
+Q=5 coloring, reinforcement 
+
+N=32 
+
+N=64 
+
+N=128 
+
+N=256 
+
+N=512 
+
+N=1024 
+
+N=2048 
+
+N=4096 
+
+N=8192 Figure 9: Results of BP + reinforcement algorithm over test dataset. 31

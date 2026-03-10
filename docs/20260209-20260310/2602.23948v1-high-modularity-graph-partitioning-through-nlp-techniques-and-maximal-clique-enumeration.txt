@@ -1,0 +1,674 @@
+Title: High-Modularity Graph Partitioning Through NLP Techniques and Maximal Clique Enumeration
+
+URL Source: https://arxiv.org/pdf/2602.23948v1
+
+Published Time: Mon, 02 Mar 2026 02:00:54 GMT
+
+Number of Pages: 27
+
+Markdown Content:
+# High-Modularity Graph Partitioning Through NLP Techniques and Maximal Clique Enumeration 
+
+# Marco D’Elia #
+
+Roma Tre University, Rome, Italy 
+
+# Irene Finocchi #
+
+Luiss Guido Carli, Rome, Italy 
+
+# Maurizio Patrignani #
+
+Roma Tre University, Rome, Italy 
+
+Abstract 
+
+Natural Language Processing (NLP) provides highly effective tools for interpreting and handling human language, offering a broad spectrum of applications. In this paper, we address a classic combinatorial problem – finding graph partitions with high modularity – by applying NLP techniques that compute term frequency and inverse document frequency (TF-IDF) alongside machine learning clustering algorithms. We present a new framework, called Clique-TF-IDF , designed for graph partitioning, a task that holds significant relevance across various network analysis contexts. This approach uses dense substructures of the graph, specifically maximal cliques, to represent each vertex in terms of the cliques it is part of, in a manner akin to term-document matrices. Experiments show that Clique-TF-IDF yields results that are comparable to or outperform the current state-of-the-art algorithms, whether or not the number of partitions is known in advance. Although this framework emphasizes on cliques and partitioning, it can be extended to devise AI-driven solutions for a variety of challenging combinatorial problems that can leverage efficiently enumerable substructures. 
+
+2012 ACM Subject Classification Theory of computation → Design and analysis of algorithms; Mathematics of computing → Graph algorithms 
+
+Keywords and phrases Term frequency-Inverse document frequency, Graph embedding, Hierarchical clustering, Graph partitioning 
+
+Funding This research was supported in part by MUR PRIN Projects EXPAND and NextGRAAL [grant numbers 2022TS4Y3N and 2022ME9Z78]. 
+
+# 1 Introduction 
+
+Community detection is a fundamental tool in network analytics, with widespread applications across various domains, including social networks, biology and bioinformatics, Internet and Web, recommendation systems, cybersecurity, transportation and infrastructure networks, financial networks, neuroscience, and criminal networks. Intuitively, a community is a subset of vertices that are tightly connected among them. When every possible pair of vertices are adjacent, the community is fully connected and can be modeled by a clique . Graph-theoretic properties based on cliques, such as k-plexes, 
+
+s-defective, or γ-quasi cliques, yield the strictest definitions of community. We refer to [ 41 ]for a survey. Although computing maximal cliques is computationally hard [ 29 ], several centralized [ 5,6, 23 , 31 , 54 ] and distributed [ 9 , 10 , 13 , 58 ] algorithms have been developed to efficiently enumerate them in real-world networks. However, the number of graph-theoretic communities is usually huge and their overlap is too large to allow the user to exploit such communities to analyze and decompose the network. Summarization, compression, and hierarchical clustering methods have been proposed to overcome some of these limitations [19, 27, 21]. In contrast to graph-theoretic approaches, a more intuitive definition of community for 
+
+> arXiv:2602.23948v1 [cs.SI] 27 Feb 2026
+
+2 Graph Partitioning Through NLP Techniques and Maximal Clique Enumeration 
+
+users is that of partitioning, where the vertex set is divided into distinct disjoint blocks. Measures such as modularity capture the quality of the partition (we refer to Section 3 for a formal definition). Unfortunately, computing partitions with maximum modularity is NP-complete [ 4 ] and exact algorithms are not feasible, even for sparse networks. As a consequence, most existing approaches to network partitioning rely on heuristics (see Section 2 for an overview on the state of the art). 
+
+Contributions of the paper. In this paper, we aim to establish a connection between communities defined in a graph-theoretic sense and vertex partitions. While the former can be computed using exact algorithms, the calculation of the latter relies on heuristic methods. By using graph-theoretic communities as a guide, our approach applies an AI-driven method to the vertex partitioning problem. In more detail, we begin by encoding maximal cliques into a matrix, with rows representing vertices and columns corresponding to cliques, akin to term-document matrices used in NLP domain. Through a weighting operation performed on this matrix, similar to function TF-IDF, we then assign higher values to maximal cliques that are large and loosely connected to the rest of the network. This matrix, once normalized, can be viewed as an embedding of the graph vertices into a metric space. Finally, we cluster the rows of the matrix (i.e., the points in the metric space) according to their similarity (i.e., distance) in order to partition the network. This approach proves beneficial both when the number k of blocks of the partition is specified in advance, and when such a number is not specified. For the first scenario, we produced two algorithms, dubbed k-Aggl-Clique-TF-IDF and k-Means-Clique-TF-IDF , that use an agglomerative approach [ 53 ] or the k-Means algorithm [ 38 ] to cluster the matrix rows, respectively. In Section 6 we experimentally show that the two algorithms outperform the well-known METIS graph partitioning algorithm [ 30 ] in terms of quality of the produced partitions, measured both with respect to absolute partitioning metrics and with respect to the ground truth, at the cost of an increased computation time. When the number k of blocks of the partition is not provided in advance, building upon preliminary results presented in [ 22 ], we add a further step to the approach in order to find a good value for k. The obtained algorithm, named Clique-TF-IDF , is experimentally compared with several state-of-the-art approaches in the literature considering both real-world and synthetic networks. The experiments reported in Section 7 show that Clique-TF-IDF is among the approaches with the best performance, although the computation times are longer than those of Leiden [ 55 ], which is a good algorithm both with respect to effectiveness and with respect to efficiency. In order to validate the use of maximal cliques of a graph to obtain an embedding of its vertices into a metric space for clustering purposes, which is proposed for the first time in this paper, we also performed experiments where this embedding phase is replaced by alternative state-of-the-art graph embedding approaches. Section 8 shows that the adopted embedding phase is more effective, more efficient, and also more practical, as it does not require many tuning parameters as is the case for alternative approaches. As an additional contribution, in Section 5 we also show how to generate a benchmark of networks whose ground truth has the same modularity independently of their size. This result can be of interest in its own right. While our focus in this paper is on maximal cliques and partitioning algorithms, we believe that the strategy proposed in this paper has broader potential and could be extended to develop AI-based solutions for various intractable combinatorial problems. These are problems where certain substructures can be efficiently enumerated and leveraged. For instance, listing independent sets might prove useful to color the vertices of a graph, since an M. D’Elia et al. 3
+
+independent set corresponds to a maximal clique in the complement graph. Similarly, max-cut problems might benefit from the efficient computation of maximal bipartite subgraphs [ 15 ]. By combining combinatorial methods with AI techniques, these hybrid approaches offer the best of both domains. Moreover, they have the potential to open new application areas for multidisciplinary research opportunities. 
+
+Organization of the paper. After surveying related work in Section 2, in Section 3 we introduce notation and provide preliminary background. Our approach is described in detail in Section 4. The experimental setup is provided in Section 5, while Sections 6–8 discuss the experimental analyses. Clique-TF-IDF is compared to state-of-the-art methods in terms of both efficiency and effectiveness, focusing on different scenarios: when the number of communities is known in advance, when it is not known, and when only the embedding phase is considered. Conclusions and directions for future work are outlined in Section 9. 
+
+# 2 Related work 
+
+The graph partitioning problem has attracted significant interest from both theoretical and practical perspectives and has been extensively studied. Various problem variants have been considered in the literature, with some works employing AI techniques to tackle different issues. For instance, when vertices have associated attributes that must be considered in the partitioning, contrastive learning and graph neural networks facilitate the learning of clusterable features, resulting in partitions that align well with the ground truth [ 20 ]. Algorithms extending traditional approaches for partitioning attributed graphs are discussed in [12]. In correlation partitioning, the edges are weighted quantitatively, representing vertex similarity. In this case, the objective is to maximize a measure that typically increases when edges with negative weights span across different partitions. This problem has been studied in [2, 51], and an online version has been studied in [34]. Another variant is structural clustering, where vertices in the same partition blocks are expected to have similar “roles” within the graph. In this context, graph neural networks have been applied to vertex classification and graph classification tasks [ 8, 18 , 60 ]. Additionally, structural vertex embedding techniques can be applied to identify an effective partition [ 48 ]. Differently from the aforementioned works, the focus of this paper is on positional clustering for graphs that have no attributes: vertex similarity depends on adjacency, and the partition quality is evaluated using modularity. This problem has been addressed in the literature in many previous works that present a variety of combinatorial algorithms, both when the number k of desired partition blocks is known in advance and when it is not. For the former case, the well-known METIS approach [ 30 ] can be applied in either its recursive bisection or multiway partitioning variants. A non-negative matrix factorization-based algorithm is detailed in [1]. The case where k is not part of the input has attracted more attention in the literature. Agglomerative hierarchical methods that maximize modularity measure are discussed in [ 11 ,3, 55 ]. Other approaches combine random walks on the graph with a similarity matrix [ 45 ]or use information theory methods [ 50 ]. Label propagation techniques are considered in [ 17 ], while statistical physics models are used in [ 47 ]. Additional heuristic approaches, which generally show lower effectiveness, are discussed in [26, 44, 46]. Finally, vertex embeddings based on positional information can also be leveraged to com-pute a partitioning [ 28 , 43 , 60 ], like in the case of structural clustering. For a comprehensive survey on vertex embedding techniques, particularly those leveraging graph neural network 4 Graph Partitioning Through NLP Techniques and Maximal Clique Enumeration 
+
+models, see [ 37 ]. When vertices have associated attributes, embedding methods are further detailed in [59]. 
+
+# 3 Background 
+
+For an undirected graph G, we let V (G) and E(G) be its vertex and edge sets, respectively. Denote the number of vertices and edges of G by n and m, respectively. Let A be the adjacency matrix of G, where Auv = 1 if vertex u and vertex v are adjacent, and 0 otherwise. In an undirected graph, A is symmetric, so Auv = Avu . The degree of a vertex u is denoted by δ(u). A partition of G is a subdivision of V into distinct blocks {V1, . . . , V k}, such that 
+
+⋃ki=1 Vi = V and Vi ∩ Vj = ∅ for every i̸ = j. Each block is intended to represent an internally dense area that is weakly connected to the other vertices. 
+
+Modularity. Modularity can be used to measure the quality of graph partitions and is defined in [11] as follows: 
+
+Q = 12m
+
+> k
+
+∑
+
+> i=1
+
+∑
+
+> u,v ∈Vi
+
+(
+
+Auv − δuδv
+
+2m
+
+)
+
+(1) Here δuδv 
+
+> 2m
+
+denotes the probability that an edge exists between vertices u and v in a random network model that maintains the vertices’ degree distribution. The modularity measure Q
+
+ranges in the interval [− 12 , 1], where non-zero values indicate deviations from randomness, with higher values suggesting a stronger community structure. In spite of the fact that maximizing modularity is NP-hard [ 4], this measure is widely used in previous works to assess the quality of communities, particularly in cases where a ground truth is unavailable or requires validation [3, 11, 55]. 
+
+Permanence. This is a more recent quality measure for graph partitions introduced in [ 7]. We first need some preliminary notation: 
+
+b(v) is the block of the partition v belongs to; 
+
+I(v) is the number of edges incident to v and internal to b(v);
+
+Emax (v) is the maximum number of edges of v to a single block of the partition different from b(v);
+
+cin (v) is the internal clustering coefficient of b(v), i.e., the ratio of the existing edges and the total number of possible edges among the neighbors of v that are part of b(v).
+
+Permanence is defined as: P (G) = 1
+
+> n
+
+∑ 
+
+> v∈V
+
+P (v) where: 
+
+P (v) = 
+
+( I(v)max {1, E max (v)} · 1
+
+δv
+
+)
+
+− (1 − cin (v)) (2) Observe that P (v) ∈ [−1, 1] . The maximum value of P (v) is equal to cin (v) = 1 and is obtained when b(v) is an isolated clique of G (in this case I(v) = δ(v)). On the other side, 
+
+P (v) is close to −1 when I(v) ≪ δ(v) and cin (v) = 0 . Consequently, also P (G) ∈ [−1, 1] .
+
+TF-IDF. The term frequency–inverse document frequency (in short, TF-IDF) measures the importance of terms in documents from a collection D = {d1, . . . , d r } of size r. We assume terms to be taken from a set T = {t1, . . . , t s} of size s, and denote by τt,d the number of occurrences of a term t ∈ T within a document d ∈ D. Since some terms may be more frequent in general, we count in δt the number of documents containing t and define the 
+
+inverse document frequency of t as γt = log ( |D| 
+
+> δt
+
+). TF-IDF is a weighting function defined as M. D’Elia et al. 5
+
+ωt,d = τt,d · γt [39 ]: its values are higher for terms appearing in a small subset of documents, and lower when a term is not common within a document or is common in the entire corpus. 
+
+Hierarchical clustering. Given a set P = {p1, . . . , p n} of n points within a d-dimensional space and an integer k, the objective of geometric clustering is to divide P into k non-empty clusters {P1, . . . , P k} such that ⋃ki=1 Pi = P and Pi ∩ Pj = ∅ for every i̸ = j. A well-known solution is based on the k-Means algorithm [38]. Another well-known method to compute a geometric clustering of P is hierarchical clustering, valued for its flexibility in identifying both local and global structures. One of the most popular variants is called agglomerative clustering [ 53 ] and begins by treating each individual point as a separate cluster, successively merging them into larger clusters. This approach relies on three key components: (i) a metric for calculating distances between points, (ii) a “linkage criterion” to measure distances or similarities between clusters to determine which to merge, and (iii) a “stopping criterion” to end the computation at an appropriate hierarchical level. Unlike other clustering algorithms based on density or centroids, hierarchical approaches do not require any initialization. Moreover, it benefits from only using distances, rather than absolute coordinates, making it more broadly applicable. 
+
+# 4 Overview of the approach 
+
+This section introduces our graph partitioning method. We leverage the efficient enumeration of the maximal cliques of a graph G and follow a pipeline consisting of the following macro-steps: 
+
+Vertex-community matrix: after computing all the maximal cliques, we construct a vertex-community matrix Z, with values reflecting the sizes of the cliques. 
+
+Tf-idf transformation: a weighting operation similar to TF-IDF is applied to Z,assigning higher values to maximal cliques that are both large and weakly connected to the rest of the network. 
+
+Clustering: by regarding the matrix rows as a set of points embedded in a multi-dimensional space, the graph partition is ultimately determined by clustering these points. 
+
+# 4.1 Vertex-community matrix 
+
+To enumerate maximal cliques, we use the algorithm introduced in [ 5]. We denote by 
+
+C = {c1, . . . , c d} the set of all maximal cliques. Let n and d be the number of vertices and the number of maximal cliques of G, respectively. We use two auxiliary data structures. 
+
+Clique-incidence matrix Y. Vertex containment in maximal cliques is described by a 
+
+clique-incidence matrix Y ∈ Nn×d. More formally: 
+
+Yiℓ =
+
+{ 1 if vertex vi belongs to maximal clique cℓ
+
+0 otherwise As an example, the incidence matrix Y depicted in Figure 1(c) shows clique membership for the graph of Figure 1(a), which contains three maximal cliques c1, c2, and c3. Our goal is to cluster the rows of Y based on their similarity, grouping in the same partition vertices belonging to very similar sets of maximal cliques. For instance, in Figure 1(c), vertices v1
+
+and v2 share more similarities compared to vertices v1 and v5.6 Graph Partitioning Through NLP Techniques and Maximal Clique Enumeration c1c2c3v2v3v1v6v7v4v5
+
+v1 v2 v3 v4 v5 v6 v7
+
+v1 3 3 3 0 0 0 0
+
+v2 3 6 6 3 0 0 0
+
+v3 3 6 6 3 0 0 0
+
+v4 0 3 3 3 0 0 0
+
+v5 0 0 0 0 3 3 3
+
+v6 0 0 0 0 3 3 3
+
+v7 0 0 0 0 3 3 3(a) Graph G (b) Co-participation matrix Xc1 c2 c3
+
+v1 1 0 0
+
+v2 1 1 0
+
+v3 1 1 0
+
+v4 0 1 0
+
+v5 0 0 1
+
+v6 0 0 1
+
+v7 0 0 1
+
+c1 c2 c3
+
+v1 9 6 0
+
+v2 15 15 0
+
+v3 15 15 0
+
+v4 6 9 0
+
+v5 0 0 9
+
+v6 0 0 9
+
+v7 0 0 9(c) Clique-incidence matrix Y (d) Vertex-community matrix Z
+
+Figure 1 (a) An example graph G. The matrix Z (d) is the product of X (c) and Y (b). 
+
+Co-participation matrix X. Directly using the matrix Y without any post-processing would not emphasize whether the vertices belong to maximal cliques of large or small size. Also, we would like that two vertices that do not fall into the same maximal clique (see, for example, vertices v1 and v4 of graph G in Figure 1(a)) had some similarity in matrix Y
+
+based on the fact that they have neighbors in common in some other maximal clique (see, for example, the rows 1 and 4 in Figure 1(b) corresponding to vertices v1 and v4). In order to solve the above two problems, we introduce an auxiliary matrix X ∈ Rn×n,called co-participation matrix. Each entry Xij of matrix X accounts for the sizes of the maximal cliques to which vertices vi and vj both belong. Precisely, let wℓ be the number of edges of a maximal clique cℓ. For any pair of vertices ⟨vi, v j ⟩, where i, j = 1 , . . . , n and 
+
+i̸ = j, we set Xij = ∑  
+
+> vi,v j∈cℓ
+
+wℓ. As for the diagonal of matrix X, we set Xii = ∑ 
+
+> vi∈cℓ
+
+wℓ.Observe that matrix X is symmetric. For the example graph of Figure 1(a), since both vertices v2 and v3 share the maximal clique c1, with w1 = 3 , and the maximal clique c2, with 
+
+w2 = 3 , we have X2 3 = w1 + w2 = 6 .
+
+Vertex-community matrix Z. We use matrix X to process matrix Y performing the matrix multiplication Z = X · Y . We call the obtained matrix Z vertex-community matrix .Observe that Z has the same size Rn×d as matrix Y . Each entry Ziℓ of Z can be viewed as the sum of two types of terms: 
+
+Actual involvement of vertex vi into the clique cℓ: when vi ∈ cℓ we sum to Ziℓ the value 
+
+|cℓ| · wℓ (see for example Z4 2 in Figure 1(d), where Z4 2 = |c2| · w2 = 3 × 3 = 9 ). This value quadratically increases with the number of vertices of cℓ.
+
+Transitive involvement of vertex vi into the clique cℓ: when vi /∈ cℓ, for each vertex vj ∈ cℓM. D’Elia et al. 7
+
+we sum to Ziℓ the term wℓ′ , where c′ 
+
+> ℓ
+
+is a maximal clique to which both vi and vj belong. For example, vertex v4 has a transitive involvement in clique c1 because of its neighbors 
+
+v2 and v3. Hence, value Z4 1 = 6 is the sum of the two terms X4 2 × Y2 1 = w2 = 3 and 
+
+X4 3 × Y3 1 = w2 = 3 .
+
+# 4.2 TF-IDF transformation 
+
+Matrix Z can be compared to the term-frequency matrix used in Information Retrieval, where occurrences of terms in documents are encoded. In our case, vertices correspond to documents and maximal clique correspond to terms. Following this analogy, we aim to assign more importance to a maximal clique (term) for a vertex (document) when the corresponding column in Z is sparse (i.e., the term is infrequent). This is because a maximal clique that is weakly connected to the rest of the graph is less desirable to split across different blocks of the partition. We therefore compute a vector Γ = [ γ1, . . . , γ d] ∈ Rd, where, for each ℓ = 1 , . . . , d ,
+
+γℓ = log ( n 
+
+> |δℓ|
+
+), where δℓ is the number of non-zero elements of column ℓ of Z, analogous to the inverse document frequency. We then modify Z by performing, for each i = 1 , . . . , n ,an element-wise multiplication of row Zi with Γ, i.e., Zi is replaced by Zi ⊙ Γ, where ⊙
+
+denotes the Hadamard product between two vectors. In the example of Figure 1, after the transformation described above, the value for the element Z1 2 for clique c2 with respect to vertex v1 is ω1,2 = τ1,2 · γ1 = Z1 2 · log( n 
+
+> |δ2|
+
+) = 6 · 0.8 = 4 .8.Finally, to obtain an embedding for the vertices, we normalize each row of Z so that each vertex corresponds to a unit-length vector. 
+
+# 4.3 Clustering 
+
+Matrix Z can be viewed as a set of n points (the vertices in V ) into a d-dimensional space (the cliques). Hence, we can perform geometric clustering of the graph by partitioning these 
+
+n points into a specified number k of clusters. To achieve this, we apply two alternative methods: (i) an agglomerative clustering approach [ 53 ], which initially assigns each point to its own cluster and then iteratively merges the two closest clusters, where the distance between clusters is defined as the average distance between their vertices. This process continues until the desired number of clusters, k, is reached. We call the obtained algorithm k-
+
+Aggl-Clique-TF-IDF ; (ii) k-Means algorithm [ 38 ], a reknown iterative centroid-based approach to produce k-way partitions of points embedded into a metric space. We call the obtained algorithm k-Means-Clique-TF-IDF .
+
+Choosing the number of clusters. Since the algorithm requires the number of clusters k
+
+as input, we employ a straightforward heuristic by performing a binary search over possible 
+
+k values to find one that achieves a high modularity score. In fact, we experimentally assessed that the modularity of the partition computed on matrix Z is usually very close to a bitonic curve with respect to number k of blocks of the partition. This empirical property ensures the effectiveness of the binary search. We consider only agglomerative clustering in this scenario. The efficiency of this search procedure depends indeed by two facts: first, the agglomerative clustering hierarchy is computed once at the start and reused to generate k-way partitions for different values of k; second, when computing the agglomerative hierarchy only the distances among points are used, instead of their actual coordinates. We call the obtained algorithm Clique-TF-IDF .8 Graph Partitioning Through NLP Techniques and Maximal Clique Enumeration 
+
+# 5 Experimental setup 
+
+In this section we discuss quality metrics (Section 5.1), dataset generation (Section 5.2), and algorithms under evaluation (Section 5.3). All experiments were conducted on a laptop with an Intel ® Core ™ i5-1135G7 CPU (4 cores, 4.2 GHz) and 8 GB of RAM. The selection of parameters in the generation of synthetic networks, as discussed in Section 5.2.2, is especially interesting and can be regarded as an additional contribution of the paper. 
+
+# 5.1 Metrics 
+
+In order to compare the effectiveness of the partitioning algorithms, we contrast them with respect to the modularity and the permanence of the produced partitions, which are standard evaluation metrics in this domain. For the synthetic instances, where a ground truth is also available, we also measure the normalized mutual information (NMI) [39]. 
+
+# 5.2 Datasets 
+
+In our experiments we used two kinds of datasets: real-world networks and synthetic networks. Real-world networks offer a measure of the performances of the algorithms in application contexts. Synthetic networks allow us to explore in a more systematic way the space of the possible inputs. Further, they allow us to compare the output partitioning with the ground truth used to produce the input instances, yielding an additional quality measure. 
+
+# 5.2.1 Real-world networks 
+
+We considered a dataset with ten real-world networks of varying sizes, ranging from tens to ten thousand vertices, collected from open repositories [ 35 , 32 , 49 ], which are commonly used as benchmarks in this field. Their characteristics, including the number of maximal cliques, are listed in Table 1. Entries marked with ∗ correspond to the largest component of networks, as certain algorithms, such as Pott [ 47 ], require connected networks. These components usually include a significant portion of the vertices. Additionally, We pre-processed the networks by removing loops and multiple edges. Networks originally containing loops and/or multiple edges are marked with ∗∗ in Table 1. The values reported in Table 1 refer to the networks after the operations described above.                                                  
+
+> Table 1 Real-world networks used in the experimental analysis. Entries labeled with ∗only refer to the giant component of the networks. Entries labeled with ∗∗ refer to networks where loops and multiple edges have been removed. Network Alias vertices Edges # Maximal cliques arenas-email arenas 1133 5451 3267 arxiv-grqc ∗grqc 4158 13422 3385 arxiv-hepth ∗hepth 8638 24806 9357 arxiv-hepph ∗hepph 11204 117619 14588 citeseer ∗∗ cite 2120 3679 2722 email-eu-core ∗∗ email 986 16064 42709 feather-lastfm-social lastfm 7624 27806 17957 p2p-gnutella04 p2p 10876 39994 38497 sociopatterns-infectious socio 410 2765 1247 zacharys-karate karate 34 78 36
+
+M. D’Elia et al. 9
+
+(a) (b) (c) (d)                            
+
+> Figure 2 The modularity with respect to the ground truth of the synthetic networks produced with the LFR library linearly depends on μwhile is independent from n. Similarly, the permanence also exhibits a linear dependency on μwhile is substantially independent from n. (a) Modularity plot with α= 1 /10 and β= 30 . (b) Modularity plot with α= 1 /10 and β= 40 . (c) Permanence plot with α= 1 /10 and β= 30 . (d) Permanence plot with α= 1 /10 and β= 40 .
+
+# 5.2.2 Synthetic networks 
+
+We used the LFR [ 33 ] library to produce synthetic networks with a priori known communities where both the vertex degree and the community size distribution are power laws. This library is specifically aimed at comparing different methods for community detection and graph partitioning. Our purpose is that of producing a benchmark of networks to show how some parameters of the instances impact on the performances of the algorithms. In particular, we selected the following parameters: Number n of vertices, which is a standard parameter to measure the time complexity of network algorithms. Average vertex degree ⟨d⟩: this is related to the number of edges in the network, which is a second standard parameter considered in network classification. Maximum vertex degree dmax : this is a measure of how much evenly the edges are distributed in the network. Scale-free networks have a maximum vertex degree much higher than the average vertex degree and often proportional to the number n of vertices. Noise μ (also referred to as “mixing parameter”): this is related to the community structure and determines of how much the internal links of each community are rewired towards vertices of other communities. If this parameter were set to 1, no links would survive within the community, contradicting our intuitive notion of community. The LFR library guarantees a scale-free distribution by choosing the number of communities of the network and their sizes. By varying parameters n, ⟨d⟩, dmax , and μ linearly in their allowed intervals, several combinations do not correspond to feasible networks and the LFR library does not produce any instance. On the other hand, instances produced by the LFR library but having a low value of modularity with respect to the ground truth are not suitable for an experimental analysis of partitioning algorithms: the ground truth becomes challenging, if not impossible, to retrieve in such instances, primarily due to the overwhelming noise that obscures it. With the purpose of obtaining a benchmark of synthetic scale-free networks featuring significant communities we used the following values for the chosen parameters. Number of vertices n ∈ { 100 , 250 , 500 , 1000 , 2000 }
+
+Maximum vertex degree dmax = α · n with α ∈ { 120 , 115 , 110 , 15 , 13 }.10 Graph Partitioning Through NLP Techniques and Maximal Clique Enumeration 
+
+(a) (b)            
+
+> Figure 3 The modularity and permanence with respect to the ground truth of the synthetic networks produced with the LFR library for different values of αand β. (a) Plot of modularity for
+> n= 500 . The four curves for α∈ { 1/15 ,1/20 }are all overlapped at the top of the plot. (b) Plot of permanence for n= 500 .
+
+Average vertex degree ⟨d⟩ = β · dmax · log 10 (n) 
+
+> n
+
+, with β ∈ { 30 , 35 , 40 }. Observe that, since 
+
+dmax = α · n, this corresponds to having ⟨d⟩ ∼ log (n). For example, when α = 1 /20 and 
+
+β = 30 , then ⟨d⟩ varies from 3 (n = 100 ) to 5 (n = 2000) . Instead, when α = 1 /3 and 
+
+β = 40 , then ⟨d⟩ varies from 26 (n = 100 ) to 44 (n = 2000) .Noise μ ∈ { 0.1, 0.2, 0.3, 0.4, 0.5}.This choice of the parameters yields networks of guaranteed modularity with respect to the ground truth’s communities. In particular, as it can be seen from Figures 2(a)-(b), the modularity of the produced instances for a given pair {α, β } only depends linearly on μ and is independent of the size n of the graph. The measure of the permanence with respect to the ground truth also seems to show a similar linear dependency on μ and a substantial independence from n (see Figures 2(c)-(d)). Figure 3(a) shows that the modularity of the produced instances with respect to the ground truth is independent on the values of β (i.e., from the average degree ⟨d⟩). Instead, the modularity decreases when α increases (i.e., when the scale-freeness of the produced networks increases). The measure of permanence (see Figure 3(b)) shows a similar descending trend with respect to mixing parameter μ, although more affected by noise. For each parameter setting, we generated five graph instances and report the average value of the considered metrics. The variance across instances was negligible and is therefore omitted from the figures for readability. 
+
+# 5.3 Algorithms 
+
+We evaluated our novel approach by comparing it with several state-of-the-art algorithms for network partitioning. In particular, when the number of desired blocks is given, we compared in Section 6 with METIS [ 30 ]. When the number of blocks of the partition is not known 
+
+a priori , we compared in Section 7 with Walktrap [ 45 ], CNM [ 11 ], Infomap [ 50 ], LP [ 17 ], Pott [ 47 ], and Leiden [ 55 ]. We were unable to compare with [ 20 ] as the code is not yet publicly available. As alternative network embedding approaches in the initial phase of Clique-TF-IDF 
+
+we considered in the experimental analysis of Section 8 algorithms Node2Vec [ 28 ] and M. D’Elia et al. 11 
+
+(a) (b) (c) (d) 
+
+(e) (f) (g) (h)           
+
+> Figure 4 Evaluation metrics on synthetic networks when α= 1 /10 and β= 40 , varying μ, for
+> n∈ { 500 ,2000 }(rows).
+
+DeepWalk [ 43 ]. The source code of our implementation can be found at https://github.com/ mdelia17/clique-tf-idf. 
+
+# 6 Evaluation of Clique-TF-IDF for computing k-way partitions 
+
+Assuming that the number k of desired blocks of the partition is fixed, we evaluated the two variants of our approach called k-Aggl-Clique-TF-IDF and k-Means-Clique-TF-IDF (see Section 4) against algorithm METIS using multilevel multiway partitioning (METIS-M) and recursive bisection (METIS-R) [ 30 ]. A comparison on real networks is not possible, since for most of them the ground-truth – and hence the value of k – is not known in advance. We therefore focus on the synthetic benchmarks (see Section 5.2.2). 
+
+# 6.1 Varying community interconnectedness by mixing parameter μ
+
+We first analyze how the algorithms are affected by different values of the mixing parameter μ.We fixed α = 1 /10 and β = 40 . In Figures 4(a)-(c), when n = 500 , it can be seen that both our approaches lead in general to a better effectiveness in terms of modularity, permanence and NMI for all the values of μ. Moreover, k-Aggl-Clique-TF-IDF has higher values of modularity and NMI with respect to k-Means-Clique-TF-IDF when μ > 0.3. In terms of efficiency, both METIS-M and METIS-R are always more efficient and k-Means-Clique-TF-IDF is one order of magnitude slower than k-Aggl-Clique-TF-IDF (see Figure 4(d)). Furthermore, the running time of k-Means-Clique-TF-IDF slightly increase with μ, while all the other algorithms do not exhibit a running time dependency on the noise μ.When n = 2000 , k-Aggl-Clique-TF-IDF remains the algorithm that produces higher 12 Graph Partitioning Through NLP Techniques and Maximal Clique Enumeration 
+
+(a) (b) (c) (d) 
+
+(e) (f) (g) (h)           
+
+> Figure 5 Evaluation metrics on synthetic networks when α= 1 /10 and β= 40 , varying n, for
+> μ∈ { 0.1,0.3}(rows).
+
+quality communities, while k-Means-Clique-TF-IDF generally exhibits lower performances, even if higher than the other two algorithms (see Figures 4(e)-(g)). Furthermore, in terms of efficiency, the gap between the running time of k-Aggl-Clique-TF-IDF and both METIS algorithms raises, as depicted in Figure 4(h). 
+
+# 6.2 Varying the number of vertices 
+
+We now evaluate the algorithms on all the evaluation metrics when the number of vertices n
+
+in the network varies, while fixing α and β to 1/10 and 40 respectively. Figures 5(a)-(d) show results when μ = 0 .1. As shown, both k-Aggl-Clique-TF-IDF and k-Means-Clique-TF-IDF 
+
+exhibit better results in terms of quality, whereas both METIS-M and METIS-R generally struggle to discover qualitative communities as n increases (see Figures 5(a)-(c)). Moreover, 
+
+k-Aggl-Clique-TF-IDF appears to be independent of n in terms of both modularity and NMI. Figures 5(e)-(h) show the analysis when μ increases to 0.3. It can be seen that k-Aggl-Clique-TF-IDF is still the best algorithm in terms of modularity and permanence (see Figures 5(e)-(f)). Moreover, even with a higher value of the mixing parameter, our approach is able to discover communities that closely resemble those of the ground truth (see Figure 5)(g). Once again, the main limit of our approach is represented by an higher computation time and a stronger dependency from the number of vertices in the network, as it can be seen in Figure 5(d) and in Figure 5(h). M. D’Elia et al. 13 
+
+(a) (b) (c) (d) 
+
+(e) (f) (g) (h)           
+
+> Figure 6 Evaluation metrics on synthetic networks when n= 1000 and β= 40 , varying α, for
+> μ∈ { 0.1,0.3}(rows).
+
+# 6.3 Varying maximum vertex degree 
+
+Finally, we report the evaluation with respect to different values of the maximum degree parameter α. We fixed n = 1000 , β = 40 and we considered μ = 0 .1 (Figures 6(a)-(d)) and 
+
+μ = 0 .3 (Figures 6(e)-(h)). In Figures 6(a)-(b) and Figures 6(e)-(f) it can be seen that both k-Aggl-Clique-TF-IDF 
+
+and k-Means-Clique-TF-IDF are more effective with respect to METIS algorithms in terms of modularity and permanence, with k-Aggl-Clique-TF-IDF that appears to be slightly better with respect to k-Means-Clique-TF-IDF as α decreases. The partitioning that is returned by our approach is in general very close to the ground truth, while both METIS-M and METIS-R identify a partitioning that is far from it (see Figure 6(c) and Figure 6(g)). Moreover, Figure 6(d) and Figure 6(h) show that while k-Means-Clique-TF-IDF is the least efficient, k-Aggl-Clique-TF-IDF exhibits a stronger dependency of running time as α
+
+increases that is primarily attributed to the increased number of maximal cliques and their size. The distribution of the number of maximal cliques with respect to their size for different values of α is depicted in Figure 7. In particular, it can be seen that as α increases both the number of cliques and the size of the largest maximal clique increase. 
+
+# 7 Evaluation of Clique-TF-IDF with unknown number of blocks 
+
+In this section we describe an experimental study to evaluate the effectiveness and efficiency of algorithm Clique-TF-IDF , when the number of blocks in the partition is not known apriori .14 Graph Partitioning Through NLP Techniques and Maximal Clique Enumeration                                
+
+> μ= 0 .1μ= 0 .3
+> α= 1 /20
+> α= 1 /15
+> α= 1 /10
+> α= 1 /5
+> α= 1 /3
+> Figure 7 Distribution of the number of maximal cliques (y-axis) with respect to their size (x-axis) when β= 40 and n= 1000 , for α∈ { 120 ,115 ,110 ,15,13}(rows) and for μ∈ { 0.1,0.3}(columns).
+
+# 7.1 Experiments on real-world networks 
+
+We evaluate the efficiency and effectiveness of Clique-TF-IDF in comparison to the algorithms outlined in Section 5.3. While Clique-TF-IDF being one of the algorithms that generates partitions with the highest modularity, Leiden consistently outperforms all others in terms of effectiveness (see Figure 8(a)). Although Pott also achieves strong modularity results, it does so with significantly higher running times, at least an order of magnitude longer than its competitors. Unlike its effectiveness on synthetic graphs (see Section 7.2), Clique-TF-IDF M. D’Elia et al. 15 
+
+(a) (b) (c)       
+
+> Figure 8 Effectiveness and efficiency measures achieved by each algorithm in terms of modularity (a), permanence (b), and running time in seconds (c). The networks on the x-axis are ordered based on the average modularity, on the average permanence, and on Clique-TF-IDF running time, respectively.
+> Figure 9 Distribution of the running time across each phase of Clique-TF-IDF .
+
+does not produce partitions with high permanence on real-world graphs compared to the other approaches (see Figure 8(b)). Figure 8(c) illustrates that although Clique-TF-IDF algorithm has relatively long com-putation times, they remain lower than those of the Pott algorithm. The large number of maximal cliques in certain networks and the binary search for the optimal number k
+
+of blocks are the primary causes of the high computation times. The overall runtime is dominated by the clustering phase, as revealed by a profiling analysis of Clique-TF-IDF (see Figure 9). However, two networks stand out as exceptions to this trend, sociopatterns and, in particular, email . To explain this behavior, we examined the distribution of maximal cliques by size. Figure 10 reveals that these two networks have a large number of maximal cliques with a distribution that deviates from the typical scale-free pattern, resembling a binomial distribution in the case of email . As a result, a significant portion of time is spent on the computation of the X and Y matrices (blue rectangles in Figure 9). 16 Graph Partitioning Through NLP Techniques and Maximal Clique Enumeration 
+
+Figure 10 Size distribution of maximal cliques for the real-world networks listed in Table 1. M. D’Elia et al. 17 
+
+(a) (b) (c) (d) 
+
+(e) (f) (g) (h)           
+
+> Figure 11 Evaluation metrics on synthetic networks when α= 1 /10 and β= 40 , varying μ, for
+> n∈ { 500 ,2000 }(rows).
+
+# 7.2 Experiments on synthetic networks 
+
+Here we discuss the evaluation of Clique-TF-IDF on synthetic graphs produced with LFR compared with other algorithms listed in Section 5.3. We analyze how modularity, permanence, NMI, and efficiency are affected by different values of the considered parameters. 
+
+Varying community interconnectedness (mixing parameter μ). We fixed α = 1 /10 
+
+and β = 40 , varying μ linearly in the interval [0 .1, 0.5] for different values of n to understand how the amount of noise in the network influences the ability of the algorithms to identify communities. As it can be seen in Figures 11(a)-(d) when n = 500 , Clique-TF-IDF is able to find blocks that are qualitative in terms of both modularity and permanence (see Figures 11(a)-(b)). More specifically, the modularity and permanence values of our approach are among the best for μ ≤ 0.3, while they are comparable for higher values of μ.When comparing in terms of NMI with the ground truth offered by LFR (Figure 11(c)), 
+
+Clique-TF-IDF is able to maintain high NMI values also when the mixing parameter μ
+
+increases, while several algorithms like Walktrap, CNM, and LP decrease drastically their values of NMI when μ > 0.3. In terms of efficiency, our approach has among the largest computation times, that are however comparable with those of CNM and one order of magnitude smaller than those of algorithm Pott (see Figure 11(d)). Furthermore, from Figure 11(d) it can be observed that Clique-TF-IDF exhibits an independence of its running times with respect to the mixing parameter, while the running times of some other algorithms like CNM slightly increase with μ. Figures 11(e)-(h) show an analogous analysis with 
+
+n = 2000 , confirming that the above described behavior of the algorithms is substantially independent of the value of n when the other parameters are fixed. 18 Graph Partitioning Through NLP Techniques and Maximal Clique Enumeration 
+
+(a) (b) (c) (d) 
+
+(e) (f) (g) (h)           
+
+> Figure 12 Evaluation metrics on synthetic networks when α= 1 /10 and β= 40 , varying n, for
+> μ∈ { 0.1,0.3}(rows).
+
+Varying the number of vertices. In the following, we analyze more in detail how the value of n affects the four evaluation metrics. We fix α and β respectively to 1/10 and 40 , varying 
+
+n ∈ { 100 , 250 , 500 , 1000 , 2000 }. Figure 12 shows the analysis with the mixing parameter 
+
+μ ∈ { 0.1, 0.3}. In particular, it can be seen that Clique-TF-IDF has values of modularity, permanence, and NMI that are substantially independent of n, with curves that are always higher or comparable with the best algorithms in the state-of-the-art (see Figures 12(a)-(c) and Figures 12(e)-(g)). In terms of efficiency, our approach has the same dependency on n
+
+of algorithm CNM (Figure 12(d) and Figure 12(h)). As in the case of real-world networks, algorithm Pott is the most inefficient. 
+
+Varying maximum vertex degree. We fixed n = 1000 and β = 40 and evaluated how the performances of the algorithms vary when α, i.e., the scale-freeness of the network, increases. When μ = 0 .1, in Figures 13(a)-(c) it can be seen that Clique-TF-IDF can recover clusters that have in general the highest modularity and permanence. Additionally, our approach leads to a value of NMI that is higher and close to the maximum as α increases (i.e., the scale-freeness of the network increases), ensuring results among the best even for lower values of α (see Figures 13(a)-(c)). With regard to efficiency, Figure 13(d) shows that the running time of most algorithms increases as α grows. Notably, Clique-TF-IDF exhibits a stronger dependency, which can be attributed to the larger number of maximal cliques as it can be seen in Figure 7. In Figures 13(e)-(h)) it can be seen that our approach performs well in all quality metrics even when the noise increases, i.e., when μ = 0 .3. In this case, when α > 1/10 , algorithm LP obtains lower values of modularity and NMI, while CNM has curves of modularity and NMI that are always below those of Clique-TF-IDF . Although we don’t include here the graphs, M. D’Elia et al. 19 
+
+(a) (b) (c) (d) 
+
+(e) (f) (g) (h)           
+
+> Figure 13 Evaluation metrics on synthetic networks when n= 1000 and β= 40 , varying α, for
+> μ∈ { 0.1,0.3}(rows).
+
+similar results are also obtained with higher values of the mixing parameter μ.
+
+# 8 Validating clique-based vertex embeddings 
+
+The experiments discussed in this section aim at showing that the clique-based vertex embedding used in the pipeline of Clique-TF-IDF is a good starting point for computations involving communities in the graph. To achieve this, we applied our clustering phase to two popular graph embedding algorithms, Node2Vec [ 28 ] and DeepWalk [ 43 ]. Both algorithms produce positional vertex embeddings, where vertex similarity is based on adjacency in the input graph, making them suitable as a preliminary step for positional clustering, which is the focus of this paper. We used the default values of DeepWalk for both the algorithms. This setting is denoted as D in Figures 14–17. Then, as these algorithms require many parameters in input, we considered different combinations of them. The number of random walks and epochs was fixed at 10, while we varied the embedding dimensionality d within the set d ∈ { 32 , 64 , 128 } and the random walk length ℓ within the set ℓ ∈ { 20 , 40 , 80 }. All other parameters were left at their default values. In Figures 14–17, the settings labeled as S, M and L correspond to d = 32 and ℓ = 20 , d = 64 and ℓ = 40 , and d = 128 and ℓ = 80 ,respectively. 
+
+# 8.1 Real-world networks 
+
+Since both Node2Vec and DeepWalk usually require substantial computation time, even on mid-sized networks, we considered only networks for which these algorithms can compute an 20 Graph Partitioning Through NLP Techniques and Maximal Clique Enumeration 
+
+(a) (b) (c)     
+
+> Figure 14 Effectiveness and efficiency measures achieved by DeepWalk, Node2Vec and Clique-TF-IDF in terms of modularity (a), permanence (b), and running time in seconds (c). The networks on the x-axis are ordered based on the average modularity, on the average permanence, and on
+> Clique-TF-IDF running time, respectively.
+
+embedding within a threshold time of 15 minutes. The results of the embedding comparison, obtained using various configurations of Node2Vec and DeepWalk as discussed above, are shown in Figure 14. In terms of effectiveness, Figure 14(a) shows that the modularity of the partitions produced by Clique-TF-IDF is larger than that of DeepWalk in all of its settings, while it is comparable than that of Node2Vec (with the only exception of the graph email ). Similar results can be observed in Figure 14(b) with respect to the permanence. Furthermore, variations in the parameters do not appear to significantly affect the quality of the partitions produced by the algorithms. Moreover, as depicted in Figure 14(a)-(b), it is evident how there is no a clear winner across different settings of Node2Vec and DeepWalk, since the best choice of parameters may depend on the characteristics of the network. In terms of efficiency, Figure 14(c) shows that 
+
+Clique-TF-IDF is significantly faster, by several orders of magnitude, than both DeepWalk and Node2Vec across all their settings (note that the y-axis of Figure 14(c) has a logarithmic scale). The increased computation time observed on email is due to the huge number of maximal clique in relation to the number of vertices. 
+
+# 8.2 Synthetic networks 
+
+Here we discuss the evaluation on synthetic graphs produced with LFR of Clique-TF-IDF 
+
+compared with the four settings of Node2Vec and DeepWalk. We repeat the same analysis of Section 7.2 on all the evaluation metrics. 
+
+Varying community interconnectedness (mixing parameter μ). We first fixed 
+
+α = 1 /10 and β = 40 , varying μ linearly in the interval [0 .1, 0.5] for different values of n, to understand how the amount of noise in the network influences the ability of the algorithms to discover strong communities. As it can be seen in Figure 15 with n = 500 , Clique-TF-IDF 
+
+is able to find more qualitative blocks with respect to Node2Vec and DeepWalk in terms of both modularity and permanence (see Figures 15(a)-(b)). More specifically, the curves for modularity and permanence of Node2Vec and DeepWalk start to diverge from our curve when 
+
+μ = 0 .3, showing a clear sensitivity of the embedding quality produced by other algorithms as the noise value increases. M. D’Elia et al. 21 
+
+(a) (b) (c) (d) 
+
+(e) (f) (g) (h)           
+
+> Figure 15 Evaluation metrics on synthetic networks when n= 500 , α = 1 /10 and β= 40 , varying
+> μlinearly in the interval [0 .1,0.5] .
+
+When comparing with the ground truth produced by LFR in terms of NMI (Figure 15(c)), 
+
+Clique-TF-IDF is able to discover most of it also when the mixing parameter μ grows, while other algorithms make more errors in classifying communities. Our approach also outperforms the competitors in terms of efficiency, since we are able to produce an embedding in a time that is several order of magnitude lesser than those of Node2Vec and DeepWalk (see Figure 15(d)). It can be observed as well that Clique-TF-IDF is substantially independent of the noise. The same analysis is repeated when n = 2000 . In Figures 15(a)-(c), it can be seen that the curves for Clique-TF-IDF in terms of modularity, permanence and NMI are similar, so our approach is independent to the value of n when other parameters are fixed. Instead, performance of other approaches tend to decrease when n grows and this is a further motivation that parameters of these embedding algorithms have a strong dependency on the characteristics of the network. 
+
+Varying the number of vertices. Figure 16 shows the evaluation with respect to different values of n, choosing α = 1 /10 and β = 40 . When μ = 0 .1, our approach achieves the highest results in terms of quality, and in particular, Clique-TF-IDF obtains values of modularity that are independent of the value of n, while all considered variants of Node2Vec and DeepWalk tend to decrease their quality as n increases (see Figures 16(a)-(c)). This phenomenon is amplified when the network is noisier, (i.e., when the mixing parameter increases), with Node2Vec and DeepWalk obtaining results far below those obtained by our algorithm, as it can be seen in Figures 16(e)-(g). Furthermore, when analyzing the running time, Figure 16(d) and Figure 16(h) show that the embedding phase of Clique-TF-IDF is at least one order of magnitude faster with respect 22 Graph Partitioning Through NLP Techniques and Maximal Clique Enumeration 
+
+(a) (b) (c) (d) 
+
+(e) (f) (g) (h)           
+
+> Figure 16 Evaluation metrics on synthetic networks when α= 1 /10 and β= 40 , varying n, for
+> μ∈ { 0.1,0.3}(rows).
+
+to all the other embedding algorithms considered. 
+
+Varying maximum vertex degree. In the end, we analyze how the scale-freeness of the network affects the embedding. We choose n and β to be 1000 and 40 respectively. When 
+
+μ = 0 .1, Clique-TF-IDF obtains values of modularity and permanence that decrease as α
+
+increases, but having results that are always better than other approaches (see Figures 17(a)-(b)). This reduction is driven by the structure of the network, as discussed in Section 5.2.2. Furthermore, when comparing to the underlying ground truth, our approach is able to discover most of the communities when α < 1/10 , while for higher values we are able to find the exact ground truth structure when on the contrary Node2Vec and DeepWalk obtain lower results, as it can be seen in Figure 17(c). Once again, our algorithm performs better in terms of modularity, permanence and NMI for all the values of α when the mixing parameter μ increases to 0.3, while other approaches lead to results that diverge from our curves as α increases (see Figures 17(e)-(g)). When considering efficiency, we observe in Figure 17(d) and Figure 17(h) that Clique-TF-IDF exhibits a stronger dependency on the running time with respect to the value of α due to the larger number of maximal cliques (see Figure 7). However, it consistently calculates embeddings more efficiently than Node2Vec and DeepWalk. 
+
+# 9 Conclusions and future work 
+
+We introduced Clique-TF-IDF , a novel framework for graph partitioning that leverages dense graph-theoretic subgraphs, modeled as maximal cliques, to describe each vertex in terms of the cliques it is part of. In addition, we justified the choice of computing a vertex positional M. D’Elia et al. 23 
+
+(a) (b) (c) (d) 
+
+(e) (f) (g) (h)           
+
+> Figure 17 Evaluation metrics on synthetic networks when n= 1000 and β= 40 , varying α, for
+> μ∈ { 0.1,0.3}(rows).
+
+embedding based on maximal cliques. Clique-TF-IDF is adaptable to various algorithms, accommodating scenarios where the number k of communities is either given in advance or unknown. The high computation time is a trade-off for the quality of partitions produced by Clique-TF-IDF . Our experimental results show that, when the number k of partition blocks is predetermined, Clique-TF-IDF outperforms the most effective algorithms in the literature in terms of effectiveness. Even in cases where k is not known a priori, the proposed approach remains promising, producing partitions with quality comparable to that of state-of-the-art competitors. Our approach requires, as a preliminary step, computing the maximal cliques of a graph: this might appear to be prohibitive as, in theory, the number of maximal cliques could be exponential in the number of vertices. However, a large research literature guarantees that maximal cliques can be efficiently computed on sparse real-world graphs, also leveraging distributed approaches. Hence, in practical cases, the efficiency of Clique-TF-IDF is limited not by the computation of cliques itself, but rather by their number (as observed in Section 7.1). Indeed, in our current implementation, we handle matrices whose dimensions are comparable with the number of cliques, which is largely independent of the number of vertices of the graph and is usually limited for social networks. In our experiments, on a small platform with limited main memory size (see Section 5), we could handle graphs up to approximately ten thousand vertices, one hundred thousand edges and maximal cliques in less than one minute. In scenarios where computational time is not a primary concern and the input graph contains up to several hundred thousand cliques, the approach proposed in this paper offers 24 Graph Partitioning Through NLP Techniques and Maximal Clique Enumeration 
+
+high-quality solutions that rival – or even surpass – traditional algorithms. One of the key findings of our study is that our approach, which combines AI techniques with pioneering combinatorial algorithms, produced results comparable to state-of-the-art algorithms de-veloped over decades of research for complex problems. In addition to applying AI to other intractable combinatorial problems where substructures can be efficiently enumerated, we suggest three promising research directions for future work: The high running time of the approach, especially when the input network has a large number of maximal cliques, could be reduced by applying a clique sampling technique similar to that proposed in [ 57 , 36 ]. The overall approach could also benefit of a distributed implementation, leveraging distributed maximal cliques enumeration algorithms [ 9, 10 ,13, 58]. Replacing maximal cliques, which serve as the starting point for the embedding, with other graph-theoretic dense substructures, such as trusses [ 56 ], k-plexes [ 14 ], fixed-size cliques [ 16 , 24 ], quasi-cliques [ 40 , 42 ], or k-diamonds [ 25 ], might improve the quality of produced partitions. Last but not least, a similar strategy could be effectively applied to the computation of structural clusterings [48, 52, 60]. 
+
+References 
+
+1 Esraa Al-sharoa and Baraa Rahahleh. Community detection in networks through a deep robust auto-encoder nonnegative matrix factorization. Engineering Applications of Artificial Intelligence , 118:105657, 2023. doi:10.1016/J.ENGAPPAI.2022.105657 .
+
+2 Nikhil Bansal, Avrim Blum, and Shuchi Chawla. Correlation clustering. Mach. Learn. ,56(1-3):89–113, 2004. doi:10.1023/B:MACH.0000033116.57574.95 .
+
+3 Vincent D Blondel, Jean-Loup Guillaume, Renaud Lambiotte, and Etienne Lefebvre. Fast unfolding of communities in large networks. Journal of Statistical Mechanics: Theory and Experiment , 2008(10):P10008, oct 2008. doi:10.1088/1742-5468/2008/10/p10008 .
+
+4 Ulrik Brandes, Daniel Delling, Marco Gaertler, Robert Görke, Martin Hoefer, Zoran Nikoloski, and Dorothea Wagner. On finding graph clusterings with maximum modularity. In WG 2007 ,volume 4769, pages 121–132, Germany, 2007. Springer. doi:10.1007/978-3-540-74839-7\ _12 .
+
+5 Coenraad Bron and Joep Kerbosch. Finding all cliques of an undirected graph (algorithm 457). Commun. ACM , 16(9):575–576, 1973. doi:10.1145/362342.362367 .
+
+6 Frédéric Cazals and Chinmay Karande. A note on the problem of reporting maximal cliques. 
+
+Theor. Comput. Sci. , 407(1-3):564–568, 2008. doi:10.1016/j.tcs.2008.05.010 .
+
+7 Tanmoy Chakraborty, Sriram Srinivasan, Niloy Ganguly, Animesh Mukherjee, and Sanjukta Bhowmick. On the permanence of vertices in network communities. In Proceedings of the 20th ACM SIGKDD international conference on Knowledge discovery and data mining , pages 1396–1405, 2014. doi:10.1145/2623330.2623707 .
+
+8 Yangrui Chen, Jiaxuan You, Jun He, Yuan Lin, Yanghua Peng, Chuan Wu, and Yibo Zhu. SP-GNN: learning structure and position information from graphs. Neural Networks , 161:505–514, 2023. doi:10.1016/j.neunet.2023.01.051 .
+
+9 James Cheng, Yiping Ke, Ada Wai-Chee Fu, Jeffrey Xu Yu, and Linhong Zhu. Finding maximal cliques in massive networks. ACM Trans. Database Syst. , 36(4):21, 2011. doi: 10.1145/2043652.2043654 .
+
+10 James Cheng, Linhong Zhu, Yiping Ke, and Shumo Chu. Fast algorithms for maximal clique enumeration with limited memory. In KDD , pages 1240–1248, 2012. doi:10.1145/2339530. 2339724 .
+
+11 Aaron Clauset, M. E. J. Newman, and Cristopher Moore. Finding community structure in very large networks. Phys. Rev. E , 70:066111, Dec 2004. doi:10.1103/PhysRevE.70.066111 .M. D’Elia et al. 25 
+
+12 David Combe, Christine Largeron, Mathias Géry, and Elöd Egyed-Zsigmond. I-louvain: An attributed graph clustering method. In Élisa Fromont, Tijl De Bie, and Matthijs van Leeuwen, editors, IDA 2015 , volume 9385 of Lecture Notes in Computer Science , pages 181–192, Germany, 2015. Springer. doi:10.1007/978-3-319-24465-5\_16 .
+
+13 Alessio Conte, Roberto De Virgilio, Antonio Maccioni, Maurizio Patrignani, and Riccardo Torlone. Finding all maximal cliques in very large social networks. In EDBT 2016 , pages 173–184, Konstanz, Germany, 2016. OpenProceedings.org. doi:10.5441/002/edbt.2016.18 .
+
+14 Alessio Conte, Donatella Firmani, Maurizio Patrignani, and Riccardo Torlone. Shared-nothing distributed enumeration of 2-plexes. In CIKM 2019 , pages 2469–2472, New York, 2019. ACM. 
+
+doi:10.1145/3357384.3358083 .
+
+15 Alessio Conte, Roberto Grossi, Andrea Marino, Takeaki Uno, and Luca Versari. Proximity search for maximal subgraph enumeration. SIAM J. Comput. , 51(5):1580–1625, 2022. doi: 10.1137/20M1375048 .
+
+16 Emilio Coppa, Irene Finocchi, and Renan Leon Garcia. Counting cliques in parallel without a cluster: Engineering a fork/join algorithm for shared-memory platforms. Inf. Sci. , 496:553–571, 2019. doi:10.1016/J.INS.2018.07.018 .
+
+17 Gennaro Cordasco and Luisa Gargano. Community detection via semi-synchronous label propagation algorithms. 2010 IEEE International Workshop on: Business Applications of Social Network Analysis (BASNA) , pages 1–8, 2010. 
+
+18 Hejie Cui, Zijie Lu, Pan Li, and Carl Yang. On positional and structural node features for graph neural networks on non-attributed graphs. In Mohammad Al Hasan and Li Xiong, editors, 
+
+ACM CIKM 2022 , pages 3898–3902, USA, 2022. ACM. doi:10.1145/3511808.3557661 .
+
+19 Marco D’Elia, Irene Finocchi, and Maurizio Patrignani. Maximal cliques summarization: Principles, problem classification, and algorithmic approaches. Comput. Sci. Rev. , 58:100784, 2025. doi:10.1016/J.COSREV.2025.100784 .
+
+20 Fnu Devvrit, Aditya Sinha, Inderjit S. Dhillon, and Prateek Jain. S3GC: scalable self-supervised graph clustering. In NeurIPS , 2022. 
+
+21 Pavla Drázdilová, Petr Prokop, Jan Platos, and Václav Snásel. A hierarchical overlapping community detection method based on closed trail distance and maximal cliques. Inf. Sci. ,662:120271, 2024. doi:10.1016/J.INS.2024.120271 .
+
+22 Marco D’Elia, Irene Finocchi, and Maurizio Patrignani. Clique-tf-idf: a new partitioning framework based on dense substructures. In International Conference of the Italian Association for Artificial Intelligence , pages 396–410. Springer, 2023. doi:10.1007/978-3-031-47546-7\ _27 .
+
+23 David Eppstein, Maarten Löffler, and Darren Strash. Listing all maximal cliques in large sparse real-world graphs. ACM J. Exp. Algorithmics , 18, 2013. doi:10.1145/2543629 .
+
+24 Irene Finocchi, Marco Finocchi, and Emanuele G. Fusco. Clique counting in MapReduce: Algorithms and experiments. ACM J. Exp. Algorithmics , 20:1.7:1–1.7:20, 2015. doi:10.1145/ 2794080 .
+
+25 Irene Finocchi, Renan Leon Garcia, and Blerina Sinaimeri. From stars to diamonds: Counting and listing almost complete subgraphs in large networks. The Computer Journal, , 67(6), 2024. 
+
+doi:10.1093/COMJNL/BXAD129 .
+
+26 M. Girvan and M. E. J. Newman. Community structure in social and biological networks. 
+
+Proceedings of the National Academy of Sciences , 99(12):7821–7826, jun 2002. doi:10.1073/ pnas.122653799 .
+
+27 Felipe Glaria, Cecilia Hernández, Susana Ladra, Gonzalo Navarro, and Lilian Salinas. Compact structure for sparse undirected graphs based on a clique graph partition. Inf. Sci. , 544:485–499, 2021. doi:10.1016/J.INS.2020.09.010 .
+
+28 Aditya Grover and Jure Leskovec. node2vec: Scalable feature learning for networks. In Balaji Krishnapuram, Mohak Shah, Alexander J. Smola, Charu C. Aggarwal, Dou Shen, and Rajeev Rastogi, editors, ACM SIGKDD 2016 , pages 855–864, USA, 2016. ACM. doi: 10.1145/2939672.2939754 .26 Graph Partitioning Through NLP Techniques and Maximal Clique Enumeration 
+
+29 Richard M. Karp. Reducibility among combinatorial problems. In Raymond E. Miller and James W. Thatcher, editors, Proc. Symp. Compl. Comp. Computat. , pages 85–103, New York, 1972. Plenum Press. doi:10.1007/978-1-4684-2001-2\_9 .
+
+30 George Karypis and Vipin Kumar. A fast and high quality multilevel scheme for partitioning irregular graphs. SIAM Journal on scientific Computing , 20(1):359–392, 1998. doi:10.1137/ S1064827595287997 .
+
+31 Ina Koch. Enumerating all connected maximal common subgraphs in two graphs. Theor. Comput. Sci. , 250(1-2):1–30, 2001. doi:10.1016/S0304-3975(00)00286-3 .
+
+32 Jérôme Kunegis. KONECT: the koblenz network collection. In 22nd International World Wide Web Conference, WWW ’13, Rio de Janeiro, Brazil, May 13-17, 2013, Companion Volume ,pages 1343–1350. ACM, 2013. doi:10.1145/2487788.2488173 .
+
+33 Andrea Lancichinetti, Santo Fortunato, and Filippo Radicchi. Benchmark graphs for testing community detection algorithms. Phys. Rev. E , 78:046110, Oct 2008. doi:10.1103/PhysRevE. 78.046110 .
+
+34 Silvio Lattanzi, Benjamin Moseley, Sergei Vassilvitskii, Yuyan Wang, and Rudy Zhou. Robust online correlation clustering. In Marc’Aurelio Ranzato, Alina Beygelzimer, Yann N. Dauphin, Percy Liang, and Jennifer Wortman Vaughan, editors, NeurIPS 2021 , pages 4688–4698, 2021. 
+
+35 Jure Leskovec and Andrej Krevl. SNAP Datasets: Stanford large network dataset collection. http://snap.stanford.edu/data, June 2014. 
+
+36 Xiaofan Li, Rui Zhou, Lu Chen, Yong Zhang, Chengfei Liu, Qiang He, and Yun Yang. Finding a summary for all maximal cliques. pages 1344–1355, Los Alamitos, CA, USA, 2021. IEEE. 
+
+doi:10.1109/ICDE51399.2021.00120 .
+
+37 Xueyi Liu and Jie Tang. Network representation learning: A macro and micro view. AI Open ,2:43–64, 2021. doi:10.1016/J.AIOPEN.2021.02.001 .
+
+38 James MacQueen et al. Some methods for classification and analysis of multivariate observa-tions. In Proceedings of the fifth Berkeley symposium on mathematical statistics and probability ,volume 1, pages 281–297. Oakland, CA, USA, 1967. 
+
+39 Christopher D. Manning, Prabhakar Raghavan, and Hinrich Schütze. Introduction to Informa-tion Retrieval . Cambridge University Press, Cambridge, UK, 2008. 
+
+40 Rafael A. Melo, Celso C. Ribeiro, and José A. Riveaux. The minimum quasi-clique partitioning problem: Complexity, formulations, and a computational study. Inf. Sci. , 612:655–674, 2022. 
+
+doi:10.1016/J.INS.2022.08.073 .
+
+41 Jeffrey Pattillo, Nataly Youssef, and Sergiy Butenko. Clique relaxation models in social network analysis. In My T. Thai and Panos M. Pardalos, editors, Handbook of Optimization in Complex Networks: Communication and Social Networks , pages 143–162. Springer New York, New York, NY, 2012. doi:10.1007/978-1-4614-0857-4\_5 .
+
+42 Bo Peng, Lifan Wu, Yang Wang, and Qinghua Wu. Solving maximum quasi-clique problem by a hybrid artificial bee colony approach. Inf. Sci. , 578:214–235, 2021. doi:10.1016/J.INS. 2021.06.094 .
+
+43 Bryan Perozzi, Rami Al-Rfou, and Steven Skiena. Deepwalk: online learning of social representations. In Sofus A. Macskassy, Claudia Perlich, Jure Leskovec, Wei Wang, and Rayid Ghani, editors, The 20th ACM SIGKDD International Conference on Knowledge Discovery and Data Mining, KDD ’14, New York, NY, USA - August 24 - 27, 2014 , pages 701–710, USA, 2014. ACM. doi:10.1145/2623330.2623732 .
+
+44 Clara Pizzuti. Ga-net: A genetic algorithm for community detection in social networks. In 
+
+Proc. of the 10th Int. Conf. on Parallel Problem Solving from Nature (PPSN X), Vol. 5199 ,page 1081–1090. Springer-Verlag, 2008. doi:10.1007/978-3-540-87700-4\_107 .
+
+45 Pascal Pons and Matthieu Latapy. Computing communities in large networks using random walks (long version), 2005. doi:10.48550/ARXIV.PHYSICS/0512106 .
+
+46 Arnau Prat-Pérez, David Dominguez-Sal, and Josep-Lluis Larriba-Pey. High quality, scalable and parallel community detection for large real graphs. In Proc. WWW 2014 , page 225–236, M. D’Elia et al. 27 
+
+New York, NY, USA, 2014. Association for Computing Machinery. doi:10.1145/2566486. 2568010 .
+
+47 Jörg Reichardt and Stefan Bornholdt. Statistical mechanics of community detection. Physical Review E , 74(1), jul 2006. doi:10.1103/physreve.74.016110 .
+
+48 Leonardo Filipe Rodrigues Ribeiro, Pedro H. P. Saverese, and Daniel R. Figueiredo. struc2vec :Learning node representations from structural identity. In ACM SIGKDD 2017 , pages 385–394, USA, 2017. ACM. doi:10.1145/3097983.3098061 .
+
+49 Ryan A. Rossi and Nesreen K. Ahmed. The network data repository with interactive graph analytics and visualization. In AAAI , 2015. URL: https://networkrepository.com. 
+
+50 Martin Rosvall and Carl T. Bergstrom. Maps of random walks on complex networks reveal community structure. Proceedings of the National Academy of Sciences , 105(4):1118–1123, 2008. doi:10.1073/pnas.0706851105 .
+
+51 Barna Saha and Sanjay Subramanian. Correlation clustering with same-cluster queries bounded by optimal cost. In Michael A. Bender, Ola Svensson, and Grzegorz Herman, editors, ESA 2019 ,volume 144 of LIPIcs , pages 81:1–81:17, Germany, 2019. Schloss Dagstuhl - Leibniz-Zentrum für Informatik. doi:10.4230/LIPIcs.ESA.2019.81 .
+
+52 Balasubramaniam Srinivasan and Bruno Ribeiro. On the equivalence between positional node embeddings and structural graph representations. In ICLR 2020 , , 2020. OpenReview.net. 
+
+53 Pang-Ning Tan, Michael Steinbach, Anuj Karpatne, and Vipin Kumar. Introduction to Data Mining (2nd Edition) . Pearson, , 2nd edition, 2018. 
+
+54 Etsuji Tomita, Akira Tanaka, and Haruhisa Takahashi. The worst-case time complexity for gen-erating all maximal cliques. In Kyung-Yong Chwa and J. Ian Munro, editors, COCOON 2004 ,volume 3106, pages 161–170, Germany, 2004. Springer. doi:10.1007/978-3-540-27798-9\ _19 .
+
+55 Vincent A. Traag, Ludo Waltman, and Nees Jan van Eck. From louvain to leiden: guaranteeing well-connected communities. Scientific Reports , 9, 2019. 
+
+56 Jia Wang and James Cheng. Truss decomposition in massive networks. Proc. VLDB Endow. ,5(9):812–823, 2012. doi:10.14778/2311906.2311909 .
+
+57 Jia Wang, James Cheng, and Ada Wai-Chee Fu. Redundancy-aware maximal cliques. In 
+
+Proceedings of the 19th ACM SIGKDD International Conference on Knowledge Discovery and Data Mining , KDD’13, page 122–130, USA, 2013. ACM. 
+
+58 Yanyan Xu, James Cheng, Ada Wai-Chee Fu, and Yingyi Bu. Distributed maximal clique computation. In 2014 IEEE International Congress on Big Data, Anchorage, AK, USA, June 27 - July 2, 2014 , pages 160–167. IEEE Computer Society, 2014. doi:10.1109/BIGDATA. CONGRESS.2014.31 .
+
+59 Shu Zhao, Jialin Chen, Jie Chen, Yanping Zhang, and Jie Tang. Hierarchical label with imbalance and attributed network structure fusion for network embedding. AI Open , 3:91–100, 2022. doi:10.1016/J.AIOPEN.2022.07.002 .
+
+60 Jing Zhu, Xingyu Lu, Mark Heimann, and Danai Koutra. Node proximity is all you need: Unified structural and positional node and graph embedding. In Carlotta Demeniconi and Ian Davidson, editors, SIAM Int. Conf. on Data Mining, SDM 2021 , pages 163–171, USA, 2021. SIAM. doi:10.1137/1.9781611976700.19 .
