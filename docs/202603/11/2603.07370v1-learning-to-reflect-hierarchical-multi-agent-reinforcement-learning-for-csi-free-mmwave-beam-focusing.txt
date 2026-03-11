@@ -1,0 +1,695 @@
+Title: Learning to Reflect: Hierarchical Multi-Agent Reinforcement Learning for CSI-Free mmWave Beam-Focusing
+
+URL Source: https://arxiv.org/pdf/2603.07370v1
+
+Published Time: Tue, 10 Mar 2026 00:58:58 GMT
+
+Number of Pages: 16
+
+Markdown Content:
+> JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 00 1
+
+# Learning to Reflect: Hierarchical Multi-Agent Reinforcement Learning for CSI-Free mmWave Beam-Focusing 
+
+Hieu Le, Texas A&M University , Oguz Bedir, Texas A&M University , Jian Tao, Texas A&M University , Mostafa Ibrahim, Texas A&M University , and Sabit Ekin, Texas A&M University 
+
+Abstract —Reconfigurable Intelligent Surfaces promise to transform wireless environments, yet practical deployment is hindered by the prohibitive overhead of Channel State Informa-tion (CSI) estimation and the dimensionality explosion inherent in centralized optimization. This paper proposes a Hierarchical Multi-Agent Reinforcement Learning (HMARL) framework for the control of mechanically reconfigurable reflective surfaces in millimeter-wave (mmWave) systems. We introduce a ”CSI-free” paradigm that substitutes pilot-based channel estimation with readily available user localization data. To manage the massive combinatorial action space, the proposed architecture utilizes Multi-Agent Proximal Policy Optimization (MAPPO) under a Centralized Training with Decentralized Execution (CTDE) paradigm. The proposed architecture decomposes the control problem into two abstraction levels: a high-level con-troller for user-to-reflector allocation and decentralized low-level controllers for low-level focal point optimization. Comprehensive ray-tracing evaluations demonstrate that the framework achieves 2.81–7.94 dB RSSI improvements over centralized baselines, with the performance advantage widening as system complexity increases. Scalability analysis reveals that the system maintains sustained efficiency, exhibiting minimal per-user performance degradation and stable total power utilization even when user density doubles. Furthermore, robustness validation confirms the framework’s viability across varying reflector aperture sizes (45–99 tiles) and demonstrates graceful performance degradation under localization errors up to 0.5 m. By eliminating CSI overhead while maintaining high-fidelity beam-focusing, this work establishes HMARL as a practical solution for intelligent mmWave environments. 
+
+Index Terms —Reconfigurable Intelligent Surfaces (RIS), Path Gain, Ray Tracing, Coverage Map, Deep Reinforcement Learning 
+
+I. I NTRODUCTION 
+
+The unprecedented surge in wireless traffic demand, fueled by augmented reality, autonomous systems, and massive de-ployments of IoT, has driven conventional wireless commu-nication architectures to their theoretical limits. Traditional methodologies conceptualize the radio propagation medium as an immutable adversarial channel that degrades signal quality, necessitating progressively complex signal processing algo-rithms and elevated transmission power levels to compensate for channel degradation effects. This approach has resulted in performance saturation with a concurrent increase in power consumption and complexity of the system architecture [1]. Reconfigurable intelligent surfaces (RIS) transform previ-ously passive structural elements into dynamic controllers of electromagnetic wave propagation, enabling adaptive radio environments. Nevertheless, despite the significant theoretical potential, practical RIS deployments face substantial imple-mentation challenges. The primary obstacle involves the com-putational burden of channel state information (CSI) estima-tion, which requires accurate electromagnetic characterization across hundreds to thousands of reflecting components oper-ating simultaneously. This requirement generates processing overhead that increases exponentially with architectural scale [2]. Moreover, RIS methodologies depend extensively on con-structive wave interference optimization, requiring advanced hardware components such as precision phase-shifting devices and ultra-low-latency reconfiguration systems. These demand-ing specifications, coupled with the mandatory perfect tempo-ral synchronization in all reflecting elements, have inhibited large-scale commercial adoption [3]–[5]. We present a fundamentally different methodology that bypasses the CSI estimation requirements through operation at a higher conceptual abstraction. In this context, we define ”CSI-free” as the elimination of pilot-based electromagnetic channel estimation. We explicitly trade the prohibitive com-putational burden of high-dimensional channel estimation for a dependency on user localization, leveraging the fact that positioning data is more accessible and scalable than per-element channel estimation in large-scale RIS deployments. Rather than coordinating precise electromagnetic interference phenomena, our technique exploits spatial awareness and user positioning data to enhance reflection characteristics via macro-scale propagation management in non-line-of-sight (NLOS) scenarios. 
+
+A. Hierarchical Multi-Agent Reinforcement Learning Paradigm 
+
+The main innovation reformulates reflector optimization as a Hierarchical Multi-Agent Reinforcement Learning (HMARL) framework [6] utilizing Centralized Training with Decen-tralized Execution (CTDE) [7]. To implement this, we em-ploy Multi-Agent Proximal Policy Optimization (MAPPO) [8], which ensures stable cooperative learning by addressing the non-stationarity inherent in multi-agent environments. In contrast to traditional RIS implementations based on passive metamaterials, our framework controls mechanically reconfig-urable metallic reflectors. While this introduces mechanical constraints, it offers distinct advantages: the elimination of  
+
+> arXiv:2603.07370v1 [cs.LG] 7 Mar 2026 JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 00 2
+
+complex RF circuitry, extended operational bandwidth, and streamlined control via conventional servos. Practical viability is further supported by the increasing availability of deep learning acceleration in modern communication platforms [9]– [11]. To manage the complexity of multi-reflector coordination, the framework decomposes the control problem into two abstraction levels. At the high level, a coordinating con-troller performs intelligent user-to-reflector assignment based on spatial positioning. At the low level, specialized controllers autonomously optimize focal points for their assigned users. This hierarchical decomposition reduces observation spaces for efficient learning and employs temporal abstraction to balance long-term planning with rapid local adaptation. By integrating spatial intelligence, this architecture effec-tively bypasses the CSI estimation bottleneck [2]. The system operates on user localization data rather than electromagnetic precision, achieving substantial performance improvements through large-scale propagation control. This approach en-sures computational tractability and enables effective scaling across varying user densities and reflector configurations, maintaining optimal performance without explicit inter-agent data exchange. 
+
+B. Contributions and Paper Organization 
+
+This research delivers three primary contributions:  
+
+> •
+
+NLOS CSI-free operation with substantial RSSI gains: We formulate reflective surface optimization as a hierarchical multi-agent Markov Decision Process (HMA-MDP). This approach enables effective radio propagation management using only user localization data, eliminating the dependency on pilot-based chan-nel estimation. The framework achieves Received Signal Strength Indicator (RSSI) improvements of 2.81–7.94 dB over centralized optimization baselines.  
+
+> •
+
+Scalable hierarchical allocation strategy: We develop a two-level neural architecture comprising a high-level allocator and low-level controllers. This decomposition exhibits superior scalability: doubling the user density (from 2 to 4 users) results in a marginal 1.39 dB per-user performance degradation.  
+
+> •
+
+Comprehensive validation of hardware and algorith-mic robustness: We validate the framework’s practical viability across diverse deployment conditions, including varying reflector aperture sizes (45–99 tiles), reward function formulations, and localization error levels. The system demonstrates high resilience, maintaining perfor-mance stability (reward standard deviation ≤ 0.81 dBm) and graceful degradation under localization errors up to 0.5 m, confirming its suitability for real-world deploy-ment without scenario-specific tuning. This work on the hierarchical multi-agent approach is particularly well-suited for practical wireless systems that require reliable coverage in demanding environments. Key applications include indoor millimeter-wave (mmWave) com-munications and dense urban deployments. The framework ex-cels at coordinating multiple reflecting elements by balancing global optimization with rapid local adaptation to changing propagation conditions. Our implementation is available on GitHub at https://github.com/hieutrungle/rs. The remainder of this study is organized as follows: Sec-tion II presents the literature survey. Section III details the system architecture and mathematical formulation. Section IV describes the multi-agent reinforcement learning framework. Section V examines simulation outcomes. Lastly, Section VI summarizes primary findings and identifies future research directions. II. L ITERATURE REVIEW 
+
+The field of RIS technology has progressed rapidly in recent years, driven by the increase in wireless traffic demands and the fundamental limitations of conventional communication architectures. Conventional RIS designs primarily leveraged electronically controlled phase adjustments to induce construc-tive interference at receivers and thereby enhance data rates [1], [12]. These approaches, however, depend critically on accurate CSI for each individual reflecting unit, a requirement that scales unfavorably with system size. As deployments grow to hundreds or even thousands of elements, the CSI estimation burden becomes the dominant impediment to practical large-scale realization [13]. In RIS-assisted wireless systems, obtaining accurate CSI typically requires a sequence of RIS reconfiguration states, leading to pilot overhead that scales with both the number of reflecting elements and the number of active users. Conven-tional cascaded channel estimation schemes therefore incur pilot lengths on the order of hundreds or even thousands of symbols, which causes significant spectral efficiency loss and, in fast-fading environments, estimation delays that exceed the channel coherence time [14]. To mitigate these burdens, several enhanced strategies have been investigated, including ON/OFF-based training protocols [15], Discrete Fourier Trans-form (DFT)-structured estimation approaches [16], and com-pressive sensing frameworks that exploit the inherent sparsity of mmWave channels [17]. Nevertheless, key challenges per-sist, particularly the high dimensionality of cascaded channel representations, limited scalability as system size grows, and constraints imposed by practical RIS hardware. Statistical-CSI–based RIS architectures have demonstrated that effective beamforming can be realized without relying on instantaneous per-element channel estimates. Multi-port network models treat the RIS as a bidirectional scattering system, where statistical CSI enables improvements in average throughput through eigenmode selection and covariance-driven phase design [18]. In parallel, blind beamforming strategies eliminate explicit CSI estimation by iteratively updating the RIS phase shifts using only received signal strength feed-back, achieving an O(N 2) SNR scaling for an N -element surface across diverse propagation conditions [19]. Codebook-driven designs further reduce signaling overhead by employing pre-optimized discrete phase-shift sets, with well-constructed codebooks approaching the performance of full-CSI schemes while requiring minimal feedback [20]. Additionally, location-aware RIS techniques leverage user position information in the JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 00 3
+
+absence of full CSI, integrating localization and beamforming through optimization criteria grounded in the Cramer–Rao bound [21]. The adoption of deep reinforcement learning (DRL) for RIS configuration has aimed to address the limitations of traditional optimization schemes. Early contributions demonstrated sum-rate maximization frameworks that relied on full CSI avail-ability across all relevant links [22], while subsequent studies proposed DRL-based phase shift design leveraging discrete channel vector samples [23], [24]. More recent work inte-grates sensing hardware within the RIS to facilitate distributed channel estimation prior to DRL-driven optimization [25]. Nonetheless, these approaches still require explicit channel estimation at the RIS, imposing substantial increases in hard-ware complexity and power consumption. Recent initiatives to relax CSI dependence have yielded mixed results [26], as many such solutions rely on large offline training datasets that limit adaptability in rapidly varying environments. The transition toward multi-agent reinforcement learning (MARL) for RIS optimization marks a significant advance-ment in addressing the coordination challenges associated with large-scale intelligent surface control. Recent MARL-based implementations have demonstrated substantial performance gains; for example, Multi-Agent Twin Delayed Deep De-terministic Policy Gradient (TD3) schemes applied to joint beamforming and RIS codebook design achieve performance on par with 256-beam DFT codebooks while reducing training computation by 97% [27]. Similarly, the Multi-Agent Global and locAl deep Reinforcement learning (MAGAR) framework [28] for STAR-RIS systems yields an 18% improvement in energy efficiency over conventional MARL , highlighting the potential of distributed learning mechanisms for RIS manage-ment. Moreover, authors of [29] demonstrated that MARL framework can achieve around 5 dB higher in average RSSI for multiple users over single-agent DRL framework. MARL methods can be characterized according to the na-ture of agent interactions: fully cooperative, fully competitive, or mixed. In fully cooperative settings, all agents jointly pursue a unified long-term objective and potentially share a com-mon reward signal [30], [31]. This category includes models such as multi-agent Markov decision processes and team-average reward formulations [31], [32]. Competitive MARL corresponds to zero-sum Markov games [33]–[35], whereas mixed scenarios integrate elements of both cooperation and competition [36], [37]. HMARL has emerged as an effective framework for par-titioning intricate coordination tasks into multiple layers of abstraction. Foundational studies extended hierarchical RL constructs such as MAXQ [38] to multi-agent domains [6], [39], enabling agents to acquire high-level coordination strate-gies while executing primitive behaviors at lower tiers. More recent advancements include ALlocator-Actor Multi-Agent Architecture (ALMA) [40], which learns subtask allocation policies in tandem with low-level execution policies, and Hierarchical Multi-Agent Skill Discovery (HMASD) [41], which utilizes transformer-based architectures for sequential skill assignment. The efficacy of hierarchical techniques stems from their ability to exploit temporal abstraction for coor-dinated decision-making while retaining scalability through modular policy designs that extend across heterogeneous agent populations and dynamic environments [42]. Although extensive research has centered on electronically controlled RIS platforms, mechanically reconfigurable metal-lic reflectors represent a fundamentally different class of intelligent surfaces that has received comparatively limited study. Unlike electronic RIS architectures that require com-plex RF circuitry, metallic reflectors inherently offer wide-band operation, e.g. almost frequency agnostic, simplified actuation via conventional servo systems, and elimination of stringent electromagnetic tuning requirements. Recent studies on passive metallic reflectors at 28 GHz have shown that appropriately positioned flat reflectors can yield substantial coverage and gain improvements in non-line-of-sight scenarios without introducing electronic complexity [43]–[45]. Com-plementary theoretical investigations have proposed enhanced reflection models that highlight the breakdown of classical Snell’s law when reflector dimensions approach the signal wavelength [46]. While active or amplifier-equipped RIS de-signs can substantially increase link capacity [47], they also incur additional hardware complexity, power consumption, and noise amplification—limitations inherently avoided by passive mechanically reconfigurable metallic reflectors. The integration of MARL with mechanically reconfigurable metallic reflectors defines a potential research direction that addresses critical gaps in existing intelligent surface technolo-gies. This paradigm enables the avoidance of CSI estimation requirements that burden traditional RIS systems, while still delivering meaningful performance gains through large-scale geometric propagation control rather than fine-grained electro-magnetic manipulation. We introduce a CSI-free framework that exploits spatial awareness and user location information to determine reflector configurations at a higher abstraction level. The proposed hierarchical control architecture comprises two synergistic components: a high-level allocation module responsible for selecting optimal reflector segments for each user, and low-level policies that refine reflector orientations to maximize RSSI for their assigned users. This hierarchical design effectively decomposes the underlying multi-objective optimization problem, enhancing scalability and adaptability across heterogeneous deployment environments. III. SYSTEM MODEL AND PROBLEM FORMULATION 
+
+A. System Architecture and Problem Formulation 
+
+The reflective surface optimization problem exhibits high computational complexity due to the joint user-to-reflector assignment and continuous reflector configuration challenges. To address this complexity while maintaining practical de-ployability, we employ a hierarchical control architecture that decomposes the system-wide optimization into high-level allocation and low-level execution subproblems. This section establishes the physical system model, introduces the hierar-chical decomposition rationale, and formalizes the constraints governing reflector operation. JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 00 4 
+
+> Figure 1. Reflector with hexagonal tiles. Each tile can be rotated in both elevation ( θ) and azimuth ( ϕ) angles.
+
+1) Physical System Configuration: The reflective surface system comprises three primary components: an access point (AP), K user equipment (UE) devices, and L independently controllable reflector segments. The reflector array consists of Nr × Nc hexagonal metallic tiles arranged in a planar configuration as shown in Fig. 1, where each tile provides mechanical adjustment capabilities in both elevation angle 
+
+θi,j and azimuth angle ϕi,j . This mechanical reconfigurability enables electromagnetic wavefront manipulation without re-quiring sophisticated RF circuitry or electronic phase shifters, making the system particularly suitable for mmWave and sub-terahertz frequencies where conventional phased arrays face significant implementation challenges. The reflector arrays employ a hierarchical segmentation scheme where tiles are partitioned into L spatial segments: 
+
+S = S1 ∪ S 2 ∪ . . . ∪ S L, Si ∩ S j = ∅, ∀i̸ = j, (1) where Sl = {(i, j ) : tile (i, j ) belongs to segment l} denotes the set of tiles within segment l. Each segment l is character-ized by its centroid position rl ∈ R3 and controls a focal point 
+
+fl(t) ∈ R3 that governs the collective reflection behavior of all tiles within that segment. The focal point concept provides an abstraction that reduces the control complexity from 2Nr Nc
+
+individual tile parameters to 3L segment-level focal point coordinates, where typically L ≪ Nr Nc.UE positions are denoted as uk(t) =[uk,x (t), u k,y (t), u k,z (t)] ⊤ ∈ R3 for k ∈ {1, 2, . . . , K },and the access point is located at fixed position s ∈ R3. The system operates in time-division duplex (TDD) mode with discrete time steps indexed by t ∈ { 0, 1, 2, . . . }.
+
+2) Hierarchical Control Architecture: The computational complexity of jointly optimizing user-to-reflector assignments and individual reflector tile configurations, even with angle quantization assumption, scales as O(KL ×(Qr ×Q c)Nr ×Nc ),rendering exhaustive search intractable for practical system sizes. Qr and Qc represent the quantization levels of azimuth and elevation angular steps, respectively. To achieve scalable                     
+
+> Time
+> 012345678
+> High-Level
+> (Allocation)
+> b0b1b2
+> Low-Level
+> (Focal Pts)
+> Ttimesteps Ttimesteps
+> Continuous focal point adjustments
+> ■High-Level: Every Tsteps
+> ■Low-Level: Every step
+> Figure 2. Temporal coordination between hierarchical controllers. The high-level allocation controller makes high-level user-to-reflector assignment de-cisions every Ttimesteps, while low-level controllers continuously optimize focal points at every timestep. This temporal abstraction enables high-level planning at the high level while maintaining rapid low-level adaptation at the low level.
+
+optimization, we decompose the control problem into a two-tier hierarchical architecture that exploits the composite task structure inherent in wireless communication scenarios. 
+
+High-level Allocation Layer: The high-level controller operates as a centralized decision-maker responsible for high-level user-to-reflector segment assignment. This controller determines the allocation b = {b1, b 2, . . . , b L}, where bl ∈{1, 2, . . . , K } indicates that user k is assigned to reflector seg-ment bl. The allocation action space B contains KL possible assignments, representing a discrete combinatorial optimiza-tion problem. Critically, the high-level controller operates on a temporally extended time scale, making allocation decisions every T environment time steps. This temporal abstraction allows sufficient time for lower-level controllers to optimize their focal point configurations before high-level reassignment occurs. 
+
+Low-level Execution Layer: Given an allocation deci-sion from the high-level controller, each reflector segment 
+
+l autonomously optimizes its focal point position fl(t) to maximize the received signal strength for its currently assigned user. These low-level controllers operate at every time step with decentralized execution, adjusting focal points based on local observations of their assigned user’s position and current focal point state. The action space for each low-level con-troller is continuous, consisting of focal point displacements 
+
+al,t = [∆ fl,x , ∆fl,y , ∆fl,z ]⊤ ∈ R3 subject to maximum displacement constraints. 
+
+Temporal Coordination Mechanism: The hierarchical architecture employs temporal abstraction to coordinate decision-making across levels. Fig. 2 illustrates this coordi-nation mechanism: the high-level controller makes allocation decisions at time steps t ∈ { 0, T, 2T, . . . }, while low-level controllers continuously optimize focal points at every time step. This structure enables high-level planning at longer time scales while maintaining rapid low-level adaptation to environmental dynamics. The hierarchical decomposition provides three fundamental advantages for practical deployment. First, it achieves ob-servation space reduction by enabling low-level controllers to operate on masked local observations relevant only to their assigned users, rather than requiring full system state knowledge. Second, it enables modular policy reuse where JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 00 5
+
+learned low-level focal point control policies can transfer across different user configurations and allocation decisions. Third, it provides computational tractability by separating the discrete combinatorial allocation problem from the continuous focal point optimization problem, enabling specialized solution techniques for each subproblem. 
+
+3) Physical Constraints and Feasibility Conditions: The hierarchical control architecture must respect physical limita-tions imposed by the mechanical reconfiguration mechanism and geometric constraints. These constraints are naturally integrated through the focal point abstraction. 
+
+Tile Orientation Constraints: For each tile (i, j ) belonging to segment l, the tile orientation is determined by the seg-ment’s focal point position fl(t) through geometric reflection principles. The tile normal vector is computed as: ⃗n i,j (fl) = 12
+
+ fl − ri,j 
+
+∥fl − ri,j ∥2
+
++ s − ri,j 
+
+∥s − ri,j ∥2
+
+
+
+, (2) where ri,j ∈ R3 denotes the position of tile (i, j ). The elevation and azimuth angles are then derived as: 
+
+θi,j (fl) = arccos( ⃗n i,j (fl) · ˆz), (3) 
+
+ϕi,j (fl) = atan2 (⃗n i,j (fl) · ˆy,⃗ n i,j (fl) · ˆx), (4) where ˆz, ˆy, and ˆx are unit vectors along the coordinate axes. The mechanical actuation system imposes physical limits on achievable tile orientations: 
+
+θmin ≤ θi,j (fl) ≤ θmax ,ϕmin ≤ ϕi,j (fl) ≤ ϕmax ,
+
+∀(i, j ) ∈ S l.
+
+(5) These constraints define the feasible focal point region Fl for segment l:
+
+Fl =
+
+n
+
+f ∈ R3 : θmin ≤ θi,j (f ) ≤ θmax ,ϕmin ≤ ϕi,j (f ) ≤ ϕmax , ∀(i, j ) ∈ S l
+
+o
+
+.
+
+(6) In practice, we approximate Fl using axis-aligned bounding boxes: 
+
+Fl ≈ { f ∈ R3 : fl, min ≤ f ≤ fl, max }, (7) where fl, min and fl, max are determined through geometric analysis of the segment’s tile positions and mechanical con-straints. 
+
+Action Space Constraints: The low-level controllers’ focal point displacement actions are constrained to ensure smooth transitions and respect actuation limits: 
+
+∥al,t ∥∞ ≤ δmax , fl(t + 1) = fl(t) + al,t ∈ F l, (8) where δmax defines the maximum focal point displacement per time step, typically set based on the mechanical actuation speed. 
+
+4) Signal Propagation Model: The controllable RSSI at user k depends on both direct propagation from the access point and reflected paths through the assigned reflector seg-ment. For user k assigned to segment l under allocation b, the received power is modeled as: 
+
+Pr,k (uk, f ) = Pt
+
+X
+
+> (i,j )∈S b
+
+|h(i,j ) 
+
+> r,k
+
+(uk, f ) + hother ,k (uk)|2, (9) where Pt denotes the transmit power, h(i,j ) 
+
+> r,k
+
+(uk, f ) represents total reflected channel coefficient from tile (i, j ) to user k as a function of the user location and focal point position, and 
+
+hother ,k (uk) accounts for the other propagation path. These co-efficients are obtained from a deterministic ray-tracing model of a fixed propagation environment, so for a given geometry they are fully determined by user and focal-point locations rather than by random fading. Since we focus on NLOS scenarios, no direct path exists. The system-wide performance objective aggregates received power across all users: 
+
+Rsys (s(t), b (t)) = 
+
+> K
+
+X
+
+> k=1
+
+Pr,k (uk(t), f (t)) . (10) We emphasize that the system-level reward is a state-dependent function rather than purely time-dependent. While we index states by time t to denote temporal evolution, the reward function Rsys (s(t), b (t)) itself depends on the current configuration of user positions, focal points, and allocations. This formulation aligns with standard MDP conventions where rewards are functions of states, and time dependence enters only through state evolution according to the system dynamics. This formulation also provides a differentiable performance metric that couples the high-level allocation decisions (through the assignment mapping bl) with low-level focal point con-figurations (through fl(t)), enabling coordinated hierarchical optimization. 
+
+B. Computational Complexity Reduction 
+
+The hierarchical architecture with focal point abstraction achieves dimensionality reduction compared to direct tile-level optimization. The control parameter dimension for the proposed focal-point-based approach scales as: 
+
+Dfocal = |B| + 3 L = KL + 3 L, (11) where the first term represents the discrete allocation space size and the second term represents the continuous focal point coordinates. In contrast, direct tile-level optimization requires a parameter space of: 
+
+Dtile = KL + 2 Nr Nc, (12) since each tile requires two independent orientation angles (θ, ϕ ). To rigorously quantify the reduction efficiency, we de-fine the dimensionality reduction factor η(K, L, N ), assuming square reflector arrays where Nr = Nc = N :
+
+η(K, L, N ) = Dtile 
+
+Dfocal 
+
+= KL + 2 N 2
+
+KL + 3 L . (13) JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 00 6
+
+We analyze the gradient of η with respect to system parameters to identify the operating regimes where the hierarchical design is most effective. 
+
+1) Sensitivity to Surface Resolution ( N ): Differentiating η
+
+with respect to the number of tiles per dimension N :
+
+∂η ∂N = ∂∂N 
+
+ KL + 2 N 2
+
+KL + 3 L
+
+
+
+= 4NKL + 3 L . (14) Since N > 0, the gradient is always positive ( ∂η ∂N > 0). Because η(N ) contains a dominant N 2 term in the numerator, the reduction factor grows quadratically with N , and because  
+
+> ∂η ∂N
+
+> 0 for N > 0, it is strictly increasing in N . As reflector arrays become denser to support higher frequency beamform-ing, the complexity savings of the focal point abstraction become increasingly significant. 
+
+2) Sensitivity to Reflector Segments (L): To determine how the reduction factor scales with the number of reflector segments L, we apply the quotient rule   uv
+
+′ = u′v−uv ′ 
+
+> v2
+
+. Let 
+
+u = KL + 2 N 2 and v = KL + 3 L. The derivatives with respect to L are: 
+
+∂u ∂L = KL ln K, ∂v ∂L = KL ln K + 3 . (15) Substituting these into the quotient rule yields: 
+
+∂η ∂L = KL[ln K(3 L − 2N 2) − 3] − 6N 2
+
+(KL + 3 L)2 . (16) In practical mmWave configurations, the hardware complexity term 2N 2 typically dominates the segment count 3L (i.e., 
+
+2N 2 ≫ 3L). Consequently, the term (3 L − 2N 2) is negative, rendering the entire gradient negative ( ∂η ∂L < 0). This con-firms that increasing L reduces the compression ratio, as it introduces additional dimensions to the focal point abstraction (both continuous coordinates and allocation combinations). 
+
+3) Sensitivity to User Density ( K): Similarly, the sensitivity with respect to user density is derived as: 
+
+∂η ∂K = LK L−1(3 L − 2N 2)(KL + 3 L)2 . (17) Under the same condition 2N 2 ≫ 3L, this derivative is negative, implying that the relative efficiency gain decreases as the allocation space KL expands. 
+
+4) Complexity Regimes and Practical Implications: The analytical behavior of η highlights two distinct operating regimes based on the magnitude of K and L:
+
+1. The Asymptotic Limit (Saturated Regime): In scenar-ios where the number of users K or segments L becomes very large (e.g., massive crowd connectivity), the combinatorial allocation term KL grows exponentially and dominates both the numerator and denominator ( KL ≫ 2N 2). In this limit: 
+
+lim  
+
+> K,L →∞
+
+η(K, L, N ) ≈ KL
+
+KL = 1 . (18) Here, the complexity is bottlenecked by the discrete assign-ment problem, which affects both the proposed and baseline methods equally, negating the advantage of the focal point abstraction. 
+
+2. The Practical Indoor Regime (Efficient Regime): 
+
+Indoor mmWave deployments are naturally constrained by physical geometry and coverage requirements, placing them in a regime where the proposed method excels.  
+
+> •
+
+Small K: Room-scale coverage typically involves a lim-ited number of active users requiring high-gain tracking (e.g., K ∈ [1 , 2] ).  
+
+> •
+
+Small L: The number of reflector arrays is limited by installation costs of individual control chains (e.g., L ∈
+
+[1 , 4] ).  
+
+> •
+
+Large N : To overcome severe mmWave path loss, reflec-tor arrays must be electrically large with high tile counts (e.g., N ≥ 8, resulting in ≥ 64 tiles per array). In this regime, the condition 2N 2 ≫ KL holds strictly. The focal point abstraction compresses the massive hardware state space ( 2N 2) into a compact representation while the allocation overhead ( KL) remains manageable. For the specific config-uration used in this study ( L = 4 , N = 8 , K = 2 ): 
+
+η ≈ 16 + 128 16 + 12 = 144 28 ≈ 5.14 . (19) This represents a greater than five-fold reduction in the action space dimensionality, accelerating the convergence of the MARL agents. 
+
+C. Hierarchical Multi-Agent MDP Formulation 
+
+Building upon the physical system architecture and hierar-chical control structure established in Section III-A, we now formalize the reflective surface optimization as a Hierarchical Multi-Agent Markov Decision Process (HMA-MDP). This formulation provides a mathematical framework for learning-based optimization without requiring CSI, leveraging the high-level-low-level decomposition to achieve computational tractability. 
+
+1) High-Level Allocation MDP: The high-level controller addresses the high-level problem of user-to-reflector segment assignment, operating as a centralized decision-maker with access to global system state. This level makes discrete com-binatorial decisions on a temporally extended time scale. 
+
+State Space: The high-level state sH (t) ∈ S H encompasses global system information necessary for informed allocation decisions: 
+
+sH (t) = {u1(t), . . . , u K (t), r 1, . . . , r L, f 1(t), . . . , f L(t)}
+
+(20) where uk(t) = [ uk,x (t), u k,y (t), u k,z (t)] ⊤ ∈ R3 represents the three-dimensional position of user k at time t, and rl ∈ R3
+
+denotes the fixed centroid position of reflector segment l. The state space dimensionality scales as |S H | = R3K+6 L, pro-viding complete observability of user and reflector positions while abstracting away the detailed tile-level configuration. 
+
+Action Space: The allocation action space AH = B consists of all feasible assignments of users to reflector segments. An allocation b ∈ B is represented as: 
+
+b(t) = [ b1(t), . . . , b L(t)] ⊤, bl ∈ { 1, 2, . . . , K }, (21) where bl = k indicates that user k is assigned to reflector seg-ment l. The cardinality of the action space is |B| = KL, rep-resenting a substantial combinatorial optimization challenge. For practical systems with K = 2 users and L = 4 reflector JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 00 7
+
+segments, this yields 128 possible allocations, necessitating efficient exploration strategies. 
+
+Temporal Abstraction: The high-level controller operates with temporal abstraction at time scale T , making allocation decisions at time steps t ∈ {0, T, 2T, . . . }. The allocation 
+
+b(tH ) determined at high-level time tH remains fixed for the subsequent T environment steps, allowing low-level con-trollers sufficient optimization horizon before high-level reas-signment. This temporal commitment mechanism is critical for hierarchical coordination, as premature reassignment would destabilize low-level learning and prevent effective focal point convergence. Therefore, high-level controller has a much slower update rate than the low-level controller to stabilize the training. 
+
+Value Function and Optimization Objective: The high-level controller learns a state-action value function QH : SH ×B → R that estimates the expected cumulative reward for executing allocation b in state sH :
+
+QH (sH , b ) = E
+
+"T −1X
+
+> t=0
+
+γtRsys (s(t), b ) | s(0) = sH
+
+#
+
+(22) where γ ∈ (0 , 1) is the discount factor and Rsystem is the system-wide reward defined in Equation (10). The high-level optimization objective seeks the allocation policy πH : SH →B that maximizes expected long-term performance: 
+
+π∗ 
+
+> H
+
+= arg max 
+
+> πH
+
+E   
+
+> sH∼ρ,b ∼πH(·| sH)
+
+" ∞X
+
+> t=0
+
+γtRsys (sH (t), b (t)) 
+
+#
+
+,
+
+(23) where ρ denotes the state distribution induced by user mobility dynamics. Due to the massive combinatorial action space, direct enumeration of all allocations is computationally prohibitive. We address this challenge through an amortized Q-learning approach with a learned proposal distribution πH (b|sH ; ζ)
+
+parameterized by neural network weights ζ, enabling efficient sampling of high-value allocations during both training and deployment. 
+
+2) Low-Level Focal Point MDP: Given an allocation b
+
+from the high-level controller, each reflector segment l ∈{1, 2, . . . , L } operates as an independent agent responsible for optimizing its focal point position to maximize signal strength for its assigned user. These low-level controllers operate at every environment time step with decentralized execution. 
+
+State Space with Observation Masking: Each low-level agent l observes only information relevant to its assigned subtask, implementing the observation masking principle that is fundamental to scalable multi-agent learning. The local state 
+
+sL,l (t) ∈ S L,l is defined as: 
+
+sL,l (t) = {uπ(l)(t), r l, f l(t)}, (24) where π(l) denotes the user assigned to reflector segment l
+
+under the current allocation b (i.e., π(l) = k if bl = k), and 
+
+fl(t) = [ fl,x (t), f l,y (t), f l,z (t)] ⊤ ∈ R3 represents the current focal point position. Critically, this local observation excludes information about other users {uk′ : k′̸ = π(l)} and other reflector segments {fl′ : l′̸ = l}, reducing the observation space dimensionality from R3K+6 L of a joint MARL to R9
+
+at the low level, a reduction factor of (K + 2 L)/3.The observation masking principle exploits the locality structure of the wireless optimization problem: under an effec-tive allocation, each reflector segment’s focal point primarily affects its assigned user’s signal strength, with limited impact on other users. This assumption enables independent optimiza-tion while maintaining near-optimal system-wide performance. 
+
+Action Space: Each low-level controller adjusts its focal point position through continuous displacement actions: 
+
+al,t = [∆ fl,x,t , ∆fl,y,t , ∆fl,z,t ]⊤ ∈ A L ⊂ R3, (25) subject to the maximum displacement constraint: 
+
+∥al,t ∥∞ ≤ δmax , (26) where δmax defines the maximum allowable displacement per time step, typically set based on mechanical actuation capa-bilities. The focal point evolves according to the dynamics: 
+
+fl(t + 1) = fl(t) + al,t , (27) with the constraint that fl(t+1) ∈ F l, where Fl is the feasible focal point region defined in the previous section. 
+
+Subtask Decomposition and Local Value Function: The hierarchical architecture decomposes the global value function into subtask-specific components, with each low-level con-troller learning a local Q-function QL,l : SL,l × A L → R.
+
+QL,l (sL,l , a l) = E
+
+" ∞X
+
+> t=0
+
+γtRl(sL,l (t), a l(t)) 
+
+#
+
+, (28) where Rl(sL,l , a l(t)) = Pr,π (l)(uπ(l), f l) represents the RSSI for the assigned user, as defined in Equation (9). The subtask decomposition leverages the assumption that, under optimal allocation and with appropriate focal point control, the re-ceived power at user k is primarily determined by the focal point of its assigned reflector segment. We assume that cross-reflector interference terms are negligible when users are spatially separated, and allocation is geometrically appropriate. This decomposition enables parallel learning of L independent focal point policies while maintaining near-optimal system-wide coordination. 
+
+Low-Level Optimization Objective: Each low-level agent seeks a policy πL,l : SL,l → A L that maximizes the expected RSSI for its assigned user: 
+
+π∗ 
+
+> L,l
+
+= arg max 
+
+> πL,l
+
+E
+
+> sL,l ,a l∼πL,l
+
+" ∞X
+
+> t=0
+
+γtPr,π (l)(uk(t), f l(t)) 
+
+#
+
+,
+
+(29) subject to the focal point dynamics in Equation (27), feasibility constraints fl(t) ∈ F l, and action bounds in Equation (26). 
+
+3) Unified Hierarchical Optimization Problem: The com-plete reflective surface optimization problem integrates the high-level allocation and low-level focal point control sub-problems through a shared system-wide performance objec-tive. The unified formulation is expressed as a hierarchical constrained optimization: JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 00 8
+
+max 
+
+b, {fl}Ll=1 
+
+E
+
+" ∞X
+
+> t=0
+
+γtRsys (s(t), b (t)) 
+
+#
+
+(30a) 
+
+s.t. b(t) ∈ B , ∀t ∈ { 0, T, 2T, . . . }, (30b) 
+
+fl(t + 1) = fl(t) + al,t , ∀l, t, (30c) 
+
+fl(t) ∈ F l, ∀l, t, , (30d) 
+
+∥al,t ∥∞ ≤ δmax , ∀l, t, (30e) 
+
+θi,j (fl(t)) ∈ [θmin , θ max ], ∀(i, j ) ∈ S l, ∀l, ∀t, 
+
+(30f) 
+
+ϕi,j (fl(t)) ∈ [ϕmin , ϕ max ], ∀(i, j ) ∈ S l, ∀l, ∀t, 
+
+(30g) where the complete system state s(t) coincides with the high-level state: s(t) = sH (t); We use sH (t) when discussing the high-level controller specifically and s(t) when referring to the complete system state. We emphasize that the physical constraints specified in (30d)–(30g) are rigorously enforced by the simulation environment as hard limits. At each time step, focal point positions are strictly clipped to the feasible region Fl, while tile orientations are mechanically restricted to the servo’s operational range. This inherent bounding of the action space ensures all agent decisions remain physically valid, thereby removing the need for auxiliary penalty terms or Lagrange multipliers typically required in Constrained MDP formulations. This unified formulation exhibits three critical properties that enable effective hierarchical learning: 
+
+Coupling Structure: The system reward factorizes across users but couples through the allocation mapping b, creating incentives for the high-level controller to assign users to reflector segments that can effectively serve them, while low-level controllers optimize focal points for their assigned users. 
+
+Temporal Decoupling: The temporal abstraction at the high level ( T time steps) creates a separation of time scales between high-level allocation and low-level execution, allowing low-level policies to partially converge before reassignment occurs. This temporal structure is essential for stable hierarchical learning. 
+
+Constraint Integration: Physical constraints (tile orien-tation limits, focal point feasibility) are naturally enforced through the focal point abstraction and feasible region Fl,avoiding the need for explicit constraint satisfaction at the low level during exploration. IV. H IERARCHICAL MULTI -A GENT REINFORCEMENT 
+
+LEARNING FRAMEWORK 
+
+This section details the hierarchical learning framework enabling efficient CSI-free optimization, covering the coor-dination mechanisms within a Centralized Training with De-centralized Execution (CTDE) architecture, the Multi-Agent Proximal Policy Optimization (MAPPO) algorithm, and the integration of a geometric compatibility matrix for learning acceleration.   
+
+> Figure 3. Hierarchical Multi-Agent Reinforcement Learning Architecture. The high-level controller performs high-level user-to-reflector allocation using global system state at extended temporal intervals ( Ttimesteps), while low-level controllers execute low-level focal point optimization using masked local observations at every timestep. The framework employs Hierarchical Multi-Agent Reinforcement Learning (HMARL), enabling global state access during training while maintaining practical deployment scalability through local observation-based execution. Dashed arrows represent aggregated reward feedback from low-level controllers to the high-level coordinator.
+
+A. Hierarchical Coordination and CTDE Framework 
+
+The hierarchical framework coordinates high-level allo-cation and low-level execution through structured informa-tion flow and shared performance objectives while leverag-ing CTDE to address multi-agent non-stationarity challenges. Fig. 3 illustrates the complete hierarchical MARL architecture, showing the information flow between high-level allocation and low-level execution levels. 
+
+1) Information Flow and Reward Coupling: The hier-archical coordination employs multi-directional information flow that couples learning across levels while maintaining computational scalability. During execution, the high-level controller observes global state sH (t) at discrete time steps 
+
+t ∈ { 0, T, 2T, . . . } and selects allocation b(t) that determines user-to-reflector assignments. This allocation decision propa-gates to all low-level controllers, establishing the assignment mapping π(l) that specifies which user each reflector segment serves. The high-level decision remains fixed for T timesteps, providing a stable optimization horizon for low-level adapta-tion. Each low-level controller l operates autonomously at every timestep, observing only its masked local state sL,l (t) =
+
+{uπ(l)(t), r l, f l(t)} containing the position of its assigned user, its own reflector position, and its current focal point. This de-centralized execution preserves scalability and enables parallel implementation across reflector segments without inter-agent communication. During training, system-wide performance 
+
+Rsys (s(t), b (t)) aggregates received power contributions from all users, providing bottom-up feedback to guide high-level allocation learning. 
+
+2) Centralized Training with Decentralized Execution: The framework employs the CTDE paradigm for the low-level control to address multi-agent non-stationarity while main-taining practical deployment scalability. During centralized training, a global critic network V π (sglobal ) accesses complete system state sglobal = {u1, . . . , u K , r 1, . . . , r L, f 1, . . . , f L}JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 00 9
+
+encompassing all user positions, reflector positions, and focal point configurations. sglobal is equivalent to s(t) but emphasizes training-time access. The global critic estimates the expected cumulative return: 
+
+V π (sglobal ) = Eπ [Gt | Sglobal ,t = sglobal ], (31) where Gt = P∞ 
+
+> t=0
+
+γtRsys (t + t). This global value function enables advantage estimation for policy updates: Adv (sglobal , b ) = Qπ (sglobal , b ) − V π (sglobal ), (32) stabilizing learning by providing consistent value estimates despite the non-stationary environment induced by concurrent policy updates across multiple agents. Specifically, purely decentralized agents would perceive the evolving policies of peers as unpredictable environmental shifts, violating the standard Markov assumption. The global critic resolves this by conditioning on the joint state, effectively alleviate the non-stationarity of the learning target during the training phase. During training, Advantage uses global state for accurate credit assignment, but policies are conditioned only on local observa-tions, ensuring decentralized execution. During execution, the global critic is discarded, and agents execute policies based solely on their prescribed local observations. The high-level policy πH (b|sH ) uses complete information to perform the user-reflector assignment. Low-level policies πL,l (al|sL,l ) use only their assigned user’s position, own reflector position, and current focal point. This decentralized execution eliminates communication overhead, enables parallel computation across reflector segments, and preserves privacy. 
+
+3) Joint Learning and Policy Modularity: Both hierar-chical levels learn concurrently through shared experiences, with high-level allocation decisions creating the context for low-level focal point optimization. The temporal abstraction mechanism ensures learning stability by separating high-level and low-level time scales: the high-level allocation persists for T timesteps while low-level controllers adapt their focal points. This temporal commitment prevents destructive policy oscillations that would arise from simultaneous high-frequency changes in both allocation and focal point configurations, reducing variance in advantage estimates and accelerating convergence. 
+
+B. Multi-Agent Proximal Policy Optimization 
+
+Both high-level and low-level controllers employ Multi-Agent Proximal Policy Optimization (MAPPO), which ex-tends the single-agent PPO algorithm [48] to multi-agent settings while addressing coordination and non-stationarity challenges [8]. For each agent l, the clipped surrogate ob-jective incorporates global state information from the CTDE architecture: 
+
+LCLIP (ψl) = Et
+
+h
+
+min 
+
+
+
+rlt(ψl)Adv (sglobal,t , a lt),
+
+clip (rlt(ψl), 1−ϵ, 1+ ϵ)Adv (sglobal,t , a lt)
+
+i 
+
+,
+
+(33) where the probability ratio rlt(ψl) = πψl (alt|olt) 
+
+> πψold ,l (alt|olt)
+
+, with olt is the partial observability from the complete state, quantifies the policy modification between updates. The clipping parameter 
+
+ϵ (typically 0.1-0.2) constrains policy modifications to ensure training stability, preventing destructive updates that might disrupt learned coordination mechanisms. The value function loss for the centralized critic is: 
+
+LV F (ξ) = Et
+
+(Vξ (sglobal ,t ) − Vtarget ,t )2 , (34) where Vtarget ,t denotes the target value calculated using tra-jectory information. The comprehensive MAPPO objective integrates policy and value function losses with entropy regu-larization: 
+
+L(ψl, ξ ) = LCLIP (ψl) − c1LV F (ξ) + c2Hπψl , (35) where Hπψl denotes entropy regularization to promote explo-ration, and c1, c 2 represent scaling coefficients. 
+
+C. Compatibility Matrix for Learning Acceleration 
+
+To accelerate convergence during early training phases, we augment the high-level allocation controller with a domain-specific compatibility matrix C ∈ RK×L that encodes prior geometric knowledge about user-reflector assignment quality. The matrix element Ckl represents the expected signal prop-agation favorability when user k is assigned to reflector l,quantified through geometric relationships: 
+
+Ckl = exp 
+
+
+
+− ∥uk − rl∥
+
+d0
+
+
+
+· cos( θkl ), (36) where ∥uk − rl∥ denotes the Euclidean distance between user k and reflector l, d0 is a normalization constant, and 
+
+θkl represents the AP-reflector-user reflection angle. High compatibility scores indicate geometric configurations where the reflector can efficiently redirect signal power toward the user with minimal path loss and favorable incident angles. We integrate the compatibility matrix into the high-level allocation policy through a weighted formulation: 
+
+πH (b|sH ; ϕ) ∝ QH (sH , b ) + α(t)
+
+> K
+
+X
+
+> k=1
+
+Ck,b k
+
+!
+
+, (37) where QH (sH , b ) is the learned Q-value for allocation b in state sH , and α(t) is a coefficient that reduces the influence of prior knowledge as training progresses. Specifically, we employ: 
+
+α(t) = 
+
+(
+
+1 t < threshold 
+
+0 t ≥ threshold (38) This design philosophy differs from conventional imitation learning or reward shaping approaches in that the compatibility matrix serves as a critical inductive bias for achieving high performance in sparse reward environments. As demonstrated in Section V.V-B, the matrix not only accelerates early conver-gence by approximately 200-300 episodes in 2-user scenarios, but also enables the hierarchical allocation mechanism to achieve superior final performance (37-28% improvement) JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 00 10  
+
+> Figure 4. Experimental setup of a conference room for simulation. The AP is depicted in blue, while the users are shown in green. The users are within the UE region.
+
+compared to learning without domain-specific guidance. This demonstrates that while the framework can learn assignment strategies through exploration alone, the exponentially large combinatorial action space makes discovering near-optimal allocations impractical within typical training horizons without geometric priors. V. R ESULTS AND DISCUSSION 
+
+Section Overview.: This section presents a structured evaluation of the proposed hierarchical MARL framework across realism, learning behavior, deployment performance, and robustness. We begin by describing the experimental setup and simulation framework, including the mmWave propagation environment, system configuration, and baseline methods. We then analyze training convergence to isolate the impact of hierarchical decomposition and the compatibility matrix. Deployment-time RSSI performance is subsequently evaluated under user mobility, followed by scalability analysis with increasing user density. Hardware–performance trade-offs are examined through reflector aperture size variation, and robustness is assessed via reward function sensitivity and user localization error analysis. Together, these results provide a comprehensive assessment of learning efficiency, deployment viability, and practical system design trade-offs. 
+
+A. Experimental Setup and Simulation Framework 
+
+The performance evaluation of the proposed HMARL framework is conducted in a realistic indoor millimeter-wave environment using a high-fidelity simulation platform that inte-grates NVIDIA Sionna’s deterministic ray-tracing engine [49] with Blender’s three-dimensional modeling capabilities [50]. This integrated computational framework enables accurate electromagnetic wave propagation modeling while incorporat-ing material-specific properties defined according to ITU-R Recommendation P.2040-1 [51], ensuring practical relevance and deployment fidelity. 
+
+1) Simulation Environment and Propagation Modeling: 
+
+The experimental testbed comprises a conference room sce-nario where an access point (AP) is positioned outside the room to serve multiple coverage areas, creating significant propagation challenges due to structural wall attenuation. Two mechanically reconfigurable metallic reflector arrays are high-level deployed at corner positions to redirect millimeter-wave signals toward user equipment within the conference room. The simulation environment employs deterministic ray-tracing to capture multi-path propagation phenomena including re-flections, diffractions, and scattering effects characteristic of indoor millimeter-wave channels. Material properties for all surfaces, including walls (con-crete with relative permittivity ϵr = 5 .31 , conductivity σ =0.0326 S/m), ceilings (wood with ϵr = 2 .89 , σ = 0 .0047 S/m), and floors (marble with ϵr = 7 .0, σ = 0 .01 S/m), are specified according to ITU-R P.2040-1 standards to ensure realistic propagation loss characteristics [51]. The reflector surfaces are modeled as metallic panels with near-perfect reflection coefficients ( ϵr = 1 , high conductivity), enabling accurate representation of specular reflection and signal redirection properties. Each reflector consists of independently adjustable hexagonal metallic tiles with mechanical servo-based control, providing wideband frequency operation without requiring sophisticated RF circuitry or electronic phase shifters. 
+
+2) System Configuration and Training Parameters: The carrier frequency is set to 60 GHz with a total transmit power of 5 dBm, representing mmWave communication systems operating with low transmitting power. Fig. 4 illustrates the experimental setup of this work. User equipment positions are sampled uniformly within a designated coverage region measuring approximately 10 m × 10 m, with random reposi-tioning at the start of each training episode to promote policy generalization across diverse spatial configurations. Reflector focal points are initialized around the center of the scenario, according to a three-dimensional Gaussian distribution char-acterized by mean vector μ = [0 .0, 0.0, 1.5] m and covariance matrix Σ = 2.5I, where I denotes the identity matrix. This stochastic initialization strategy ensures comprehensive exploration of the reflector orientation space while maintaining physical feasibility constraints. The MAPPO algorithm operates under a CTDE paradigm, where global system state information is accessible during training and at a centralized high-level controller but individual low-level agents execute policies based solely on local obser-vations during deployment. The high-level controller consists of an attention layer with a layer normalization followed by 2 fully connected heads (128 neurons), one is for the Q-value and the other is the policy action. Each low-level agent’s policy and value network consists of two fully connected layers with 256 neurons and ReLU activation functions, providing sufficient representational capacity for learning complex coor-JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 00 11 
+
+dination behaviors. The Adam optimizer with a learning rate of 2.0 × 10 −4 ensures stable policy updates, while a discount factor of γ = 0 .985 emphasizes long-term cumulative rewards. PPO-specific parameters include a clipping parameter ϵ = 0 .2
+
+to constrain policy modifications and a generalized advantage estimation (GAE) lambda of 0.9 for advantage estimation. Training proceeds over 3,200 episodes for both 2-user and 4-user scenarios, with each batch of 200 samples processed for 40 epochs to maximize sample efficiency. Each episode lasts 100 time steps. Table I summarizes the complete system parameters and training hyperparameters. 
+
+3) Performance Metrics and Baseline Methods: The pri-mary evaluation metric is the RSSI, measured in dBm, which quantifies the signal power at each UE location. System-level performance is assessed through both individual user RSSI and aggregate metrics, including mean RSSI across all users. Additionally, training convergence is evaluated using episode-averaged cumulative reward. To comprehensively evaluate the proposed hierarchical ar-chitecture, four distinct control strategies are compared:  
+
+> •
+
+Allocator : Implements the full hierarchical framework with a high-level user-to-reflector allocation controller augmented by a compatibility matrix encoding prior domain knowledge, combined with low-level PPO-based focal point optimization agents.  
+
+> •
+
+No compat : A variant that removes the compatibil-ity matrix while retaining the hierarchical allocation-execution structure, enabling assessment of the matrix’s contribution to learning acceleration.  
+
+> •
+
+No allocator : A baseline that employs a single cen-tralized PPO agent that directly optimizes the average RSSI across all users without hierarchical decomposition, representing a conventional centralized optimization ap-proach.  
+
+> •
+
+Random : A baseline that assigns users to reflectors through uniform random selection while maintaining low-level PPO optimization for assigned users, establishing a lower-bound performance reference. The selection of these baselines is designed to isolate and verify the distinct contributions of the proposed framework. Specifically, No allocator serves as the architectural bench-mark, validating the hypothesis that hierarchical decompo-sition is superior to standard centralized learning for high-dimensional control problems. No compat functions as an ablation study, isolating the specific performance gain con-figurable to the geometric inductive bias. Finally, Random 
+
+establishes the performance floor, confirming that the user-to-reflector assignment is a non-trivial combinatorial problem that requires intelligent optimization rather than stochastic selection. 
+
+4) Evaluation Protocol: Post-training evaluation is con-ducted over 300 timesteps with fixed trained policies to assess deployment performance and RSSI stability. To assess robust-ness, realistic mobility is simulated via 30 cm user displace-ments every two steps under varying reflector configurations. All experiments are executed with deterministic ray-tracing to ensure reproducibility, capturing multi-path propagation phenomena characteristic of indoor millimeter-wave channels.                            
+
+> Table I SYSTEM PARAMETERS AND TRAINING HYPERPARAMETERS
+> Parameter Value System Configuration
+> Carrier frequency & transmit power 60 GHz, 5 dBm User scenarios & reflector arrays 2, 4 users; 2 arrays Coverage area 10 m ×10 m
+> Neural Network & Optimization
+> High-level layer & activation attention + 128 neurons, ReLU Low-level hidden layers & activation 256 neurons, ReLU Optimizer & learning rate Adam, 2.0×10 −4
+> PPO Configuration
+> Discount factor γ, clip ϵ, GAE λ0.985, 0.2, 0.9 Entropy & value loss coefficients 1.0×10 −4, 1.0 Batch size & training epochs 200, 40
+> Training & Evaluation
+> Training episodes & eval timesteps 3,200, 300 Focal point initialization μ,Σ[0.0, 0.0, 1.5] m, 2.5I
+> Figure 5. Training performance of the two-user scenario: episode-averaged reward for two-user scenario across four methods over 3,200 episodes.
+> Figure 6. Training performance of the four-user scenario: episode-averaged reward for four-user scenario across four methods over 3,200 episodes.
+
+B. Training Performance and Convergence Analysis 
+
+The training performance of the hierarchical MARL frame-work is evaluated across 2-user (2UE) and 4-user (4UE) configurations. Fig. 5 and Fig. 6 present episode-averaged reward convergence over 3,200 training episodes, comparing four control strategies. The Allocator method achieves superior convergence in JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 00 12 
+
+both scenarios, reaching average rewards of approximately 67 (2UE) and 69 cumulative reward (4UE) after convergence. This demonstrates rapid initial learning within 500 episodes followed by stable improvement, with consistent behavior regardless of user density scaling. 
+
+Impact of Compatibility Matrix: The performance differ-ence between Allocator and No compat reveals the critical contribution of domain knowledge encoding. In the 2UE scenario (Fig. 5), Allocator achieves a final reward of approx-imately 67 cumulative reward, while No compat converges to only 42 cumulative reward, representing a 37% perfor-mance gap that persists throughout training. The 4UE scenario (Fig. 6) exhibits similar behavior (69 vs. 50, 28% gap). This substantial advantage demonstrates that the compatibility matrix provides essential inductive bias guiding the allocation controller toward geometrically favorable assignments. The exponentially large discrete action space ( KL combinations) creates a sparse reward landscape where effective strategies require prohibitively extensive exploration without domain-specific guidance. While the compatibility matrix requires geometric knowledge readily available through localization infrastructure, the substantial performance improvement (37% in 2UE, 28% in 4UE) justifies the minimal overhead compared to CSI estimation in traditional RIS systems. 
+
+Hierarchical vs. Centralized Learning: Hierarchical meth-ods ( Allocator and No compat ) outperform the centralized 
+
+No allocator baseline. In the 2UE scenario, hierarchical ap-proaches achieve rewards of 67 versus 40 (67% improvement), while in 4UE they reach 69 compared to 50 (38% improve-ment) compared to centralized approaches. The centralized ap-proach struggles due to increased observation dimensionality and credit assignment complexity when a single agent must simultaneously optimize focal points for multiple reflectors serving multiple users. The hierarchical decomposition dis-tributes decision-making across specialized controllers operat-ing at different temporal abstractions, enabling more efficient exploration and coordination. 
+
+Baseline Performance: The Random baseline employs uniform random user-reflector assignment with low-level PPO optimization, achieving the poorest performance: approxi-mately 27 (2UE) and 40 (4UE). This underperformance, even compared to centralized optimization, highlights the necessity of learned assignment strategies rather than naive heuristics for effective multi-reflector coordination. 
+
+Scalability Across User Densities: Comparing 2UE and 4UE scenarios reveals that the hierarchical framework scales effectively with increasing user density. While the final mean convergence performance remains comparable (69 for 2UE vs. 67 for 4UE), the 4-user scenario exhibits notably higher reward variance, as indicated by the wider shaded regions in Fig. 5 compared to Fig. 6. This increased variance reflects the increased difficulty of simultaneously coordinating reflector assignments in a denser environment with a significantly larger combinatorial action space. Nevertheless, the system success-fully converges to a high-performance policy, demonstrating that the hierarchical architecture maintains learning efficiency despite the increased complexity.         
+
+> Figure 7. Deployment RSSI Performance for Two-User Configuration: Hier-archical MARL with and without Compatibility Matrix, Centralized PPO, and Random Assignment. Solid lines represent mean RSSI, and shaded regions denote empirical standard deviation.
+> Figure 8. Deployment RSSI Performance for Four-User Configuration: Hierarchical MARL with and without Compatibility Matrix, Centralized PPO, and Random Assignment. Solid lines represent mean RSSI, and shaded regions denote empirical standard deviation.
+
+C. Deployment Performance Evaluation and Architectural Comparison 
+
+Post-training evaluation validates learned policy generaliza-tion and practical deployment performance. Fig. 7 and Fig. 8 present RSSI performance during 300-timestep evaluation with user movement with a velocity of 1 m/s. 
+
+Hierarchical vs. Centralized Optimization: The hierarchi-cal architecture achieves substantial RSSI improvements over centralized optimization. For 2-user configuration (Fig. 7), 
+
+Allocator achieves −65 .23 dBm compared to −68 .04 dBm for centralized No allocator (2.81 dB improvement). This ad-vantage amplifies significantly in the 4-user scenario (Fig. 8): 
+
+−66 .62 dBm versus −74 .56 dBm (7.94 dB gain). From the reinforcement learning perspective, hierarchical decomposition reduces both problem dimensionality and credit assignment complexity. The centralized agent must simul-taneously optimize 3 L focal point parameters, resulting in action space growth and ambiguous reward attribution across reflector-user interactions. The hierarchical approach decou-ples this into high-level discrete allocation decisions with low-level continuous optimization maintaining fixed dimensional-JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 00 13 
+
+> Figure 9. Mean RSSI per User: Comparison of 2-User and 4-User Deployment Scenarios. Dashed lines indicate mean performance over 300 timesteps; shaded regions denote empirical standard deviation.
+
+ity per agent. From the wireless communication perspective, the hierar-chical framework enables task-specific optimization aligned with physical channel characteristics. The high-level allocator captures macro-scale geometric relationships and user-reflector compatibility, while low-level agents refine configurations based on fine-grained signal propagation dynamics. 
+
+Scalability of Hierarchical Decomposition: The perfor-mance gap between hierarchical and centralized methods widens with system complexity. The 4-user scenario exhibits a larger gap (7.94 dB) than the 2-user scenario (2.81 dB), demonstrating that centralized optimization suffers dispropor-tionately as user density increases. Conversely, the hierarchi-cal approach maintains consistent improvements, validating scalability to larger multi-user systems—crucial for mmWave networks with the dynamic user number. 
+
+Compatibility Matrix Deployment Validation: The Allo-cator method consistently outperforms No compat , achieving a 1.4 dB gain in 2-user scenarios ( −65 .23 dBm vs. −66 .63 
+
+dBm) and a 3.54 dB gain in 4-user scenarios ( −66 .62 dBm vs. −70 .16 dBm). These results confirm that the compatibility matrix effectively identifies and sustains optimal signal assign-ments. Crucially, this advantage persists because the policy retains the structured exploration patterns learned during train-ing, proving that the method provides lasting allocation quality rather than just temporary training assistance. 
+
+Stability and Variance Analysis: Shaded regions in Fig. 7 and Fig. 8 represent empirical standard deviation. Hierarchi-cal methods exhibit lower variance compared to centralized, particularly in 4-user scenarios. Stable RSSI performance reflects consistent assignment and optimization decisions de-spite dynamic positions. The centralized baseline shows larger fluctuations, degrading Quality of Service (QoS) guarantees. 
+
+D. Scalability Analysis: User Density and System Efficiency Trade-off 
+
+To evaluate the scalability of the proposed HMARL frame-work, we analyze system performance under varying user densities. Fig. 9 and Fig. 10 illustrate the mean RSSI per 
+
+> Figure 10. Total System RSSI: Comparison of 2-User and 4-User Deployment Scenarios. Dashed lines indicate mean total performance over 300 timesteps; shaded regions denote empirical standard deviation.
+
+User and total system RSSI, respectively, for 2-user and 4-user configurations. These metrics shows the trade-off between individual Quality of Service (QoS) and aggregate system efficiency. As demonstrated in Fig. 9, doubling the user density from 2 to 4 results in a per-user RSSI degradation of 1.39 dB (declining from −65 .23 dBm to −66 .62 dBm). Theoretical naive scaling, where fixed resources are divided equally among double the users, would necessitate a 3 dB reduction (50% power loss). The observed degradation of only 1.39 dB indicates that the hierarchical allocator effectively mitigates power loss/interference, maintaining QoS standards better than a uniform resource split. Fig. 10 reveals that the aggregate received power remains highly stable, with a negligible difference of 0.32 dB between the 2-user ( −61 .42 dBm) and 4-user ( −61 .10 dBm) scenarios. This consistency demonstrates that the algorithm maintains high efficacy in guiding signals toward assigned users, re-gardless of user density. Rather than suffering from saturation or interference losses as complexity grows, the hierarchical controller successfully identifies spatially complementary con-figurations, ensuring that the reflective surface area remains fully utilized to maximize total system throughput. These results verify the framework’s robustness in dynamic deployment scenarios. The system exhibits near-linear scal-ability, where the addition of users results in minimal per-user degradation (1.39 dB) while maintaining comparable total power levels. This confirms that the HMARL approach effectively exploits multi-user diversity to sustain efficient signal redirection. 
+
+E. Impact of Reflector Aperture Size on System Performance 
+
+Optimizing the hardware configuration is essential for estab-lishing a viable trade-off between deployment cost and system performance. To characterize this relationship, we evaluate the system’s robustness across varying reflector aperture sizes. Fig. 11 illustrates the RSSI performance for four distinct configurations, ranging from a compact 45-tile array (r5) to a large-scale 99-tile array (r11). JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 00 14  
+
+> Figure 11. RSSI Performance Across Reflector Aperture Configurations: 5-Row (45 tiles), 7-Row (63 tiles), 9-Row (81 tiles), and 11-Row (99 tiles) Im-plementations. Solid lines represent mean RSSI over 300 evaluation timesteps; shaded regions denote empirical standard deviation. Dashed horizontal lines indicate mean performance for each configuration.
+
+The evaluation reveals a monotonic relationship between aperture size and received signal strength, though with dimin-ishing returns. The baseline r5 configuration (45 tiles) yields a mean RSSI of −66 .43 dBm. Expanding the aperture to r7 (63 tiles) provides the most significant marginal gain of 
+
+1.21 dB, resulting in −65 .22 dBm. Subsequent increases yield progressively smaller improvements: the r9 configuration (81 tiles) adds 0.37 dB (reaching −64 .85 dBm), while the r11 configuration (99 tiles) adds a negligible 0.09 dB (reaching 
+
+−64 .76 dBm). Despite a 2.2× increase in the number of reflective el-ements from r5 to r11, the total performance improvement is limited to 1.67 dB. This saturation indicates that beyond a specific threshold, additional tiles contribute minimally to signal concentration due to the geometric constraints of the fixed user coverage area. Consequently, the r9 configuration emerges as the optimal design choice, capturing the majority of the achievable beam-focusing gain while minimizing hardware complexity compared to the r11 implementation. 
+
+F. Reward Function Sensitivity Analysis 
+
+To validate the robustness of the hierarchical framework to reward function design choices, we evaluate performance across five path-loss compensated reward formulations. The reward signal is constructed as R = RSSI × d−n, where d is the propagation distance and n ∈ { 0, 1, 2, 3, 4} represents the path-loss exponent. This parameterization enables assessment of how different distance-normalization factors affect learning and deployment performance. Fig. 12 demonstrates that all five reward formulations converge to a narrow performance band spanning −64 .42 to −65 .23 dBm, representing only 0.81 dBm stadard deviation across the tested r7 (63 tiles) configurations. This consistent performance confirms that the HMARL with MAPPO approach effectively mitigates the sensitivity issues common in reinforcement learning, maintaining robust per-formance without requiring meticulous reward engineering or specific distance scaling.        
+
+> Figure 12. Reward function sensitivity analysis: path-loss compensated reward signals. Path-Loss exponents fn∈ { f0, f 1, f 2, f 3, f 4}. Solid lines represent mean RSSI over 300 evaluation timesteps; shaded regions denote empirical standard deviation.
+> Figure 13. RSSI Performance Under User Position Localization Errors: Performance across localization error levels ( σerror ∈[0 .1,3.0] m), evaluated with dynamic user repositioning. Solid lines represent mean RSSI over 300 evaluation timesteps; shaded regions denote empirical standard deviation. Results demonstrate graceful degradation up to 0.5 m error, establishing practical localization accuracy requirements for reliable deployment.
+
+G. Robustness to User Position Localization Errors 
+
+Practical deployment of the hierarchical MARL framework depends on user localization information. Real-world local-ization systems encounter positioning errors due to hardware limitations and environmental multipath, which can degrade allocation quality if not properly addressed. This section evaluates framework robustness to localization inaccuracies by training separate instances under different user position error levels σerror ∈ {0.0, 0.1, 0.3, 0.5, 1.0, 2.0, 3.0} meters using error-matched training. The error follows the Gausian distribution with zero-mean and σerror -variance. In this setup, each instance learns under the same error statistics present during evaluation, reflecting practical scenarios where local-ization system characteristics are known in advance, enabling error-aware policy learning. Performance degrades systematically with increasing lo-calization error, as shown in Fig. 13, The no-error baseline achieves −64 .43 dBm mean RSSI. As error increases, perfor-mance decreases gradually: JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 00 15  
+
+> •
+
+σ = 0 .1 m yields −64 .83 dBm (0.40 dB loss);  
+
+> •
+
+σ = 0 .3 m yields −70 .58 dBm (6.15 dB loss);  
+
+> •
+
+σ = 0 .5 m yields −77 .17 dBm (12.74 dB loss);  
+
+> •
+
+σ = 1 .0 m yields −78 .16 dBm (13.73 dB loss);  
+
+> •
+
+σ = 2 .0 m yields −83 .72 dBm (19.29 dB loss);  
+
+> •
+
+σ = 3 .0 m yields −89 .56 dBm (25.13 dB loss). From a practical deployment perspective, approximately 0.3 m (30 cm) localization accuracy maintains less than 6 dB performance degradation, a requirement achievable through commodity WiFi/BLE infrastructure. Conversely, achieving tighter 0.1 m (10 cm) accuracy via Ultra-Wideband (UWB) systems enables near-optimal performance with only negligi-ble loss. These trade-offs enable system designers to select localization technology based on performance requirements and cost constraints. The variance analysis presented in Fig. 13 (shaded regions) reveals stable performance with sub-meter errors, showing less than 3 dBm standard deviation at 0.5 m error, but increasing standard deviation at larger errors (5.5 dBm at 3.0 m). This QoS consistency requirement suggests limiting localization error below 1.0 m for reliable operation in dynamic deployment scenarios. While the framework exhibits sensitivity to errors exceed-ing 1.0 m, it maintains robust performance within the sub-meter regime typical of modern indoor tracking systems. This accuracy requirement aligns with the capabilities of emerging technologies, such as Ultra-Wideband (UWB), which routinely deliver the necessary decimeter-level precision. Consequently, the approach is well-suited for deployment in next-generation smart environments where high-fidelity localization infrastruc-ture is available. VI. C ONCLUSION 
+
+This work addresses the scalability and overhead chal-lenges of multi-reflector coordination in mmWave systems by introducing an HMARL framework. By decomposing the optimization problem into high-level allocation and low-level execution layers, the proposed approach eliminates the depen-dency on explicit CSI, relying instead on geometric priors and user localization. Experimental evaluation confirms that the hierarchical architecture not only outperforms centralized optimization baselines by up to 7.94 dBm but also exhibits superior scalability. As user density increases, the system exploits multi-user diversity to maintain sustained total power efficiency with minimal per-user QoS degradation. Crucially, the framework demonstrates practical robustness: it adapts effectively across varying reflector aperture sizes and main-tains reliable operation within the sub-meter localization error regime ( ≤ 0.5 m) typical of modern tracking infrastructure. These findings establish that mechanically reconfigurable reflectors, controlled via hierarchical learning, offer a cost-effective and wideband alternative to electronic metasurfaces for indoor coverage enhancement. Future research will extend this paradigm to high-mobility scenarios with time-varying channels, investigate joint AP-reflector beam-coordination, and validate the mechanical dynamics through physical prototyp-ing. ACKNOWLEDGMENTS 
+
+This material is based upon work supported by the U.S. Department of Energy, Office of Science, Office of Advanced Scientific Computing Research, Early Career Research Pro-gram under Award Number DE-SC-0023957. REFERENCES [1] M. Di Renzo, A. Zappone, M. Debbah, M.-S. Alouini, C. Yuen, J. de Rosny, and S. Tretyakov, “Smart Radio Environments Empow-ered by Reconfigurable Intelligent Surfaces: How It Works, State of Research, and The Road Ahead,” IEEE Journal on Selected Areas in Communications , vol. 38, no. 11, pp. 2450–2525, 2020. [2] E. Bj¨ ornson, H. Wymeersch, B. Matthiesen, P. Popovski, L. Sanguinetti, and E. de Carvalho, “Reconfigurable Intelligent Surfaces: A Signal Processing Perspective with Wireless Applications,” IEEE Signal Pro-cessing Magazine , vol. 39, no. 2, pp. 135–158, 2022. [3] C. Pan, G. Zhou, K. Zhi, S. Hong, T. Wu, Y. Pan, H. Ren, M. D. Renzo, A. Lee Swindlehurst, R. Zhang, and A. Y. Zhang, “An Overview of Signal Processing Techniques for RIS/IRS-Aided Wireless Systems,” 
+
+IEEE Journal of Selected Topics in Signal Processing , vol. 16, no. 5, pp. 883–917, 2022. [4] S. Kim, H. Lee, J. Cha, S.-J. Kim, J. Park, and J. Choi, “Practical Channel Estimation and Phase Shift Design for Intelligent Reflecting Surface Empowered MIMO Systems,” IEEE Transactions on Wireless Communications , vol. 21, no. 8, pp. 6226–6241, 2022. [5] G. C. Alexandropoulos, K. Stylianopoulos, C. Huang, C. Yuen, M. Ben-nis, and M. Debbah, “Pervasive Machine Learning for Smart Radio Envi-ronments Enabled by Reconfigurable Intelligent Surfaces,” Proceedings of the IEEE , vol. 110, no. 9, pp. 1494–1525, 2022. [6] R. Makar, S. Mahadevan, and M. Ghavamzadeh, “Hierarchical Multi-Agent Reinforcement Learning,” in Proceedings of the Fifth Interna-tional Conference on Autonomous Agents , 2001, pp. 246–253. [7] L. Kraemer and B. Banerjee, “Multi-agent reinforcement learning as a rehearsal for decentralized planning,” Neurocomputing , vol. 190, pp. 82–94, 2016. [8] C. Yu, A. Velu, E. Vinitsky, J. Gao, Y. Wang, A. Bayen, and Y. Wu, “The Surprising Effectiveness of PPO in Cooperative Multi-agent Games,” Ad-vances in Neural Information Processing Systems , vol. 35, pp. 24 611– 24 624, 2022. [9] A. Nasari, H. Le, R. Lawrence, Z. He, X. Yang, M. Krell, A. Tsyplikhin, M. Tatineni, T. Cockerill, L. Perez, D. Chakravorty, and H. Liu, “Benchmarking the Performance of Accelerators on National Cyberinfrastructure Resources for Artificial Intelligence / Machine Learning Workloads,” in Practice and Experience in Advanced Research Computing 2022: Revolutionary: Computing, Connections, You , ser. PEARC ’22. New York, NY, USA: Association for Computing Machinery, 2022. [Online]. Available: https://doi.org/10.1 145/3491418.3530772 [10] H. Le, Z. He, M. Le, D. Chakravorty, L. M. Perez, A. Chilumuru, Y. Yao, and J. Chen, “Insight Gained from Migrating a Machine Learning Model to Intelligence Processing Units,” in Practice and Experience in Advanced Research Computing 2024: Human Powered Computing , ser. PEARC ’24. New York, NY, USA: Association for Computing Machinery, 2024. [Online]. Available: https://doi.org/10.1145/3626203.3670527 [11] Qualcomm. (2024) Unlocking On-device Generative AI with an NPU and Heterogeneous Computing. [Online]. Available: https: //www.qualcomm.com/content/dam/qcomm-martech/dm-assets/docume nts/Unlocking-on-device-generative-AI-with-an-NPU-and-heterogeneo us-computing.pdf [12] S. Zahra, L. Ma, W. Wang, J. Li, D. Chen, Y. Liu, Y. Zhou, N. Li, Y. Huang, and G. Wen, “Electromagnetic Metasurfaces and Reconfigurable Metasurfaces: A Review,” Frontiers in Physics , vol. 8, 2021. [Online]. Available: https://www.frontiersin.org/articles/10.3389/f phy.2020.593411 [13] S. Basharat, M. Khan, M. Iqbal, U. S. Hashmi, S. A. R. Zaidi, and I. Robertson, “Exploring Reconfigurable intelligent surfaces for 6G: State-of-the-art and the road ahead,” IET Communications ,vol. 16, no. 13, pp. 1458–1474, 2022. [Online]. Available: https: //ietresearch.onlinelibrary.wiley.com/doi/abs/10.1049/cmu2.12364 [14] C. Hu, L. Dai, S. Han, and X. Wang, “Two-Timescale Channel Esti-mation for Reconfigurable Intelligent Surface Aided Wireless Commu-nications,” IEEE Transactions on Communications , vol. 69, no. 11, pp. 7736–7747, 2021. JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 00 16 
+
+[15] J. Chen, Y.-C. Liang, H. V. Cheng, and W. Yu, “Channel Estimation for Reconfigurable Intelligent Surface Aided Multi-User mmWave MIMO Systems,” IEEE Transactions on Wireless Communications , vol. 22, no. 10, pp. 6853–6869, 2023. [16] X. Wei, D. Shen, and L. Dai, “Channel Estimation for RIS Assisted Wireless Communications—Part I: Fundamentals, Solutions, and Future Opportunities,” IEEE Communications Letters , vol. 25, no. 5, pp. 1398– 1402, 2021. [17] B. Shamasundar, N. Daryanavardan, and A. Nosratinia, “Channel Train-ing & Estimation for Reconfigurable Intelligent Surfaces: Exposition of Principles, Approaches, and Open Problems,” IEEE Access , vol. 11, pp. 6717–6734, 2023. [18] A. Abrardo, “Optimizing Reconfigurable Intelligent Surfaces in Multi-User Environments: A Multiport Network Theory Approach Leveraging Statistical CSI,” IEEE Transactions on Communications , vol. 73, no. 3, pp. 2047–2060, 2025. [19] W. Lai, W. Wang, F. Xu, X. Li, S. Niu, and K. Shen, “Blind beamforming for intelligent reflecting surface in fading channels without CSI,” arXiv e-prints , pp. arXiv–2305, 2023. [20] J. An, C. Xu, Q. Wu, D. W. K. Ng, M. Di Renzo, C. Yuen, and L. Hanzo, “Codebook-Based Solutions for Reconfigurable Intelligent Surfaces and Their Open Challenges,” IEEE Wireless Communications , vol. 31, no. 2, pp. 134–141, 2024. [21] A. M. Nazar, M. Y. Selim, and D. Qiao, “Revolutionizing RIS Networks: Lidar-based Data-driven Approach to Enhance RIS Beamforming,” 
+
+Sensors , vol. 25, no. 1, p. 75, 2024. [22] C. Huang, R. Mo, and C. Yuen, “Reconfigurable Intelligent Surface Assisted Multiuser MISO Systems Exploiting Deep Reinforcement Learning,” IEEE Journal on Selected Areas in Communications , vol. 38, no. 8, pp. 1839–1850, 2020. [23] A. Taha, Y. Zhang, F. B. Mismar, and A. Alkhateeb, “Deep Reinforce-ment Learning for Intelligent Reflecting Surfaces: Towards Standalone Operation,” in 2020 IEEE 21st International Workshop on Signal Pro-cessing Advances in Wireless Communications (SPAWC) , 2020, pp. 1–5. [24] A. Taha, M. Alrabeiah, and A. Alkhateeb, “Enabling Large Intelligent Surfaces With Compressive Sensing and Deep Learning,” IEEE Access ,vol. 9, pp. 44 304–44 321, 2021. [25] H. Choi, L. V. Nguyen, J. Choi, and A. L. Swindlehurst, “A Deep Reinforcement Learning Approach for Autonomous Reconfigurable In-telligent Surfaces,” in 2024 IEEE International Conference on Commu-nications Workshops (ICC Workshops) , 2024, pp. 208–213. [26] B. Sheen, J. Yang, X. Feng, and M. M. U. Chowdhury, “A Deep Learning Based Modeling of Reconfigurable Intelligent Surface Assisted Wireless Communications for Phase Shift Configuration,” IEEE Open Journal of the Communications Society , vol. 2, pp. 262–272, 2021. [27] A. Abdallah, A. Celik, M. M. Mansour, and A. M. Eltawil, “Deep Reinforcement Learning Based Beamforming Codebook Design for RIS-aided mmWave Systems,” in 2023 IEEE 20th Consumer Communica-tions and Networking Conference (CCNC) , 2023, pp. 1020–1026. [28] P.-H. Liao, L.-H. Shen, P.-C. Wu, and K.-T. Feng, “Multi-Agent Deep Reinforcement Learning for Energy Efficient Multi-Hop STAR-RIS-Assisted Transmissions,” in 2024 IEEE 100th Vehicular Technology Conference (VTC2024-Fall) , 2024, pp. 1–5. [29] H. Le, O. Bedir, M. Ibrahim, J. Tao, and S. Ekin, “Signal Whisperers: Enhancing Wireless Reception Using DRL-Guided Reflector Arrays,” 
+
+IEEE Transactions on Machine Learning in Communications and Net-working , vol. 4, pp. 265–281, 2026. [30] L. Busoniu, R. Babuska, and B. De Schutter, “A Comprehensive Survey of Mmultiagent Reinforcement Learning,” IEEE Transactions on Systems, Man, and Cybernetics, Part C (Applications and Reviews) ,vol. 38, no. 2, pp. 156–172, 2008. [31] K. Zhang, Z. Yang, H. Liu, T. Zhang, and T. Basar, “Fully Decen-tralized Multi-agent Reinforcement Learning with Networked Agents,” in International Conference on Machine Learning . PMLR, 2018, pp. 5872–5881. [32] S. Kar, J. M. Moura, and H. V. Poor, “QD-Learning: A Collabo-rative Distributed Strategy for Multi-Agent Reinforcement Learning Through Consensus+Innovations,” IEEE Transactions on Signal Pro-cessing , vol. 61, no. 7, pp. 1848–1862, 2013. [33] M. L. Littman, “Markov Games as a Framework for Multi-agent Rein-forcement Learning,” in Machine Learning Proceedings 1994 . Elsevier, 1994, pp. 157–163. [34] L. S. Shapley, “Stochastic Games,” Proceedings of the National Academy of Sciences , vol. 39, no. 10, pp. 1095–1100, 1953. [35] C. Park, K. Zhang, and A. Ozdaglar, “Multi-player Zero-sum Markov Games with Networked Separable Interactions,” Advances in Neural Information Processing Systems , vol. 36, pp. 37 354–37 369, 2023. [36] J. Hu and M. P. Wellman, “Nash Q-learning for General-sum Stochastic Games,” Journal of Machine Learning Research , vol. 4, no. Nov, pp. 1039–1069, 2003. [37] R. Lowe, Y. I. Wu, A. Tamar, J. Harb, O. Pieter Abbeel, and I. Mordatch, “Multi-agent Actor-critic for Mixed Cooperative-Competitive Environ-ments,” Advances in Neural Information Processing Systems , vol. 30, 2017. [38] T. G. Dietterich, “The maxq method for hierarchical reinforcement learning,” in Proceedings of the Fifteenth International Conference on Machine Learning , ser. ICML ’98. San Francisco, CA, USA: Morgan Kaufmann Publishers Inc., 1998, p. 118–126. [39] M. Ghavamzadeh, S. Mahadevan, and R. Makar, “Hierarchical Multi-Agent Reinforcement Learning,” Autonomous Agents and Multi-Agent Systems , vol. 13, no. 2, pp. 197–229, 2006. [40] S. Iqbal, R. Costales, and F. Sha, “ALMA: Hierarchical Learning for Composite Multi-Agent Tasks,” Advances in Neural Information Processing Systems , vol. 35, pp. 7155–7166, 2022. [41] M. Yang, Y. Yang, Z. Lu, W. Zhou, and H. Li, “Hierarchical Multi-Agent Skill Discovery,” Advances in Neural Information Processing Systems ,vol. 36, pp. 61 759–61 776, 2023. [42] Z. Xu, Y. Bai, B. Zhang, D. Li, and G. Fan, “HAVEN: Hierarchical Cooperative Multi-Agent Reinforcement Learning with Dual Coordina-tion Mechanism,” in Proceedings of the AAAI conference on artificial intelligence , vol. 37, no. 10, 2023, pp. 11 735–11 743. [43] W. Khawaja, O. Ozdemir, Y. Yapici, F. Erden, and I. Guvenc, “Coverage Enhancement for NLOS mmWave Links Using Passive Reflectors,” 
+
+IEEE Open Journal of the Communications Society , vol. 1, pp. 263– 281, 2020. [44] A. Deng, Y. Liu, and D. M. Blough, “Maximizing Coverage for mmWave WLANs with Dedicated Reflectors,” in ICC 2021 - IEEE International Conference on Communications , 2021, pp. 1–6. [45] H. Le, O. Bedir, M. Ibrahim, J. Tao, and S. Ekin, “Guiding Wireless Signals with Arrays of Metallic Linear Fresnel Reflectors: A Low-cost, Frequency-versatile, and Practical Approach,” in 2024 IEEE 100th Vehicular Technology Conference (VTC2024-Fall) , 2024, pp. 1–7. [46] Z. Yu, C. Feng, Y. Zeng, T. Li, and S. Jin, “Wireless Communication Using Metal Reflectors: Reflection Modelling and Experimental Verifi-cation,” in ICC 2023 - IEEE International Conference on Communica-tions , 2023, pp. 4701–4706. [47] Z. Zhang, L. Dai, X. Chen, C. Liu, F. Yang, R. Schober, and H. V. Poor, “Active ris vs. passive ris: Which will prevail in 6g?” IEEE Transactions on Communications , vol. 71, no. 3, pp. 1707–1725, 2023. [48] J. Schulman, F. Wolski, P. Dhariwal, A. Radford, and O. Klimov, “Proxi-mal Policy Optimization Algorithms,” arXiv preprint arXiv:1707.06347 ,2017. [49] J. Hoydis, S. Cammerer, F. Ait Aoudia, A. Vem, N. Binder, G. Marcus, and A. Keller, “Sionna: An Open-Source Library for Next-Generation Physical Layer Research,” arXiv preprint , Mar. 2022. [50] Blender. (2025) The Blender Foundation. Blender. [Online]. Available: https://www.blender.org/ [51] I. T. U. R. Sector. (2024, Dec.) Effects of building materials and structures on radiowave propagation above about 100MHz. International Telecommunications Union Radiocommunication Sector. [Online]. Available: https://www.itu.int/rec/R-REC-P.2040/en

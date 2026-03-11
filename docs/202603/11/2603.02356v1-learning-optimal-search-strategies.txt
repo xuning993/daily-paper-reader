@@ -1,0 +1,2346 @@
+Title: Learning Optimal Search Strategies
+
+URL Source: https://arxiv.org/pdf/2603.02356v1
+
+Published Time: Wed, 04 Mar 2026 01:08:03 GMT
+
+Number of Pages: 27
+
+Markdown Content:
+# Learning Optimal Search Strategies 
+
+## Stefan Ankirchner ∗ Maximilian Philipp Thiel †
+
+## March 4, 2026 
+
+Abstract 
+
+We explore the question of how to learn an optimal search strategy within the example of a parking problem where parking opportunities arrive according to an unknown inhomogeneous Poisson process. The optimal policy is a threshold-type stopping rule characterized by an in-difference position. We propose an algorithm that learns this threshold by estimating the integrated jump intensity rather than the intensity function itself. We show that our algorithm achieves a logarithmic re-gret growth, uniformly over a broad class of environments. Moreover, we prove a logarithmic minimax regret lower bound, establishing the growth optimality of the proposed approach. 
+
+2020 MSC : Primary: 60G40, 93E35; secondary: 62L05, 68Q32. 
+
+Keywords : optimal stopping, parking problem, reinforcement learning, re-gret. 
+
+# Introduction 
+
+The parking problem is a classical example of a search problem. To describe a standard version of it, suppose that an agent is driving along a street, that she can not make a U-turn and that she can only see whether the next lot is free, but not which of the following ones. If the agent arrives at a free lot, then she has to decide whether to take it or not. Once a free lot is discarded, it is discarded forever. A decision rule can be modeled as a stopping time. The parking problem consists of finding the stopping time that minimizes the expected distance of the taken lot to some given target. 
+
+> ∗
+
+Stefan Ankirchner, Institute for Mathematics, University of Jena, Inselplatz 5, 07743 Jena, Germany. Email: s.ankirchner@uni-jena.de. 
+
+> †
+
+Maximilian Thiel, Institute for Mathematics, University of Jena, Inselplatz 5, 07743 Jena, Germany. Email: maximilian.thiel@uni-jena.de. 
+
+1
+
+> arXiv:2603.02356v1 [cs.LG] 2 Mar 2026
+
+To determine an optimal stopping time, one needs to know the distribu-tion of the position of free parking lots. But what if the agent does not know the distribution? The parking problem is also a paradigm of a problem that usually needs to be solved not once, but in many consecutive rounds, e.g. every morning when driving to your workplace. If the stopping agent does not know the distribution of the free lots, then she can learn it over time by observing in each round the positions of free lots up to the actual chosen one. In the present article we address the question of what constitutes a good strategy for choosing a parking lot round after round. We do so within the framework of a continuous-time model, where free parking lots arrive according to an inhomogeneous Poisson process. Within this model the opti-mal stopping rule is of threshold type: there is a position b∗ after which it is optimal to take the first free lot. The position b∗ can be characterized as an indifference level: if the lot at b∗ is free, then the agent is indifferent between taking it or taking the next free one. We assume that the stopping agent does not know the jump intensity of the Poisson process. We propose a specific algorithm, called indifference level updating (ILU), that estimates the integrated jump intensity and determines a stopping rule in every round, based on the observations made so far. In order to assess the quality of our algorithm we compute the growth rate of the regret, i.e. the accumulated difference of the expected distance to the target and the minimal expected distance when choosing the optimal stopping rule. Indeed, we show that the regret implied by the ILU algorithm grows logarithmically, uniformly for a large class of distributions. A crucial property of the ILU algorithm is that it does not estimate the jump intensity function, but the integrated jump intensity. For the latter we have estimators with a mean square error (MSE) converging to zero at the rate 1 /n , where n is the number of independent process observations. We assume that the jump intensity is once continuously differentiable, which implies that the roundwise regret can be bounded against the MSE of the estimator. Hence a MSE in O(1 /n ) entails a logarithmic growth of the ac-cumulated regret. We remark that any estimator of the intensity function itself, e.g. a kernel estimator, converges at a slower rate than O(1 /n ), and hence entails a regret growing faster than the logarithm. To show that the ILU algorithm is good, we prove that the minimax regret grows logarithmically as well. This means that there is no algorithm that has, uniformly over all environments, a regret rate that grows slower than the logarithm. In this sense the ILU algorithm is a good method for choosing parking lots. While we present our results in the context of the parking problem, the 2underlying methods are not specific to this application. They apply more broadly to a class of timing and search problems with stochastic opportu-nity arrivals. To simplify the exposition, we develop our approach using the parking problem as a canonical example; it should be possible to carry out extensions to other settings with minor and natural adaptations. 
+
+Comparison with the literature 
+
+There is an extensive literature on the parking problem formulated as a stopping problem, see e.g. [12] for an early reference in discrete time. Aversion of the parking problem in continuous time has been considered in [14]. We refer to Chapter 2.5 in [8] for a recent overview on the variants of the parking problem that have been solved already. The ILU algorithm described in the present article can be seen as an example of a model-based reinforcement learning algorithm. Reinforcement learning (RL) usually is understood to comprise algorithms, e.g. the q-learning algorithm, that make few assumptions on the model and the system distri-bution. RL algorithms are, therefore, universally applicable. However, the algorithms can be quite inefficient for some applications. To obtain efficient algorithms for learning solutions to stochastic control problems it is natural to use as much information on the model as possible. The ILU algorithm presented in the this article is such an algorithm: it makes use of the fact that optimal stopping rules are of threshold type, i.e. there exists a position after which it is optimal to take the first free lot. Moreover, the algorithm exploits the fact that free lots arrive according to an inhomogeneous Poisson process. A crucial ingredient of the algorithm is the estimation of the integrated jump intensity of the Poisson process. There is quite some literature on model-based RL algorithms for mod-els where the state dynamics are described as a Markov decision process. We refer to [11] for a survey. Examples of model-based RL algorithms for continuous-time stochastic control problems are still rather scarce. A first approach for linear-quadratic problems in continuous time is presented in [7]. The authors introduce a weighted least-squares algorithm for learning drift rates and hence the optimal control. The growth rate of the regret is not pro-vided, and it seems that its determination has not yet been made. [2, 10, 15] consider linear-quadratic problems in an episodic finite time horizon setting, providing non-asymptotic regret bounds. The article [13] considers propagator models and describe algorithms achieving sublinear regrets. [6, 3, 5, 4] examine singular and impulsive control problems in a non-parametric, ergodic setting, and obtain algorithms with 3sublinear regret rates of power type. The article [1] introduces a steering al-gorithm to keep a process as close to some given path as possible, exploiting that the process is driven by a Browian motion and that the drift rates are from an unknown bounded interval. 
+
+# 1 The parking problem in continuous time 
+
+In this section we summarize some results on the parking problem in contin-uous time. Suppose that the parking spaces are located on the interval [ S, ∞), where 
+
+S ∈ (−∞ , 0). Assume that free parking lots arrive according to an inhomo-geneous Poisson process with jump intensity λ : [ S, ∞) → (0 , ∞). More precisely, let ( N λt )t≥S a right-continuous process, defined on some probabil-ity space (Ω , F, P ), such that the increments are independent and ( N λt − N λs )is Poisson distributed with the parameter R ts λ(u)du , for all s ≤ t. We inter-pret the jump times of the process ( Nt) as the positions of the free parking lots the agent can use while driving along the street from S to the right. In this section we assume that the jump intensity function λ is known by the stopping agent. In the next section we will omit this assumption and assume that the stopping agent does not know λ, but can learn it by observing independent samples of the jump process ( Nt). We suppose that the agent wants to park her car as close as possible to the target 0, in expectation. A policy for searching a parking lot can be described in terms of decision rule describing for each parking lot t ∈ [S, ∞)whether to take it or not, in case it is free. It is straightforward to show that it is enough to consider only decision rules of the following threshold type: there is a threshold b ∈ [S, 0] after which the first free lot is accepted; and before b any free lot is discarded. Indeed, for any decision rule one can construct a threshold rule with an expected distance to the target that is not larger. We model the decision rule with threshold b ∈ [S, 0] as the stopping time 
+
+τb := inf {t ≥ b : Nt > N b}. Observe that τb is the first jump time of N after 
+
+b; we interpret τb as the position of the first free parking space after b.Note that the aim to park the car as close as possible to the target amounts in the problem of finding the threshold b for which E|τb| becomes minimal. We refer to b∗ such that E|τb∗ | = min b∈[S, 0] E[|τb|] as an optimal threshold. The next theorem provides a sufficient condition for b∗ to be an optimal threshold. 4Theorem 1.1. Let b∗ ∈ [S, 0) be such that 
+
+Z 0
+
+> b∗
+
+eR 0  
+
+> yλ(u)du
+
+dy =
+
+Z ∞
+
+> 0
+
+e− R y  
+
+> 0λ(u)du
+
+dy. (1.1) 
+
+Then b∗ is an optimal threshold. Proof. First note that for all b ∈ [S, 0] we have 
+
+E|τb| = −
+
+Z 0
+
+> b
+
+yλ (y)e− R yb λ(u)du dy +
+
+Z ∞
+
+> 0
+
+yλ (y)e− R yb λ(u)du dy. 
+
+Next observe that for b to be optimal it is sufficient that it satisfies the FOC  
+
+> ∂E |τb|
+> ∂b
+
+= 0. We now show that (1.1) is equivalent to the FOC. Indeed, 
+
+∂E |τb|
+
+∂b = λ(b)
+
+
+
+b −
+
+Z 0
+
+> b
+
+yλ (y)e− R yb λ(u)du dy +
+
+Z ∞
+
+> 0
+
+yλ (y)e− R yb λ(u)du dy 
+
+
+
+,
+
+and hence ∂E |τb| 
+
+> ∂b
+
+= 0 is equivalent to 
+
+b =
+
+Z 0
+
+> b
+
+yλ (y)e− R yb λ(u)du dy −
+
+Z ∞
+
+> 0
+
+yλ (y)e− R yb λ(u)du dy. 
+
+By using λ(y)e− R yb λ(u)du = − ∂∂y e− R yb λ(u)du and applying integration by parts, the last equation can be rewritten as 
+
+b = −
+
+Z 0
+
+> b
+
+y ∂∂y e− R yb λ(u)du dy +
+
+Z ∞
+
+> 0
+
+y ∂∂y e− R yb λ(u)du dy 
+
+= −
+
+h
+
+ye − R yb λ(u)du 
+
+i0
+
+> b
+
++
+
+Z 0
+
+> b
+
+e− R yb λ(u)du dy +
+
+h
+
+ye − R yb λ(u)du 
+
+i∞
+
+> 0
+
+−
+
+Z ∞
+
+> 0
+
+e− R yb λ(u)du dy 
+
+= − (0 − b) + 
+
+Z 0
+
+> b
+
+e−(R 0    
+
+> bλ(u)du −R0
+> yλ(u)du )
+
+dy + 0 −
+
+Z ∞
+
+> 0
+
+e−(R 0    
+
+> bλ(u)du +Ry
+> 0λ(u)du )
+
+dy 
+
+= b + e− R 0 
+
+> bλ(u)du
+
+Z 0
+
+> b
+
+eR 0  
+
+> yλ(u)du
+
+dy −
+
+Z ∞
+
+> 0
+
+e− R y  
+
+> 0λ(u)du
+
+dy 
+
+
+
+.
+
+This implies that the FOC is equivalent to 
+
+Z 0
+
+> b
+
+eR 0  
+
+> yλ(u)du
+
+dy =
+
+Z ∞
+
+> 0
+
+e− R y  
+
+> 0λ(u)du
+
+dy. 
+
+5In the following we rewrite the LHS of (1.1) in terms of the integrated jump intensity Λ( y) := 
+
+Z 0
+
+> y
+
+λ(u) du, y ∈ [S, 0] .
+
+Hence, if b∗ satisfies the equation 
+
+Z 0
+
+> b∗
+
+eΛ( y) dy =
+
+Z ∞
+
+> 0
+
+e− R y  
+
+> 0λ(u)du
+
+dy, (1.2) then b∗ is an optimal threshold. We finally remark that since λ is assumed to be positive, there exists at most one real b∗ ∈ [S, 0] satisfying equation (1.1). 
+
+Intuition behind the optimality criterion 
+
+Note that for all t > 0
+
+P (τ0 > t ) = P (N λt − N λ 
+
+> 0
+
+= 0) = e− R t 
+
+> 0λ(u)du
+
+,
+
+and hence the RHS of (1.1) coincides with the expectation E[τb∗ |τb∗ > 0] = 
+
+E(τ0) = R ∞ 
+
+> 0
+
+P (τ0 > t ) dt. In other words, the right-hand side of (1.1) corre-sponds exactly to the expected value of the first jump time after the parking space 0. The right-hand side, therefore, measures the expected costs after the driver has passed parking space 0. The left-hand side of Equation (1.1) is equal to |b∗|− E[|τb∗ |1{τb∗ <0}]   
+
+> P(τb∗≥0)
+
+. Rear-ranging terms yields that (1.1) is equivalent to 
+
+|b∗| = E|τb∗ ]. (1.3) Equation (1.3) characterizes b∗ as the position at which the agent is indifferent between taking the lot, provided it is free, and continuing until the next free lot. 
+
+Optimality gap 
+
+We denote by ∆( b) := E|τb| − E|τb∗ | (1.4) the optimality gap of choosing the stopping rule with threshold b ∈ [S, 0] instead of the optimal threshold b∗. The next lemma collects some properties of the optimality gap. 6Lemma 1.2. ∆ is differentiable. Moreover, if λ is continuously differen-tiable, then ∆ is twice continuously differentiable, and the second derivative is given by 
+
+∆′′ (b) (1.5) =λ′(b)
+
+
+
+b −
+
+Z 0
+
+> b
+
+yλ (y)e− R yb λ(u)du dy +
+
+Z ∞
+
+> 0
+
+yλ (y)e− R yb λ(u)du dy 
+
+
+
++ λ(b)
+
+
+
+1 + bλ (b) −
+
+Z 0
+
+> b
+
+yλ (y)λ(b)e− R yb λ(u)du dy +
+
+Z ∞
+
+> 0
+
+yλ (y)λ(b)e− R yb λ(u)du dy 
+
+
+
+.
+
+Proof. The claims are straightforward to show. We close this section by considering the special case where λ is constant. 
+
+Corollary 1.3. Suppose that λ is constant and greater than ln(2) /|S|. Then 
+
+b∗ = − ln(2) /λ is an optimal threshold and 
+
+∆λ(b) = 1
+
+λ(2 eλb − 1) − b − ln(2) 
+
+λ . (1.6) 
+
+# 2 Learning optimal rules 
+
+Based on the Equation (1.1), the optimal stopping time τb∗ can be deter-mined with the knowledge of the intensity function λ. In the following we assume that the agent does not know the intensity function λ. We do as-sume, however, that the agent has to solve the stopping problem in many consecutive rounds and that in each round she observes the jump process up to the chosen stopping time. With the observations the agent can estimate the true intensity function λ. Hence, in round n the agent can approximate the optimal stopping rule by using the observations made in previous rounds 0, 1, . . . , n − 1. Let ( N 0 
+
+> t
+
+)t∈[S, ∞), (N 1 
+
+> t
+
+)t∈[S, ∞), . . . be a sequence of stochastic processes on a measurable space (Ω , F). Assume that for every positive and measurable intensity function λ : [ S, ∞) → (0 , ∞) there exists a probability measure Pλ
+
+such that ( N 0 
+
+> t
+
+)t∈[S, ∞), (N 1 
+
+> t
+
+)t∈[S, ∞), . . . is an independent sequence of Poisson processes with jump intensity λ.Similar as in the previous section, we denote by τ ib the first jump time of 
+
+N i after time b ∈ [S, 0]. Moreover, the optimality gap under Pλ is denoted by ∆ λ(b). 
+
+Definition 2.1 (Policy) . A policy ( πn)n≥0 is a sequence of random variables with values in [ S, 0] such that πn is measurable with respect to Fn, where 7F0 = {∅ , Ω} and Fn := Wn−1 
+
+> k=0
+
+σ(N λ,k t : t ∈ [S, τ kπk ]) for every n ≥ 1. (Recall that if ( Ai)i∈I is a family of σ-algebras indexed by a set I, then W 
+
+> i∈I
+
+Ai
+
+denotes the smallest σ-algebra containing all Ai.) We denote the set of policies by Π .
+
+We interpret πn as the threshold the agent chooses in round n for the stopping rule. For a given positive and measurable intensity function λ, we define the regret of an arbitrary policy ( πn)n≥0 in round T ∈ N as 
+
+Rπλ(T ) := 
+
+> T
+
+X
+
+> n=0
+
+Eλ[∆ λ(πn)] ,
+
+where ∆ λ is the optimality gap function defined. Next we describe a specific algorithm that leads to a policy with a regret growing logarithmically as the number of rounds converge to infinity. We later prove that there is no policy that can achieve a regret growing slower than the logarithm. In this sense the algorithm is asymptotically optimal. 
+
+Algorithm (Indifference level updating (ILU)). 
+
+1. Initialize I = {0}.2. Choose the stopping time with threshold 0 in round 0. 3. In any round n ≥ 1 do the following: (a) Compute ˆΓ( y) := 
+
+P 
+
+> i∈I
+
+(N i 
+
+> 0
+
+− N iy)
+
+|I| , y ∈ [S, 0] , (2.1) and ˆφ := 1
+
+|I| 
+
+X
+
+> i∈I
+
+τ i 
+
+> 0
+
+(2.2) (b) Determine ˆb such that 
+
+Z 0ˆb
+
+eˆΓ( y) dy = ˆ φ. (2.3) If there is no solution ˆb ∈ [S, 0], then set ˆb = S.8(c) Choose the stopping time with threshold ˆb.(d) If the stopping time takes a value greater than zero, then I ← I ∪ { n}.Remark: Note that I is the set of rounds where the algorithm stops after 0. We refer to I as the set of rounds with full information. The quantity 
+
+N j 
+
+> 0
+
+−N jy is the number of jumps on the interval [ y, 0] in round j, for y ∈ [S, 0]. The function ˆΓ( y) is an estimator of the integrated jump intensity function Λ( y), y ∈ [S, 0]. Moreover, ˆ φ is an estimator of Eλ(τ i
+
+> 0
+
+), the expected first jump time after 0. Since ˆΓ and ˆφ make only use of observations of the rounds in I, the sequence of thresholds chosen by the ILU algorithm is a policy in the sense of Definition 2.1. 
+
+# 3 Main results 
+
+We start by defining an environment class of smooth intensity functions λ.
+
+Definition 3.1 (Environment class M(L), L ∈ (1 , ∞)) .
+
+We say λ ∈ M (L) if and only if 1. λ is continuously differentiable; 2. λ is bounded from below by ln(2) /|S| + 1 /L ;3. λ and λ′ are bounded by L on [ S, ∞), i.e. λ(u) ≤ L and |λ′(u)| ≤ L,for all u ∈ [S, ∞). Notice that property 2 guarantees the following. 
+
+Lemma 3.2. For any λ ∈ M (L) there exists a unique b∗ ∈ (S, 0) satisfying 
+
+(1.1) ; moreover this b∗ satisfies b∗ − S ≥ | S| − 
+
+ln(2)  
+
+> |S|
+
++ 1
+
+> L
+
+−1
+
+ln(2) > 0.
+
+Proof. The smallest possible value for b∗, denoted by b∗
+
+> min
+
+, is achieved by 
+
+λ ∈ M (L) that is constant equal to the minimal value. Hence b∗ 
+
+> min
+
+satisfies 
+
+Z 0
+
+> b∗
+> min
+
+e−( ln(2)    
+
+> |S|+1
+> L)u
+
+du =
+
+ln(2) 
+
+|S| + 1
+
+L
+
+−1
+
+. (3.1) A straightforward computation shows that 
+
+b∗ 
+
+> min
+
+= −
+
+ln(2) 
+
+|S| + 1
+
+L
+
+−1
+
+ln(2) > − |S|
+
+ln(2) ln(2) = S. 
+
+9In the following we denote by RILU λ (T ) the regret in round T ∈ N entailed by the ILU algorithm under the probability measure Pλ.
+
+Theorem 3.3 (Upper bound of ILU on class M(L)) . There exists a constant 
+
+C ∈ R, depending only on S and L, such that for all T ∈ N, we have 
+
+sup 
+
+> λ∈M (L)
+
+RILU λ (T ) ≤ C ln( T + 1) .
+
+The proof is provided in Section 5. 
+
+Theorem 3.4 (Lower bound on class M(L)) . Suppose that L is larger than 
+
+ln(2) /|S| + 1 /L , and hence M(L) is non-empty. Then there exists c ∈ (0 , ∞)
+
+such that for all T ∈ N
+
+inf   
+
+> policy π
+
+sup 
+
+> λ∈M (L)
+
+Rπλ(T ) ≥ c ln( T ).
+
+The proof is provided in Section 6. Theorem 3.3 and Theorem 3.4 imply that the ILU algorithm has an asymp-totically optimal growth rate. 
+
+# 4 MSE of the estimated threshold 
+
+We use the setting of Section 2. To simplify notation we omit the superscript zero and write τb = τ 0 
+
+> b
+
+. Note that τb has the same distribution as τ ib for any 
+
+i ≥ 1, under any Pλ.In the following let λ ∈ M (L). To simplify notation we omit λ in Pλ, Eλ,Var λ etc. 
+
+Lemma 4.1. We have Var (τ0) < ∞.Proof. Since λ ∈ M (L), we have λ(u) ≥ C for all u ∈ [S, ∞), where C := 10 ln(2) /|S| + 1 
+
+> L
+
+. Moreover, 
+
+E(τ 20 ) = 
+
+Z ∞
+
+> 0
+
+P (τ 20 > t )dt =
+
+Z ∞
+
+> 0
+
+P (τ0 > √t)dt 
+
+= 2 
+
+Z ∞
+
+> 0
+
+P (τ0 > u )udu 
+
+= 2 
+
+Z ∞
+
+> 0
+
+e− R u 
+
+> 0λ(y)dy
+
+udu 
+
+≤ 2
+
+Z ∞
+
+> 0
+
+e−Cu udu 
+
+= 2 
+
+
+
+[− 1
+
+C e−Cu u]∞ 
+
+> 0
+
++ 1
+
+C
+
+Z ∞
+
+> 0
+
+e−Cu 
+
+
+
+= 2
+
+C2 < ∞.
+
+It is obvious that |E(τ0)| < ∞. Therefore Var( τ0) < ∞.We first analyze the ILU algorithm under the additional assumption of full information. We use this assumption to make it easier to work with the estimators. 
+
+Definition 4.2 (Full Information Policy) . A policy ( πf ull n )n≥0 is a sequence of random variables with values in [ S, 0] such that πn is measurable with respect to Fn, where F0 = {∅ , Ω} and Fn := Wn−1 
+
+> k=0
+
+σ(N λ,k t : t ∈ [S, τ k 
+
+> 0
+
+]) for every n ≥ 1. We denote the set of policies by Π f ull .
+
+In the following, we consider the estimators ˆΛn(y) := 
+
+Pn−1 
+
+> i=0
+
+(N i 
+
+> 0
+
+− N iy)
+
+n ,
+
+and ˆτ0,n := 1
+
+n
+
+> n−1
+
+X
+
+> i=0
+
+τ i
+
+> 0
+
+,
+
+for n ≥ 1. Note that ( ˆΛn) and (ˆ τ0,n ) are exactly the counterparts to the estimators ˆΓ and ˆ φ from the ILU Algorithm, under the additional assumption that full information is always available. 
+
+Definition 4.3. Let ˆb0 := 0 . For every n ∈ N let ˆbn be the real in [ S, 0] that satisfies Z 0ˆbn
+
+eˆΛn(y) dy = ˆ τ0,n . (4.1) If there is no ˆbn ∈ [S, 0] satisfying Equation (4.1), we set ˆbn = S. 
+
+11 Note that ( ˆbn) ∈ Πf ull , but not necessarily a policy in the sense of Defi-nition 2.1. 
+
+Lemma 4.4. For all y ∈ [S, 0] we have that MSE (ˆΛn(y)) = 1 
+
+> n
+
+Λ( y) and ˆΛn(y)
+
+is an unbiased estimator. Proof. Straightforward. 
+
+Lemma 4.5. It holds that the MSE (ˆ τ0,n ) = 1 
+
+> n
+
+Var (τ0) and ˆτ0,n is an unbiased estimator. Proof. Straightforward. 
+
+Lemma 4.6. For all n ∈ N we have 
+
+E( sup 
+
+> x∈[S, 0]
+
+(ˆΛn(x) − Λ( x)) 2) ≤ 4Λ( S) 1
+
+n ≤ 4L|S| 1
+
+n (4.2) 
+
+Proof. First, notice that M (y) := ˆΛn(−y) − Λ( −y), y ∈ [0 , |S|], is a time-continuous martingal w.r.t. the natural filtration ( Fy)y∈[0 ,|S|], where Fy =
+
+σ(N i 
+
+> 0
+
+− N it : −y ≤ t ≤ 0, i = 0 , . . . , n − 1) . Note that ( M (y)) is a square inte-grable martingale with left-continuous paths. Therefore, Doob’s L2−maximal inequality for is applicable and we get 
+
+E( sup 
+
+> x∈[S, 0]
+
+(ˆΛn(x) − Λ( x)) 2) = E[ sup 
+
+> y∈[0 ,|S|]
+
+M (y)2]
+
+≤ 4E[M (|S|)2] = E(( ˆΛn(S) − Λ( S)) 2).
+
+With Lemma 4.4 we get 
+
+E( sup 
+
+> x∈[S, 0]
+
+(ˆΛn(x) − Λ( x)) 2) ≤ 4Λ( S) 1
+
+n,
+
+and with the simple estimate Λ( S) ≤ L|S| we have (4.2). 
+
+Proposition 4.7. Let M := min {m ∈ N0 : S + m 12L ≥ 0}. Then, for all 
+
+n ∈ N, we have 
+
+E
+
+ˆbn − b∗
+
+2
+
+≤
+
+
+
+S2 4Λ( S) + Var( τ0)
+
+ε2
+
+ 1
+
+n+ (4.3) +
+
+
+
+S24Λ( S)( M + 1) + 2Var( τ0) + 8 |S|
+
+Z 0
+
+> S
+
+e2Λ( y)Λ( y) dy 
+
+ 1
+
+n,
+
+where 0 < ε < min {E(τ0), 1, b∗−S 
+
+> 3+2 E(τ0)
+
+}.
+
+12 Proof. Fix n ∈ N and suppose first that we are on the event Bn := {| S| >
+
+|ˆbn|} .Note that ˆbn is determined in such a way that 
+
+Z 0ˆbn
+
+eˆΛn(y) dy = ˆ τ0,n .
+
+Furthermore, the optimal b∗ and the unknown, true intensity function λ
+
+satisfy Z 0
+
+> b∗
+
+eΛ( y) dy = E(τ0).
+
+Therefore 
+
+Z 0
+
+> b∗
+
+eΛ( y) dy −
+
+Z 0ˆbn
+
+eˆΛn(y) dy = E(τ0) − ˆτ0,n .
+
+This is equivalent to 
+
+Z 0
+
+> b∗
+
+eΛ( y) dy −
+
+Z 0ˆbn
+
+eΛ( y) dy +
+
+Z 0ˆbn
+
+
+
+eΛ( y) − eˆΛn(y)
+
+
+
+dy = E(τ0) − ˆτ0,n . (4.4) 1st case: Let ˆbn ≥ b∗. It follows from (4.4): 
+
+Z ˆbn
+
+> b∗
+
+eΛ( y) dy = E(τ0) − ˆτ0,n −
+
+Z 0ˆbn
+
+
+
+eΛ( y) − eˆΛn(y)
+
+
+
+dy 
+
+= E(τ0) − ˆτ0,n +
+
+Z 0ˆbn
+
+eΛ( y)
+
+
+
+eˆΛn(y)−Λ( y) − 1
+
+
+
+dy. (4.5) In the following, we estimate the left-hand side of equation (4.5) from below and the right-hand side from above. We define for this 
+
+A := 
+
+Z ˆbn
+
+> b∗
+
+eΛ( y) dy, B := E(τ0) − ˆτ0,n +
+
+Z 0ˆbn
+
+eΛ( y)
+
+
+
+eˆΛn(y)−Λ( y) − 1
+
+
+
+dy. 
+
+Note that 
+
+A ≥ (ˆbn − b∗) min  
+
+> y∈[S, 0]
+
+eΛ( y) ≥ ˆbn − b∗;
+
+B ≤ | E(τ0) − ˆτ0,n | +
+
+Z 0
+
+> S
+
+eΛ( y) eˆΛn(y)−Λ( y) − 1 dy. 
+
+13 Observe that for all x ∈ [−1, 1] we have 
+
+|ex − 1| ≤ 2|x|. (4.6) Define Cn := 
+
+n ˆΛn(y) − Λ( y) ≤ 1, ∀y ∈ [S, 0] 
+
+o
+
+.
+
+Then on Cn we have 
+
+eˆΛn(y)−Λ( y) − 1 ≤ 2 ˆΛn(y) − Λ( y) .
+
+In particular, using the estimates of A and B, we get ˆbn − b∗ ≤ | E(τ0) − ˆτ0,n | + 2 
+
+Z 0
+
+> S
+
+eΛ( y) ˆΛn(y) − Λ( y) dy. 
+
+2nd case: Let ˆbn < b ∗. Then (4.4) implies 
+
+−
+
+Z b∗
+
+> ˆbn
+
+eΛ( y) dy = E(τ0) − ˆτ0,n +
+
+Z 0ˆbn
+
+eΛ( y)
+
+
+
+eˆΛn(y)−Λ( y) − 1
+
+
+
+dy, 
+
+which is equivalent to 
+
+Z b∗
+
+> ˆbn
+
+eΛ( y) dy = (ˆ τ0,n − E(τ0)) + 
+
+Z 0ˆbn
+
+eΛ( y)
+
+
+
+−
+
+
+
+eˆΛn(y)−Λ( y) − 1
+
+ 
+
+dy. (4.7) In the following, we estimate the left-hand side of equation (4.7) from below and the right-hand side from above. We define for this 
+
+A := 
+
+Z b∗
+
+> ˆbn
+
+eΛ( y) dy, B := (ˆ τ0,n − E(τ0)) + 
+
+Z 0ˆbn
+
+eΛ( y)
+
+
+
+−
+
+
+
+eˆΛn(y)−Λ( y) − 1
+
+ 
+
+dy. 
+
+Then 
+
+A ≥ (b∗ − ˆbn) min  
+
+> y∈[S, 0]
+
+eΛ( y) ≥ b∗ − ˆbn;
+
+B ≤ | E(τ0) − ˆτ0,n | +
+
+Z 0
+
+> S
+
+eΛ( y) eˆΛn(y)−Λ( y) − 1 dy. 
+
+Let Cn be as in the first case. Then on Cn we have 
+
+eˆΛn(y)−Λ( y) − 1 ≤ 2 ˆΛn(y) − Λ( y) .
+
+14 Therefore applies 
+
+b∗ − ˆbn ≤ | E(τ0) − ˆτ0,n | + 2 
+
+Z 0
+
+> S
+
+eΛ( y) ˆΛn(y) − Λ( y) dy. 
+
+To sum up, in any case, if Bn and Cn occur, we have 
+
+ˆbn − b∗ ≤ | E(τ0) − ˆτ0,n | + 2 
+
+Z 0
+
+> S
+
+eΛ( y) ˆΛn(y) − Λ( y) dy. (4.8) Thus, using the estimate ( e + f )2 ≤ 2( e2 + f 2), e, f ∈ R
+
+E
+
+
+
+ˆbn − b∗ 2
+
+1Bn 1Cn
+
+
+
+≤ 2
+
+n
+
+E (E(τ0) − ˆτ0,n )2 1Bn 1Cn
+
+ + (4.9) + 4 E
+
+"
+
+1Bn 1Cn
+
+Z 0
+
+> S
+
+eΛ( y) ˆΛn(y) − Λ( y) dy 
+
+2# o
+
+.
+
+≤ 2
+
+n
+
+E (E(τ0) − ˆτ0,n )2 ++ 4 E
+
+"Z 0
+
+> S
+
+eΛ( y) ˆΛn(y) − Λ( y) dy 
+
+2# o
+
+.
+
+Using Jensen’s inequality for integrals we further obtain 
+
+E
+
+
+
+ˆbn − b∗ 2
+
+1Bn 1Cn
+
+
+
+≤ 2
+
+n
+
+E (E(τ0) − ˆτ0,n )2 + 4 E
+
+
+
+|S|
+
+Z 0
+
+> S
+
+
+
+eΛ( y) ˆΛn(y) − Λ( y)
+
+2
+
+dy 
+
+ o
+
+= 2 
+
+n
+
+MSE(ˆ τ0,n ) + 4 |S|
+
+Z 0
+
+> S
+
+e2Λ( y)MSE( ˆΛn(y)) dy 
+
+o
+
+.
+
+With Lemma 4.4 and 4.5 we further obtain that 
+
+E
+
+
+
+ˆbn − b∗ 2
+
+1Bn 1Cn
+
+
+
+≤ 1
+
+n
+
+
+
+2Var( τ0) + 8 |S|
+
+Z 0
+
+> S
+
+e2Λ( y)Λ( y) dy )
+
+
+
+. (4.10) In summary, we have 
+
+E(( ˆbn − b∗)2)= E(( ˆbn − b∗)21Bcn ) + E(( ˆbn − b∗)21Bn 1Ccn ) + E(( ˆbn − b∗)21Bn 1Cn )
+
+≤ S2P (Bcn) + S2P (Ccn) + 1
+
+n
+
+
+
+2Var( τ0) + 8 |S|
+
+Z 0
+
+> S
+
+e2Λ( y)Λ( y) dy )
+
+
+
+. (4.11) 15 Due to Lemma 4.5, 4.6 and Lemma 4.8 below we have 
+
+P (Bcn) ≤ E(|| ˆΛn − Λ|| 2) + Var(ˆ τ0,n )
+
+ε2
+
+≤ 4Λ( S) + Var( τ0)
+
+ε2
+
+1
+
+n (4.12) where 0 < ε < min {E(τ0), 1, b∗−S 
+
+> 3+2 E(τ0)
+
+}.
+
+Furthermore, with the Estimate (4.14) from Lemma 4.10 below, we have 
+
+P (Ccn) ≤ (4Λ( S)( M + 1)) 1
+
+n. (4.13) By combining the estimates (4.12), (4.13) and (4.11) we get (4.7). 
+
+Lemma 4.8. Let Bn := {| S| > |ˆbn|} , n ∈ N. Then we have 
+
+P (Bcn) ≤ E(|| ˆΛn − Λ|| 2
+
+> ∞
+
+) + Var (ˆ τ0,n )
+
+ε2 ,
+
+where 0 < ε < min {E(τ0), 1, b∗−S 
+
+> 3+2 E(τ0)
+
+}.
+
+Proof. We want to determine ε := ε(λ) > 0 such that || ˆΛn − Λ|| ∞ < ε and 
+
+|E(τ0) − ˆτ0,n | < ε implies |ˆbn| < |S|. Let δ := b∗ − S.We show via contradiction that ε < min {1, δ 
+
+> 3+2 E(τ0)
+
+} implies |ˆbn| < |S|.Assume |ˆbn| = |S|. We have 
+
+Z 0ˆbn
+
+eˆΛn(u)du ≥
+
+Z 0ˆbn
+
+eΛ( u)−εdu =
+
+Z 0
+
+> S
+
+eΛ( u)−εdu = e−ε
+
+Z 0
+
+> b∗−δ
+
+eΛ( u)du 
+
+= e−ε
+
+Z 0
+
+> b∗
+
+eΛ( u)du +
+
+Z b∗
+
+> b∗−δ
+
+eΛ( u)du 
+
+
+
+= e−ε
+
+
+
+E(τ0) + 
+
+Z b∗
+
+> b∗−δ
+
+eΛ( u)du 
+
+
+
+≥ e−ε
+
+
+
+E(τ0) + δ min 
+
+> u∈[S, 0]
+
+eΛ( u)
+
+
+
+= e−ε (E(τ0) + δ) .
+
+Moreover 
+
+E(τ0) + ε ≥ ˆτ0,n ≥
+
+Z 0ˆbn
+
+eˆΛn(u)du ≥ e−ε (E(τ0) + δ) .
+
+16 Therefore we have a contradiction if eε(E(τ0) + ε) < (E(τ0) + δ). Note that for 0 ≤ ε ≤ 1 it holds that eε ≤ 1 + ε + ε2. It follows for ε ∈ [0 , 1] 
+
+eε(E(τ0) + ε) ≤ (1 + ε + ε2)( E(τ0) + ε) ≤ (1 + 2 ε)( E(τ0) + ε)
+
+≤ E(τ0) + ε + 2 εE (τ0) + 2 ε2
+
+≤ E(τ0) + (3 + 2 E(τ0)) ε. 
+
+With ε < min {1, δ 
+
+> 3+2 E(τ0)
+
+} we have eε(E(τ0) + ε) ≤ E(τ0) + (3 + 2 E(τ0)) ε < E(τ0) + δ and therefore a contradiction. Note that E(τ0)−ε ≥ 0 and therefore we have in the end ε < min {E(τ0), 1, δ 
+
+> 3+2 E(τ0)
+
+}.
+
+Finally, 
+
+P (Bcn) ≤ P (|| ˆΛn − Λ|| > ε ) + P (|E(τ0) − ˆτ0,n | > ε ) ≤ E(|| ˆΛn − Λ|| 2
+
+> ∞
+
+) + Var(ˆ τ0,n )
+
+ε2
+
+In the following let ˜Cn(y, r ) := 
+
+n ˆΛn(y) − Λ( y) ≤ r
+
+o
+
+, r ∈ R, n ∈ N. In particular, 
+
+Cn = \
+
+> y∈[S, 0]
+
+˜Cn(y, 1) ,
+
+where the event Cn is defined as in the proof of Proposition 4.7. 
+
+Lemma 4.9. Let y ∈ [S, 0] and define k := 12L . Then for all t ∈ [y, y + k ∧ 0] 
+
+and ω ∈ ˜Cn(y, 12 ) ∩ ˜Cn(y + k, 12 ) : 
+
+ˆΛn(t) − Λ( t) ≤ 1.
+
+Proof. W.l.o.g. let y + k < 0. If y + k ≥ 0, then replace y + k by 0 in the following considerations and the estimates are still valid. Let ω ∈ ˜Cn(y, 12 ) ∩ ˜Cn(y + k, 12 ). It follows that ˆΛn(y, ω ) − Λ( y) ≤ 12 and 
+
+ˆΛn(y + k, ω ) − Λ( y + k) ≤ 12 . Moreover, it follows directly from the defini-tion that ˆΛn(y1, ω ) ≥ ˆΛn(y2, ω ) if y1 ≤ y2 and y1, y 2 ∈ [S, 0]. Therefore, the following applies for any t ∈ [y, y + k]: ˆΛn(t, ω ) − Λ( t) ≤ ˆΛn(y, ω ) + Λ( y) − Λ( y) − Λ( t)
+
+≤ 12 + L(t − y)
+
+≤ 12 + Lk = 1 .
+
+17 Furthermore Λ( t) − ˆΛn(t, ω ) ≤ Λ( t) − Λ( y + k) + Λ( y + k) − ˆΛn(y + k, ω )
+
+≤ Lk + 12 = 1 .
+
+Lemma 4.10. Let M := min {m ∈ N0 : S + m 12L ≥ 0}. Then 
+
+P (Ccn) ≤ 4Λ( S)( M + 1) 1
+
+n, (4.14) 
+
+where Cn =
+
+n ˆΛn(y) − Λ( y) ≤ 1, ∀y ∈ [S, 0] 
+
+o
+
+.
+
+Proof. We have M = min {m ∈ N0 : S + m 12L ≥ 0}. Define ym := S + m 12L
+
+with m ∈ { 0, 1, . . . , M − 1}. Furthermore let yM := 0. According to Lemma 4.9 it holds for all t ∈ [S, 0] and ω ∈ ˜Cn(y0, 12 ) ∩ ˜Cn(y1, 12 ) ∩ · · · ∩ ˜Cn(yM , 12 ): 
+
+ˆΛn(t) − Λ( t) ≤ 1.
+
+In particular, the following applies: ˜Cn
+
+
+
+y0, 12
+
+
+
+∩ · · · ∩ ˜Cn
+
+
+
+yM , 12
+
+
+
+⊆
+
+n ˆΛn(y) − Λ( y) ≤ 1, ∀y ∈ [S, 0] 
+
+o
+
+= Cn.
+
+Therefore, using Ccn ⊆
+
+ ˜Cn(y0, 12 ) ∩ ˜Cn(y1, 12 ) ∩ · · · ∩ ˜Cn(yM , 12 )
+
+c
+
+and the subadditivity of probability measures, we get 
+
+P (Ccn) ≤ P
+
+ 
+
+˜Cn
+
+
+
+y0, 12
+
+
+
+∩ ˜Cn
+
+
+
+y1, 12
+
+
+
+∩ · · · ∩ ˜Cn
+
+
+
+yM , 12
+
+c
+
+≤
+
+> M
+
+X
+
+> i=0
+
+P
+
+
+
+˜Cn
+
+
+
+yi, 12
+
+c
+
+=
+
+> M
+
+X
+
+> i=0
+
+P
+
+ 
+
+ˆΛn(yi) − Λ( yi) > 12
+
+ 
+
+≤
+
+> M
+
+X
+
+> i=0
+
+1(1 /2) 2 Var( ˆΛn(yi)) =
+
+> M
+
+X
+
+> i=0
+
+4Λ( yi) 1
+
+n
+
+≤ 4Λ( S)( M + 1) 1
+
+n.
+
+18 5 Proof of Theorem 3.3 
+
+Let ( πn) be the sequence of thresholds chosen by the ILU algorithm. Recall that ( πn) is a policy in the sense of Definition 2.1. We need to show that there exists a constant C such that for all λ ∈ M (L) and T ∈ N we have 
+
+Rπλ(T ) ≤ C ln( T + 1). We estimate the expected optimality gaps Eλ[∆ λ(πn)] by using the opti-mality gaps entailed by the sequence ( ˆbn). To this end we define for n ≥ 0
+
+rλ(n) := Eλ[∆ λ(ˆbn)] .
+
+Next we define a sequence σ(j), j ≥ 0, recursively as follows. We set σ(1) = 0 and for all j ≥ 1
+
+σ(j + 1) = min {n > σ (j) : τ nπn > 0}.
+
+Notice that σ(j) represents the round where for the j-th time we have full information. Moreover, Eλ(σ(j + 1) − σ(j)) is exactly the expected waiting time until a round with full information. The expected value is bounded from above by Eλ(σ(j + 1) − σ(j)) ≤ eL|S|. Finally, let In denote the random set of rounds with full information during the first n rounds of search. We have I0 = ∅ and In = {σ(j) : σ(j) ≤ n − 1} for n ≥ 1. Moreover, note that 
+
+|I n| = max {k : σ(k) ≤ n − 1} and σ(|I n|) < n ≤ σ(|I n| + 1). The crucial observation now is that for all n ≥ 0 we have 
+
+Eλ[∆ λ(πn)] = Eλ[rλ(|I n|)] . (5.1) Note that the equation for n = 0 is trivial, since Eλ[∆ λ(π0)] = Eλ[∆ λ(0)] = 
+
+Eλ[∆ λ(ˆb0)] = rλ(0). In order to prove the equation for n ≥ 1, we can assume that ( ˆbn) is independent of ( πn) and ( In) (define ( ˆbn) on an independent copy of the probability space). Then on the event {|I n| = i} the threshold πn has the same distribution as ˆbi. Hence Eλ[∆ λ(πn)1 {|I n|=i}] = Eλ[∆ λ(ˆbi)1 {|I n|=i}] = 
+
+Eλ[∆ λ(ˆbi)] Pλ(|I n| = i) = rλ(i)Pλ(|I n| = i). Consequently, 
+
+Eλ[∆ λ(πn)] = 
+
+> n−1
+
+X
+
+> i=0
+
+rλ(i)Pλ(|I n| = i) = Eλ[rλ(|I n|)] .
+
+From (5.1) we get 
+
+Rπλ(T ) = 
+
+> T
+
+X
+
+> n=0
+
+Eλ [rλ(|I n|)] .
+
+19 Now we use that λ belongs to the environment class M(L). This implies that 
+
+λ is continuously differentiable and hence ∆ λ twice continuously differentiable (see Lemma 1.2). Therefore, using ∆ λ(b∗) = ∆ ′
+
+> λ
+
+(b∗) = 0, Taylor’s theorem implies ∆λ(b) = 12∆′′ 
+
+> λ
+
+(θ)( b − b∗)2 (5.2) for some θ between b and b∗.Moreover, we define c := sup λ∈M (L) sup b∈[S, 0] ∆′′ 
+
+> λ
+
+(b). Since λ ∈ M (L) one can derive from Equation (1.5) that c depends on S and L only, and that 
+
+c < ∞. Hence, for all λ and b ∈ [S, 0] we have ∆ λ(b) ≤ 12 c(b − b∗)2. Thus, sup 
+
+> λ∈M (L)
+
+rλ(n) ≤ 12cE λ[( ˆbn − b∗)2].
+
+For notational convenience, let Llow := ln(2)  
+
+> |S|
+
++ 1 
+
+> L
+
+. Note that Llow is exactly the lower bound from property 2 of the environment class M(L) and only de-pends on the environment class parameters S and L. The following estimates are valid for all λ ∈ M (L)1. Λ( S) ≤ | S|L;2. min {m ∈ N0 : S + m 12L ≥ 0} ≤ ⌈ 2|S|L⌉ ≤ 2|S|L + 1; 3. E(τ0) ≥ 1 
+
+> L
+
+;4. Var( τ0) ≤ 2L2
+
+> low
+
+.The last estimate follows from the proof of Lemma 4.1. Moreover, using Lemma 3.2 we have 
+
+b∗ − S
+
+3 + 2 E(τ0) ≥ |S| − L−1 
+
+> low
+
+ln(2) 3 + 2 L−1
+
+> low
+
+.
+
+Therefore, Proposition 4.7 implies that sup λ∈M (L) rλ(n) ≤ 12 cD 1 
+
+> n
+
+, where 
+
+D =
+
+" S2 4L|S| + 2 L2
+
+> low
+
+(min { 1 
+
+> L
+
+, |S|− L−1 
+
+> low ln(2) 3+2 L−1
+> low
+
+})2
+
+ +  4L2 
+
+> low
+
++ 8 |S|3Le 2|S|L + |S|34L(2 |S|L + 2)  #
+
+1
+
+n.
+
+20 Therefore, for all λ ∈ M (L) we have 
+
+Rπλ(T ) = Eλ
+
+" TX
+
+> n=0
+
+rλ(|I n|)
+
+#
+
+≤ Eλ(τ 00 ) + Eλ
+
+" TX
+
+> n=1
+
+rλ(|I n|)
+
+#
+
+≤ L−1 
+
+> low
+
++ Eλ
+
+ 
+
+> |I T|
+
+X
+
+> j=1
+
+(σ(j + 1) − σ(j)) rλ(j)
+
+
+
+≤ L−1 
+
+> low
+
++
+
+> T
+
+X
+
+> j=1
+
+Eλ[σ(j + 1) − σ(j)] rλ(j)
+
+≤ L−1 
+
+> low
+
++ eL|S|
+
+> T
+
+X
+
+> j=1
+
+rλ(j)
+
+≤ L−1 
+
+> low
+
++ eL|S| 12c D ln( T + 1) 
+
+≤ L−1
+
+> low
+
+ln( T + 1) ln(2) + eL|S| 12c D ln( T + 1) =
+
+ L−1
+
+> low
+
+ln(2) + eL|S| 12c D 
+
+
+
+ln( T + 1) .
+
+Note that the RHS of the previous inequality does not depend on λ. Thus we have shown the theorem. 
+
+# 6 Lower bound: Proof of Theorem 3.4 
+
+In the following we prove Theorem 3.4. We need to show that the minimax regret inf  
+
+> π∈Π
+
+sup 
+
+> λ∈M (L)
+
+Rπλ(T )grows at least logarithmically. The crux of the argument is that it is enough to derive a logarithmic lower bound for H(L) := {λ ∈ M (L) : λ constant },the subclass of constant intensity functions. Indeed, note that inf  
+
+> π∈Π
+
+sup 
+
+> λ∈M (L)
+
+Rπλ(T ) ≥ inf  
+
+> π∈Π
+
+sup 
+
+> λ∈H (L)
+
+Rπλ(T ).
+
+Therefore, a logarithmic lower bound H(L) implies a lower bound for the whole environment class M(L). Note that if the unknown intensity function is from the class H(L), then the stopping agent observes a homogeneous Poisson processes in each round. 21 The estimation of the intensity function is thus simply a one parameter esti-mation, namely the estimation of λ ∈ [a, b ], where a := ln(2)  
+
+> |S|
+
++ 1 
+
+> L
+
+and b := L.In addition, we assume that we have full information in every round, i.e. that we can observe the homogeneous Poisson process on [ S, 0] in every round. Since the class of policies with full information is larger than the class of policies with partial information, we have inf  
+
+> π∈Π
+
+sup 
+
+> λ∈H (L)
+
+Rπλ(T ) ≥ inf 
+
+> π∈Πf ull
+
+sup 
+
+> λ∈H (L)
+
+Rπλ(T ). (6.1) Moreover, to simplify the following analysis we introduce the class of so-called cut-off full information policies Πcut := 
+
+
+
+πcut = ( πcut n )n≥1|∃ πf ull ∈ Πf ull s.t. ∀n ≥ 0 : πcut n = min {πf ull n , −ln(2) 
+
+L }
+
+
+
+.
+
+The idea is that for λ ∈ H (L) we know that b∗ ∈ (S, −ln(2)  
+
+> L
+
+] by Corollary 1.3. Therefore, cutting off every policy at −ln(2)  
+
+> L
+
+can not worsen the regret. Let 
+
+π ∈ Πf ull and πcut the corresponding cut-off policy. Fix n ∈ N0.
+
+case 1: We have πn < −ln(2)  
+
+> L
+
+. Therefore ∆( πn) = E|τπn | − E|τb∗ | = E|τπcut n | − E|τb∗ | = ∆( πcut n )
+
+case 2: We have πn ∈ [L∗, 0] , where L∗ := −ln(2)  
+
+> L
+
+. By Theorem 1.3 we know the cost function for λ ∈ H (L) is ∆ λ(b) = 1 
+
+> λ
+
+(2 eλb − 1) − b − ln(2)  
+
+> λ
+
+for 
+
+b ∈ [S, 0] . We want to show that ∆ λ(x) ≥ ∆λ(L∗) for all x ∈ [L∗, 0] . We have ∆′
+
+> λ
+
+(x) = 2 eλx − 1. Recall that λ ∈ [ln(2) /|S| + 1 
+
+> L
+
+, L ] and x ∈ [L∗, 0] . It follows directly λx ≥ − ln(2) and therefore ∆ ′
+
+> λ
+
+(x) ≥ 0 for all x ∈ [L∗, 0] .
+
+It follows ∆λ(πn) ≥ ∆λ(πcut n ).
+
+In summary, the regret rate does not get worse by substituting policies by cut-off policies and hence we get inf  
+
+> π∈Π
+
+sup 
+
+> λ∈H (L)
+
+Rπλ(T ) ≥ inf 
+
+> π∈Πf ull
+
+sup 
+
+> λ∈H (L)
+
+Rπλ(T ) = inf  
+
+> π∈Πcut
+
+sup 
+
+> λ∈H (L)
+
+Rπλ(T ).
+
+Therefore a lower bound for cut-off policies is valid for the policies from Def-inition 2.1 as well. When estimating a constant jump intensity, observing ( N jt )t∈[S, 0] is equiva-lent, in the sense of sufficiency, to observing N j 
+
+> 0
+
+∼ P oi (λ|S|). Therefore, in the following we can assume that any estimator of the parameter λ makes solely use of the values N 00 , N 10 , N 20 , . . . . Note that the latter sequence is i.i.d. 
+
+22 and Poisson distributed with parameter λ|S|. W.l.o.g. we choose |S| = 1. Otherwise just replace λ by ˜λ := |S|λ ∈ [|S|a, |S|b] in the following consid-erations. Recall from Lemma 1.3 that for any constant λ we have Eλ(|τb∗ |) =  
+
+> ln(2)
+> λ
+
+. There is a one-to-one correspondence between the optimal threshold 
+
+b∗ and the given constant intensity λ. Indeed, we have b∗(λ) = −ln(2)  
+
+> λ
+
+and 
+
+λ(b∗) = −ln(2)  
+
+> b∗
+
+. We use this correspondence to reduce the problem of finding a minimizing cut-off policy to a problem of determining an estimator for λ
+
+with minimal mean square error. 
+
+Proposition 6.1. There exists a constant c ∈ (0 , ∞) such that for all x ∈
+
+[S, 0] and λ ∈ H (L) we have ∆λ(x) ≥ c(x − b∗(λ)) 2.
+
+Proof. We make a Taylor expansion of ∆ λ(x) around the optimal thresh-old b∗(λ). Note that all necessary smoothness conditions are fulfilled and therefore we get ∆λ(x) = ∆ λ(b∗(λ)) + ∆ ′
+
+> λ
+
+(b∗(λ))( x − b∗(λ)) + ∆ ′′ 
+
+> λ
+
+(ν)( x − b∗(λ)) ,
+
+where ν ∈ [min {x, b ∗(λ)}, max {x, b ∗(λ)}]. By definition and the first order optimality criteria we know ∆ λ(b∗(λ)) = ∆ ′
+
+> λ
+
+(b∗(λ)) = 0 . Moreover, for λ ∈H(L) we know that ∆ λ(x) = 1 
+
+> λ
+
+(2 eλx − 1) − x − ln(2)  
+
+> λ
+
+. It follows ∆ ′′ 
+
+> λ
+
+(x) = 2λe λx > 0 for all x. Therefore, we have ∆λ(x) ≥ c(x − b∗(λ)) 2,
+
+where c := inf λ∈[a,b ] inf x∈[S, 0] ∆′′ 
+
+> λ
+
+(x) > 0.
+
+Proposition 6.1 implies that for all ( πn) ∈ Πcut we have 
+
+Eλ(∆ λ(πn)) ≥ cE λ[( πn − b∗(λ)) 2] = cE λ
+
+
+
+(b∗(−ln(2) 
+
+πn
+
+) − b∗(λ)) 2
+
+
+
+≥ ˜cE λ
+
+
+
+(−ln(2) 
+
+πn
+
+− λ)2
+
+
+
+, (6.2) where ˜ c := c min λ∈[a,b ](b∗)′(λ) = cln(2)  
+
+> L2
+
+.We can interpret −ln(2)  
+
+> πn
+
+as the corresponding estimator for the parameter 
+
+λ defined by the policy ( πn) ∈ Πcut . It follows directly by (6.2) that 
+
+Rπλ(T ) = 
+
+> T
+
+X
+
+> n=1
+
+Eλ(∆ λ(πn)) ≥ ˜c
+
+> T
+
+X
+
+> n=1
+
+Eλ
+
+
+
+(− ln(2) 
+
+πn
+
+− λ)2
+
+
+
+23 and therefore inf   
+
+> policies π
+
+sup 
+
+> λ∈H (L)
+
+Rπλ(T ) ≥ inf  
+
+> π∈Πcut
+
+sup 
+
+> λ∈H (L)
+
+Rπλ(T ) ≥ inf 
+
+> estimator ˆλ
+
+sup 
+
+> λ∈[a,b ]
+
+˜c
+
+> T
+
+X
+
+> n=1
+
+Eλ[( ˆλn−λ)2].
+
+In summary, we have reduced the problem of deriving a lower bound for the minimax regret on the environment class M(L) to a problem of deriving a lower bound for the minimax risk when estimating λ ∈ H (L) using the observations N 00 , N 10 , N 20 , . . . .Next observe that the minimax risk can be bounded from below with the Bayes risk with prior density q
+
+inf 
+
+> estimator ˆλ
+
+sup 
+
+> λ∈[a,b ]
+
+Eλ
+
+" TX
+
+> n=1
+
+(ˆλn − λ)2
+
+#
+
+≥ inf 
+
+> estimator ˆλ
+
+Z
+
+> [a,b ]
+
+Eλ
+
+" TX
+
+> n=1
+
+(ˆλn − λ)2
+
+#
+
+q(λ)dλ 
+
+= inf 
+
+> estimator ˆλT
+
+X
+
+> n=1
+
+Z
+
+> [a,b ]
+
+Eλ
+
+h
+
+(ˆλn − λ)2
+
+i
+
+q(λ)dλ. 
+
+(6.3) Recall that the the density of the Beta (3 , 3) −distribution on [0 , 1] is given by q[0 ,1] (x) = 30 x2(1 − x)2. It is straightforward to show that q[a,b ](x) =  
+
+> 1
+> b−a
+
+q[0 ,1] (x−ab−a ) = 30 (b−a)5 (x − a)2(b − x)2 is density function on [ a, b ]. In the following we choose the prior with density q = q[a,b ].Now, we apply the so-called van Trees inequality to the RHS of (6.3). This inequality can be found, for example, in Chapter 2 in [9]. For the choice of the specific prior with density q = q[a,b ] all conditions for the application of the van Trees inequality are satisfied, especially the condition q(a) = q(b) = 0, and hence we get inf 
+
+> estimator ˆλT
+
+X
+
+> n=1
+
+Z
+
+> [a,b ]
+
+Eλ
+
+h
+
+(ˆλn − λ)2
+
+i
+
+q(λ)dλ ≥
+
+> T
+
+X
+
+> n=1
+
+1
+
+Iq[a,b ] + R 
+
+> [a,b ]
+
+Ip(n) (λ)q(λ)dλ ,
+
+where Iq[a,b ] := R  ∂∂λ ln( q(λ)) 2 q(λ)dλ and Ip(n) (λ) denotes the Fisher in-formation of the n-fold product of the Poisson distribution. Recall that 
+
+Ip(n) = n Ip(1) = nλ .To derive the value of Iq[a,b ] we first calculate Iq[0 ,1] . Note that Iq[0 ,1] =
+
+R q′(λ)2 
+
+> q(λ)
+
+dλ and hence 
+
+Iq[0 ,1] =
+
+Z 10
+
+60 2x2(1 − x)2(1 − 2x)2
+
+30 x2(1 − x)2 dx = 120 
+
+Z 10
+
+(1 − 2x)2dx = 40 .
+
+24 Next observe that q′
+
+> [a,b ]
+
+(x) = 1 
+
+> b−a
+
+q′
+
+> [0 ,1]
+
+(x−ab−a ) 1 
+
+> b−a
+
+and thus 
+
+Iq[a,b ] =
+
+Z ba 
+
+> 1(b−a)4
+
+(q′
+
+> [0 ,1]
+
+(x−ab−a )) 21 
+
+> b−a
+
+q[0 ,1] (x−ab−a ) dx 
+
+=
+
+Z 10
+
+1(b − a)3
+
+q′
+
+> [0 ,1]
+
+(u)
+
+q[0 ,1] (u)(b − a)du 
+
+= 40 (b − a)2 ,
+
+where we substitute u = x−ab−a . To sum up, we get 
+
+> T
+
+X
+
+> n=1
+
+1
+
+Iq[a,b ] + R 
+
+> [a,b ]
+
+Ip(n),n (λ)q(λ)dλ =
+
+> T
+
+X
+
+> n=1
+
+1 
+
+> 40 (b−a)2
+
++ n R 
+
+> [a,b ]1
+> λ
+
+q(λ)dλ 
+
+≥
+
+> T
+
+X
+
+> n=1
+
+1 
+
+> 40 (b−a)2
+
++ n 1
+
+> a
+
+R 
+
+> [a,b ]
+
+q(λ)dλ 
+
+≥ C′ ln( T ),
+
+where C′ = 1  
+
+> 40 (b−a)2+1
+> a
+
+. Therefore ˜c inf 
+
+> estimator ˆλ
+
+sup 
+
+> λ∈[a,b ]
+
+Eλ
+
+" TX
+
+> n=1
+
+(ˆλn − λ)2
+
+#
+
+≥ ˜cC ′ ln( T ) = C ln( T ),
+
+where C = ˜ cC ′. In summary, inf  
+
+> π∈Π
+
+sup 
+
+> λ∈M (L)
+
+Rπλ(T ) ≥ inf 
+
+> estimator ˆλ
+
+sup 
+
+> λ∈[a,b ]
+
+˜cE λ
+
+" TX
+
+> n=1
+
+(ˆλn − λ)2
+
+#
+
+≥ C ln( T ).
+
+Thus Theorem 3.4 is proved. 
+
+## Acknowledgements 
+
+We thank Nabil Kazi-Tani and Michael Neumann for very fruitful discussions. Funded by the Deutsche Forschungsgemeinschaft (DFG, German Research Foundation) – Project number 547236699. 25 References 
+
+[1] S. Ankirchner, S. Christensen, J. Kallsen, P. L. Borne, and S. Perko. Learning to steer with Brownian noise. arXiv preprint arXiv:2410.03221 ,2024. [2] M. Basei, X. Guo, A. Hu, and Y. Zhang. Logarithmic regret for episodic continuous-time linear-quadratic reinforcement learning over a finite-time horizon. Journal of Machine Learning Research , 23(178):1–34, 2022. [3] S. Christensen, N. Dexheimer, and C. Strauch. Data-driven optimal stopping: A pure exploration analysis. arXiv preprint arXiv:2312.05880 ,2023. [4] S. Christensen and C. Strauch. Nonparametric learning for impulse control problems—Exploration vs. exploitation. The Annals of Applied Probability , 33(2):1569 – 1587, 2023. [5] S. Christensen, C. Strauch, and L. Trottner. Learning to reflect: a uni-fying approach for data-driven stochastic control strategies. Bernoulli ,30(3):2074–2101, 2024. [6] S. Christensen, A. H. Thomsen, and L. Trottner. Data-driven rules for multidimensional reflection problems. to appear in SIAM / ASA Journal on Uncertainty Quantification, arXiv preprint arXiv:2311.06639 , 2024. [7] T. E. Duncan, L. Guo, and B. Pasik-Duncan. Adaptive continuous-time linear quadratic gaussian control. IEEE Transactions on automatic control , 44(9):1653–1662, 2002. [8] T. S. Ferguson. Optimal stopping and applications, 2006. URL https://www. math. ucla. edu/˜ tom/Stopping/Contents. html , 2018. [9] R. D. Gill and B. Y. Levit. Applications of the van Trees inequality: a Bayesian Cram´ er-Rao bound. 1995. [10] X. Guo, A. Hu, and Y. Zhang. Reinforcement learning for linear-convex models with jumps via stability analysis of feedback controls, 2021. [11] T. M. Moerland, J. Broekens, A. Plaat, and C. M. Jonker. Model-based reinforcement learning: A survey. Foundations and Trends in Machine Learning , 16(1):1–118, 2023. 26 [12] J. MacQueen and R. G. Miller, Jr. Optimal persistence policies. Oper-ations Res. , 8:362–380, 1960. [13] E. Neuman and Y. Zhang. Statistical learning with sublinear regret of propagator models, 2023. [14] M. Sakaguchi and M. Tamaki. On the optimal parking problem in which spaces appear randomly. 1982. [15] L. Szpruch, T. Treetanthiploet, and Y. Zhang. Exploration-exploitation trade-off for continuous-time episodic reinforcement learning with linear-convex models. arXiv preprint arXiv:2112.10264 , 2021. 27

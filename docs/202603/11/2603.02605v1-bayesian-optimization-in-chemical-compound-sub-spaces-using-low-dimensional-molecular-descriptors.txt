@@ -1,0 +1,676 @@
+Title: Bayesian Optimization in Chemical Compound Sub-Spaces using Low-Dimensional Molecular Descriptors
+
+URL Source: https://arxiv.org/pdf/2603.02605v1
+
+Published Time: Wed, 04 Mar 2026 01:38:35 GMT
+
+Number of Pages: 15
+
+Markdown Content:
+# BAYESIAN OPTIMIZATION IN CHEMICAL COMPOUND 
+
+# SUB -S PACES USING LOW -D IMENSIONAL MOLECULAR 
+
+# DESCRIPTORS 
+
+A P REPRINT 
+
+Yun-Wen Mao 
+
+Department of Chemistry, University of British Columbia, Vancouver, B.C. V6T 1Z1, Canada Stewart Blusson Quantum Matter Institute, Vancouver, B.C. V6T 1Z4, Canada 
+
+ymaoai@student.ubc.ca 
+
+Roman V. Krems 
+
+Department of Chemistry, University of British Columbia, Vancouver, B.C. V6T 1Z1, Canada Stewart Blusson Quantum Matter Institute, Vancouver, B.C. V6T 1Z4, Canada 
+
+rkrems@chem.ubc.ca 
+
+March 4, 2026 
+
+# ABSTRACT 
+
+Efficient optimization of molecules with targeted properties remains a significant challenge due to the vast size and discrete nature of chemical compound space. Conventional machine-learning-based optimization approaches typically require large datasets to construct accurate surrogate models, limiting their applicability in data-scarce settings. In this study, we present a Bayesian optimization (BO) framework that identifies optimal molecular structures with high precision using fewer than 2,000 training data points within a chemical subspace containing more than 133,000 molecules. The framework employs a low-dimensional and physics-informed molecular descriptor vector that facilitates data-efficient surrogate modeling and optimization. A key innovation of the proposed framework is a reliable inverse mapping scheme that translates optimized points in the descriptor space back into chemically valid molecular structures, thereby bridging continuous optimization and discrete molecular design. We demonstrate the effectiveness of our approach on the QM9 benchmark dataset, where the framework successfully identifies organic molecules with the target entropy and zero-point vibrational energy (ZPVE) values. For entropy optimization, our approach achieves a 100 % success rate while requiring fewer than 1,000 molecular evaluations in more than 80 % of test cases. For ZPVE, the success rate exceeds 80 % for molecules containing more than two heavy atoms. These results highlight the critical role of low-dimensional, interpretable descriptors in enabling data-efficient optimization and robust inverse molecular design, and establish Bayesian optimization as a practical tool for molecular discovery in small-data regimes. 
+
+Keywords Bayesian Optimization · Inverse molecular design · Gaussian Process Regression · Chemical compound space optimization 
+
+# 1 Introduction 
+
+The chemical compound space is vast due to the combinatorial nature of molecular structures. The number of molecules suitable for medical applications is estimated to range from 10 23 to 10 60 [1]. Combined with the high cost 
+
+> arXiv:2603.02605v1 [physics.chem-ph] 3 Mar 2026
+
+Bayesian optimization in chemical compound sub-spaces A P REPRINT 
+
+of experimental screening and quantum-chemistry calculations, the size of the chemical compound space makes the search for molecules with desired physical and chemical properties extremely challenging. To address this challenge, data-driven approaches— including machine learning (ML)— have emerged as important tools. ML models can serve as surrogates for experiments or quantum-chemistry computations, enabling efficient screening of chemical compound sub-spaces, such as sets of structural isomers or specific classes of ligands. Various ML methods have been employed for molecular property predictions, including feed-forward neural networks (NNs) [ 2, 3, 4 ], large language models (LLMs) [ 5 , 6, 7 , 8, 9, 10 ], generative adversarial networks (GANs) [ 11 , 12 , 13 , 14 ], variational autoencoders (VAEs) [ 15 , 16 , 17 , 18 , 19 ], kernel methods [ 20 , 21 , 22 , 23 ], random forests [ 24 ], and reinforcement learning (RL) [ 25 ]. These approaches have demonstrated remarkable success in accelerating molecular discovery. However, high-throughput screening often trades accuracy for speed, and may therefore overlook important molecules. An alternative strategy is direct optimization within chemical compound sub-spaces to identify specific molecules with high precision. High-precision optimization of molecular properties should be validated using experiments or quantum-chemical calculations to confirm the candidates proposed by the optimizer. This requires efficient optimization schemes, capable of converging to optimal solutions in complex molecule spaces with a small number of confirmations. The development of such efficient optimizers faces two challenges: (i) molecules are complex and generally require high-dimensional numerical descriptors, which leads to high-dimensional optimization problems; and (ii) optimization requires the inverse mapping from numerical descriptors to molecules. A great variety of molecular descriptors have been developed to encode compositional, structural, and electronic property information into numerical features suitable for learning algorithms. It has been established that physics-based descriptors generally yield more data-efficient models than, for example, descriptors derived from tokenized SMILES strings processed as text [ 26 , 27 , 28 , 29 ]. Examples of molecular descriptors that incorporate physical features include the Behler-Parrinello symmetry functions (ACSF) [ 30 , 31 ], smooth overlap of atomic positions (SOAP) [ 32 ], local many-body tensor representation (LMBTR) functions [ 33 ], Faber-Christensen-Huang-Lilienfeld (FCHL19) [ 34 ], convolutional many-body distribution functionals (cMBDF) [ 35 ], Coulomb matrices [ 36 ], bag of bonds (BoB) features [ 37 ], and spectrum of London and Axilrod-Teller-Muto (SLATM) [ 38 ]. While these descriptors have enabled accurate ML predictions for a wide range of molecular properties, optimization within the high-dimensional chemical compound space represented by such descriptors remains highly challenging. This difficulty arises from the fundamentally non-smooth nature of the objective landscape, as molecules are inherently discrete graphs of atoms and bonds. Thus, even small structural modifications, such as functional group substitutions, can lead to abrupt changes in molecular properties [ 39 ]. One way to circumvent this problem is to construct smooth and continuous latent spaces using models such as VAEs [ 15 , 16 , 17 , 18 , 19 ], GANs [ 40 , 41 ], or diffusion models [ 42 , 43 , 44 ], enabling gradient-based optimization. However, training such generative models typically requires large datasets. Therefore, data-efficient and gradient-free methods are needed to allow direct optimization in chemical sub-spaces, especially when data are scarce. A possible approach to reduce the data requirements for molecular property discovery is Bayesian optimization (BO). BO is particularly well suited for expensive evaluations (i.e. experimental or quantum-chemical confirmation of molecular properties), gradient-free settings, and global optimization. In chemistry and materials science, BO has been applied to diverse optimization problems, including catalyst discovery [ 45 , 46 , 47 , 48 ], molecular docking [ 49 , 50 ], and material property optimization [ 51 , 52 , 53 , 54 ]. However, Bayesian optimization is particularly sensitive to the dimensionality problem and, as other optimization approaches, requires overcoming the inverse problem. High dimensionality of the input space limits the probabilistic surrogate models underlying BO. Although probabilistic models provide uncertainty estimates that guide the search, their predictive performance deteriorates rapidly in high-dimensional spaces [ 55 ]. This issue is especially pronounced in chemistry, where high-quality data are scarce, yet molecular descriptor spaces are often high-dimensional in order to capture subtle structural variations and complex chemical features. Prior work [ 56 ] has shown that reducing descriptor dimensionality can significantly improve both ML model accuracy and computational efficiency. Furthermore, other studies have demonstrated that physically grounded descriptors result in more robust and generalizable models [ 26 , 23 ]. Our previous work [ 22 ] introduced physically motivated and low-dimensional molecular descriptor vectors that preserve essential chemical information while substantially reducing dimensionality. This representation enables accurate Gaussian process regression (GPR) interpolation even with limited data and provides the foundation for the optimization framework developed here. In the present work, we exploit these low-dimensional descriptors to explore the feasibility of BO in chemical compound spaces. To achieve this, we develop and demonstrate an inverse-mapping scheme that converts molecular descriptor vectors back into molecules. Inverse design requires mapping points in descriptor space back to chemically valid molecular structures, a key step in any molecular property optimization strategy. This inverse mapping is difficult due to the discrete and constrained nature of molecules. Most points in descriptor-property space do not correspond to physically-realizable molecules, often making reconstruction from a set of optimized descriptors ill-posed. Several strategies [ 57 ] have been proposed to address this challenge. For high-dimensional descriptors, prior work explored various deep learning techniques, including reinforcement learning (RL) [ 58 , 25 ], evolutionary approaches such as genetic algorithms (GA) [ 59 , 60 , 61 ], 2Bayesian optimization in chemical compound sub-spaces A P REPRINT 
+
+and generative models, VAEs [ 15 , 16 , 17 , 18 , 19 ], generative adversarial networks (GANs) [ 40 , 41 ], and generative pre-trained transformer (GPT) models [ 6, 7, 8 , 9 , 10 ]. These models enable inverse molecular design by generating molecules with targeted properties. However, such approaches typically require large training datasets, which are unavailable for many practical applications in chemistry. Moreover, these methods often lack interpretability or chemical consistency, especially when applied to small-data or physics-informed settings. In addition, the latent representations learned by these models do not always align with well-defined sets of molecular descriptors, limiting integration with descriptor-based optimization frameworks. In this work, we address both the dimensionality challenge and the inverse problems inherent to optimization in chemical compound spaces. Our approach introduces a general strategy for solving the inverse problem in low-dimensional, physically motivated descriptor spaces, providing a reliable bridge between optimized descriptors and valid molecular structures. Molecules are first represented using the compact and physically inspired descriptors introduced in our previous work [ 22 ]. BO is then employed to efficiently explore this reduced descriptor space using GPR with kernels optimized for data-efficient interpolation. Each candidate vector of descriptors proposed by BO is mapped onto a molecule using an algorithm that identifies chemically plausible structures by matching the predicted stoichiometry and shape characteristics against a molecular database. We validate this approach using the QM9 dataset, demonstrating that the optimization scheme can successfully identify organic molecules with desired entropy and zero-point vibrational energy (ZPVE), achieving up to 100 % success rate with a small number of iterations. This framework enables the optimizer to propose candidates in continuous descriptor spaces and realize them as valid molecules, effectively bridging the gap between continuous optimization and discrete chemical design. 
+
+# 2 Dataset summary 
+
+We use the QM9 dataset [ 62 ] to benchmark our optimization framework. The dataset contains 133,885 stable organic molecules composed of the following atoms: H, C, O, N, and F. Within the QM9 dataset, there are 526 subsets of constitutional isomers defined as molecules with the same chemical formula but different atom connectivity. The subsets range in size from two molecules to as many as 6,059 molecules, with the largest subset corresponding to the chemical formula C7H10 O2. For each molecule in QM9, properties such as zero-point vibrational energy (ZPVE), enthalpy, and Gibbs free energy are computed at the B3LYP/6-31G(2df,p) level of theory. In this work, we focus on optimizing the molecular entropy and ZPVE, as our previously developed low-dimensional descriptors [ 22 ] are particularly well-suited for interpolating these properties, yielding interpolation models with chemical accuracy ≤ 1 kcal mol −1 using a small number of molecules in the training set. 
+
+# 3 Method 
+
+3.1 Molecular property optimization scheme 
+
+The pseudo-algorithm 1 outlines the iterative process of the present molecular property optimization framework. The goal of the algorithm is to identify the optimal molecular structure with the property value closest to a specified target value ytarget within a given chemical sub-space. The objective function is defined as 
+
+δ(x) = |ytarget − γ(x)|, (1) where x is a vector of numerical features representing a molecule, and γ(·) denotes the underlying ML model that predicts the molecular property (e.g., a GP model). The optimization seeks the global minimum of δ(x),
+
+x∗ = arg min  
+
+> x
+
+δ(x), (2) where x∗ is the vector of features corresponding to the optimal molecule. Training the optimization algorithm requires data points sampled across the input space. The training dataset with Ntrain samples is defined as Dtrain = ( Xtrain , ∆train ),where the d-dimensional inputs are Xtrain = {xi | i ∈ [1 , N train ]} ⊂ Rd and the corresponding outputs are ∆train =
+
+{δ(xi) | i ∈ [1 , N train ]}. The initial training dataset Xtrain is generated using Latin-hypercube sampling (LHS) [ 63 , 64 ], a statistical randomized sampling method that prevents clustering in the input space. Each input point xi ∈ Xtrain 
+
+is mapped to an output value δi using the inverse mapping scheme described in Sec. 3.4. Given the training dataset 
+
+Dtrain , Bayesian optimization proposes a new sampling point xBO . Using the mapping function mentioned in line 4 of Algorithm 1, this vector is mapped on the corresponding molecule and hence the output property value δBO is computed. The training set Dtrain is updated to include (xBO , δ BO ) and the process is iterated. The iterative optimization process terminates when min(∆ train ) < ϵ , where ϵ is a predefined error threshold. A nonzero threshold ϵ > 0 permits limited error tolerance, accounting for thermal noise and model limitations. For example, ϵ = 1 kcal mol −1 corresponds to chemical accuracy, which is defined as the maximum acceptable deviation between theoretical predictions and experimental measurements due to thermal fluctuations [65]. 3Bayesian optimization in chemical compound sub-spaces A P REPRINT 
+
+Algorithm 1 Bayesian Optimization with Chemical Formula Search  
+
+> 1:
+
+Initialize training data using Latin hypercube sampling Xtrain = {xi | i ∈ [1 , N t=0 ]} ⊂ Rd 
+
+> 2:
+
+Initialize output set ∆train = ∅ 
+
+> 3:
+
+for i = 1 to N0 do  
+
+> 4:
+
+Compute δi = δ(xi) for xi ∈ Xtrain  
+
+> 5:
+
+Update ∆train = ∆ train ∪ { δi} 
+
+> 6:
+
+end for  
+
+> 7:
+
+Form the initial training dataset Dtrain = ( Xtrain , ∆train ) 
+
+> 8:
+
+while min(∆ train ) > ϵ do  
+
+> 9:
+
+Use Bayesian optimization to suggest next point: xBO = BayesianOptimization (Dtrain ) 
+
+> 10:
+
+Compute (xt, δ t), where δt = δ(xBO ), for the tth BO iteration  
+
+> 11:
+
+Update Dtrain = Dtrain ∪ { xt, δ t} 
+
+> 12:
+
+end while  
+
+> 13:
+
+return xt
+
+3.2 Details of Bayesian Optimization 
+
+Bayesian optimization (BO) is an iterative ML algorithm designed to efficiently locate the global minimum of an objective function. In this work, we use the objective function defined in eq. (2). BO relies on probabilistic surrogate models trained on the dataset Dtrain , which provide both predictions of the black-box function and associated uncertainty estimates. At each iteration, BO selects a sampling point by maximizing an acquisition function α(x), which leverages the output of the surrogate model to balance exploration and exploitation. Because the acquisition function is computationally inexpensive relative to experiments or quantum chemistry calculations, it efficiently guides the search towards an optimal molecular structure. We use Gaussian Process regression (GPR) [ 66 ] as the surrogate model for BO. GPR is a probabilistic, non-parametric supervised learning method that models the objective function d(x) as a random function with a joint Gaussian prior over the function values. Given an unseen input set X∗, GPR predicts the corresponding outputs ∆∗ by modeling the joint distribution between the training outputs ∆ and the test output ∆∗ as a multivariate Gaussian 
+
+ ∆∆∗
+
+
+
+∼ N
+
+ μμ∗
+
+
+
+,
+
+ K K∗
+
+KT 
+
+> ∗
+
+K∗∗ 
+
+ 
+
+(3) where μ = [ m(x1), . . . , m (xNtest )] and μ∗ = [ m(x∗,1), . . . , m (x∗,N train )] denote the prior mean functions evaluated at the training and test points, respectively, with m(·) representing the prior mean. The covariance matrices are defined using the kernel function k, such that K = k(Xt, X t), K∗ = k(Xt, X ∗), and K∗∗ = k(X∗, X ∗). As discussed in our previous work [ 22 ], kernel optimization is critical for accurate interpolation. We use the Bayesian information criterion (BIC) [ 67 , 20 ] as the model selection metric to construct kernel functions of variable complexity by forming linear combinations and products of basis kernel functions. The basis kernel functions used in this work are rational quadratic kernel ( κRQ )
+
+κRQ (xi, x j ) = 
+
+
+
+1 + d(xi, x j )2
+
+2al 2
+
+2
+
+(4) where a is the scale mixture parameter, l is the length scale of the kernel, and d(·, ·) is the Euclidean distance between two data points; Matérn kernel( κMAT )
+
+κMAT (xi, x j ) = 1Γ( η)2 η−1
+
+ √2ηl d(xi, x j )
+
+η
+
+Kη
+
+ √2ηl d(xi, x j )
+
+
+
+(5) where η and l are positive parameters, Kν (·) is a modified Bessel function, and Γ( ·) is the gamma function; and dot product kernels ( κDP )
+
+κDP (xi, x j ) = σ20 + ⟨xi, x j |xi, x j ⟩ (6) where σ20 is a parameter which controls the inhomogeneity of the kernel. The acquisition function is constructed from the predictive mean μ∗ and uncertainty σ∗ provided by the GPR model. For an unseen input point x∗, the predictive mean and variance of a noiseless GPR model are given by 
+
+μ(x∗) = kT 
+
+> ∗
+
+K−1∆, (7) 
+
+σ∗ = k(x∗, x ∗) − k ∗T K−1k∗, (8) 4Bayesian optimization in chemical compound sub-spaces A P REPRINT 
+
+where k∗ is a vector with entries k(x∗, x i) for i ∈ [1 , N train ]. These quantities are used to compute the acquisition function. Various forms of α(x) have been proposed [ 68 ], each balancing exploration and exploitation differently. Here, we use the upper confidence bound (UCB) acquisition function defined as 
+
+α(x) = μ∗(x) + ζσ ∗(x), (9) where the tunable parameter ζ controls the trade-off between exploration, driven by the uncertainty term σ∗(x), and exploitation, guided by μ∗(x), across the space of molecules represented by multi-dimensional descriptor vectors. 
+
+3.3 Molecular descriptors 
+
+Computational and machine learning models require molecules to be represented by numerical vectors. In general, molecular descriptors are numerical features or binary strings constructed through mathematical transformations that encode structural properties of molecules. Many examples of physics-inspired molecular descriptors have been proposed, where these descriptors can be broadly categorized as either ‘local’ or ‘global’ descriptors. Local descriptors represent the atomic environment within a molecule. Examples include smooth overlap of atomic positions (SOAP) [ 32 ], Faber-Christensen-Huang-Lilienfeld (FCHL19) [ 34 ], Behler-Parrinello symmetry functions (ACSF) [ 30 , 49 ], and LMBTR [ 33 ]. Global descriptors characterize the molecule as a whole. Descriptors such as Coulomb matrices [ 36 ], bag of bonds (BoB) features [ 37 ], and spectrum of London and Axilrod-Teller-Muto (SLATM) [ 38 ] are under this category. Combined with optimized learning algorithms, these representations allow ML models to interpolate chemical sub-spaces efficiently. In this work, we use the physically motivated, low-dimensional set of molecular descriptors introduced in our previous work [ 22 ]. We begin by forming three-dimensional vectors derived from the Coulomb matrix (CM). The resulting numerical representation can be viewed as a predominantly global descriptor. Each element Mij in CM is defined as 
+
+Mij =
+
+(0.5Z2.4 
+
+> i
+
+for i = j 
+
+> ZiZj
+> Rij
+
+for i̸ = j, (10) where Zi and Zj are the atomic numbers of atoms i and j, respectively, and Rij is the separation between atoms i and 
+
+j. The matrix M is reduced to a three-dimensional eigenvalue descriptor vector 
+
+Λ = [ λmax , μ (λ), σ (λ)] , (11) where λmax is the largest eigenvalue of M , and μ(λ) and σ(λ) are the mean and standard deviation of the distribution of eigenvalues of M . This vector provides a compact global characterization of the molecule. The three-dimensional vectors (11) are supplemented by inner products ⟨fZ , f m⟩, introduced and described in detail in our previous work [ 22 ]. Briefly, ⟨fZ , f m⟩ is defined as the inner product of an atomic reference probability density function fZ with the molecular function fm. The atomic reference distribution fZ of an atom with the nuclear charge 
+
+Z is 
+
+fZ = ωZ × f (x | μ = (0 .5 × Z2.4)β , σ 2 = σ2 
+
+> Z
+
+), (12) where ωZ is a weight constant, β is a hyperparameter controlling the mean position, and σ2 
+
+> Z
+
+sets the variance of the normal distribution f (·). The definition of the molecular distribution fm is inspired by the Gershgorin circle theorem [69, 70]. We define fm as the sum of normal distributions f (·)
+
+fm =
+
+> nmax
+
+X
+
+> i
+
+ω × f
+
+x | μ = (0 .5 × Z2.4 
+
+> i
+
+)β , σ 2 =
+
+
+
+> nmax
+
+X 
+
+> j̸=i
+
+ZiZj
+
+Rij 
+
+
+
+> s
+
+ , (13) where nmax is the maximum number of atoms in molecule m, ω is a weight constant, β is a global hyperparameter shared with eq. (12), and s adjusts the standard deviation. The constants and hyperparameters in eq. (12) and eq. (13) are adjustable. While ⟨fZ , f m⟩ is fundamentally a global descriptor, since fZ targets only atoms with the nuclear charge 
+
+Z, it also encodes information about local atomic environments through the Rij -dependent variance. 
+
+3.4 Inverse mapping: from descriptor space to molecules 
+
+When a Bayesian optimizer proposes a sampling point in the descriptor space, the corresponding numerical vector must be mapped onto a molecule, as indicated in algorithm 1 of algorithm 1. However, due to the discrete and constrained nature of molecules, mapping a descriptor vector back to a chemically valid molecular structure is challenging. To address this challenge, we develop Algorithm 2. Given a descriptor vector x′
+
+> t
+
+, the algorithm predicts the chemical formula CνC HνH NνN OνO FνF , where νatom denotes the number of atoms in a molecular species. The resulting 5Bayesian optimization in chemical compound sub-spaces A P REPRINT 
+
+Algorithm 2 Mapping from descriptor x′ 
+
+> t
+
+to (xt, δ t) 
+
+> 1:
+
+Generate the chemical formula from x′
+
+> t
+
+: HνH CνC NνN OνO FνF = ChemicalFormula (x′
+
+> t
+
+) 
+
+> 2:
+
+Search molecules with the correct stoichiometry: M = DatabaseSearch (H νH CνC NνN OνO FνF ) 
+
+> 3:
+
+if M = ∅ then  
+
+> 4:
+
+Set xt = x′
+
+> t
+
+, δt = δmax  
+
+> 5:
+
+else  
+
+> 6:
+
+Find the best molecule: m∗ = arg min m∈M (∥Λ′ 
+
+> i
+
+− Λm∥2) 
+
+> 7:
+
+end if  
+
+> 8:
+
+Calculate descriptor: xt = CalculateDescriptor (m∗) 
+
+> 9:
+
+Calculate the output: δt = d(xt) 
+
+> 10:
+
+return (xt, δ t)
+
+molecular formula can then be matched to species in a molecular database. In this work, we use the QM9 database as the reference; however, the procedure is general and can be applied to any molecular database or modules that generate valid molecular structures. If no structure with the predicted formula exists in the database, the formula is considered chemically implausible. The algorithm returns the original descriptor vector x′ 
+
+> t
+
+with a penalty output value 
+
+δmax , providing negative feedback to the Bayesian optimization algorithm and discouraging exploration of chemically infeasible regions in the descriptor space. The value of δmax is tunable and dataset-dependent. In practice, we set 
+
+δmax = 40 kcal mol −1 for molecular entropy optimization and δmax = 150 kcal mol −1 for zero-point vibrational energy (ZPVE) optimization, corresponding to the range of values of these properties in the QM9 dataset. If valid candidates are found, the algorithm outputs a set of eligible molecular structures M. For each candidate 
+
+m ∈ M , the reduced three-dimensional Coulomb matrix eigenvalue descriptors Λ are computed using eq. (11). The most representative structure is selected from the set M according to 
+
+m∗ = arg min 
+
+> m∈M
+
+(∥Λ′ 
+
+> t
+
+− Λm∥2), (14) where Λ′ 
+
+> t
+
+is the CM eigenvalue vector corresponding to the descriptor vector x′
+
+> t
+
+. Practically, to efficiently identify m∗
+
+within the large database, we use a kd-tree search [ 71 ] implemented in the Scipy Python package. As demonstrated in our previous work [ 22 ], the CM eigenvalue descriptor Λ effectively encodes molecular shape information. Thus, eq. (14) ensures that the algorithm selects a molecule m∗ with the best matching structure among the constitutional isomers in 
+
+M. The corresponding output value δt is then computed using eq. (1) and the algorithm returns the new point (xt, δ t).Given a molecule m, the classification scheme in algorithm 2 of Algorithm 2 determines the stoichiometric coefficients using the set of molecular descriptors ⟨fZ , f m|fZ , f m⟩ detailed in section 3.3. fig. 1 illustrates how these descriptors encode stoichiometric information by comparing fZ and fm for the molecule H3C4N2OF . The left panel of fig. 1 reveals five distinct peaks in fm=H 3C4N2OF , each centered at x = 0 .5Z2.4, corresponding to atoms of nuclear charge Z.For example, the peak in the blue shaded region arises from the carbon atoms in H3C4N2OF , with the center located at x = 0 .5 · (6) 2.4 = 75 . The right panel shows the overlap between the carbon peak and the carbon-atom reference probability density function, fZ=6 eq. (12). Since the atomic reference probability density functions are fixed, the molecular descriptor value ⟨fZ , f m|fZ , f m⟩
+
+varies across molecules solely due to differences in the shapes of the corresponding peaks in fm. For example, fig. 2 compares the carbon peaks of two molecular functions, fH3C4N2OF and fH9C6NO 2 . Because H9C6NO 2 contains more carbon atoms, the resulting carbon peak is higher and broader, yielding a larger molecular descriptor value: 
+
+⟨f6, f H9C6NO 2 |f6, f H9C6NO 2 ⟩ = 122 .4 compared with ⟨f6, f H3C4N2OF |f6, f H3C4N2OF ⟩ = 84 .5.To capture the peak characteristics of fm, which are largely governed by the number and type of atoms, we introduce a model that assigns an estimated probability distribution ˆfν,Z to each combination of ν atoms and nuclear charge 
+
+Z. This formulation establishes a direct mapping between the molecular descriptors ⟨fZ , f m|fZ , f m⟩, which encode peak-shape information, and the underlying atomic composition. The estimated distributions are defined as 
+
+ˆfν,Z =
+
+> ν
+
+X
+
+> i
+
+ω × fi
+
+"
+
+x | μ =
+
+ Z2.4
+
+2
+
+β
+
+, σ 2 =
+
+
+
+θ · ˆMij (Z, ν )
+
+s
+
+#
+
+, (15) where θ is a parameter for adjusting the variance, and the constants ω, β, and s are global parameters shared with Eq. (12, 13) to ensure consistency across all peak definitions. The function ˆMij (·) approximates the average value off-diagonal elements of the Coulomb matrix, which is dependent on Z and ν . The specific parameter setting and their physical justification are discussed in Sec. 4.1, where we analyze the accuracy of the inverse mapping. 6Bayesian optimization in chemical compound sub-spaces A P REPRINT 0 100 200 300 
+
+# x
+
+# 0
+
+# 2
+
+# 4
+
+> fH3C4N2OF
+
+# H
+
+# C
+
+# N O F
+
+# 60 80 100 
+
+# x
+
+# fH3C4N2OF 
+
+# fZ=6 OH 
+
+# NF
+
+# N
+
+Figure 1: Left: Molecular function of H3C4N2OF (blue solid line) computed from eq. (13), with the shaded region highlighting the carbon peak. Right: Enhanced view of the carbon peak of fH3C4N2OF overlaid with fZ=6 (orange dotted line given by eq. (12)). Parameters: ωZ = 10 , σ2 
+
+> Z
+
+= 0 .5, β = 1 .2, s = 0 .7 and ω = 10 .50 60 70 80 90 100 
+
+# x
+
+0
+
+1
+
+2
+
+3
+
+4
+
+5
+
+6
+
+> fmolecule , fZ
+
+# fZ=6 
+
+# 4 carbons 
+
+# hf6, f H3C4N2OF i =84.5 
+
+# 6 carbons 
+
+# hf6, f H9C6NO 2i =122.4 
+
+## OH 
+
+## NF
+
+## N
+
+# O
+
+# NH 
+
+# O
+
+Figure 2: The carbon peaks in the molecular spectra of H3C4N2OF (blue line with circles) and H9C6NO 2 (red line with triangles). The values of inner products between atomic reference probability distribution fZ=6 (orange dotted line) and each molecular function fm are displayed. All constants in eq. (12) and 13 are the same as in fig. 1. 
+
+# 4 Results 
+
+4.1 Parameterization and Analysis of Inverse Mapping 
+
+A key step in applying the inverse mapping model is the specification of parameters that govern the estimated probability distributions ˆfν,Z in eq. (15). We define the estimation function ˆMij (Z, ν ) as 
+
+ˆMij (Z, ν ) = Z · Zμ
+
+ρZ (1 + kν ) , (16) where Zμ is a nuclear-charge constant, ρZ is a constant related to atom separation, and k is a scaling parameter that determines how strongly ν influences the denominator. In our implementation, we set Zμ = 6 .2, corresponding to the average nuclear charge of H, C, N, O, and F, which are the elements present in the QM9 dataset. For distributions estimating heavy-atoms peaks ( Z > 1), we set k = 0 .01 . For ˆfν,Z =1 , we adopt a large value of k = 0 .2, which yields more accurate estimates when compared with the hydrogen peaks of fm from QM9. We attribute the higher k value for hydrogens to two factors: (i) hydrogen atoms typically occupy terminal positions in molecules; and (ii) an increasing 7Bayesian optimization in chemical compound sub-spaces A P REPRINT 
+
+number of hydrogen implies a greater proportion of single bonds and, consequently leading to more elongated molecular geometries. Both effects contribute to a more rapid increase in the average separation between hydrogen and other atoms compared with that observed for heavier elements. Table 1 lists the ρZ values used for each atom type, which produce a set of ˆfν,Z capable of estimating the observed peak shapes. The last column of the table lists reference bond lengths for each atom type. Except for carbon, most ρZ
+
+Atom Z ρZ (Å) Reference bond(s) (bond length (Å)) H 1 1.09 C-H (1.07) C 6 2 C-C (1.54) N 7 1.43 C-N (1.43) O 8 1.4 C-O (1.43) and C=O (1.21) F 9 1.35 C-F (1.35) Table 1: Values of the atom separation constant ( ρZ ) in eq. (15) for all atom types present in the QM9 dataset. values closely match these references. Because organic molecules are typically built on carbon skeletons, carbon atoms are more likely to be located at the molecular periphery. This explains why the estimated average separation for carbon 
+
+ρZ=6 is greater than even the long C − C single bond. Multiplying ˆMij by θ in eq. (15) parallels summing the Mij 
+
+terms in eq. (13). Table 2 lists the tested θ values that yield ˆfν,Z to accurately reproduce atomic peaks in fm for the QM9 dataset. Optimal θ values depend on both Z and ν.Atoms ( Z) Condition θ value H (1); F (9) ν < 4 ν + 2 
+
+H (1); F (9) ν ≥ 4 ν
+
+C (6); N (7); O (8) ν < 6 7
+
+C (6); N (7); O (8) ν ≥ 6 ν
+
+Table 2: Values of the scaling constant θ in eq. (16) depending on ν and Z.Fig. 3 presents examples of the estimated atomic peaks ˆfν,Z . The left panel shows the estimated distributions ˆfν,Z =6 
+
+for 1 ≤ ν ≤ 4 carbon atoms. The red line with squares corresponds to ν = 1 , green line with diamonds to ν = 2 ,orange line with triangles to ν = 3 , and blue line with circles to ν = 4 . Each curve is overlaid with a shaded region of the same color, representing the range of fm observed in the QM9 molecules with the corresponding ν. All ˆfν,Z lie within their respective shaded ranges, indicating that the estimated distributions capture the observed fm carbon peak features across different ν. The right panel shows the distributions of molecular descriptor 
+
+D
+
+f6, ˆfmolecule f6, ˆfmolecule 
+
+E
+
+for QM9 molecules with varying ν. For each ν, a Gaussian distribution 
+
+hZ,ν = f (x | μ =
+
+D
+
+f6, ˆfν,Z =6 f6, ˆfν,Z =6 
+
+E
+
+, σ = 4) (17) overlaps the scattered points along each ν. The close agreement between the Gaussian curves and the observed data confirms that 
+
+D
+
+f6, ˆfν,Z =6 f6, ˆfν,Z =6 
+
+E
+
+provides an accurate estimate of ν from the molecular descriptor. Using the Bayes’ theorem, we classify ν from the molecular descriptor. For a given descriptor value fZ,m =
+
+⟨fZ , f m|fZ , f m⟩, the probability that it originates from the distribution hZ,ν is 
+
+P (hZ,ν | fZ,m ) = hZ,ν (fZ,m )
+
+Pνmax  
+
+> ν′
+
+hν′,Z (fZ,m ) , (18) where hZ,ν (fZ,m ) denotes the likelihood of fZ,m under the Gaussian distribution parameterized by (ν, Z ). Assuming equal priors for all hZ,ν , the denominator normalizes the probabilities. Fig. 4 shows an example of how this classification algorithm successfully maps molecular descriptors to the corresponding chemical formula. 
+
+4.2 Molecular property optimization 
+
+We evaluate the performance of the optimization algorithm by examining how quickly it converges to molecular structures with the desired chemical properties. Fig. 6 presents the optimization results for molecular entropy ( S × T ,8Bayesian optimization in chemical compound sub-spaces A P REPRINT 70 80 90 
+
+# x
+
+01234
+
+> fmolecule , ˆfν,Z =6
+
+0 25 50 75 100 
+
+# 〈N 6, f molecule 〉
+
+4321
+
+> ν
+
+〈N 6, ˆf4,6〉〈N 6, ˆf3,6〉〈N 6, ˆf2,6〉〈N 6, ˆf1,6〉
+
+Figure 3: Left: Estimated probability distributions ˆfν,Z =6 for ν carbon atoms. The shaded regions indicate the range of fmolecules corresponding to each ν. Results are shown for ν = 1 (red line with squares), ν = 2 (green line with diamonds), ν = 3 (orange line with triangles), and ν = 4 (blue line with circles). Right: Distributions of ⟨f6, f m|f6, f m⟩ for molecules with various ν values. For each ν, a Gaussian distribution hν,Z with the mean 
+
+μ =
+
+D
+
+f6, ˆfν,Z =6 f6, ˆfν,Z =6 
+
+E
+
+and standard deviation σ = 4 is overlaid. OH 
+
+# NF
+
+# N                                                
+
+> Descriptor value Highest posterior probability Classified 𝝂
+> 𝑓 !,𝑓 "#$%&'$% =38 𝑃 ℎ()*,,)-38 =94% 3 hydrogen atoms
+> 𝑓 .,𝑓 "#$%&'$% =27 𝑃 ℎ()/,,)027 =64% 4 carbon atoms
+> 𝑓 1,𝑓 "#$%&'$% =13 𝑃 ℎ()2,,)313 =60% 2 nitrogen atoms
+> 𝑓 4,𝑓 "#$%&'$% =6.9𝑃 ℎ()5,,)*6.9=56% 1 oxygen atoms
+> 𝑓 6,𝑓 "#$%&'$% =6.7𝑃 ℎ()7,,)*6.7=66% 1 fluorine atoms
+> Chemical
+> formula
+> derived:
+> C0H-N3OF
+> Correct!
+
+Figure 4: An example application of the inverse chemical formula mapping algorithm with optimized hyperparameters for determining the stoichiometric coefficients from a set of molecular descriptors. top panel) and zero-point vibrational energy (ZPVE, bottom panel). Target values are uniformly sampled across the property range, with molecules of varying sizes drawn from each interval. For entropy, molecules are sampled at intervals of 1 kcal mol −1, while for ZPVE the interval is 5 kcal mol −1. For each target value, ten independent BO runs are performed, where the initial training datasets D0 are different due to randomization of the LHS method. The bars indicate the average number of BO iterations required to reach the targets, and the error bars show the full range of the number of iterations required for successful optimization, from minimum to maximum, across all trials. Solid green bars correspond to 100% success rates, where all trials converge to the optimal structure, while open bars indicated 
+
+< 100% success, with the corresponding success rate labeled above each bar. Among the partially successful cases, results with ≥ 90% success are shown in green, and those with lower rates are in orange. The gray-shaded region marks a property interval where no successful optimizations are achieved. The entropy values in the QM9 dataset span the range 13 to 37 kcal mol −1. As shown in fig. 5(a), our algorithm achieves a 100 % success rate in identifying molecules when the target entropy lies within 17 kcal mol −1 ≤ S × T ≤ 36 kcal mol −1, typically requiring fewer than 1000 BO iterations on average. Near the boundaries of the distribution, however, the optimization becomes less reliable: the success rate drops below 100 % and the required number of iterations increases. In particular, the algorithm fails completely in the low-entropy regime ( 13 kcal mol −1 ≤ S × T ≤ 14 kcal mol −1). The target molecule in this range that the algorithm cannot identify is water ( H2O). Further analysis in fig. 6(a) reveals that the success rates (blue circles) are abnormally low for molecules with only one heavy atom. In contrast, the success rate for molecules with at least two heavy atoms remains above 90 %
+
+9Bayesian optimization in chemical compound sub-spaces A P REPRINT 12 14 16 18 20 22 24 26 28 30 32 34 36 38 
+
+## S × T (kcal mol −1)
+
+01000 2000 3000 4000 
+
+> BO iterations
+> 0% 90% 90% 80% 70%
+
+## a) 10 20 30 40 50 60 70 80 90 100 110 120 130 140 150 160 
+
+## ZPVE (kcal mol −1)
+
+01000 2000 3000 4000 5000  
+
+> BO iterations  68% 96% 83% 92% 99% 92% 97% 99% 90% 99% 93% 82% 84%90% 42% 70% 85% 70%63% 35% 10% 90% 50%
+
+## b) 
+
+Figure 5: Molecular optimization results for entropy (top) and ZPVE (bottom). Target values are sampled uniformly across the full property range. For each target value, ten independent optimizations are performed. The bars represent the average number of BO iterations required to identify the target, and the error bars show the full range of the number of iterations across all trials. The solid green bars indicate 100 % success rate, while the open bars correspond to cases with < 100% success rate. The gray shaded region marks the 0% success rate. For all calculations, the threshold parameter ϵ = 0 .1 kcal mol −1.1 2 3 4 5 6 7 8 9
+
+Number of heavy atoms 
+
+> 020 40 60 80 100
+> Success rate (%)  100% 90%
+
+a) Entropy         
+
+> 01000 2000 3000 4000
+> BO iterations 123456789
+
+Number of heavy atoms 
+
+> 020 40 60 80 100
+> Success rate (%)  100% 90%
+
+b) ZPVE 
+
+> 01000 2000 3000 4000 5000
+> BO iterations
+
+Figure 6: Correlation between the number of heavy atoms with success rate (blue circles) and with BO iterations (orange triangles). Left panel: entropy optimization. Right panel: ZPVE optimization. For ZPVE, the values in the QM9 dataset span a much broader range, from 10 to 160 kcal mol −1. As shown in fig. 5(b), optimizing molecular structures with respect to ZPVE is more challenging than for entropy. Overall, the required 10 Bayesian optimization in chemical compound sub-spaces A P REPRINT 
+
+number of BO iterations is significantly higher, and only seven intervals achieve 100% success rate. Success rates vary substantially across the ZPVE range, with values spanning from as high as 99% to as low as 10% . Unlike the entropy case, where failures are clearly concentrated at the extreme ends of the distribution in fig. 5(a), ZPVE failures are scattered across the property range. This indicates that ZPVE optimization is more sensitive to local structural features of molecules and is not solely governed by the extremity of the target value. Fig. 6(b) shows that molecules with 2 
+
+− 6 heavy atoms achieve nearly 100% success rates with fewer than 1000 BO iterations on average. However, as the number of heavy atoms increases, the success rate declines while the average number of iterations grows. The algorithm performs the worst for molecules with only one heavy atom, similar to the entropy result. For these molecules, the overall success rate drops to just 20% , and convergence requires the highest average number of iterations ( ≈ 1500 
+
+iterations). 
+
+# 5 Summary 
+
+In this work, we present a data-efficient framework for molecular property optimization in discrete chemical compound spaces based on Bayesian optimization (BO). Our approach addresses the fundamental challenges that limit molecular optimization: the discreteness and high dimensionality of chemical compound space, as well as the inverse problem of mapping numerical molecular descriptor vectors back to chemically valid structures. Our approach overcomes these problems through an integrated strategy that combines three key components: (i) a compact and physics-informed nine-dimensional molecular descriptor vector that preserves essential chemical information while mitigating the curse of dimensionality; (ii) BO with Gaussian process regression, which allows sample-efficient exploration of the descriptor landscape; and (iii) a robust, generalizable, and chemically consistent inverse mapping scheme that reconstructs stoichiometry and valid molecular structures from optimized descriptor vectors. Together, these components establish a coherent framework that enables data-efficient optimization in a vast and discrete chemical compound space. We benchmark the proposed framework on the QM9 dataset by optimizing molecular entropy and zero-point vibrational energy (ZPVE). For both properties, the approach achieves success rates exceeding 80% for molecules containing at least two heavy atoms, typically converging to optimal structures with fewer than 1,000 Bayesian optimization iterations. Entropy optimization is particularly effective, reaching 100% success rate while requiring fewer than 1,000 molecular evaluations in over 80% of test cases, demonstrating high sample efficiency. Optimization performance declines near the extremes of the property distribution, most notably for low-entropy molecules such as water ( H2O), highlighting the difficulty of interpolation in sparsely sampled regions of descriptor space. ZPVE optimization is comparatively more challenging, with success rates more sensitive to molecular size and structural complexity. Nevertheless, our approach consistently and efficiently navigates chemically constrained property landscapes and exhibit reliable convergence across diverse molecular systems. By combining chemically meaningful descriptors, Bayesian optimization, and a physically interpretable and consistent inverse mapping scheme, this work establishes a general strategy for high-precision inverse molecular optimization in discrete chemical compound space. Beyond the specific applications studied here, the results illustrate the importance of reducing molecular representations to compact and physically grounded descriptors to overcome the dimensionality barrier that limits data-efficient optimization in chemistry. The proposed framework therefore makes BO practically viable for molecular design under small-data regimes, where conventional generative or gradient-based approaches struggle. Despite being demonstrated on the QM9 dataset, our approach is not dataset-specific and can be generalized to larger chemical compound spaces, alternative descriptor sets, or other molecular databases. Future developments may incorporate de novo molecular generative models [ 7, 72 ] or large language models (LLMs) [ 73 , 74 , 75 , 5, 76 ]for structure creation instead of database search, as well as integrate uncertainty-aware or active-learning strategies to further enhance efficiency. In summary, the proposed framework bridges continuous optimization in descriptor space with discrete molecular design, offering a promising route to accelerate the discovery of molecules with tailored properties for applications across chemistry, material sciences, and beyond. 
+
+# 6 Data availability statement 
+
+All data that support the findings of this study are included within the article (and any supplementary files). 
+
+# Acknowledgments 
+
+This work was supported by NSERC of Canada. 11 Bayesian optimization in chemical compound sub-spaces A P REPRINT 
+
+# References 
+
+[1] Pavel G Polishchuk, Timur I Madzhidov, and Alexandre Varnek. Estimation of the size of drug-like chemical space based on gdb-17 data. J. Comput. Aided Mol. Des. , 27:675, 2013. [2] Ahmet Sureyya Rifaioglu, Esra Nalbat, Volkan Atalay, Maria Jesus Martin, Rengul Cetin-Atalay, and Tunca Do ˇgan. DEEPScreen: high performance drug–target interaction prediction with convolutional neural networks using 2-D structural compound representations. Chem. Sci. , 11(9):2531, 2020. doi:10.1039/C9SC03414E. [3] Peter C. St. John, Caleb Phillips, Travis W. Kemper, A. Nolan Wilson, Yanfei Guan, Michael F. Crowley, Mark R. Nimlos, and Ross E. Larsen. Message-passing neural networks for high-throughput polymer screening. J. Chem. Phys. , 150(23):234111, 2019. doi:10.1063/1.5099132. [4] Rafael Gómez-Bombarelli, Jorge Aguilera-Iparraguirre, Timothy D. Hirzel, David Duvenaud, Dougal Maclaurin, Martin A. Blood-Forsythe, Hyun Sik Chae, Markus Einzinger, Dong-Gwang Ha, Tony Wu, Georgios Markopoulos, Soonok Jeon, Hosuk Kang, Hiroshi Miyazaki, Masaki Numata, Sunghan Kim, Wenliang Huang, Seong Ik Hong, Marc Baldo, Ryan P. Adams, and Alán Aspuru-Guzik. Design of efficient molecular organic light-emitting diodes by a high-throughput virtual screening and experimental approach. Nat. Mater. , 15(10):1120, 2016. doi:10.1038/nmat4717. [5] Mayk Caldas Ramos, Christopher J. Collison, and Andrew D. White. A review of large language models and autonomous agents in chemistry. Chem. Sci. , 16(6):2514, 2025. doi:10.1039/D4SC03921A. [6] Viraj Bagal, Rishal Aggarwal, P. K. Vinod, and U. Deva Priyakumar. MolGPT: Molecular Generation Using a Transformer-Decoder Model. J. Chem. Inf. Model. , 62(9):2064, 2022. doi:10.1021/acs.jcim.1c00600. [7] Ye Wang, Honggang Zhao, Simone Sciabola, and Wenlu Wang. cmolgpt: a conditional generative pre-trained transformer for target-specific de novo molecular generation. Molecules , 28(11):4430, 2023. [8] Gavin Ye. De novo drug design as GPT language modeling: large chemistry models with supervised and reinforcement learning. J. Comput. Aided Mol. Des. , 38(1):20, 2024. doi:10.1007/s10822-024-00559-z. [9] Nathan C. Frey, Ryan Soklaski, Simon Axelrod, Siddharth Samsi, Rafael Gómez-Bombarelli, Connor W. Co-ley, and Vijay Gadepally. Neural scaling of deep chemical models. Nat. Mach. Intell. , 5(11):1297, 2023. doi:10.1038/s42256-023-00740-3. [10] Geyan Ye, Xibao Cai, Houtim Lai, Xing Wang, Junhong Huang, Longyue Wang, Wei Liu, and Xiangxiang Zeng. DrugAssist: a large language model for molecule optimization. Brief. Bioinform. , 26(1):bbae693, 2025. doi:10.1093/bib/bbae693. [11] Claudio Zeni, Robert Pinsler, Daniel Zügner, Andrew Fowler, Matthew Horton, Xiang Fu, Zilong Wang, Aliaksan-dra Shysheya, Jonathan Crabbé, Shoko Ueda, Roberto Sordillo, Lixin Sun, Jake Smith, Bichlien Nguyen, Hannes Schulz, Sarah Lewis, Chin-Wei Huang, Ziheng Lu, Yichi Zhou, Han Yang, Hongxia Hao, Jielan Li, Chunlei Yang, Wenjie Li, Ryota Tomioka, and Tian Xie. A generative model for inorganic materials design. Nature , 639(8055): 624, 2025. doi:10.1038/s41586-025-08628-5. [12] Sungwon Kim, Juhwan Noh, Geun Ho Gu, Alán Aspuru-Guzik, and Yousung Jung. Generative adversarial networks for crystal structure prediction. ACS Cent. Sci. , 6(8):1412, 2020. doi:10.1021/acscentsci.0c00426. [13] Yong Zhao, Mohammed Al-Fahdi, Ming Hu, Edirisuriya M. D. Siriwardane, Yuqi Song, Alireza Nasiri, and Jianjun Hu. High-throughput discover of novel cubic crystal materials using deep generative neural networks. Adv. Sci. , 8(20):2100566, 2021. doi:10.1002/advs.202100566. [14] Yue Liu, Zhengwei Yang, Zhenyao Yu, Zitu Liu, Dahui Liu, Hailong Lin, Mingqing Li, Shuchang Ma, Maxim Avdeev, and Siqi Shi. Generative artificial intelligence and its applications in materials science: Current situation and future perspectives. J. Materiomics. , 9(4):798, 2023. doi:10.1016/j.jmat.2023.05.001. [15] Rafael Gómez-Bombarelli, Jennifer N Wei, David Duvenaud, José Miguel Hernández-Lobato, Benjamín Sánchez-Lengeling, Dennis Sheberla, Jorge Aguilera-Iparraguirre, Timothy D Hirzel, Ryan P Adams, and Alán Aspuru-Guzik. Automatic chemical design using a data-driven continuous representation of molecules. ACS Central Sci. ,4:268, 2018. doi:10.1021/acscentsci.7b00572. [16] Tengfei Ma, Jie Chen, and Cao Xiao. Constrained generation of semantically valid graphs via regularizing variational autoencoders. Adv. Neural Inf. Process. , 31, 2018. [17] Wengong Jin, Regina Barzilay, and Tommi Jaakkola. Junction tree variational autoencoder for molecular graph generation. In Int. Conf. Mach. Learn. , page 2323. PMLR, 2018. [18] Hiroaki Iwata, Taichi Nakai, Takuto Koyama, Shigeyuki Matsumoto, Ryosuke Kojima, and Yasushi Okuno. VGAE-MCTS: A New Molecular Generative Model Combining the Variational Graph Auto-Encoder and Monte Carlo Tree Search. J. Chem. Inf. Model. , 63(23):7392, 2023. doi:10.1021/acs.jcim.3c01220. 12 Bayesian optimization in chemical compound sub-spaces A P REPRINT 
+
+[19] Alessio Fallani, Leonardo Medrano Sandonas, and Alexandre Tkatchenko. Inverse mapping of quantum properties to structures for chemical space of small organic molecules. Nat. Commun. , 15(1):6061, 2024. doi:10.1038/s41467-024-50401-1. [20] David Duvenaud, James Lloyd, Roger Grosse, Joshua Tenenbaum, and Ghahramani Zoubin. In Proceedings of the 30th Int. Conf. on Machine Learning , 2013. [21] Danish Khan, Stefan Heinen, and O Anatole von Lilienfeld. Kernel based quantum machine learning at record rate: Many-body distribution functionals as compact representations. J. Chem. Phys. , 159(3):034106, 2023. [22] Yun-Wen Mao and Roman V Krems. Efficient interpolation of molecular properties across chemical compound space with low-dimensional descriptors. Mach. Learn.: Sci. Technol. , 5(1):015059, apr 2024. doi:10.1088/2632-2153/ad360e. [23] Filippo Bigi, Sergey N. Pozdnyakov, and Michele Ceriotti. Wigner kernels: Body-ordered equivariant machine learning without a basis. J. Chem. Phys. , 161(4):044116, 2024. doi:10.1063/5.0208746. [24] Mariya Popova, Olexandr Isayev, and Alexander Tropsha. Deep reinforcement learning for de novo drug design. 
+
+Sci Adv. , 4(7):eaap7885, 2018. doi:10.1126/sciadv.aap7885. [25] Z. Zhou, S. Kearnes, Li Li, R. N. Zare, and P. Riley. Optimization of molecules via deep reinforcement learning. 
+
+Sci. Rep. , 9:1, 2019. doi:10.1038/s41598-019-47148-x. [26] Felix Musil, Andrea Grisafi, Albert P Bartók, Christoph Ortner, Gábor Csányi, and Michele Ceriotti. Physics-inspired structural representations for molecules and materials. Chem. Rev. , 121(16):9759, 2021. [27] Daniel S. Wigh, Jonathan M. Goodman, and Alexei A. Lapkin. A review of molecular representation in the age of machine learning. WIREs Comput Mol Sci. , 12(5):e1603, 2022. doi:10.1002/wcms.1603. [28] Yuheng Ding, Bo Qiang, Qixuan Chen, Yiqiao Liu, Liangren Zhang, and Zhenming Liu. Exploring Chemical Reaction Space with Machine Learning Models: Representation and Feature Perspective. J. Chem. Inf. Model. , 64 (8):2955, 2024. doi:10.1021/acs.jcim.4c00004. [29] Chuizheng Meng, Sam Griesemer, Defu Cao, Sungyong Seo, and Yan Liu. When physics meets machine learning: a survey of physics-informed machine learning. Mach. Learn. Comput. Sci. Eng , 1(1):20, 2025. doi:10.1007/s44379-025-00016-0. [30] Jörg Behler. Atom-centered symmetry functions for constructing high-dimensional neural network potentials. J. Chem. Phys. , 134(7):074106, 2011. doi:10.1063/1.3553717. [31] M. Gastegger, L. Schwiedrzik, M. Bittermann, F. Berzsenyi, and P. Marquetand. wACSF—Weighted atom-centered symmetry functions as descriptors in machine learning potentials. J. Chem. Phys. , 148(24):241709, 03 2018. [32] Albert P. Bartók, Risi Kondor, and Gábor Csányi. On representing chemical environments. Phys. Rev. B , 87: 184115, May 2013. [33] Haoyan Huo and Matthias Rupp. Unified representation of molecules and crystals for machine learning. Mach. Learn.: Sci. Technol. , 3(4):045017, 2022. doi:10.1088/2632-2153/aca005. [34] Anders S. Christensen, Lars A. Bratholm, Felix A. Faber, and O. A. von Lilienfeld. FCHL revisited: Faster and more accurate quantum machine learning. J. Chem. Phys. , 152(4):044107, 01 2020. [35] Danish Khan and O. Anatole von Lilienfeld. Generalized convolutional many-body distribution functional representations. Proc. Natl. Acad. Sci. , 122(41):e2415662122, 2025. doi:10.1073/pnas.2415662122. [36] Matthias Rupp, Alexandre Tkatchenko, Klaus-Robert Müller, and O Anatole von Lilienfeld. Fast and accurate modeling of molecular atomization energies with machine learning. Phys. Rev. Lett. , 108(5):058301, 2012. [37] Katja Hansen, Franziska Biegler, Raghunathan Ramakrishnan, Wiktor Pronobis, O. A. von Lilienfeld, Klaus-Robert Müller, and Alexandre Tkatchenko. Machine Learning Predictions of Molecular Properties: Accurate Many-Body Potentials and Nonlocality in Chemical Space. J. Phys. Chem. Lett. , 6(12):2326, 2015. [38] Bing Huang and O. Anatole von Lilienfeld. Quantum machine learning using atom-in-molecule-based fragments selected on the fly. Nat. Chem. , 12(10):945, 2020. doi:10.1038/s41557-020-0527-z. [39] Jun Xia, Lecheng Zhang, Xiao Zhu, Yue Liu, Zhangyang Gao, Bozhen Hu, Cheng Tan, Jiangbin Zheng, Siyuan Li, and Stan Z. Li. Understanding the limitations of deep models for molecular property prediction: insights and solutions. Adv. Neural Inf. Process. Syst. , 36:64774, 2023. [40] Gabriel Lima Guimaraes, Benjamin Sanchez-Lengeling, Carlos Outeiral, Pedro Luis Cunha Farias, and Alán Aspuru-Guzik. Objective-reinforced generative adversarial networks (organ) for sequence generation models. 2018. 13 Bayesian optimization in chemical compound sub-spaces A P REPRINT 
+
+[41] Nicola De Cao and Thomas Kipf. Molgan: An implicit generative model for small molecular graphs. 2022. [42] Dayan Liu, Tao Song, Shuang Wang, Xue Li, Peifu Han, Gehang Ju, Jianmin Wang, and Shudong Wang. DiffMeta-RL: Reinforcement Learning-Guided Graph Diffusion for Metabolically Stable Molecular Generation. J. Chem. Inf. Model. , 65(21):11746, 2025. doi:10.1021/acs.jcim.5c02060. [43] Masami Sako, Nobuaki Yasuo, and Masakazu Sekijima. DiffInt: A Diffusion Model for Structure-Based Drug Design with Explicit Hydrogen Bond Interaction Guidance. J. Chem. Inf. Model. , 65(1):71, 2025. doi:10.1021/acs.jcim.4c01385. [44] Hongni Jin and Kenneth M. Jr. Merz. LigandDiff: de Novo Ligand Design for 3D Transition Metal Complexes with Diffusion Models. J. Chem. Theory Comput. , 20(10):4377, 2024. doi:10.1021/acs.jctc.4c00232. [45] Arjun Manoj, Srinivas Soumitri Miriyala, and Kishalay Mitra. Multi-objective optimization through a novel Bayesian approach for industrial manufacturing of Polyvinyl Acetate. J. Manuf. Process. , 38(15):1955, 2023. doi:10.1080/10426914.2023.2195915. [46] Yifan Wu, Aron Walsh, and Alex M. Ganose. Race to the bottom: Bayesian optimisation for chemical problems. 
+
+Digit. Discov. , 3(6):1086, 2024. doi:10.1039/D3DD00234A. [47] Aswitha Tadepalli, Cheeli Suresh Daniel Raju, Sakshi Manekar, Kishalay Mitra, and Debaprasad Shee. Smart optimization and sensitivity analysis of lignin depolymerization: Bayesian learning approach to process and catalyst design. J. Environ. Chem. Eng. , 13(6):119677, 2025. doi:10.1016/j.jece.2025.119677. [48] Xilan Feng, Xiangrui Gong, Dapeng Liu, Yang Li, Ying Jiang, and Yu Zhang. Bayesian Optimization-guided Discovery of High-performance Methane Combustion Catalysts based on Multi-component PtPd@CeZrOx Core–Shell Nanospheres. Angew. Chem. Int. Ed. , 62(47):e202313068, 2023. doi:10.1002/anie.202313068. [49] Ivan A. Bespalov, Nikolai V. Krivoshchapov, Alexey A. Lisov, Vasiliy A. Chaliy, and Michael G. Medvedev. Physics-Informed Bayesian Optimization for Conformational Ensemble Augmentation. J. Chem. Inf. Model. , 65 (12):6048, 2025. doi:10.1021/acs.jcim.5c00522. [50] Yue Cao and Yang Shen. Bayesian active learning for optimization and Uncertainty quantification in protein docking. J. Chem. Theory Comput. , 16(8):5334, 2020. doi:10.1021/acs.jctc.0c00476. [51] Florian Häse, Matteo Aldeghi, Riley J. Hickman, Loöc M. Roch, and Alán Aspuru-Guzik. Gryffin: An algorithm for Bayesian optimization of categorical variables informed by expert knowledge. Appl. Phys. Rev. , 8(3):031406, 2021. doi:10.1063/5.0048164. [52] David Kurunczi-Papp and Lasse Laurson. Bayesian optimization of 7-component (AlVCrFeCoNiMo) single crystal alloy’s compositional space to optimize elasto-plastic properties from molecular dynamics simulations. 
+
+Model. Simul. Mater. Sci. Eng. , 32(8):085013, 2024. [53] Xiaobo Li, Yu Che, Linjiang Chen, Tao Liu, Kewei Wang, Lunjie Liu, Haofan Yang, Edward O. Pyzer-Knapp, and Andrew I. Cooper. Sequential closed-loop Bayesian optimization as a guide for organic molecular metal-lophotocatalyst formulation discovery. Nat. Chem. , 16(8):1286, 2024. doi:10.1038/s41557-024-01546-5. [54] Robert Pollice, Gabriel dos Passos Gomes, Matteo Aldeghi, Riley J. Hickman, Mario Krenn, Cyrille Lav-igne, Michael Lindner-D’Addario, AkshatKumar Nigam, Cher Tian Ser, Zhenpeng Yao, and Alán Aspuru-Guzik. Data-Driven Strategies for Accelerated Materials Design. Acc. Chem. Res. , 54(4):849, 2021. doi:10.1021/acs.accounts.0c00785. [55] Gecheng Chen and Rui Tuo. Projection pursuit gaussian process regression. IISE Trans. , 55(9):901, 2023. doi:10.1080/24725854.2022.2121882. [56] Michael J Willatt, Félix Musil, and Michele Ceriotti. Feature optimization for atomistic machine learning yields a data-driven construction of the periodic table of the elements. Phys. Chem. Chem. Phys. , 20(47):29661, 2018. [57] B. Sanchez-Lengeling and Alán Aspuru-Guzik. Inverse molecular design using machine learning: generative models for matter engineering. Science , 361:360–5, 2018. doi:10.1126/science.aat2663. [58] Jiaxuan You, Bowen Liu, Zhitao Ying, Vijay Pande, and Jure Leskovec. Graph convolutional policy network for goal-directed molecular graph generation. Adv. Neural Inf. Process. Syst. , 31, 2018. [59] J. H. Jensen. A graph-based genetic algorithm and generative model/Monte Carlo tree search for the exploration of chemical space. Chem. Sci. , 10:3567, 2019. doi:10.1039/C8SC05372C. [60] S. Reeves, B. DiFrancesco, V. Shahani, S. MacKinnon, A. Windemuth, and A. E. Brereton. Assessing methods and obstacles in chemical space exploration. Appl. AI Lett. , 1:e17, 2020. doi:10.1002/ail2.17. [61] E. S. Henault, M. H. Rasmussen, and J. H. Jensen. Chemical space exploration: how genetic algorithms find the needle in the haystack. PeerJ. Phys. Chem. , 2:e11, 2020. doi:10.7717/peerj-pchem.11. 14 Bayesian optimization in chemical compound sub-spaces A P REPRINT 
+
+[62] Raghunathan Ramakrishnan, Pavlo O Dral, Matthias Rupp, and O Anatole von Lilienfeld. Quantum chemistry structures and properties of 134 kilo molecules. Sci. Data. , 1(1):140022, 2014. [63] M. D. Mckay, R. J. Beckman, and W. J. Conover. A comparison of three methods for selecting values of input variables in the analysis of output from a computer code. Technometrics , 42(1):55, 2000. [64] Michael Stein. Large sample properties of simulations using latin hypercube sampling. Technometrics , 29(2):143, 1987. [65] John A. Pople. Nobel lecture: Quantum chemical models. Rev. Mod. Phys. , 71:1267, 1999. doi:10.1103/RevModPhys.71.1267. [66] Kevin P Murphy. Machine learning: A probabilistic perspective (adaptive computation and machine learning series) . The MIT Press, London, UK, 2018. [67] David K Duvenaud, Hannes Nickisch, and Carl Rasmussen. Additive gaussian processes. Adv. Neural Inf. Process. Syst. , 24, 2011. [68] Xilu Wang, Yaochu Jin, Sebastian Schmitt, and Markus Olhofer. Recent advances in bayesian optimization. ACM Comput. Surv. , 55(13s):1, 2023. [69] Semyon Aranovich Gershgorin. Uber die abgrenzung der eigenwerte einer matrix. News of the Russian Academy of Sciences. Mathematical series , (6):749, 1931. [70] Y. Saad. Numerical Methods for Large Eigenvalue Problems: Revised Edition . Classics in Applied Mathematics. Society for Industrial and Applied Mathematics, Philadelphia, PA, 2011. [71] Songrit Maneewongvatana and David M. Mount. Analysis of approximate nearest neighbor searching with clustered point sets, 1999. [72] Cynthia Shen, Mario Krenn, Sagi Eppel, and Alán Aspuru-Guzik. Deep molecular dreaming: inverse machine learning for de-novo molecular design and interpretability with surjective representations. Mach. Learn.: Sci. Technol. , 2(3):03LT02, 2021. doi:10.1088/2632-2153/ac09d6. [73] Daniil A. Boiko, Robert MacKnight, Ben Kline, and Gabe Gomes. Autonomous chemical research with large language models. Nature , 624(7992):570, 2023. doi:10.1038/s41586-023-06792-0. [74] Yixiang Ruan, Chenyin Lu, Ning Xu, Yuchen He, Yixin Chen, Jian Zhang, Jun Xuan, Jianzhang Pan, Qun Fang, Hanyu Gao, Xiaodong Shen, Ning Ye, Qiang Zhang, and Yiming Mo. An automatic end-to-end chemical synthesis development platform powered by large language models. Nat. Commun. , 15(1):10160, 2024. doi:10.1038/s41467-024-54457-x. [75] Andres M. Bran, Sam Cox, Oliver Schilter, Carlo Baldassari, Andrew D. White, and Philippe Schwaller. Aug-menting large language models with chemistry tools. Nat. Mach. Intell. , 6(5):525, 2024. doi:10.1038/s42256-024-00832-8. [76] Yunheng Zou, Austin H. Cheng, Abdulrahman Aldossary, Jiaru Bai, Shi Xuan Leong, Jorge Arturo Campos-Gonzalez-Angulo, Changhyeok Choi, Cher Tian Ser, Gary Tom, Andrew Wang, Zijian Zhang, Ilya Yakavets, Han Hao, Chris Crebolder, Varinia Bernales, and Alán Aspuru-Guzik. El agente: an autonomous agent for quantum chemistry. Matter. , 8(7):102263, 2025. doi:10.1016/j.matt.2025.102263. 15

@@ -1,46 +1,6 @@
 {
-  "generated_at": "2026-03-10T19:31:23.591644+00:00",
-  "updated_date": "20260310",
+  "generated_at": "2026-03-11T19:40:56.995168+00:00",
+  "updated_date": "20260311",
   "carryover_days": 9,
-  "items": [
-    {
-      "id": "2603.07579v1",
-      "title": "Succinct QUBO formulations for permutation problems by sorting networks",
-      "abstract": "Quadratic Unconstrained Binary Optimization (QUBO) is a standard NP-hard optimization problem. Recently, it has gained renewed interest through quantum computing, as QUBOs directly reduce to the Ising model, on which quantum annealing devices are based. We introduce a QUBO formulation for permutations using compare-exchange networks, with only $O(n \\log^2 n)$ binary variables. This is a substantial improvement over the standard permutation matrix encoding, which requires $n^2$ variables and has a much denser interaction graph. A central feature of our approach is uniformity: each permutation corresponds to a unique variable assignment, enabling unbiased sampling.   Our construction also allows additional constraints, including fixed points and parity. Moreover, it provides a representation of permutations that supports the operations multiplication and inversion, and also makes it possible to check the order of a permutation. This can be used to uniformly generate permutations of a given order or, for example, permutations that commute with a specified permutation. To our knowledge, this is the first result linking oblivious compare-exchange networks with QUBO encodings. While similar functionality can be achieved using permutation matrices, our method yields QUBOs that are both smaller and sparser. We expect this method to be practically useful in areas where unbiased sampling of constrained permutations is important, including cryptography and combinatorial design.",
-      "authors": [
-        "Katalin Friedl",
-        "Levente Gegő",
-        "László Kabódi",
-        "Viktória Nemkin"
-      ],
-      "primary_category": "quant-ph",
-      "categories": [
-        "quant-ph",
-        "cs.DS"
-      ],
-      "published": "2026-03-08T10:37:52+00:00",
-      "link": "https://arxiv.org/pdf/2603.07579v1",
-      "tags": [
-        "keyword:ML CO",
-        "query:ML CO"
-      ],
-      "llm_score": 8.0,
-      "llm_evidence_en": "QUBO formulations for NP-hard permutation problems",
-      "llm_evidence_cn": "针对NP难排列问题的QUBO建模",
-      "llm_evidence": "针对NP难排列问题的QUBO建模",
-      "canonical_evidence": "针对NP难排列问题的QUBO建模",
-      "llm_tldr_en": "Introduces efficient QUBO formulations for permutation problems using sorting networks to reduce variables.",
-      "llm_tldr_cn": "引入使用排序网络的高效QUBO建模方法，减少了排列问题的变量数量。",
-      "llm_tldr": "引入使用排序网络的高效QUBO建模方法，减少了排列问题的变量数量。",
-      "llm_tags": [
-        "query:ml-co"
-      ],
-      "matched_query_tag": "query:ml-co",
-      "matched_query_text": "deep learning methods for solving NP hard problems",
-      "matched_requirement_id": "req-9",
-      "selection_source": "carryover_cache",
-      "paper_id": "2603.07579v1",
-      "carry_days": 1
-    }
-  ]
+  "items": []
 }

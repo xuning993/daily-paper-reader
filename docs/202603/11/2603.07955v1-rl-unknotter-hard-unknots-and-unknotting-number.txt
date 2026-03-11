@@ -1,0 +1,362 @@
+Title: RL unknotter, hard unknots and unknotting number
+
+URL Source: https://arxiv.org/pdf/2603.07955v1
+
+Published Time: Tue, 10 Mar 2026 01:51:18 GMT
+
+Number of Pages: 15
+
+Markdown Content:
+RL UNKNOTTER, HARD UNKNOTS AND UNKNOTTING NUMBER   
+
+> ANNE DRANOWSKI, YURA KABKOV AND DANIEL TUBBENHAUER
+> Abstract. We develop a reinforcement learning pipeline for simplifying knot diagrams. A trained agent learns move proposals and a value heuristic for navigating Reidemeister moves. The pipeline applies to arbitrary knots and links; we test it on “very hard” unknot diagrams and, using diagram inflation, on 4 1#9 10 where we recover the recently established and surprising upper bound of three for the unknotting number.
+
+Contents 
+
+1. Introduction 12. Background and notation 23. The reinforcement-learning unknotter 64. Unknotting the hard and “very hard” unknots 75. Crossing-change search for composite knots 9References 15 1. Introduction 
+
+We train a reinforcement learning agent that treats knot simplification as search in a huge move graph and learns where to move next. 1A. Motivation. A knot is a smooth embedding of S1 in S3 (“a closed rope”), and in practice it is often represented by a planar diagram. Many basic questions in knot theory (deciding whether a diagram is the unknot, simplifying a diagram, searching for short unknotting sequences, ...) are naturally diagrammatic: one applies local moves to a diagram and hopes to reach a simpler represen-tative. From a computational perspective this leads to a vast, highly branching move graph whose vertices are diagrams (or PD codes) and whose edges are elementary diagrammatic moves. Even for moderately sized diagrams, exhaustive search is typically infeasible, and standard deterministic simplification heuristics can get stuck in deep local minima. This paper explores the use of modern RL as a source of learned heuristics for navigating the move graph of knot diagrams. Concretely, we formulate a Markov decision process in which states are planar diagram codes and actions are chosen diagrammatic moves (Reidemeister moves together with a small amount of auxiliary “cleanup”). We train a neural agent, the unknotter , that (i) proposes promising moves and (ii) estimates how close a diagram is to being simplified. The trained agent can then be used either as a policy (to generate simplification trajectories) or as a heuristic in a broader search procedure. Our focus is not on certification (e.g. proving minimal crossing numbers or unknotting numbers), but on producing effective diagram-level evidence and practical workflows. In particular, the methods developed here apply to any knot diagram given in PD form; throughout the paper we use specific families of diagrams as benchmarks, and we work out one composite example, 4 1#9 10 (which, famously [BH25, BH26], has an unexpected unknotting number; we give a new way to verify this), in detail.     
+
+> 2020 Mathematics Subject Classification. Primary: 57K10, 68T05; Secondary: 57K14, 90C59.
+> Key words and phrases. Diagrammatic knot simplification, reinforcement learning, Reidemeister-move search, hard unknot diagrams, unknotting number.
+> 1
+> arXiv:2603.07955v1 [math.GT] 9 Mar 2026 2A. DRANOWSKI, Y. KABKOV AND D. TUBBENHAUER
+
+1B. Contributions. This work is inspired by the amazing paper [ABD+25]. Our contributions are: 
+
+• RL environment for planar diagrams. We formalize diagram simplification as an RL problem on PD codes: the agent interacts with a move generator, receives a reward shaped by simpli-fication progress, and learns a value estimate that serves as “distance-to-simplification” on the move graph. 
+
+• A trained simplification heuristic (the unknotter). We train neural agents that, when run from a given diagram, reliably find simplification trajectories. As a stress test, we show that the unknotter can unknot the “very hard” unknots from [ABD+25] with high success probability per run ( > 95%), despite the large search space and the need for occasional temporary increases in crossing number. 
+
+• Crossing-change search powered by the unknotter. We build a general pipeline that, for a fixed knot K, starts from an arbitrary diagram of K, inflates it (adds crossings without changing the isotopy class), explores a small number of crossing changes, and then simplifies using the learned heuristic. The output is an explicit diagram-level witness that the chosen diagram becomes the unknot after the prescribed number of crossing changes. 
+
+• Worked example 41#9 10 . We exemplify the crossing change pipeline on the composite knot 41#9 10 , where our computational pipeline recovers the upper bound of three for the unknot-ting number. (This does not claim that the unknotting number of 4 1#9 10 is three; rather, it explicitly produces diagrams and crossing changes leading to knots with known unknotting number at most two, thereby verifying that the unknotting number of 4 1#9 10 is ≤ 3.) 
+
+Remark 1B.1 . The case of 4 1#9 10 is not meant as a routine connected sum sanity check. For a long time it was an open problem whether the unknotting number is additive under connected sum, i.e. whether u(K#J) = u(K) + u(J) ( u = unknotting numbers) always holds. The knot 4 1#9 10 
+
+is a particularly striking counterexample: although one expects the connected sum to “inherit” the difficulty of its summands, there exists an unexpectedly short unknotting sequence using only three crossing changes. Crucially, this three move sequence is not apparent on standard low crossing (“easy”) diagrams of 4 1#9 10 : in typical diagrams, local reasoning suggests that at least four crossing changes are needed, and naive search in the low crossing regime does not find the short sequence. The point of our experiment is that by passing to inflated diagrams, still representing the same knot, and then using the unknotter as a guide, we can investigate this phenomenon algorithmically and recover the three crossing upper bound at the diagrammatic level. For background on the additivity problem and the specific 4 1#9 10 example, see [BH25, BH26]. In contrast to [BH25, BH26], our approach is essentially automated (we plan to update this paper in the future to make this approach almost entirely automated). 3
+
+1C. How to read this paper. Section 2 fixes notation for diagrams and planar diagram codes, and summarizes the diagrammatic moves used throughout. Section 3 defines the RL environment and describes the training setup and evaluation protocol. Section 4 reports our main simplification benchmarks on the “hard” and “very hard” unknot families. Section 5 develops the crossing change search pipeline and works out the 4 1#9 10 example in detail. 
+
+Remark 1C.1 . All experiments in this paper are fully scriptable; we provide code, trained models, and the generated datasets and more at [DKT26]. 3
+
+Acknowledgments. DT subscribes to “The game of life insists on its own permanence, independent of its players.” and acknowledges support from ARC Future Fellowship FT230100489. 2. Background and notation 
+
+We assume the reader is comfortable with basic knot theory (diagrams, Reidemeister moves, crossing number), see e.g. [Ada94] for background. We nonetheless fix notation and briefly explain why the computational tasks we consider are intrinsically hard. 2A. Diagrams, planar diagram codes, and moves. A knot diagram is the image of a generic immersion S1 ↬ S2 with crossing data (over/under information) at each double point. Links and link diagrams are multicomponent versions of knots and knot diagrams, and we will use them inter-changeably. Two diagrams represent the same knot if and only if they are related by a finite sequence RL UNKNOTTER, HARD UNKNOTS AND UNKNOTTING NUMBER 3
+
+of Reidemeister moves. The Reidemeister moves R0 (isotopy, often not specified), R1, R2, R3 are: 
+
+So: 
+
+(a) R0 is isotopy, and should be thought of as a cleaning operation. 
+
+(b) R1 and R2 reduce or increase the number of crossings. We think of these as removing or adding cards to a deck. 
+
+(c) R3 does not change the number of crossings. We think of this as a shuffle move. Crucial is the idea of increase-shuffle , which increases the number of crossings using R1 and R2, and then shuffle them in using R3. For example: 
+
+In the picture on the right the R2 move created in the middle are now shuffled in. 
+
+Remark 2A.1 . In general, we think of the unknotting as a game where the options are to add or remove cards (via R1 and R2), or to shuffle the deck (via R3). 
+
+This is an important (but certainly not new) idea to keep in mind. 3
+
+In the implementation we represent a diagram by a planar diagram (PD) code . Concretely, a PD code is a list of quadruples 
+
+PD = [a1, b 1, c 1, d 1], ... , [an, b n, c n, d n],4 A. DRANOWSKI, Y. KABKOV AND D. TUBBENHAUER 
+
+encoding the cyclic order of the four half-edges incident to each crossing, together with the over/under structure. For example: 
+
+(Sometimes PD codes are written P D [X[a, b, c, d ], ...], but we usually omit the P D and the X.) 
+
+Remark 2A.2 . We work with diagrammatic encodings compatible with spherogram (as shipped with 
+
+SnapPy [CDW26]). Throughout, a diagram means a planar diagram (PD) encoding of an oriented link diagram. We also use Dowker–Thistlethwaite (DT) codes but they are less important for our purpose, so we will not recall them. We routinely convert between PD codes and other standard encodings whenever available. 3
+
+Our move set consists of diagrammatic simplifications (Reidemeister 1/2/3 and standard “cleanup” and isotopy routines) together with a small amount of randomization (shuffling local R3 choices). This is intentionally conservative: we want a move set that is uncontroversial for knot theorists and easy to verify independently. 2B. Why simplification is hard. Even for the unknot, simplification can be deceptive: many diagrams admit no immediate simplifying Reidemeister 1/2 moves, and a sequence of Reidemeister 3 moves may be required before any crossing reduction becomes available. For example: 
+
+(This is a famous example; it is taken from [HK14] and then modified.) In other words, the increase-shuffle operation is essential. From a computational viewpoint, this creates two intertwined difficulties: 
+
+• Sparse progress: if we measure progress by the crossing number of the current diagram, then many “correct” steps (notably R3 moves) do not change this measure at all. 
+
+• Local minima and “dead ends”: greedy strategies that only accept crossing reducing moves can (and will!) get stuck, while strategies that occasionally allow temporary increases in crossing number face an enormous branching factor. This motivates the following guiding principle: we should allow the algorithm to explore, but we must also equip it with a mechanism to undo unproductive exploratory detours. In our setup this is implemented by a simple backtrack operation: the agent can revert to a higher crossing diagram RL UNKNOTTER, HARD UNKNOTS AND UNKNOTTING NUMBER 5
+
+state (as an escape-type move) when it believes it has entered an unhelpful region of the search space. Backtracking is not a new topological move; it is a search control device addressing the combinatorial explosion inherent in Reidemeister search. 2C. A minimal RL primer. Reinforcement learning (RL) is a framework for learning policies 
+
+(decision rules) for sequential decision making problems, see e.g. [SB18] for background. (We assume the reader has background in RL and machine learning techniques, but not too much is actually needed to follow the exposition.) An RL problem is typically formalized as a Markov decision process (MDP), consisting of: 
+
+(a) a set of states s,
+
+(b) a set of actions a available in each state, 
+
+(c) a transition rule s 7 → s′ when an action is applied, and 
+
+(d) a reward signal r(s, a, s ′). The agent repeatedly observes a state (here: a diagram), chooses an action (here: a move or a macro-step simplification mode), and receives reward. The goal is to learn a policy maximizing expected cumulative reward (often discounted over time). In our context, rewards are designed to correlate with “getting simpler”: e.g. reducing the crossing number, reaching the unknot, or reaching a diagram that admits further reductions. For example (but simplified): 
+
+→ → reward. For our purposes, the key point is conceptual rather than philosophical: RL provides a mechanism to learn heuristics in large, irregular search spaces where hand-crafted greedy rules fail, especially when progress signals are sparse and the correct strategy sometimes requires non-monotone exploration (hence the importance of backtracking). We will not attempt a general survey of RL; we only describe the specific MDP and training setup used in this paper in Section 3. 2D. Benchmarks used in this paper. Given a starting diagram D0 we consider the set of diagrams reachable by sequences of the above operations within a fixed step budget T . We then define the 
+
+empirical minimum crossing number 
+
+cmin (D0; T ) := min { c(D) : D reachable from D0 in at most T steps }.
+
+This quantity depends on the allowed moves and on the budget T ; it is not a certified invariant of the underlying link type. In particular, cmin (D0; T ) is an upper bound on the true crossing number of the underlying link, and it is 0 precisely when the simplification trajectory reaches a crossing-free diagram. Our method, with details given below, is: 
+
+• Train an RL agent that has the moves R0, R1, R2, R3, and it gets rewards for reducing the number of crossings of an input diagram, 
+
+• The agent outputs cmin (D0; T ). 
+
+Remark 2D.1 . The code can also output additional data like the steps used or the minimal diagram, but that is not relevant for the abstract discussion below. 3
+
+We will apply our method to two families of instances: 
+
+• the “hard” and “very hard” unknot diagrams introduced in [ABD+25], and 
+
+• the diagram families and crossing change experiments motivated by [BH25, BH26]. 6 A. DRANOWSKI, Y. KABKOV AND D. TUBBENHAUER 
+
+Both sources provide diagrammatic instances that are difficult for naive greedy simplifiers because many local moves temporarily increase c(D) or require nonlocal rearrangements before a crossing reduction becomes available. 3. The reinforcement-learning unknotter 
+
+We now describe the reinforcement-learning (RL) agent used throughout the experiments. The agent is trained on a gymnasium environment whose states are diagrams and whose actions are 
+
+macro-actions that call spherogram ’s simplification routines. We train using PPO as implemented in stable-baselines3 .
+
+Remark 3.1 . We call the model below the unknotter . The unknotter is available here: [DKT26]. 3
+
+3A. Planar-diagram encodings. Given a diagram D, we write c(D) for its number of crossings. Our code accepts the following PD/DT input formats (and we use these formats in all datasets released with this paper): 
+
+• DT code: a string of the form DT: [...] which is passed directly to spherogram.Link .
+
+• PD list-of-quads: a string representing a list of quadruples [[ a1, b 1, c 1, d 1], . . . , [an, b n, c n, d n]] ,
+
+parsed as JSON (or, as a fallback, as a Python literal) and then passed to spherogram.Link .
+
+• PD in X[...] blocks: a string containing one or more blocks X[a,b,c,d] ; these blocks are extracted and converted into a list-of-quads. 
+
+• Simple JSON wrappers: if a line is valid JSON containing a field pd /dt (or variants), we unwrap and parse that field. In all cases we apply a strict parser (rejecting lines that are not clearly PD/DT encodings) and keep only lines that successfully instantiate a Link object. 3B. Environment: state, actions, and termination. A state is a spherogram.Link object D
+
+obtained from a PD/DT encoding as in Section 3A. Episodes start by sampling a diagram uniformly at random from a fixed list of input PD strings (a mixture of hard/very-hard instances and random diagrams; see Section 3F). Rather than just feeding the full PD graph to the network, the current implementation uses a compact feature vector 
+
+o(D) ∈ R6
+
+with the following entries: 
+
+(a) c(D), the current number of crossings, 
+
+(b) the number of link components (when available from spherogram ), 
+
+(c) the current step counter, 
+
+(d) a binary feature indicating whether a single basic simplify call would strictly reduce crossings, 
+
+(e) a binary feature indicating whether the previous actions reduced crossings, 
+
+(f ) a constant bias feature. The action space (macro-actions) is as follows. An action is a pair ( m, κ ) in a MultiDiscrete 
+
+space, where 
+
+m ∈ { 0, 1, 2, 3}, κ ∈ { 0, 1, ... , κ max }, κmax = 8 .
+
+(In other words, the model can choose its action, details up next, and how often it wants to apply them.) The mode m selects one of four macro-actions (details on the moves follow in Section 3C): 
+
+• m = 0: simplify(mode="basic") (this tries to reduce the number of crossings using all R1 and R2 instances it can find); 
+
+• m = 1: simplify(mode="level", type III limit= κ ∨ 1) (a R3 shuffle); 
+
+• m = 2: simplify(mode="pickup", type III limit= κ ∨ 1) (a slightly different type of R3 shuffle); 
+
+• m = 3: backtrack(steps= κ ∨ 1, prob type 1=0.35, prob type 2=0.65) (this increases the number of crossings by adding R1 and R2 moves randomly) followed by a small type 3 shuffle. RL UNKNOTTER, HARD UNKNOTS AND UNKNOTTING NUMBER 7
+
+(Here κ ∨ 1 := max {κ, 1}.) The backtrack macro action can be disabled; in this paper we keep it enabled. An episode terminates when either (i) c(D) = 0 (the diagram has been simplified to the unknot), or (ii) a fixed step budget T = 500 is reached. 
+
+Remark 3B.1 . The values κmax = 8 and T = 500 are the ones that worked well. They can be changed if the user wants to. 3
+
+3C. Move set implemented in spherogram . The core simplification primitive is spherogram ’s built-in diagram simplifier 
+
+D 7 → simplify (D; mode = basic/level/pickup) ,
+
+which performs combinations of Reidemeister moves (and related local simplifications) according to the chosen mode. In addition, we use Link.backtrack as a stochastic “escape” operator that attempts to undo local traps by exploring alternative simplification paths. 3D. Reward shaping and “blocking”. Let cbefore and cafter be the crossing numbers before and after applying the chosen macro-action, and set ∆ := cbefore − cafter .
+
+The per-step reward is a dense shaping term plus a small step cost: 
+
+r = w∆ ∆ − w↑ max {0, −∆} − wpot cafter − λ, 
+
+with parameters (w∆, w ↑, w pot , λ ) = (1 .0, 0.5, 0.02 , 0.05) ,
+
+and an additional terminal bonus of +10 upon reaching c(D) = 0. To reduce wasted exploration on obviously unproductive modes, we implement a simple blocking 
+
+heuristic: if a non-backtrack mode m ∈ { 0, 1, 2} increases crossings (i.e. ∆ < 0), we temporarily mark that mode as blocked, and future requests for that mode are cyclically remapped to the next unblocked mode. Any successful crossing reduction (∆ > 0) resets the blocked set; additionally, using backtrack also resets the blocked set. 
+
+Remark 3D.1 . Implementing the blocking feature was crucial. Without it, the unknotter failed to do its designed task properly. 3
+
+3E. Policy and training. We train a Proximal Policy Optimization (PPO) agent with an MLP policy network ( MlpPolicy in stable-baselines3 ). Unless stated otherwise, the hyperparameters are as follows: 
+
+• learning rate: linear decay 3 · 10 −4 · p (with training progress p ∈ [0 , 1]), 
+
+• rollout length nsteps = 2048, batch size 256, epochs per update 10, 
+
+• discount γ = 0 .995, GAE parameter λGAE = 0 .97, 
+
+• clip range 0 .2, entropy coefficient 0 .01, value-function coefficient 0 .5, 
+
+• max gradient norm 0 .5. Models are evaluated periodically during training using a one-episode evaluation callback, and we keep the best-performing checkpoint. 
+
+Remark 3E.1 . These parameters are not set in stone; tweaking might give better results. 3
+
+3F. Training data. Training episodes sample PD/DT strings from a mixture of sources. In the current codebase we use: 
+
+• a large file of “hard” unknots and a small file of “very hard” unknots from [ABD+25], stored as CSVs (first column = PD/DT string), and 
+
+• auxiliary sets of random diagrams used for exploration and regularization. All lines are filtered by the strict parser from Section 3A, ensuring that every training instance can be instantiated as a spherogram.Link .4. Unknotting the hard and “very hard” unknots 
+
+This section tests the unknotter on the hard unknot datasets introduced in [ABD+25]. We first recall the terminology used there, then describe our evaluation protocol, and finally report the results. 8 A. DRANOWSKI, Y. KABKOV AND D. TUBBENHAUER 
+
+4A. “Hard” and “very hard”. Following [ABD+25], a diagram D of the unknot is called hard 
+
+if, in any sequence of Reidemeister moves from D to the trivial diagram, the crossing number must first increase before it decreases. Equivalently, there is no monotone simplification of D to the trivial diagram with respect to c( · ). Hard unknot diagrams are of particular interest because they obstruct naive greedy simplification heuristics and may serve as stress tests for unknot-detection procedures [ABD+25]. In addition, [ABD+25] identifies a much smaller subset of “really hard” diagrams: these are hard unknot diagrams on which SnapPy ’s built-in heuristic simplification (including its more sophisticated 
+
+global heuristic) still fails to reach the trivial diagram even after repeated attempts; see [ABD+25]. In this paper we will refer to these “really hard” instances as very hard unknots. An example is: 
+
+4B. Experimental setup. We work with the PD/DT formats described in Section 3A. Concretely, we load the hard/very-hard instance lists from the datasets distributed alongside [ABD+25] (their public bucket). In all experiments we apply our strict parser and keep only strings that instantiate a spherogram.Link object (Section 3A). We evaluate the trained unknotter in deterministic mode (no action sampling) and run it for a fixed step budget T (in our code: maxstepsdone , typically T = 500). Each step is one macro-action of the form simplify(mode, cap) (with mode in {basic , level , pickup , backtrack }, cf. Section 3C), plus the small post-backtrack shuffle by pure type 3 moves (typically k ≤ 2) to avoid immediate cycling. For a start diagram D0, let cmin (D0; T ) be the empirical minimum crossing number encountered along the trajectory. We record: 
+
+• Unknot success: whether the trajectory reaches the trivial diagram, i.e. cmin (D0; T ) = 0. 
+
+• Crossing reduction: whether the agent achieves any reduction, i.e. cmin (D0; T ) < c (D0). The latter is a weaker diagnostic that is useful for sanity checks and ablations; the main target is actual unknotting. Although the policy evaluation is deterministic, the environment contains stochasticity through: (i) backtrack , which is stochastic in spherogram , and (ii) our optional post-backtrack random type 3 shuffle. Hence we repeat each evaluation R times per instance with independent random seeds. 4C. Results on very hard unknots. We focus on the “very hard” subset from [ABD+25]. Em-pirically, these are precisely the instances where naive simplifiers and even repeated SnapPy global 
+
+calls often stall, making them a robust stress test for our approach. 
+
+Proposition 4C.1. (Empirical.) On the N = 385 very hard diagrams from [ABD+25], evaluated with a fixed budget of T = 500 macro-steps and repeated R = 10 times per instance, the unknotter achieves a mean per-run unknotting rate of p = 94 .57% with standard deviation 1.15% across runs. Equivalently, in a typical run it unknots about ≈ 360 of the 385 instances. A stronger way to summarize robustness is instance-wise: in these experiments, every instance was unknotted in at least one of the R = 10 runs (so there were no “never resolved” diagrams at this budget), 266 instances were unknotted in all 10 runs, and the remaining 119 instances were unknotted only intermittently (solved in some but not all runs), indicating residual sensitivity to stochastic choices in backtrack /shuffle. RL UNKNOTTER, HARD UNKNOTS AND UNKNOTTING NUMBER 9
+
+Proof. Here is the summary table: 
+
+The figures above summarize our evaluation on the N = 385 “very hard” unknots from [ABD+25] with a fixed budget of T = 500 macro-steps, repeated for R = 10 independent runs. The first figure reports per-run aggregates: for each run it lists the number and percentage of instances that were fully resolved (i.e. reduced to a crossing-free diagram), together with the median of the minimum crossing number attained over instances in that run (which is 0 throughout) and the worst minimum achieved among the remaining unresolved instances (typically in the range 38 to 46). The second figure is instance-wise: it ranks diagrams by how often they were resolved across the 10 runs and records, for each instance, the min/median/max of the best crossing number achieved across runs. In particular, all instances are resolved at least once, but a noticeable subset is only intermittently resolved (e.g. 4 /10, 5 /10, ...), indicating sensitivity to stochastic choices in the simplification/backtracking dynamics at fixed budget. □
+
+4D. Why backtracking matters (diagnostic/ablation). One conceptual reason for introducing the backtrack action is that it directly targets the “local trap” phenomenon discussed in Section 2B: the agent may spend many steps in a region where c(D) does not decrease, and exploration without the ability to revert is inefficient. Backtracking provides a controlled way to abandon a nonproductive branch and try an alternative simplification path. 5. Crossing-change search for composite knots 
+
+In this section we use the unknotter as a search heuristic for a different task: we aim to find 
+
+diagrams of a fixed knot K that become unknotted after a small number of crossing changes. The guiding example is the composite knot 4 1#9 10 , and we use the same procedure for further examples appearing in [BH25, BH26]. 10 A. DRANOWSKI, Y. KABKOV AND D. TUBBENHAUER 
+
+5A. Preliminaries. A crossing change is the local operation that flips the over/under information at a chosen crossing of a diagram: 
+
+(This example is taken from https://en.wikipedia.org/wiki/Unknotting_number .) A classical invariant is the unknotting number u(K), the minimum number of crossing changes required to turn some(!) diagram of K into a diagram of the unknot. Our experiments are not designed to certify u(K); rather, we look for explicit diagram-level witnesses that K can be unknotted by m
+
+crossing changes, often starting from diagrams that are far from minimal. A natural question is how u( · ) behaves under connected sum. It was long conjectured that unknotting number should be additive ,
+
+u(K#L) ?
+
+= u(K) + u(L),
+
+in analogy with the additivity of several classical invariants under connected sum. This conjecture is now known to be false, which was a major breakthrough [BH25, BH26]. One reason why this was open for a long time is twofold: First, the definition of u(K) is inherently diagram-dependent: it asks for the existence of a good diagram and a good set of crossings to flip, and there is no a priori reason that a standard diagram for K#L (obtained by concatenating standard diagrams for K and L) should expose such a set. As an example, and with reference to [WZ25]: 
+
+The left diagram is a standard minimal crossing diagram of 7 1#mir(7 1), and the right is also a diagram of 7 1#mir(7 1), but with way more crossings. On the left diagram six crossing changes are needed, while on the right five suffice. Second, as far as we know, the standard arsenal of computable invariants (Jones polynomial etc.) offers limited guidance in locating promising crossings: many invariants yield lower bounds on u(K), but do not pinpoint where to change crossings, and they often behave too coarsely under connected sum to detect subtle diagram level phenomena. This is precisely why we treat the crossing-change search as an explicit diagrammatic exploration problem rather than an invariant-driven one. RL UNKNOTTER, HARD UNKNOTS AND UNKNOTTING NUMBER 11 
+
+5B. Pipeline. Starting from a fixed base diagram D0 of K (for instance the standard PD from a table), we generate more complicated diagrams of the same knot type by inserting random diagram-matic complexity via Reidemeister moves and related local modifications that preserve the knot type. We refer to this as inflation . Operationally, inflation is implemented as a bounded-length random walk in our move set (Section 3C), producing a diagram D with larger crossing number but still representing K.(A) Crossing-change search (diagram-level witnesses). Given a diagram D, after applying a pre-scribed number m of crossing changes at selected crossings, we run the unknotter as a sim-plifier for a fixed budget T and declare success if it reaches a crossing-free diagram. Thus, in this part of the workflow the unknotter is used as an oracle for the outcome of a candidate crossing-change pattern: (D, S ) 7 −→ “unknotted?” ,
+
+where S is a set (or ordered list) of crossings to flip. As before, this is an empirical oracle: success means “unknotted within budget T under our move set”, and failure means only “not found within this budget”. A success produces an explicit diagram-level witness (inflated base PD, the flipped indices, and the simplification trajectory / best diagram encountered). (B) One-flip identification (name the neighbor). In addition, we also run a second, complementary postprocessing pipeline in which we fix m = 1 and aim to identify the knot type obtained after a single crossing change. Concretely, for each inflated diagram D and each crossing index i, we form the singly-flipped diagram D{i}, run the unknotter for budget T , and record a simplified representative eD{i} (in practice: the lowest-crossing PD encountered along the run). We then compute the Jones polynomial of eD{i} and match it against a database e.g. KnotInfo [CL26] or a customized one in progress (very much in spirit of [LTV26, TZ25, KLT+25, DKT25]), to obtain a standard knot label. The hope is that once the neighbor knot type is identified, its unknotting number might already be tabulated, yielding immediate context for the “distance one” landscape around K.The crucial difference between the two: (A) is a purely diagram search, fully using the unknotter. (B) uses the unknotter and a database. 
+
+Remark 5B.1 . Note that using the unknotter is key for both. For (A) this is clear, but even for (B) this is crucial as the generated diagrams have a crossing number outside of any known database, so we need to reduce the crossing number first. 3
+
+5C. Why this is hard. At a naive level, searching for m crossing changes is combinatorially explo-sive: a diagram with n crossings has   nm
+
+ possible m-tuples of crossings to flip, and inflation typically increases n substantially. Moreover, diagram inflation is a double-edged sword: it increases the num-ber of potential crossing-change opportunities, but it also introduces many nugatory or near-nugatory crossings and can create large regions of the diagram where local changes have little global effect. Two further issues are specific to our setting: 
+
+• Non-monotonicity. Even if a crossing-change pattern does unknot the diagram, verifying this may require long non-monotone simplification sequences (Section 2B), so a simplistic verifier can produce false negatives. 
+
+• Diagram dependence. The existence of a diagram unknotted by m crossing changes is a statement about the knot type, but the difficulty of finding it is strongly diagram-dependent: some diagrams are “friendly” to small crossing-change witnesses, others hide them behind extensive Reidemeister rearrangements. 
+
+• Identification limits (for the one-flip pipeline). The Jones polynomial is fast and robust to compute, but it is not a complete invariant; moreover database conventions require handling mirroring and q–shifts carefully, and even when a knot is identified, its unknotting number may be unknown or absent from the relevant census. And, crucially, the databases only go to roughly the fifteen crossing range. Consequently, the one-flip pipeline should be read as a naming/triage tool rather than a certification procedure. This is precisely where the unknotter becomes useful: it provides a fast heuristic for navigat-ing a search space in which both the candidate generation (inflation + flips) and the verifica-tion/simplification are highly nontrivial. 12 A. DRANOWSKI, Y. KABKOV AND D. TUBBENHAUER 
+
+5D. Crossing-change sweeps, and the Jones-identification workflow. This subsection records the concrete evaluation workflow used in our experiments. All code and intermediate artifacts refer-enced below are contained in [DKT26], and the individual witnesses produced by the sweeps (base PD, flipped crossings, and the best crossing number found) are exported as CSV/JSONL/TXT files. The repository contains three pieces of information that are directly useful for writing a fully reproducible evaluation section: 
+
+• A fixed evaluation driver. The script crossing-reduction/run variant sweep.py imple-ments a parallel sweep over crossing-change variants : for each input PD diagram with c
+
+crossings and a prescribed number of flips m, it enumerates all   cm
+
+ choices of m crossings, applies those m flips, and then runs the trained unknotter for a fixed step budget T . Each variant is recorded with the fields 
+
+variant id , source index , original crossings ,
+
+flipped indices , episodes , deterministic ,
+
+rl unknot success , min crossings found , steps taken total .
+
+• A PD-pool generator tailored to connected sums. The script called crossing-reduction generate t backtrack pool.py constructs a fixed base diagram 
+
+T = K1#K2
+
+from two hard-coded PD codes (in the current snapshot, K1 is a 4 crossing diagram and 
+
+K2 a 9 crossing diagram; this is the same pair used in rluntanglenumber.ipynb ). It then produces a large, deduplicated pool of inflated diagrams of T by applying random backtrack 
+
+steps together with a small number of pure type III shuffles, keeping only diagrams whose crossing number lies in a prescribed window. Importantly, the generator tracks combina-torial coverage : if a sampled diagram has c crossings and we intend to sweep m flips, it contributes   cm
+
+ variants towards a target coverage (e.g. 10 6 variants). 
+
+• Summaries for writing tables. The script crossing-reduction/summarize success.py then postprocesses a sweep directory and writes descriptive summaries (success rates per base PD, most common successful flip patterns, and enrichment statistics for flip indices). These outputs are designed to be dropped into a paper as tables/figures with minimal manual work. 
+
+• Jones-based identification for the m = 1 sweep. After running the sweep with m = 1, the notebook uncrossing.ipynb postprocesses the resulting minimal PDs: it reads the script 
+
+OUT DIR/min pd results flips1.jsonl , computes the Jones polynomial for each record, and writes OUT DIR/min pd results flips1 jones.jsonl . It then converts each polynomial to a KnotInfo-style Jones vector 
+
+[ emin , e max , c emin , c emin +1 , ... , c emax ],
+
+including internal zeros, and writes both 
+
+OUT DIR/min pd results flips1 jones vec knotinfo.jsonl 
+
+and a line-based version 
+
+OUT DIR/min pd results flips1 jones vec knotinfo.txt .
+
+Finally, it matches these vectors against knotinfo data complete.xls (which is stored in 
+
+PROJECT DIR ) up to (i) overall q–shift and (ii) mirroring, and writes detailed matches to 
+
+OUT DIR/knotinfo match results.jsonl .Indeed, since additivity is false in general, one should expect that if a connected sum admits an un-expectedly short unknotting sequence, it may be realized only on a nonstandard diagram obtained after substantial Reidemeister rearrangement. This motivates precisely the workflow implemented in the repository: inflate the connected-sum diagram into a large and diverse pool of equivalent diagrams, then conduct an exhaustive sweep over m crossing changes on each pooled diagram, using the unknotter as the verifier. The additional m = 1 Jones-identification postprocessing complements this by turning one-flip outputs into standard knot labels whenever possible. RL UNKNOTTER, HARD UNKNOTS AND UNKNOTTING NUMBER 13 
+
+5E. Case study: 41#9 10 . We ran both pipelines on the connected sum K = 4 1#9 10 . The knot itself is 
+
+and an example of an inflation with 25 crossings is 
+
+PD: [[23 , 13 , 24 , 12] , [13 , 23 , 14 , 22] , [15 , 10 , 16 , 11] , [11 , 14 , 12 , 15] , [9 , 33 , 10 , 32] , [5 , 43 , 6, 42] ,
+
+[3 , 29 , 4, 28] , [1 , 31 , 2, 30] , [47 , 25 , 48 , 24] , [39 , 9, 40 , 8] , [31 , 5, 32 , 4] , [29 , 3, 30 , 2] ,
+
+[27 , 1, 28 , 0] , [16 , 33 , 17 , 34] , [19 , 39 , 20 , 38] , [20 , 43 , 21 , 44] , [21 , 47 , 22 , 46] , [48 , 25 , 49 , 26] , [49 , 27 , 0, 26] ,
+
+[18 , 35 , 19 , 36] , [17 , 35 , 18 , 34] , [37 , 45 , 38 , 44] , [36 , 45 , 37 , 46] , [41 , 7, 42 , 6] , [40 , 7, 41 , 8]] .14 A. DRANOWSKI, Y. KABKOV AND D. TUBBENHAUER 
+
+(This is Python output, which starts counting at zero.) If one changes the 17th crossing and runs the unknotter, one gets the 15 crossing diagram 
+
+PD: [[13 , 21 , 14 , 20] , [19 , 15 , 20 , 14] , [17 , 22 , 18 , 23] , [21 , 18 , 22 , 19] ,
+
+[23 , 7, 24 , 6] , [25 , 5, 26 , 4] , [27 , 11 , 28 , 10] ,
+
+[29 , 9, 0, 8] , [7 , 27 , 8, 26] , [9 , 29 , 10 , 28] , [11 , 1, 12 , 0] , [16 , 3, 17 , 4] ,
+
+[2 , 15 , 3, 16] , [1 , 13 , 2, 12] , [5 , 25 , 6, 24]] .
+
+(5E.1) This will appear in (B) below. 
+
+(A) Crossing-change search. In this case (in contrast to (B) below) we were not able to verify that the unknotting number of K is at most three, but only the upper bound of four (e.g. the appearing three crossing diagrams, which are either trefoils or Hopf links, are witnesses): 
+
+The picture shows how many knot diagrams (of 53950 in total) had a given crossing number after running the unknotter. In other words, this was not successful. This could mean that diagrams that allow three flips are very rare in this crossing range, or even need a higher crossing number. In any case, studying the distribution as above is an interesting question in its own right. 
+
+(B) One-flip identification via the Jones polynomial. Running the m = 1 sweep and then the postprocessing in uncrossing.ipynb , the final matching block identifies (up to mirroring and q
+
+shift conventions handled by the matcher) the KnotInfo knot 
+
+K15 n4866 (this is the knot in (5E.1) above) via the KnotInfo-style Jones vector [−7, 2, −2, 4, −6, 9, −9, 9, −8, 6, −3, 1] ,
+
+equivalently the Jones polynomial 
+
+−2q−7 + 4 q−6 − 6q−5 + 9 q−4 − 9q−3 + 9 q−2 − 8q−1 + 6 − 3q + q2.RL UNKNOTTER, HARD UNKNOTS AND UNKNOTTING NUMBER 15 
+
+This knot has known unknotting number 2, therefore the original knot has unknotting number ≤ 3. In our search of 100 inflated diagrams this knot was found two times. 
+
+References 
+
+[Ada94] C.C. Adams. The knot book . W. H. Freeman and Company, New York, 1994. An elementary introduction to the mathematical theory of knots. [ABD+25] T. Applebaum, S. Blackwell, A. Davies, T. Edlich, A. Juh´ asz, M. Lackenby, N. Tomaˇ sev, and D. Zheng. The unknotting number, hard unknot diagrams, and reinforcement learning. Experimental Mathematics , 2025. https://arxiv.org/abs/2409.09032 ,
+
+doi:10.1080/10586458.2025.2542174 .[BH26] M. Brittenham and S. Hermiller. Unknotting number and connected sums: The knots 41 and 5 1. 2026. URL: https://arxiv.org/abs/2601.18757 .[BH25] M. Brittenham and S. Hermiller. Unknotting number is not additive under connected sum. 2025. https://arxiv.org/abs/2506.24088 .[CL26] J.C. Cha and C. Livingston. KnotInfo: Table of Knot Invariants . 2026. 
+
+https://knotinfo.math.indiana.edu .[CDW26] M. Culler, N.M. Dunfield, and J.R. Weeks. SnapPy, a computer program for studying the geometry and topology of 3-manifolds. 2026. http://snappy.computop.org .[DKT26] A. Dranowski, Y. Kabkov, and D. Tubbenhauer. Code and more for “RL unknotter, hard unknots and unknotting number”. 2026. https://github.com/annedranowski/ untangling-number , https://github.com/dtubbenhauer/unknotter .[DKT25] A. Dranowski, Y. Kabkov, and D. Tubbenhauer. On knot detection via picture recogni-tion. 2025. https://arxiv.org/abs/2510.06284 .[HK14] A. Henrich and L.H. Kauffman. Unknotting unknots. Amer. Math. Monthly ,121(5):379–390, 2014. URL: https://arxiv.org/abs/1006.4176 , doi:10.4169/amer. math.monthly.121.05.379 .[KLT+25] T. Kelom¨ aki, A. Lacabanne, D. Tubbenhauer, P. Vaz, and V. L. Zhang. On detection probabilities of link invariants. 2025. https://arxiv.org/abs/2509.05574 .[LTV26] A. Lacabanne, D. Tubbenhauer, and P. Vaz. Big data approach to Kazhdan–Lusztig polynomials. Journal of Experimental Mathematics , 2(1):21–62, 2026. https://arxiv. org/abs/2412.01283 , doi:10.56994/JXM.002.001.002 .[SB18] R.S. Sutton and A.G. Barto. Reinforcement learning: An introduction. 2018. Second edition, MIT Press, 2018. http://incompleteideas.net/book/ .[TZ25] D. Tubbenhauer and V. Zhang. Big data comparison of quantum invariants. 2025. To appear in Journal of Experimental Mathematics . https://arxiv.org/abs/2503.15810 .[WZ25] C. Wang and Y. Zhang. A remark on the counterexample to the unknotting number conjecture. 2025. https://arxiv.org/abs/2507.14265 .

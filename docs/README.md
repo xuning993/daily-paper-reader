@@ -6,82 +6,76 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-03-10
-- 运行时间：2026-03-10 19:34:31 UTC
+- 最新运行日期：2026-03-11
+- 运行时间：2026-03-11 19:43:15 UTC
 - 运行状态：成功
-- 本次总论文数：20
-- 精读区：9
+- 本次总论文数：18
+- 精读区：7
 - 速读区：11
 
 ### 今日简报（AI）
-今日聚焦 20 篇运筹优化与 AI 前沿，深度拆解了多任务 VRP 动态约束理解与柔性车间调度的记忆增强新范式。
-满分论文揭示了“上下文链”学习在复杂路径规划中的卓越表现，同时神经符号系统在溶剂设计与逻辑推理领域展现出强劲潜力。
-推荐优先研读两篇 10 分佳作，探索大模型思维与启发式算法结合在解决大规模组合优化问题上的实战价值。
-- 详情：[/202603/10/README](/202603/10/README)
+今日深度研读18篇前沿论文，重点聚焦满分成果 RADAR 在非对称距离表征路径规划上的重大突破。
+研究揭示了非对称感知对路由效率的决定性提升，并同步展示了 GRPO 算法在稳定多智能体拓扑学习中的创新潜力。
+建议读者
+- 详情：[/202603/11/README](/202603/11/README)
 
 ### 精读区论文标签
-1. [Chain-of-Context Learning: Dynamic Constraint Understanding for Multi-Task VRPs](/202603/10/2603.01667v1-chain-of-context-learning-dynamic-constraint-understanding-for-multi-task-vrps)  
+1. [RADAR: Learning to Route with Asymmetry-aware DistAnce Representations](/202603/11/2603.03388v1-radar-learning-to-route-with-asymmetry-aware-distance-representations)  
    标签：评分：10.0/10、query:ml-co
-   evidence：用于多任务车辆路径问题的强化学习
-2. [Learning Memory-Enhanced Improvement Heuristics for Flexible Job Shop Scheduling](/202603/10/2603.02846v1-learning-memory-enhanced-improvement-heuristics-for-flexible-job-shop-scheduling)  
+   evidence：针对非对称距离车辆路径问题的神经求解器
+2. [RADAR: Learning to Route with Asymmetry-aware DistAnce Representations](/202603/11/2603.03388v2-radar-learning-to-route-with-asymmetry-aware-distance-representations)  
    标签：评分：10.0/10、query:ml-co
-   evidence：深度强化学习用于柔性作业车间调度
-3. [RESCHED: Rethinking Flexible Job Shop Scheduling from a Transformer-based Architecture with Simplified States](/202603/10/2603.07020v1-resched-rethinking-flexible-job-shop-scheduling-from-a-transformer-based-architecture-with-simplified-states)  
-   标签：评分：10.0/10、query:ml-co
-   evidence：深度强化学习解决柔性作业车间调度问题
-4. [Learning to Rank the Initial Branching Order of SAT Solvers](/202603/10/2603.07176v1-learning-to-rank-the-initial-branching-order-of-sat-solvers)  
-   标签：评分：10.0/10、query:ml-co
-   evidence：使用GNN预测SAT求解器中的分支顺序
-5. [Constraints Matrix Diffusion based Generative Neural Solver for Vehicle Routing Problems](/202603/10/2603.07568v1-constraints-matrix-diffusion-based-generative-neural-solver-for-vehicle-routing-problems)  
-   标签：评分：10.0/10、query:ml-co
-   evidence：车辆路径问题的生成式神经求解器
-6. [Preference-Conditioned Reinforcement Learning for Space-Time Efficient Online 3D Bin Packing](/202603/10/2603.07800v1-preference-conditioned-reinforcement-learning-for-space-time-efficient-online-3d-bin-packing)  
-   标签：评分：10.0/10、query:ml-co
-   evidence：强化学习用于3D装箱优化
-7. [SynthCharge: An Electric Vehicle Routing Instance Generator with Feasibility Screening to Enable Learning-Based Optimization and Benchmarking](/202603/10/2603.03230v1-synthcharge-an-electric-vehicle-routing-instance-generator-with-feasibility-screening-to-enable-learning-based-optimization-and-benchmarking)  
+   evidence：针对具有非对称距离表示的车辆路径问题的神经求解器
+3. [Optimal trajectory-guided stochastic co-optimization for e-fuel system design and real-time operation](/202603/11/2603.03484v1-optimal-trajectory-guided-stochastic-co-optimization-for-e-fuel-system-design-and-real-time-operation)  
    标签：评分：9.0/10、query:ml-co
-   evidence：用于基于学习的路径优化实例生成器
-8. [Large Language Model-Driven Full-Component Evolution of Adaptive Large Neighborhood Search](/202603/10/2603.06996v1-large-language-model-driven-full-component-evolution-of-adaptive-large-neighborhood-search)  
+   evidence：针对组合空间的机器学习辅助协同优化
+4. [Learning to Reflect: Hierarchical Multi-Agent Reinforcement Learning for CSI-Free mmWave Beam-Focusing](/202603/11/2603.07370v1-learning-to-reflect-hierarchical-multi-agent-reinforcement-learning-for-csi-free-mmwave-beam-focusing)  
    标签：评分：9.0/10、query:ml-co
-   evidence：大模型驱动的自适应大邻域搜索演化
-9. [Large Language Model for Discrete Optimization Problems: Evaluation and Step-by-step Reasoning](/202603/10/2603.07733v1-large-language-model-for-discrete-optimization-problems-evaluation-and-step-by-step-reasoning)  
+   evidence：针对大规模组合动作空间的强化学习
+5. [Agentic Neurosymbolic Collaboration for Mathematical Discovery: A Case Study in Combinatorial Design](/202603/11/2603.08322v1-agentic-neurosymbolic-collaboration-for-mathematical-discovery-a-case-study-in-combinatorial-design)  
    标签：评分：9.0/10、query:ml-co
-   evidence：大语言模型解决离散优化问题
+   evidence：用于组合设计理论发现的AI智能体
+6. [Efficient Policy Learning with Hybrid Evaluation-Based Genetic Programming for Uncertain Agile Earth Observation Satellite Scheduling](/202603/11/2603.08447v1-efficient-policy-learning-with-hybrid-evaluation-based-genetic-programming-for-uncertain-agile-earth-observation-satellite-scheduling)  
+   标签：评分：9.0/10、query:ml-co
+   evidence：用于组合优化调度问题的遗传编程超启发式算法
+7. [Reinforced Generation of Combinatorial Structures: Ramsey Numbers](/202603/11/2603.09172v1-reinforced-generation-of-combinatorial-structures-ramsey-numbers)  
+   标签：评分：9.0/10、query:ml-co
+   evidence：基于大语言模型的智能体用于组合拉姆齐数
 
 ### 速读区论文标签
-1. [LOTUS: A Warm-Start Framework for Powering Dual Decomposition in Large-Scale Two-Stage Stochastic Programs](/202603/10/2603.01733v1-lotus-a-warm-start-framework-for-powering-dual-decomposition-in-large-scale-two-stage-stochastic-programs)  
+1. [Graph-GRPO: Stabilizing Multi-Agent Topology Learning via Group Relative Policy Optimization](/202603/11/2603.02701v1-graph-grpo-stabilizing-multi-agent-topology-learning-via-group-relative-policy-optimization)  
    标签：评分：8.0/10、query:ml-co
-   evidence：大规模随机混合整数规划的预热启动框架
-2. [Pencil Puzzle Bench: A Benchmark for Multi-Step Verifiable Reasoning](/202603/10/2603.02119v1-pencil-puzzle-bench-a-benchmark-for-multi-step-verifiable-reasoning)  
+   evidence：用于动态拓扑构建的强化学习
+2. [Deep learning-guided evolutionary optimization for protein design](/202603/11/2603.02753v1-deep-learning-guided-evolutionary-optimization-for-protein-design)  
    标签：评分：8.0/10、query:ml-co
-   evidence：NP完全约束满足问题的基准测试
-3. [AI4S-SDS: A Neuro-Symbolic Solvent Design System via Sparse MCTS and Differentiable Physics Alignment](/202603/10/2603.03686v1-ai4s-sds-a-neuro-symbolic-solvent-design-system-via-sparse-mcts-and-differentiable-physics-alignment)  
+   evidence：深度学习引导的序列设计进化优化
+3. [Changing the Game: The Bounce-Bind Ising Machine](/202603/11/2603.02771v1-changing-the-game-the-bounce-bind-ising-machine)  
    标签：评分：8.0/10、query:ml-co
-   evidence：结合蒙特卡洛树搜索的神经符号框架，用于高维组合空间
-4. [Cheap Thrills: Effective Amortized Optimization Using Inexpensive Labels](/202603/10/2603.05495v1-cheap-thrills-effective-amortized-optimization-using-inexpensive-labels)  
+   evidence：用于MAX-CUT等组合优化问题的伊辛机
+4. [RL unknotter, hard unknots and unknotting number](/202603/11/2603.07955v1-rl-unknotter-hard-unknots-and-unknotting-number)  
    标签：评分：8.0/10、query:ml-co
-   evidence：优化问题的机器学习代理模型
-5. [Invariant-Stratified Propagation for Expressive Graph Neural Networks](/202603/10/2603.01388v1-invariant-stratified-propagation-for-expressive-graph-neural-networks)  
+   evidence：用于简化纽结图的强化学习流水线
+5. [Learning Optimal Search Strategies](/202603/11/2603.02356v1-learning-optimal-search-strategies)  
    标签：评分：7.0/10、query:ml-co
-   evidence：高表达能力的图神经网络架构
-6. [Layer-wise QUBO-Based Training of CNN Classifiers for Quantum Annealing](/202603/10/2603.02958v1-layer-wise-qubo-based-training-of-cnn-classifiers-for-quantum-annealing)  
+   evidence：学习最优搜索策略和停止规则
+6. [StitchCUDA: An Automated Multi-Agents End-to-End GPU Programing Framework with Rubric-based Agentic Reinforcement Learning](/202603/11/2603.02637v1-stitchcuda-an-automated-multi-agents-end-to-end-gpu-programing-framework-with-rubric-based-agentic-reinforcement-learning)  
    标签：评分：7.0/10、query:ml-co
-   evidence：基于QUBO的神经网络训练
-7. [CASSR: Continuous A-Star Search through Reachability for real time footstep planning](/202603/10/2603.02989v1-cassr-continuous-a-star-search-through-reachability-for-real-time-footstep-planning)  
+   evidence：用于程序优化的智能体强化学习
+7. [Design and Analysis of an Improved Constrained Hypercube Mixer in Quantum Approximate Optimization Algorithm](/202603/11/2603.05187v1-design-and-analysis-of-an-improved-constrained-hypercube-mixer-in-quantum-approximate-optimization-algorithm)  
    标签：评分：7.0/10、query:ml-co
-   evidence：改进用于组合足迹规划的A*搜索算法
-8. [CASSR: Continuous A-Star Search through Reachability for real time footstep planning](/202603/10/2603.02989v2-cassr-continuous-a-star-search-through-reachability-for-real-time-footstep-planning)  
+   evidence：用于组合优化的量子近似优化算法
+8. [Escaping the Hydrolysis Trap: An Agentic Workflow for Inverse Design of Durable Photocatalytic Covalent Organic Frameworks](/202603/11/2603.05188v1-escaping-the-hydrolysis-trap-an-agentic-workflow-for-inverse-design-of-durable-photocatalytic-covalent-organic-frameworks)  
    标签：评分：7.0/10、query:ml-co
-   evidence：足迹规划中的组合搜索
-9. [GPU-friendly and Linearly Convergent First-order Methods for Certifying Optimal $k$-sparse GLMs](/202603/10/2603.01306v1-gpu-friendly-and-linearly-convergent-first-order-methods-for-certifying-optimal-k-sparse-glms)  
+   evidence：用于导航组合设计空间的LLM智能体
+9. [Learning-Augmented Moment Estimation on Time-Decay Models](/202603/11/2603.02488v1-learning-augmented-moment-estimation-on-time-decay-models)  
    标签：评分：6.0/10、query:ml-co
-   evidence：利用分支定界和近端框架优化稀疏广义线性模型
-10. [Discrete World Models via Regularization](/202603/10/2603.01748v1-discrete-world-models-via-regularization)  
+   evidence：流模型中的学习增强算法
+10. [Bayesian Optimization in Chemical Compound Sub-Spaces using Low-Dimensional Molecular Descriptors](/202603/11/2603.02605v1-bayesian-optimization-in-chemical-compound-sub-spaces-using-low-dimensional-molecular-descriptors)  
    标签：评分：6.0/10、query:ml-co
-   evidence：用于搜索启发式和规划的布尔状态表示
-11. [Reasoning Core: A Scalable Procedural Data Generation Suite for Symbolic Pre-training and Post-Training](/202603/10/2603.02208v1-reasoning-core-a-scalable-procedural-data-generation-suite-for-symbolic-pre-training-and-post-training)  
+   evidence：针对离散化学化合物空间的贝叶斯优化
+11. [Test-Time Meta-Adaptation with Self-Synthesis](/202603/11/2603.03524v1-test-time-meta-adaptation-with-self-synthesis)  
    标签：评分：6.0/10、query:ml-co
-   evidence：符号推理和规划任务的数据生成
+   evidence：用于特定问题自适应的元学习框架
 
 
 <div class="dpr-home-promo-card">

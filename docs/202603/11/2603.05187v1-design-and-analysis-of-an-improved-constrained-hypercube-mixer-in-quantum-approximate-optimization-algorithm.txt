@@ -1,0 +1,2205 @@
+Title: Design and Analysis of an Improved Constrained Hypercube Mixer in Quantum Approximate Optimization Algorithm
+
+URL Source: https://arxiv.org/pdf/2603.05187v1
+
+Published Time: Fri, 06 Mar 2026 02:11:05 GMT
+
+Number of Pages: 20
+
+Markdown Content:
+# Design and Analysis of an Improved Constrained Hypercube Mixer in Quantum Approximate Optimization Algorithm 
+
+Arkadiusz Wołk a,b, ∗, Karol Capała a,b , Katarzyna Rycerz a,b 
+
+> aAGH University of Krakow, Faculty of Computer Science, Mickiewicza 30, Kraków, 30-059, Poland
+> bAcademic Computer Center Cyfronet AGH, Nawojki 11, Kraków, 30-950, Poland
+
+Abstract 
+
+The Quantum Approximate Optimization Algorithm (QAOA) is expected to o ff er advantages over classical ap-proaches when solving combinatorial optimization problems in the Noisy Intermediate-Scale Quantum (NISQ) era. In its standard formulation, however, QAOA is not suited for constrained problems. One way to incorporate certain types of constraints is to restrict the mixing operator to the feasible subspace; however, this substantially increases circuit size, thereby reducing noise robustness. In this work, we refine an existing hypercube mixer method for en-forcing hard constraints in QAOA. We present a modification that generates circuits with fewer gates for a broad class of constrained problems defined by linear functions. Furthermore, we calculate an analytical upper bound on the number of binary variables for which this reduction might not apply. Additionally, we present numerical experimental results demonstrating that the proposed approach improves robustness to noise. In summary, the method proposed in this paper allows for more accurate QAOA performance in noisy settings, bringing us closer to practical, real-world NISQ-era applications. 
+
+Keywords: Quantum approximate optimization algorithm, Constrained optimization, Noisy intermediate-scale quantum, Noise robustness in quantum algorithms, Hypercube operator 
+
+1. Introduction 
+
+Combinatorial optimization problems arise fre-quently across scientific and industrial domains. Typ-ical examples include the knapsack problem [1], the ve-hicle routing problem [2], and task scheduling [3, 4]. Many decision variants of these problems are NP-complete [5]. Consequently, approximation and heuris-tic algorithms are often employed to find approximate solutions in a more viable time frame [3, 6]. A potential strategy for tackling these problems in the future is to employ quantum computers [7]. Their antic-ipated benefit is supposed to stem from superior scala-bility as the problem size grows. Many quantum algo-rithms cannot be fully tested, as the current generation of Noisy Intermediate-Scale Quantum (NISQ) [8] hard-ware provides only a relatively small number of qubits subject to quantum noise that can strongly degrade com-putational outcomes. Consequently, there has been an active search for quantum algorithms that can perform   
+
+> ∗Corresponding author
+> Email address: awolk@agh.edu.pl (Arkadiusz Wołk)
+
+more reliably under these conditions. One algorithm that is projected to outperform classical methods in the NISQ era is the Quantum Approximate Optimization Algorithm (QAOA) [9–11]. In its conventional formula-tion, it can approximate solutions to unconstrained com-binatorial optimization problems. However, many real-world applications include various constraints [12]. There are several ways to handle constraints. The chosen strategy can strongly influence the obtained out-comes and, therefore, plays a central role in the opti-mization procedure. For instance, the slack method [12, 13], unbalanced penalization [14], and conditional pe-nalization [15] add penalty terms that are intended to reduce the likelihood of infeasible solutions, but do not fully eliminate them from the solution set. Moreover, some of these techniques rely on parameters that must be tuned carefully to achieve good performance. In con-trast, some approaches modify the initial state of QAOA and the mixing Hamiltonian to simulate the walk on the hypercube graph constrained to only feasible solu-tions [9, 16]. While this leads to more complex cir-cuits, these methods guarantee that only feasible solu-tions will have non-zero probability. 
+
+> arXiv:2603.05187v1 [quant-ph] 5 Mar 2026
+
+It is well established that the number of gates and the depth of a circuit significantly influence noise re-silience [17–19]. Therefore, reducing gate count is ex-pected to improve the likelihood that these algorithms will produce high-quality results on NISQ devices. In this paper, we propose an improved method for handling hard constraints with the hypercube operator in QAOA [9, 16], by reducing the required number of gates and enhancing the noise robustness. It is applica-ble to problems with constraints defined by linear func-tions. To summarize, our paper o ff ers the following contri-butions: 
+
+• a new modification of the hypercube QAOA mixer operator that reduces the required circuit size, 
+
+• setting the analytical upper bound on the number of binary variables for which the standard method might outperform our modification, 
+
+• the numerical results showing the improved robust-ness of the proposed modification over standard methods for the most common noise models. The paper is organized as follows: in Section 2, a method for handling hard constraints in QAOA is pre-sented, and most common noise models are described; Section 3 provides a detailed description of the stan-dard implementation; Section 4 introduces the imple-mentation that utilizes a reduced number of gates; Sec-tion 5 extends these two methods to address the case of multiple linear functions; Section 6 presents the an-alytical analysis of the implementations; Section 7 de-scribes the experiments conducted and reports their re-sults; The paper concludes with the Summary and Con-clusions (Sec. 8). 
+
+2. Preliminaries 
+
+2.1. Notation 
+
+Throughout this paper, each gate acts on qubits that belong to a quantum register. A register is a set of qubits that are used in a similar way or for a common purpose. We often need to represent natural numbers as quantum states. If a is a binary representation of a natural num-ber, we write |a⟩w to show that register w is in the state 
+
+|a⟩.An operator defined to act on a particular register is assumed to act as the identity on all remaining qubits: 
+
+A|y⟩x = |z⟩x
+
+A|y⟩x|a⟩b = (A|y⟩x) ⊗ (I|a⟩b) = |z⟩x|a⟩b. (1) The notation [A]b=101 (2) denotes the operator A controlled by the qubits of reg-ister b, conditioned on them being in the state 101, whereas [A]bi=1 (3) denotes the operator A controlled by the i-th qubit of the register b.
+
+2.2. Quantum Approximate Optimization Algorithm 
+
+To apply the QAOA [9], the objective function of the combinatorial problem is translated into the cost Hamil-tonian HC . The search space of QAOA consists of all binary vectors of dimension n, resulting in the diag-onal Hc with eigenvectors corresponding to the solu-tions in the search space and eigenvalues correspond-ing to the values of the objective function. Addition-ally, the algorithm requires the mixing Hamiltonian HM ,which does not commute with HC . In the basic version 
+
+HM = PNi=1 Xi, where Xi is the Pauli-X operator. The QAOA ansatz consists of p alternating layers cost oper-ator UC
+
+UC (γ) = e−iγHC , (4) mixing operator UM
+
+UM (β) = e−iβHM , (5) where γ ∈ [0 , 2π], β ∈ [0 , π ] are the adjustable param-eters tuned by the classical optimizer to minimize the expectation value 
+
+Fp(γ, β) = ⟨γ, β|HC |γ, β⟩, (6) of the quantum state 
+
+|γ, β⟩ = UM (βp)UC (γp) · · · UM (β1)UC (γ1)|+⟩⊗n, (7) where |+⟩⊗n is a uniform superposition of n qubits. The optimization is performed with respect to the 2 p param-eters as ( γ, β) ∈ [0 , 2π]p × [0 , π ]p.
+
+2.3. Constrained hypercube mixer 
+
+The basic formulation of QAOA (see Sec. 2.2) is applicable to finding approximate solutions to uncon-strained optimization problems. In such a case, the search space of QAOA consists of all n-dimensional bi-nary vectors, where n represents the number of vari-ables in Quantum Unconstrained Binary Optimization (QUBO) [12] formulation of a problem. In their original work on QAOA [9], the authors also propose a modified 2version of the algorithm in which the mixing Hamilto-nian HM is replaced by a hypercube operator B that is confined to the feasible subspace 
+
+⟨x|B|y⟩ =
+
+
+
+1, x and y are feasible solutions and Ham (x, y) = 10, otherwise 
+
+, (8) where x, y ∈ { 0, 1}n and Ham (x, y) denotes the Ham-ming distance between the binary encodings of x and 
+
+y.The constrained hypercube mixing operator 
+
+UB(β) = e−iβB, (9) generated for a QUBO problem with n binary variables, when applied to a feasible solution, generates a super-position consisting exclusively of feasible solutions. In practice, implementing this operator requires either a classical decomposition, which has exponential com-plexity in the size of the Hamiltonian, or an oracle-based simulation method, as demonstrated in [16]. Although the latter approach uses more gates than the standard QAOA, employing the constrained hypercube operator as the mixing Hamiltonian HM with a feasible initial state ensures that all resulting states remain feasible, which can be advantageous in certain scenarios. We outline the general strategy for constructing a cir-cuit for this operator, following the approach in [16]. The constrained hypercube operator B is interpreted as an adjacency matrix [20], where x is called a neighbor of y whenever ⟨x|B|y⟩ = 1. All n candidate neighbors of a vertex y are obtained by flipping exactly one of the n
+
+bits in the binary expansion of y, since B has a non-zero entry only if Ham (x, y) = 1. The operation that flips the 
+
+j-th qubit, denoted n j(y), is defined by 
+
+n j(y) = n j(y1y2 . . . yn) = y1y2 . . . y j−1(y j ⊕ 1) y j+1 . . . yn.
+
+(10) We refer to n j(y) as the j-th potential neighbor of y,since it constitutes an actual neighbor only in the case where ⟨n j(y)|B|y⟩ = 1. The following steps require a way to check the feasi-bility of a solution. Thus, we define a feasibility indica-tor function 
+
+χ f (y) =
+
+
+
+1 , when y represents a feasible solution 0 , otherwise .
+
+(11) The constrained hypercube operator B (Eq. (8)) can be rewritten using the indicator function as 
+
+B|y⟩x =
+
+> n
+
+X
+
+> j=1
+
+χ f (n j(y)) |n j(y)⟩x =
+
+> n
+
+X
+
+> j=1
+
+Bj|y⟩x , (12) where 
+
+Bj|y⟩x = χ f (n j(y)) |n j(y)⟩x. (13) Every operator Bj is Hermitian and transforms y into its j-th neighbor only if it is a feasible solution, i.e., an actual neighbor. Given that, the constrained hypercube mixing opera-tor UB (Eq. (9)) can be approximated using a second-order Trotter formula [21] 
+
+UB(β) ≈
+
+
+
+UB1
+
+ β
+
+2r
+
+
+
+. . . UBn
+
+ β
+
+2r
+
+
+
+UBn
+
+ β
+
+2r
+
+
+
+. . . UB1
+
+ β
+
+2r
+
+ r
+
+,
+
+(14) where 
+
+UBj (β) = e−iβBj . (15) Each unitary operator UBj (Eq. (15)) is obtained by exponentiating the Hermitian operator Bj (Eq. (13)), which can be rewritten as 
+
+Bj|y⟩x = χ f (n j(y)) |n j(y)⟩x = χ f (n j(y)) X j|y⟩x ==
+
+
+
+X j|y⟩x , χ f (n j(y)) = 10 , χ f (n j(y)) = 0, (16) where X j is the Pauli X operator applied to the j-th qubit in the register xX j|y⟩x = I⊗( j−1) ⊗ X ⊗ I⊗(n− j)|y1y2 . . . yn⟩x == |y1y2 . . . y j ⊕ 1 . . . yn⟩x == |n j(y)⟩x
+
+(17) Then 
+
+UBj (β)|y⟩x = e−iβBj |y⟩x == e−iχ f (n j(y)) βX j |y⟩x ==
+
+
+
+e−iβX j |y⟩x , χ f (n j(y)) = 1
+
+I|y⟩x , χ f (n j(y)) = 0, (18) which is equivalent to applying the standard j-th qubit rotation about the X-axis of the Bloch sphere [22] 
+
+RX j(2 β)|y⟩x = e−iβX j |y⟩x == I⊗( j−1) ⊗ e−iβX ⊗ I⊗(n− j)|y1y2 . . . yn⟩x == I⊗( j−1) ⊗ RX (2 β) ⊗ I⊗(n− j)|y1y2 . . . yn⟩x,
+
+(19) when χ f (n j(y)) = 1. The conditional application of op-erator RX j (Eq. (19)) in UBj (18) can be achieved by checking the feasibility of j-th potential neighbor and setting flag qubits to appropriate states that are then used as control qubits of the RX j operator. It is important to emphasize that the modified hy-percube operator is not applicable to all types of con-straints. This limitation becomes clear if we interpret 3the operator B as the adjacency matrix of a graph whose vertices represent feasible solutions. When UB is ap-plied to a superposition of feasible solutions, the result-ing state will only include those feasible solutions that are connected by paths in the graph defined by B [20]. If the constraints induce a graph in which not every pair of feasible solutions is connected by a path, then no ampli-tude transfer can occur between such disconnected solu-tions, potentially preventing the optimization algorithm from finding a high-quality solution [16]. Nevertheless, there exists a broad class of problems and constraint structures for which a constrained hypercube operator remains suitable [16, 23]. 
+
+2.4. Quantum noise 
+
+All existing quantum hardware is a ff ected by quan-tum noise. By modeling this noise, we can simulate such conditions. Among the most frequently encoun-tered noise types are phase damping, amplitude damp-ing, and depolarization [24, 25]. In this work, we ne-glect the State Preparation And Measurement (SPAM) errors, as they influence all the methods discussed here in the same manner. 
+
+3. Standard implementation 
+
+In Sec. 2.3, we outlined a general construction method of the constrained hypercube mixing operator. This section provides a detailed description of the stan-dard implementation of UB (see Eq. (9)), based on [16]. The overall circuit for the constrained hypercube mixing operator is shown in Fig. 1a. The register x is prepared in the state |ψ⟩, which represents a superposi-tion of feasible solutions. The auxiliary flag register f ,and the constraint register l are both initialized in state 
+
+|0⟩. According to Eq. (14), the operator UB is then ap-proximated by a product of operators UBj , each defined in Eq. (18). The circuit in Fig. 1b illustrates a standard realiza-tion of UBj . For simplicity, let y represent an arbi-trary feasible solution selected from the superposition 
+
+|ψ⟩ stored in the register x. First, the j-th potential neighbor of y is computed. Next, its feasibility is eval-uated using Eq. (11), and the resulting flags are stored for conditional application of the RX j operator defined in Eq. (19). Consequently, the operator UBj can be fac-tored into three components: 
+
+UBj (β) = N†
+
+> j
+
+hRX j(2 β)i f =a
+
+N j , (20) where N j denotes the neighbor-feasibility oracle. For a given value y stored in register x, the oracle sets a collection of flags in register f that can be viewed as a binary number. Whenever this number matches a, the j-th neighbor of y is a feasible solution, that is, χ f (n j(y)) =
+
+1. More formally, the action of N j on the registers can be expressed as 
+
+N j|y⟩x|0⟩l|k⟩ f = |y⟩x|0⟩l|k ⊕ v(n j(y)) ⟩ f , (21) where 
+
+v : {0, 1}n −→ { 0, 1}n f
+
+v(y) =
+
+
+
+a χ f (y) = 1any other value χ f (y) = 0(22) and n f ∈ N s.t. n f ≥ 1 is the number of flags used. The operator N j can be constructed by applying the follow-ing sequence of operators 
+
+N j = X jVX j , (23) where X j (see Eq. (17)) is used to transform y into its 
+
+j-th potential neighbor n j(y) (see Eq. (10)) and V is a quantum oracle for the validation function v (Eq. (22)) that acts as a feasibility indicator (Eq. (11)) in Eq. (18). The action of the oracle V can therefore be expressed as 
+
+V|y⟩x|0⟩l|k⟩ f = |y⟩x|0⟩l|k ⊕ v(y)⟩ f . (24) The second application of X j is used to restore the value 
+
+y in the register x.The above discussion did not rely on any particular structure of the constraints. However, implementing the oracle V requires us to concentrate on a specific class of constraints. In the remainder of this work, we limit ourselves to validation functions that, as part of their procedure, evaluate a linear function 
+
+l(y) =
+
+> n
+
+X
+
+> k=1
+
+lkyk ∀klk , 0, (25) Thus, v operates in two stages: computes the linear function l(y), and then uses this value to perform the feasibility check. Consequently, the validation function 
+
+v(y) can be expressed with the help of an auxiliary func-tion c(y, l(y)) with the same codomain as v as 
+
+v(y) = c(y, l(y)) . (26) An example of a function c is to compare l(y) with fixed upper and lower bounds, which is equivalent to a linear inequality constraint. Because the operator V is a quantum oracle for the validation function v, it can be expressed as 
+
+V = L†CL , (27) 4UB (β)
+
+# . . . . . . 
+
+# . . . . . . 
+
+# . . . . . . 
+
+# |ψ⟩x
+
+# UB0
+
+# ( β
+
+2
+
+# )
+
+# UBn
+
+# ( β
+
+2
+
+# )
+
+# UBn
+
+# ( β
+
+2
+
+# )
+
+# UB0
+
+# ( β
+
+2
+
+# )
+
+# |0⟩l
+
+# |0⟩f(a) Check j-th neighbor feasibility - Nj
+
+Validation oracle - V        
+
+> f=a
+> n
+> nl
+> nf
+> |ψ⟩xXj
+> L
+> C
+> L†
+> XjRX j
+> N†
+> j|0⟩l
+> |0⟩f
+> ynj(y)
+
+Find j-th neighbor               
+
+> nj(y)nj(y)nj(y)nj(y)nj(y)nj(y)nj(y)y
+
+Restore y            
+
+> 0l(nj(y)) l(nj(y)) l(nj(y)) l(nj(y)) 0
+> 0c(nj(y), l (nj(y)))
+> (b)
+
+Figure 1: (a) The overview of the circuit for constrained hypercube mixing operator UB (see Eq. (14)) when r = 1 is used in approximation. (b) The standard implementation of operator UB j (see Eq. (30)), where n is the number of binary variables, nl is the number of qubits to calculate linear function and n f is the number of flags used to control RX j operator. 
+
+where L computes a function l(y) for y in the register x
+
+and adds it to the register l, i.e., 
+
+L|y⟩x|p⟩l = |y⟩x|p + l(y)⟩l (28) and C uses values in the registers x and l to check the feasibility of the solution by setting flags in the register 
+
+f , i.e. 
+
+C|y⟩x|p⟩l|k⟩ f = |y⟩x|p⟩l|k ⊕ c(y, p)⟩ f . (29) Finally, by expanding the neighbor-feasibility oracle given by Eq. (23) with the feasibility oracle given by Eq. (27) into UBj (see Eq. (20)), and using the fact that 
+
+X j and V (see Eq. (17) and Eq. (24), respectively) are Hermitian, we can express UBj as 
+
+UBj (β) = N†
+
+> j
+
+hRX j(2 β)i f =a
+
+N j == X jVX j
+
+hRX j(2 β)i f =a
+
+X jVX j == X j L†CLX j
+
+hRX j(2 β)i f =a
+
+X j L†CLX j.
+
+(30) and the standard implementation of the constrained hy-percube operator UB is given by Eq. (14). 
+
+4. Modified circuit 
+
+From the detailed analysis of the standard imple-mentation (see Fig. 1), one can infer that, in terms of gate count, the validation oracle V constitutes the largest component of the circuit built using the standard method, as expressed in Eq. (14). Each UBj involves two calls to the oracle V, resulting in a total of approx-imately 4 nr queries for the full operator UB, where r
+
+denotes the number of iterations in the Trotter formula and n is the number of binary variables (as in Sec. 2.3). Consequently, an e ffi cient realization of the oracle V is essential for the overall performance of the circuit. From the definition of the constrained hypercube op-erator (Sec. 2.3), it follows that the state |y⟩x can only be mapped to |n j(y)⟩x or a superposition of these two 5states. Each such transformation modifies exactly one bit in the representation of y. Thus, the values of the linear function l(y) (Eq. (25)) for these states can di ff er only by the j-th coe ffi cient l j:
+
+|l(y) − l(n j(y)) | = |l j| . (31) This behavior can be exploited to shrink the circuit size in the standard implementation (Sec. 3). The standard constrained hypercube mixing operator UB
+
+(Eq. (14)) may be supplied with a superposition of states of the form |y⟩x|l(y)⟩l, in which the value l(y) has already been precomputed. In that case, the operators L and 
+
+L† (Eq. (28)) within the validation oracle V (Eq. (27)) can be omitted. However, whenever an operator X j or 
+
+RX j is applied to the x register, the precomputed value in the l register must be updated by adding and /or sub-tracting the j-th coe ffi cient l j so that the joint state of both registers can still be expressed as a superposition of states of the form |y⟩x|l(y)⟩l. The constrained hyper-cube mixing operator modified in this way is denoted by 
+
+UB′ . An overview of the circuit with this modification is provided in Fig. 2a, and the detailed construction of the operator UBj is shown in Fig. 2b. As stated above, the modification starts by replacing a validation oracle V with 
+
+V′ = C (32) where only C (Eq. (29)) is left and L is removed because 
+
+V′ will be provided with the precomputed value of l(y)in the register l. Its behavior is summarized as 
+
+V′|y⟩x|l(y)⟩l|k⟩ f = |y⟩x|l(y)⟩l|k ⊕ c(y, l(y)) ⟩ f , (33) where c is the same function as in the standard method (Eq. (26)). The operator X j in the neighbor-feasibility oracle (Eq. (23)) transforms y into n j(y), and therefore the value in the register l should also be updated from l(y)to l(n j(y)). This can be achieved by adding or removing 
+
+l j depending on the value of y j. Given operators 
+
+L(+) 
+
+> j
+
+|p⟩l = |p + l j⟩l
+
+L(−) 
+
+> j
+
+|p⟩l = |p − l j⟩l, (34) where l j is the j-th coe ffi cient of the linear function (Eq. (25)), the neighbor-feasibility oracle N j is replaced by 
+
+N′ 
+
+> j
+
+= X j
+
+hL(+)
+
+> j
+
+ix j=0 hL(−)
+
+> j
+
+ix j=1
+
+V′ hL(+)
+
+> j
+
+ix j=1 hL(−)
+
+> j
+
+ix j=0
+
+X j,
+
+(35) such that 
+
+N′
+
+> j
+
+|y⟩x|l(y)⟩l|k⟩ f = |y⟩x|l(y)⟩l|k ⊕ c(n j(y), l(n j(y))) ⟩ f .
+
+(36) Similarly, when the operator RX j is applied, a value in the register l must be updated because a value in the register x can change. It can be shown that replacing 
+
+hRX j
+
+i f =a
+
+(Eq. (20)) with 
+
+hL(+)
+
+> j
+
+ix j=1 hRX j(2 β)i f =a hL(−)
+
+> j
+
+ix j=1 (37) transforms the value in the register x in the same way, but also properly updates the value in the register l.In the end, the operator UBj (Eq. (20)) with the mod-ified neighbor-feasibility oracle (Eq. (35)) and the re-placement of the controlled RX j operator (Eq. (37)) yields 
+
+UB′j (β) = N′
+
+> j
+
+† hL(+)
+
+> j
+
+ix j=1 hRX j(2 β)i f =a hL(−)
+
+> j
+
+ix j=1
+
+N′ 
+
+> j
+
+.
+
+(38) The modified constrained hypercube mixing operator 
+
+UB′ is derived by replacing UBj with UB′j (Eq. (38)) in 
+
+UB (Eq. (14)) 
+
+UB′ (β) =
+
+
+
+UB′
+
+> 1
+
+ β
+
+2r
+
+
+
+. . . UB′
+
+> n
+
+ β
+
+2r
+
+
+
+UB′
+
+> n
+
+ β
+
+2r
+
+
+
+. . . UB′
+
+> 1
+
+ β
+
+2r
+
+ r
+
+.
+
+(39) It is important to note that the operator UB′ cannot be used directly as a replacement for the standard imple-mentation UB as it needs to be provided with precom-puted values of the linear function. This can be achieved by applying the operator L (Eq. (28)) before and its in-verse after: 
+
+L†UB′ (β)L. (40) 
+
+5. Extension for multiple linear functions 
+
+The standard implementation from Sec. 3 and the modified implementation from Sec. 4 both apply to set-tings with a single linear function. In this section, we describe how to extend each of these approaches to han-dle multiple linear functions. Suppose that the validation function (Eq. (26)) evalu-ates several linear functions instead of just one. This sit-uation arises in problems with multiple inequality con-straints. We distinguish two ways to implement this ex-tension: the parallel and sequential approaches. In the standard circuit, one can either evaluate the di ff erent lin-ear functions on separate registers ( in parallel ) and then use all of them jointly to verify the feasibility of a can-didate solution, or reuse a single register to compute the 6UB′ (β)
+
+. . . . . . 
+
+. . . . . . 
+
+. . . . . . 
+
+|ψ⟩x
+
+L
+
+UB′
+
+> 0
+
+( β
+
+> 2
+
+)
+
+UB′
+
+> n
+
+( β
+
+> 2
+
+)
+
+UB′
+
+> n
+
+( β
+
+> 2
+
+)
+
+UB′
+
+> 0
+
+( β
+
+> 2
+
+) L†
+
+|0⟩l
+
+|0⟩f      
+
+> yyyy
+> 0l(y)l(y)0(a)
+
+Check j-th neighbor feasibility - N ′
+
+> j
+> xj
+
+Calculate l(nj (y)) 
+
+> xj
+
+Validation oracle - V ′
+
+> xj
+
+Restore l(y) 
+
+> xjxj
+
+Apply RX j and keep value in l correct               
+
+> xj
+> f=a
+> n
+> nl
+> nf
+> |ψ⟩xXj
+> C′
+> XjRX j
+> (N′
+> j)†
+> |0⟩lL(−)
+> jL(+)
+> jL(−)
+> jL(+)
+> jL(−)
+> jL(+)
+> j
+> |0⟩f
+> ynj(y)
+
+Find j-th neighbor       
+
+> nj(y)nj(y)nj(y)y
+
+Restore y      
+
+> l(nj(y)) l(nj(y))
+> 0c(nj(y), l (nj(y)))
+> (b)
+
+Figure 2: (a) The overview of the circuit for the modified implementation of UB′ (Eq. (39)) when r = 1 is used in approximation. (b) The modified implementation of operator UB′j (Eq. (38)), where n is the number of binary variables, nl is the number of qubits to calculate linear function and n f
+
+is the number of flags used to control RX j operator. 
+
+linear functions one after another ( sequentially ), stor-ing intermediate results for use in the final feasibility check. The modified construction from Sec. 4, how-ever, admits only the parallel extension. This is because the value of each linear function is first computed at the start of the circuit (via the L operator in Fig. 2a) and then continuously updated throughout the computation (through the L(+) 
+
+> j
+
+and L(−) 
+
+> j
+
+operators in Fig. 2b). In the next part, we assume that there are nl lin-ear functions that are computed to check the feasibility, such that 
+
+li(y) =
+
+> n
+
+X
+
+> j=1
+
+(li) jy j, i ∈ { 1, . . . , nl} and ∀ j(li) j , 0.
+
+(41) 
+
+5.1. Sequential 
+
+The standard method can be extended to multiple lin-ear functions by reusing a register and computing each function sequentially. For readability, we mark opera-tors in this method by superscript ( s), e.g. O(s). Given operators that compute the value of the i-th linear func-tion 
+
+L(s) 
+
+> i
+
+|y⟩x|p⟩l = |y⟩x|p + li(y)⟩l (42) the validation oracle V (Eq. (27)) can be rewritten as 
+
+V(s) = L(s)
+
+> nl
+
+†
+
+C(s) 
+
+> nl
+
+L(s) 
+
+> nl
+
+. . . L(s)2
+
+†
+
+C(s)2 L(s)2
+
+L(s)1
+
+†
+
+C(s)1 L(s)1 ,
+
+(43) where each operator C(s) 
+
+> i
+
+might compute partial results and set flags in the register f using y, li(y) and all pre-vious partial results. In the end, the series of operators that make up V(s) must compute all flags in the register 
+
+f and uncompute all other intermediate results. Thus, 
+
+V(s) is a quantum oracle for some function v(s), defined in the same way as in Eq. (22), that checks feasibility by computing multiple linear functions and can use a di ff erent flag configuration 
+
+V(s)|y⟩x|0⟩l|k⟩ f = |y⟩x|0⟩l|k ⊕ v(s)(y)⟩ f . (44) It should be noted that to reduce the final circuit size, the pairs of operators L(s)
+
+> i
+
+L(s)
+
+> i−1
+
+†
+
+can be merged, because both operators add or subtract values of linear functions in the same register. Therefore, they can be treated as one linear function with a coe ffi cient equal to the dif-ference between the coe ffi cients of individual functions (li) j − (li−1) j. This fact is important for the analysis of circuit sizes in Sec. 6. The standard constrained hypercube mixing operator 7(Eq. (14)) with this modification applied yields 
+
+U(s) 
+
+> B
+
+(β) =
+
+
+
+U(s)
+
+> B1
+
+ β
+
+2r
+
+
+
+. . . U(s)
+
+> Bn
+
+ β
+
+2r
+
+
+
+U(s)
+
+> Bn
+
+ β
+
+2r
+
+
+
+. . . U(s)
+
+> B1
+
+ β
+
+2r
+
+ r
+
+,
+
+(45) where 
+
+U(s) 
+
+> Bj
+
+(β) = X jV(s) X j
+
+hRX j(2 β)i f =as
+
+X jV(s) X j, (46) and as is a flag configuration used by v(s) (as a in Eq. (22)). 
+
+5.2. Parallel 
+
+Instead of reusing the same register, all linear func-tions can be computed using separate registers for each. For readability, we mark operators in this method by su-perscript ( p), e.g. O(p). Then, feasibility can be checked using the function v(p), defined as in Eq. (22), but which computes multiple linear functions and can use a di ff er-ent flag configuration. It can be expressed using an aux-iliary function c(p), which is provided with the values of all linear functions to check feasibility (as in Eq. (26)), as 
+
+v(p)(y) = c(p)(y, l1(y), . . . , lnl (y)) (47) with a quantum oracle for c(p) given by 
+
+C(p)|y⟩x|p1⟩l1 . . . |pnl ⟩lnl |k⟩ f =|y⟩x|p1⟩l1 . . . |pnl ⟩lnl ⊗⊗ | k ⊕ c(p)(y, p1, . . . , pnl )⟩ f .
+
+(48) Additionally, each linear function has an analog of op-erator L (Eq. (28)) to calculate its value in a separate register 
+
+L(p) 
+
+> i
+
+|y⟩x|p⟩li = |y⟩x|p + li(y)⟩li . (49) In the following subsections, we describe in detail the parallel approach applied to standard and modified methods, respectively. 
+
+5.2.1. Standard method 
+
+The standard method is extended by substituting each 
+
+L (Eq. (28)) in an element UBj (Eq. (30)) of the standard constrained hypercube mixing operator (Eq. (14)) with a series of operators L(p) 
+
+> i
+
+for each linear function and replacing C (Eq. (29)) with C(p) (Eq. (48)). Therefore, only the validation oracle V must be changed 
+
+V(p) = L(p)1
+
+†
+
+. . . L(p)
+
+> nl
+
+†
+
+C(p) L(p) 
+
+> nl
+
+. . . L(p)1 . (50) This yields a new mixing operator 
+
+U(p) 
+
+> B
+
+(β) =
+
+
+
+U(p)
+
+> B1
+
+ β
+
+2r
+
+
+
+. . . U(p)
+
+> Bn
+
+ β
+
+2r
+
+
+
+U(p)
+
+> Bn
+
+ β
+
+2r
+
+
+
+. . . U(p)
+
+> B1
+
+ β
+
+2r
+
+ r
+
+,
+
+(51) where 
+
+U(p) 
+
+> Bj
+
+(β) = X jV(p) X j
+
+hRX j(2 β)i f =ap
+
+X jV(p) X j, (52) and ap is a flag configuration used by v(p) (as a in Eq. (22)). 
+
+5.2.2. Modified method 
+
+In the modified method, a quantum oracle V′
+
+(Eq. (33)) is provided with the precomputed value of a linear function. In a case of multiple linear functions, the values of all linear functions are provided in the reg-isters l1, . . . , lnl . Therefore, a quantum oracle V′ is re-placed with V′(p) that uses a new operator C(p) (Eq. (48)) 
+
+V′(p) = C(p). (53) The modified method requires additional operators sim-ilar to L(+) 
+
+> j
+
+and L(−) 
+
+> j
+
+(Eq. (34)) for each linear function 
+
+li
+
+L(p+)  
+
+> i,j
+
+|p⟩li = |p + (li) j⟩li
+
+L(p−)  
+
+> i,j
+
+|p⟩li = |p − (li) j⟩li . (54) Each operator L, L†, L(+) 
+
+> j
+
+, and L(−) 
+
+> j
+
+in UB′j (Eq. (38)) must be replaced with the series of corresponding oper-ators for every linear function. Therefore, the neighbor-feasibility oracle N′ 
+
+> j
+
+(Eq. (35)) is transformed as 
+
+N′(p) 
+
+> j
+
+= X j
+
+hL(p−)1, j
+
+ix j=1 hL(p+)1, j
+
+ix j=0
+
+. . . . . . hL(p−) 
+
+> nl,j
+
+ix j=1 hL(p+) 
+
+> nl,j
+
+ix j=0
+
+V′(p) hL(p+) 
+
+> nl,j
+
+ix j=1 hL(p−) 
+
+> nl,j
+
+ix j=0
+
+. . . . . . hL(p+)1, j
+
+ix j=1 hL(p−)1, j
+
+ix j=0
+
+X j
+
+(55) and the operator RX j (Eq. (37)) is replaced by 
+
+hL(p+)1, j
+
+ix j=1
+
+. . . hL(p+) 
+
+> nl,j
+
+ix j=1
+
+hRX j(2 β)i f =ap
+
+hL(p−) 
+
+> nl,j
+
+ix j=1
+
+. . . hL(p−)1, j
+
+ix j=1
+
+. (56) Substituting the modified neighbor-feasibility oracle (Eq. (55)) and the replacement of the RX j operator 8(Eq. (56)) into the modified constrained hypercube mix-ing operator UB′j (Eq. (39)) yields 
+
+U(p) 
+
+> B′
+
+(β) =
+
+
+
+U(p)
+
+> B′
+> 1
+
+ β
+
+2r
+
+
+
+. . . U(p)
+
+> B′
+> n
+
+ β
+
+2r
+
+
+
+U(p)
+
+> B′
+> n
+
+ β
+
+2r
+
+
+
+. . . U(p)
+
+> B′
+> 1
+
+ β
+
+2r
+
+ r
+
+,
+
+(57) where 
+
+U(p)
+
+> B′j
+
+(β) = N′(p)
+
+> j
+
+hRX j(2 β)i f =ap
+
+N′(p) 
+
+> j
+
+, (58) and ap is a flag configuration used by v(p) (as a in Eq. (22)). As in the case of one linear function (Eq. (40)), to replace the standard method, it must be surrounded by the operators calculating the values of all linear functions 
+
+L† 
+
+> 1
+
+. . . (Lnl )†U(p) 
+
+> B′
+
+(β)Lnl . . . L1. (59) 
+
+6. Circuit size analysis 
+
+This section establishes an upper bound on the num-ber of binary variables n (as in Sec. 2.3) for which the standard method produces circuits with fewer gates than the modified method. This is accomplished by compar-ing the circuit sizes generated by the modified method with those produced by either approach to the standard method. For that purpose, we define the function G that takes an operator, specifically an element of the set M2m,2m of all square matrices of size 2 m, and returns the size of the circuit that implements this operator, that is, the number of basic gates used, 
+
+G : M2m,2m (C) −→ N. (60) The circuit sizes for all methods will be expressed us-ing the values of the function G for a set of operators. To enable direct comparison, we will find relationships between the values of the function G for di ff erent oper-ators. We begin by presenting selected identities and es-timates employed in the subsequent analysis. Firstly, both operators L(s) 
+
+> i
+
+(Eq. (42)) and L(p) 
+
+> i
+
+(Eq. (49)) for the 
+
+i-th linear function perform the same operation just on di ff erent registers, thus 
+
+G L(s)
+
+> i
+
+ = G L(p)
+
+> i
+
+. (61) It is important to note that to perform in-place arith-metic operations, such as L(p) 
+
+> i
+
+, we have applied the quantum Fourier transform (QFT) [26, 27], a technique commonly used in other algorithms, such as the fast multiplication method employed in the Shor factoriza-tion algorithm [28, 29]. Therefore, when a constrained hypercube operator is generated for n variables, the op-erator L(p) 
+
+> i
+
+must transform the register into a QFT basis and then perform n conditional additions, so it consists of n controlled operators L(p+)  
+
+> i,j
+
+each being the series of the same number of rotation operations around the z axis in the Bloch sphere. As a result, the number of gates re-quired to implement L(p) 
+
+> i
+
+must be at least equal to the number of gates needed to implement n copies of the operator hL(p+) 
+
+> i,j
+
+ix j=1
+
+, i.e., 
+
+G L(p)
+
+> i
+
+ ≥ nG 
+
+h L(p+) 
+
+> i,j
+
+ix j=1
+
+. (62) Moreover, the inverse of L(p) 
+
+> i
+
+consists of the n con-trolled operators L(p−)  
+
+> i,j
+
+and the transformation back from QFT to computational basis. Each operator L(p−)  
+
+> i,j
+
+has identical structure as L(p+)  
+
+> i,j
+
+, but with the rotation angles negated. This means that the sizes of those operators are the same 
+
+G L(p−) 
+
+> i,j
+
+ = G L(p+) 
+
+> i,j
+
+ ,
+
+G L(p)
+
+> i
+
+ = G
+
+ L(p)
+
+> i
+
+†
+
+. (63) Using the above derivations, we can connect the size of operators used by di ff erent methods through 
+
+G L(s)
+
+> i
+
+ = G
+
+ L(s)
+
+> i
+
+†
+
+== G L(p)
+
+> i
+
+ = G
+
+ L(p)
+
+> i
+
+†
+
+≥≥ nG 
+
+h L(p+) 
+
+> i,j
+
+ix j=1
+
+.
+
+(64) 
+
+6.1. Sequential approach to the standard method 
+
+To estimate the lower bound on the number of gates required to implement U(s) 
+
+> B
+
+, we start with its definition given by Eq. (45). The size of a circuit can be expressed as 
+
+G U(s)
+
+> B
+
+ = 2nrG U(s)
+
+> Bj
+
+ . (65) where n represents the number of binary variables (as in Sec. 2.3) and r is a number of iterations in the approx-imation (Eq. (45)). Then, each operator U(s) 
+
+> Bj
+
+(Eq. (46)) can be expanded to yield 
+
+G U(s)
+
+> B
+
+ = 2nr 
+
+
+
+4G(X j) + 2G V(s) + G
+
+h RX j
+
+i f =as
+
+ 
+
+.
+
+(66) As mentioned in Sec. 5.1, the validation oracle V(s) (see Eq. (43)) contains pairs of L(s)
+
+> i+1
+
+L(s)
+
+> i
+
+†
+
+operators that 9subtract li(y) and add li+1(y) to the register l. In a case where both operate on the same number of qubits, be-cause addition is performed in the QFT basis, they have identical structures but di ff erent rotation angles. There-fore, it can be treated as a new linear function and per-formed using just one operator with a structure identical to L(s) 
+
+> i+1
+
+or L(s)
+
+> i
+
+†
+
+, such that 
+
+G
+
+
+
+L(s)
+
+> i+1
+
+L(s)
+
+> i
+
+†
+
+≥ G L(s)
+
+> i+1
+
+ . (67) Additionally, because C(p) (Eq. (48)) from validation oracle V(p) (Eq. (50)) in the parallel approach to the standard method has access to the values of all linear functions li it can be implemented with fewer gates and flags to control the operator RX j than the series of op-erators C(s) 
+
+> i
+
+in V(s) passing information between them-selves. Therefore, in the best case scenario for a sequen-tial version, the number of gates required to implement all C(s) 
+
+> i
+
+is the same as C(p) and RX j can be controlled by the same number of flags 
+
+G(C1) + · · · + G(Cnl ) ≥ G C(p) ,
+
+G
+
+h RX j
+
+i f =as
+
+
+
+≥ G
+
+h RX j
+
+i f =ap
+
+
+
+, (68) where ap is a flag configuration used in a parallel ap-proach (Eq. (58)) which can be di ff erent from a condi-tion as used in a sequential approach. Therefore, the size of operator V(s) can be estimated using the esti-mate on the cost of operators pairs L(s)
+
+> i+1
+
+L(s)
+
+> i
+
+†
+
+, given by Eq. (67), and the estimate on the series of operators 
+
+Ci, given by Eq. (68). Applying these results, the size of operator V(s) has a lower-bound of 
+
+G V(s) ≥ G C(p) + G L(s)
+
+> nl
+
+ +
+
+> nl
+
+X
+
+> i=1
+
+G L(s)
+
+> i
+
+
+
+≥ G C(p) +
+
+> nl
+
+X
+
+> i=1
+
+G L(s)
+
+> i
+
+ ,
+
+(69) where nl is the number of linear functions. We can now derive an estimate for the full operator given by Eq. (66) using the validation oracle estimate (Eq. (69)) and replacing L(s)
+
+> i
+
+†
+
+with L(s) 
+
+> i
+
+through the identity expressed in Eq. (64) 
+
+G U(s)
+
+> B
+
+ ≥ 2nr 
+
+"
+
+4G(X j) + 2G C(p)
+
++ 2
+
+> nl
+
+X
+
+> i=1
+
+G L(s)
+
+> i
+
+ + G
+
+h RX j
+
+i f =ap
+
+# 
+
+.
+
+(70) 
+
+6.2. Parallel approach to the standard method 
+
+Following similar steps as for the sequential approach to the standard method in Sec. 6.1, we derive an estimate for the parallel approach. The number of gates required for parallel implementation of operator U(p) 
+
+> B
+
+can be ex-pressed using its decomposition in terms of the opera-tors U(p) 
+
+> Bj
+
+(see Eq. (51)), as 
+
+G(U(p) 
+
+> B
+
+) = 2nrG (U(p) 
+
+> Bj
+
+). (71) Then, each operator U(p) 
+
+> Bj
+
+(Eq. (52)) is expanded 
+
+G(U(p) 
+
+> B
+
+) = 2nr 
+
+"
+
+4G(X j) + 2G V(p) + G
+
+h RX j
+
+i f =ap
+
+# 
+
+.
+
+(72) Using the composition of V(p) (see Eq. (50)) and replac-ing L(p)
+
+> i
+
+†
+
+using Eq. (64), the size of the circuit can be expressed as 
+
+G(U(p) 
+
+> B
+
+) = 2nr 
+
+"
+
+4G(X j) + 2G C(p)
+
++ 4
+
+> nl
+
+X
+
+> i=1
+
+G L(p)
+
+> i
+
+ + G
+
+h RX j
+
+i f =ap
+
+# (73) where nl is the number of linear functions. 
+
+6.3. Parallel approach to the modified method 
+
+To estimate the number of gates required to imple-ment the modified constrained hypercube operator U(p)
+
+> B′
+
+(Eq. (57)), we proceed as in the case of the parallel ap-proach to the standard method in Sec. 6.2. We begin by expressing the size using its decomposition in terms of 
+
+U(p)
+
+> B′j
+
+G(U(p) 
+
+> B′
+
+) = 2nrG (U(p)
+
+> B′j
+
+). (74) Then, each operator U(p)
+
+> B′j
+
+(Eq. (58)) is expanded 
+
+G(U(p) 
+
+> B′
+
+) = 2nr 
+
+"
+
+2G N′(p)
+
+> j
+
+ + G
+
+h RX j
+
+i f =ap
+
+
+
++ 2
+
+> nl
+
+X
+
+> i=1
+
+G
+
+h L(p+) 
+
+> i,j
+
+ix j=1# 
+
+,
+
+(75) where the fact that operators control qubit x j = 0 can be replaced with x j = 1 by moving them before or after X j
+
+(Fig. 2b) and the identity in Eq. (63) were used. Using 10 the composition of N′(p) 
+
+> j
+
+(see Eq. (55)) and using the identity for L(p)
+
+> i
+
+†
+
+(Eq. (64)) we get 
+
+G(U(p) 
+
+> B′
+
+) = 2nr 
+
+"
+
+4G X j
+
+ + 2G V′(p)
+
++ 10 
+
+> nl
+
+X
+
+> i=1
+
+G
+
+h L(p+) 
+
+> i,j
+
+ix j=1
+
++ G
+
+h RX j
+
+i f =ap
+
+# 
+
+.
+
+(76) Finally, expanding V(p) (Eq. (53)) yields 
+
+G(U(p) 
+
+> B′
+
+) = 2nr 
+
+"
+
+4G X j
+
+ + 2G C(p)
+
++ 10 
+
+> nl
+
+X
+
+> i=1
+
+G
+
+h L(p+) 
+
+> i,j
+
+ix j=1
+
++ G
+
+h RX j
+
+i f =ap
+
+# 
+
+.
+
+(77) The total cost of the modified method must include the computation of linear functions; thus, 
+
+G(U(p) 
+
+> B′
+
+) + 2
+
+> nl
+
+X
+
+> i=1
+
+G L(p)
+
+> i
+
+ . (78) 
+
+6.4. Condition for the guaranteed circuit size reduction 
+
+In this subsection, we derive an upper bound on the number of binary variables n (as in Sec. 2.3) for which the standard method (either approach) yields a circuit with fewer gates. The bound is found by comparing the number of gates in the modified method with the lower-bound estimates of both approaches to the stan-dard method. Therefore, the results obtained represent the worst-case scenario for our method. Furthermore, a direct comparison of the two implementations of the standard method is not feasible, as the assumptions used in their derivation may not hold simultaneously. Conse-quently, the standard implementation with a lower min-imum gate count does not necessarily yield a smaller circuit size for a given instance. For this reason, we es-tablish an upper bound on the advantage of both imple-mentations of the standard method against our modified method. We start with a comparison between the sequential standard method (Eq. (70)) and the modified method (Eq. (78)) 
+
+G U(p)
+
+> B′
+
+ + 2
+
+> nl
+
+X
+
+> i=1
+
+G L(p)
+
+> i
+
+ ≥ G U(s)
+
+> B
+
+. (79) Substituting for G U(s)
+
+> B
+
+ (Eq. (70)) and G U(p)
+
+> B′
+
+
+
+(Eq. (77)), inequality (79) can be expressed as 2nr 
+
+4G X j
+
+ + 2G C(p) + 10 
+
+> nl
+
+X
+
+> i=1
+
+G
+
+h L(p+) 
+
+> i,j
+
+ix j=1
+
++ G
+
+h RX j
+
+i f =ap
+
+ + 2
+
+> nl
+
+X
+
+> i=1
+
+G L(p)
+
+> i
+
+ ≥≥ 2nr 
+
+4G(X j) + 2G C(p) + 2
+
+> nl
+
+X
+
+> i=1
+
+G(L(s) 
+
+> i
+
+) + G
+
+h RX j
+
+i f =ap
+
+ .
+
+(80) By reducing identical terms on both sides of the in-equality, it becomes 20 nr 
+
+> nl
+
+X
+
+> i=1
+
+G
+
+h L(p+) 
+
+> i,j
+
+ix j=1
+
++ 2
+
+> nl
+
+X
+
+> i=1
+
+G L(p)
+
+> j
+
+ ≥≥ 4nr 
+
+> nl
+
+X
+
+> i=1
+
+G L(s)
+
+> i
+
+ (81) which by using the identity for L(s) 
+
+> j
+
+(Eq. (64)) further simplifies to 20 nr 
+
+> nl
+
+X
+
+> i=1
+
+G
+
+h L(p+) 
+
+> i,j
+
+ix j=1
+
+≥ (4 nr − 2) 
+
+> nl
+
+X
+
+> i=1
+
+G L(p)
+
+> i
+
+ . (82) Finally, using an estimate for L(p) 
+
+> i
+
+(Eq. (64)) the inequal-ity (82) implies that 20 nr ≥ (4 nr − 2) n, (83) and because n is the number of binary variables, i.e., 
+
+n ∈ N and n ≥ 1, it simplifies to 
+
+n ≤ 10 r + 12r = 5 + 12r (84) Here, r represents the number of approximation itera-tions in Eq. (14). Consequently, it also must be a pos-itive integer, i.e., r ∈ N and r ≥ 1. Under these con-ditions, because the right-hand side of the inequality in 11 Eq. (84) is a decreasing function of r, it implies that 
+
+n ≤ 5 + 12 . (85) Therefore, only for 
+
+n ≤ 5 (86) the sequential approach to the standard method can pro-duce a circuit that uses fewer gates than the modified method. This bound is valid for any number of approx-imation iterations r and for any number of linear func-tions nl.The upper bound on the number of binary variables 
+
+n for which the modified method, given by Eq. (78), requires more gates than the parallel standard method, given by Eq. (73), can be obtained by substituting the corresponding formulas into the inequality 
+
+G U(p)
+
+> B′
+
+ + 2
+
+> nl
+
+X
+
+> i=1
+
+G L(p)
+
+> i
+
+ ≥ G U(p)
+
+> B
+
+. (87) By performing steps analogous to those for the bound corresponding to the sequential approach, given by Eq. (86), one can obtain 
+
+n ≤ 20 r + 28r = 2.5 + 14r . (88) Again, the right-hand side of the inequality in Eq. (88) is a decreasing function of r, which implies that for r ≥ 1
+
+n ≤ 2.5 + 14 . (89) Therefore, only for 
+
+n ≤ 2 (90) the parallel approach to the standard method can pro-duce a circuit that uses fewer gates than the modified method. The upper bound on the number of binary variables for which the modified method might require more gates than the sequential approach to the standard method is 
+
+n = 5, and the upper bound for the parallel approach is n = 2, as given by Eqs. (86) and (90), respectively. This implies that for n ≥ 6, the modified method pro-posed in this work always requires fewer gates than the standard method. It is important to recall, however, that the derivations were based on the most favorable as-sumptions for the approaches to the standard method. In practice, this means that the modified method may require fewer gates even for a smaller problem size. An experimental analysis of this issue is presented in Sec. 7. 
+
+7. Experiments 
+
+The analysis in Sec. 6 demonstrated that when the number of binary variables n (as in Sec. 2.3) exceeds 6, the circuit implementing the modified method is smaller in size than the standard implementations of the con-strained hypercube operator. However, for fewer than 6 variables, it is still possible that the modified method produces circuits with fewer gates. Additionally, gate count and circuit depth significantly a ff ect noise resis-tance [17–19]. Therefore, we suspect that the modified circuit might exhibit enhanced noise robustness. To ver-ify these propositions, circuits were generated for sam-ple problems to compare sizes and their accuracy in a noisy environment. 
+
+7.1. Setup 
+
+In this paper, we focused on constraints that are de-fined by linear functions, but we did not restrict our-selves to any particular form. As shown in Sec. 6, the upper bound was calculated for a general case of con-straints defined by linear functions and as such does not depend on our particular choice. To ensure that the re-quirements of our method (Eq. (41)) are met and that the generated constrained hypercube operator is capa-ble of searching the entirety of the solution space, we have decided to focus on the constraints [23]: 
+
+a ≤
+
+> n
+
+X
+
+> i=1
+
+liyi ≤ b s.t. ∀ili > 0 and b − a ≥ 2 max  
+
+> i
+
+li.
+
+(91) The upper bound calculated in Sec. 6 does depend only on the number of binary variables n (as in Sec. 2.3). Thus, when n ≥ 6, we can guarantee that the modified method produces circuits with fewer gates. The number of constraints and their weights do not a ff ect the upper bound. However, they may reduce the actual di ff erence in the number of gates or increase the circuit’s width and depth, thereby a ff ecting noise robustness. Therefore, a range of problems that yield circuits with di ff erent widths, depths, and gate counts was selected by vary-ing the number of variables, constraints, and weights. The actual problems employed in the experiments are displayed in the Tab. 1. The experiment set comprises six problems with one constraint and four with two con-straints. For a given number of variables, n, and a given number of constraints, a pair of problems has been cre-ated to generate circuits with di ff erent widths, the nar-rower one being indicated by ‘n’ and the wider one by ‘w’. Experiments with a higher number of constraints or variables were not feasible due to excessive resource 12 Table 1: Problem instances used in experiments 
+
+# Constraint Number of Circuit width Modified Standard Standard binary variables ( n) (parallel) (sequential) 1n 1 ≤ 2x0 + 3x1 + 2x2 + 1x3 ≤ 7 4 11 1w 4 ≤ 9x0 + 6x1 + 8x2 + 3x3 ≤ 22 4 12 2n 1 ≤ 2x0 + 3x1 + 2x2 + 1x3 + 4x4 ≤ 9 5 12 2w 7 ≤ 12 x0 + 8x1 + 3x2 + 15 x3 + 6x4 ≤ 37 5 14 3n 3 ≤ 2x0 + 3x1 + 2x2 + 1x3 + 4x4 + 1x5 ≤ 11 6 13 3w 4 ≤ 7x0 + 5x1 + 3x2 + 8x3 + 6x4 + 1x5 ≤ 20 6 14 4n 
+
+
+
+0 ≤ 1x0 + 1x1 + 1x2 ≤ 22 ≤ 2x0 + 1x1 + 2x2 ≤ 6 3 13 11 4w 
+
+
+
+2 ≤ 3x0 + 2x1 + 1x2 ≤ 82 ≤ 2x0 + 1x1 + 2x2 ≤ 6 3 14 12 5n 
+
+
+
+0 ≤ 1x0 + 1x1 + 1x2 + 1x3 ≤ 32 ≤ 2x0 + 1x1 + 2x2 + 1x3 ≤ 6 4 14 12 5w 
+
+
+
+3 ≤ 1x0 + 2x1 + 3x2 + 4x3 ≤ 11 2 ≤ 2x0 + 1x1 + 2x2 + 1x3 ≤ 6 4 15 13 
+
+requirements, particularly for the noise model simula-tion. To simulate a noisy environment, models that mirror the most impactful type of noise in real hardware have been selected [24, 25], i.e., depolarizing channel and a combination of phase- and amplitude- damping chan-nels (see Sec. 2.4). The parameter ranges for each were selected to produce results a ff ected by noise, but not to the extent that they destroy all correlations. Thus, using a noise model based on real hardware was not viable as it produced random results. In both cases, a noisy channel is applied after each 1-qubit and 2-qubit gates on qubits that were acted upon. The depolarizing noise model is characterized by a sin-gle parameter, designated as p. In experimental stud-ies, the value of this parameter was selected from a set 
+
+{10 −6, 2·10 −6, . . . , 20 ·10 −6}. The phase- and amplitude-damping noise model is dependent on two parameters, 
+
+pa and pp. Both were set equal and selected from the same set used for the depolarizing channel. All methods described in this paper were executed for both noise models with selected parameters and for each problem instance in Tab.1. Furthermore, experi-ments were conducted with varying numbers of itera-tions, r = 3, 5, 7, in a Trotter formula (see Eq. (14)). For each problem, an initial state was chosen to be a superposition of all feasible solutions. The circuit con-sisted of a single constrained hypercube operator, im-plemented by a given method for a parameter value of 
+
+β = 3 (see Eq. (14)). The reference values have been calculated using an ideal circuit, employing an accu-rate numerical simulation based on the Pade approxi-mation [30] in a noiseless environment. To ascertain the degree of accuracy of a simulation, we have decided that the fidelity metric [31] 
+
+F(p, σ ) =
+
+
+
+tr 
+
+q √pσ √p
+
+2
+
+(92) would be employed between the final density matrix p
+
+obtained for each presented method and the density ma-trix σ obtained by the reference method. The experiments were conducted using Qiskit 1.3.1 [32] and Qiskit Aer 0.16.0. All tested circuits were transpiled to the basis gate set {RZ, SX, X, ECR}, with the third level of optimization provided by the Qiskit transpiler. The circuits were then executed on the Aer-Simulator using density matrix simulation in a specified noisy environment. The ideal circuit was created using the Qiskit HamiltonianGate 1 implementation and then simulated using AerSimulator in the absence of noise. 
+
+7.2. Results 
+
+The sizes of the circuits generated in all experiments are reported in Table 2. As shown, in every case the 
+
+> 1https://quantum.cloud.ibm.com/docs/en/api/ qiskit/qiskit.circuit.library.HamiltonianGate
+
+13 Table 2: The size of circuits for problems in Table 1. Underline, and green background denote the lowest value of a parameter for a given problem and the number of iterations r.
+
+r Problem Size Depth Modified Standard (par) Standard (seq) Modified Standard (par) Standard (seq) 31n 34072 40488 (19%) ↑ 15842 14162 (11%) ↓
+
+1w 46318 53936 (16%) ↑ 19079 17435 (9%) ↓
+
+2n 41313 54084 (31%) ↑ 19084 18033 (6%) ↓
+
+2w 77689 96627 (24%) ↑ 28324 25836 (9%) ↓
+
+3n 50385 71722 (42%) ↑ 23322 23344 3w 71287 99262 (39%) ↑ 29368 28519 (3%) ↓
+
+4n 35202 37132 (5%) ↑ 37110 (5%) ↑ 13991 10627 (24%) ↓ 15812 (13%) ↑
+
+4w 43399 45891 (6%) ↑ 52079 (20%) ↑ 16176 12541 (22%) ↓ 20903 (29%) ↑
+
+5n 41798 51405 (23%) ↑ 51407 (23%) ↑ 18871 15042 (20%) ↓ 20011 (6%) ↑
+
+5w 56858 67780 (19%) ↑ 76110 (34%) ↑ 21015 17364 (17%) ↓ 29124 (39%) ↑
+
+51n 56346 67312 (19%) ↑ 26258 23542 (10%) ↓
+
+1w 76668 89668 (17%) ↑ 31651 28983 (8%) ↓
+
+2n 68313 89908 (32%) ↑ 31616 29969 (5%) ↓
+
+2w 128681 160639 (25%) ↑ 47050 42938 (9%) ↓
+
+3n 83247 119206 (43%) ↑ 38594 38756 3w 117957 165038 (40%) ↑ 48702 47371 (3%) ↓
+
+4n 58156 61674 (6%) ↑ 61738 (6%) ↑ 23189 17667 (24%) ↓ 26308 (13%) ↑
+
+4w 71725 76217 (6%) ↑ 86631 (21%) ↑ 26818 20841 (22%) ↓ 34779 (30%) ↑
+
+5n 69002 85425 (24%) ↑ 85539 (24%) ↑ 31303 25022 (20%) ↓ 33303 (6%) ↑
+
+5w 94024 112660 (20%) ↑ 126654 (35%) ↑ 34869 28880 (17%) ↓ 48480 (39%) ↑
+
+71n 78676 94152 (20%) ↑ 36698 32894 (10%) ↓
+
+1w 107034 125376 (17%) ↑ 44207 40503 (8%) ↓
+
+2n 95383 125762 (32%) ↑ 44178 41877 (5%) ↓
+
+2w 179663 224721 (25%) ↑ 65726 60058 (9%) ↓
+
+3n 116193 166694 (43%) ↑ 53902 54140 3w 164631 230818 (40%) ↑ 67992 66195 (3%) ↓
+
+4n 81170 86236 (6%) ↑ 86366 (6%) ↑ 32405 24707 (24%) ↓ 36804 (14%) ↑
+
+4w 100111 106563 (6%) ↑ 121183 (21%) ↑ 37478 29141 (22%) ↓ 48655 (30%) ↑
+
+5n 96286 119485 (24%) ↑ 119671 (24%) ↑ 43759 35002 (20%) ↓ 46595 (6%) ↑
+
+5w 131270 157580 (20%) ↑ 177198 (35%) ↑ 48747 40396 (17%) ↓ 67836 (39%) ↑
+
+14 modified method produced circuits with fewer gates, al-though the upper bound was not exceeded (Sec. 6). The smallest di ff erence, approximately 5%–6%, is observed for problems 4n and 4w, which are characterized by the lowest number of binary variables n (Tab. 1). This be-havior is consistent with the analysis presented in Sec. 6, which demonstrated that the advantage of the proposed method arises from the fact that the values of a linear function can be computed using a constant number of 
+
+L(p+)  
+
+> i,j
+
+gates, rather than a number proportional to n. Con-sequently, as the number of variables decreases, the ben-efit of the method diminishes and may eventually van-ish. Conversely, the advantage is expected to increase with the number of variables, which is evident for prob-lems 1–3 with a single constraint. Specifically, the dif-ference in the number of gates increases from 16% (1w in Tab. 2) for 4 variables to 42% (3n in Tab. 2) for 6 variables. Furthermore, as noted in Sec. 7.1, although the num-ber of constraints and the weights do not determine which method produces a circuit with fewer gates, they do influence the magnitude of the di ff erence. This e ff ect is also reflected in the results, as the ratio of circuit sizes decreases for wider circuits (i.e., higher weights) in the pairs 1n vs. 1w, . . . , 3n vs. 3w. In the case of two con-straints, variations in the ratios are also observed; how-ever, the precise form of its dependence on the number of variables and the weight values is not immediately apparent. Moreover, for both methods, the number of gates in the generated circuit is expected to increase approxi-mately linearly with the number of iterations r in the approximation given by Eq. (14). Therefore, the ratio of circuit sizes between the methods should remain ap-proximately constant, which is consistent with the re-sults reported in Tab. 2. When comparing circuit depths, we observe that the di ff erence appears to decrease as the number of vari-ables increases. In particular, it decreases from 11% for 3 variables (1n in Tab. 2) to essentially 0% for 6 variables (3n in Tab. 2). This can be explained by the faster growth in the number of gates for both standard approaches compared to our method. It must be noted that the circuits produced by the par-allel approach had lower or essentially the same depth as those produced by our method. Consequently, we can-not directly infer from those observations alone that the modified method is more noise-resilient, as both depth and gate count a ff ect it. This indicates that experiments in noisy environments are necessary to verify the im-proved noise robustness. Both approaches to the standard method yield the same circuit in a one-constraint problem; their depth and gate count are identical. This is reflected in the noise-resistance experiments, in which both approaches achieve the same accuracy. We note, that for almost all two-constraint problems, the sequential approach to the standard method yielded a circuit with more gates. However, in the analysis presented in Sec. 6, the esti-mated number of gates for the sequential approach was smaller. It is important to remember that this was un-derestimated by assuming that additional optimizations (e.g., Sec. 6.1) are always possible, which is not the case in those experiments. The noise-resistance results for problems with one constraint a ff ected by depolarizing noise are presented in Figure 3 and for problems with two constraints in Figure 4. We have determined that the phase- and amplitude-damping noise model yielded results that were nearly identical. For clarity, these results have not been shown. As stated at the beginning, both approaches to the standard method for a single constraint generate cir-cuits of identical form; therefore, their results are la-beled ’Standard methods’. When two constraints are present, the di ff erence in the gate count between them is clearly visible in Table 2. The impact of this di ff er-ence on the resilience to noise is shown in Figure 4 and is most visible in Figure 4d. As demonstrated in Figures 3 and 4, increasing the number of iterations r improves accuracy in a noiseless environment. This is a direct consequence of employ-ing a more accurate approximation without introducing additional errors. It is also evident that all methods for a given number of iterations r without noise achieve the same result, thereby indicating that they in fact imple-ment the same transformation. However, as the noise strength (noise parameter) increases, the fidelity for cir-cuits with more iterations declines more rapidly. This phenomenon can be attributed to the increase in the number of gates (Table 2), which grows linearly with the number of iterations r. Consequently, the enhance-ment in the accuracy of the approximation is surpassed by the accumulation of errors. The initially least ac-curate circuit, with the fewest gates, accumulates fewer errors and emerges as the most accurate with su ffi cient noise. Generally, the fidelity values for all problems are low enough at the maximum selected noise parameter that the results are almost indistinguishable from random noise. This indicates that the parameter range was ap-propriately selected to reveal di ff erences between the methods before their results are completely degraded. If the noise model of real hardware had been used, it 15 would have yielded even worse results due to the noise level. Most importantly, we have found that, in all cases, the fidelity of the modified method is higher than that of either approach to the standard method (see Figures 3 and 4). The experimental evidence demonstrates that the proposed method exhibits greater noise resistance than the standard method. As shown in Table 2, the modified method produced circuits with fewer gates in every case. The circuit depth and the number of gates are significant factors in error accumulation [17–19]. In this case, the decrease in the number of gates is most likely the cause of improved resilience as the depth of a modified circuit can be larger, but the fidelity is still higher, e.g., problem 1n (Table 2, Figure 3a). In conclusion, these experiments provide evidence that our modified method is more robust to noise. Addi-tionally, we have shown that when the upper bound cal-culated in Sec. 6 is not exceeded, the standard method does not necessarily produce circuits with fewer gates, and that our method might be a better choice even below this upper bound. Standard (both) [r=3] Standard (both) [r=5] Standard (both) [r=7]   
+
+> Modified [r=3] Modified [r=5] Modified [r=7]
+
+(a) Problem 1n 0 0.5 1 1.5 2 
+
+> ·10 −5
+> 0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1
+> Noise parameter
+> Fidelity
+
+(b) Problem 1w 0 0.5 1 1.5 2
+
+> ·10 −5
+> 0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1
+> Noise parameter
+> Fidelity
+
+(c) Problem 2n 0 0.5 1 1.5 2 
+
+> ·10 −5
+> 0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1
+> Noise parameter
+> Fidelity
+
+(d) Problem 2w 0 0.5 1 1.5 2
+
+> ·10 −5
+> 0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1
+> Noise parameter
+> Fidelity
+
+(e) Problem 3n 0 0.5 1 1.5 2 
+
+> ·10 −5
+> 0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1
+> Noise parameter
+> Fidelity
+
+(f) Problem 3w 0 0.5 1 1.5 2
+
+> ·10 −5
+> 0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1
+> Noise parameter
+> Fidelity
+
+Figure 3: Final state fidelity compared to the ideal result with ‘depo-larizing’ noise model for problems with a single constraint (Table 1) 
+
+8. Conclusion 
+
+This paper addresses the e ffi cient solution of con-strained combinatorial optimization problems using the Quantum Approximate Optimization Algorithm (QAOA). The study primarily investigates a modified mixer operator that restricts the search space to feasi-ble solutions. Specifically, a novel approach to imple-menting the constrained hypercube mixing operator, as introduced in [9, 16], is presented. The proposed mod-ification optimizes the quantum circuit by reducing the number of arithmetic operations required for problems with constraints defined by linear functions of all binary variables. The conventional approach repeatedly evalu-ates all linear functions at each step of the walk on a constrained hypercube, thereby significantly increasing circuit complexity. The modified method instead pre-computes the values of all linear functions and updates 16 Standard (seq) [r=3] Standard (seq) [r=5] Standard (seq) [r=7]     
+
+> Standard (par) [r=3] Standard (par) [r=5] Standard (par) [r=7]
+> Modified [r=3] Modified [r=5] Modified [r=7]
+
+(a) Problem 4n 0 0.5 1 1.5 2 
+
+> ·10 −5
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1
+> Noise parameter
+> Fidelity
+
+(b) Problem 4w 0 0.5 1 1.5 2
+
+> ·10 −5
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1
+> Noise parameter
+> Fidelity
+
+(c) Problem 5n 0 0.5 1 1.5 2 
+
+> ·10 −5
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1
+> Noise parameter
+> Fidelity
+
+(d) Problem 5w 0 0.5 1 1.5 2
+
+> ·10 −5
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1
+> Noise parameter
+> Fidelity
+
+Figure 4: Final state fidelity compared to the ideal result with ‘depo-larizing’ noise model for problems with two constraints (Table 1) 
+
+them using the value of a single coe ffi cient associated with the bit that di ff erentiates nodes in the graph, lever-aging the properties of linear functions. A comprehensive analysis of circuit sizes was con-ducted, yielding an upper bound on the number of bi-nary variables for which the standard method may re-quire fewer gates than the modified method. The re-sults indicate that for problems with 6 or more variables, the modified method reduces the gate count, thereby of-fering a more practical approach for large-scale con-strained optimization problems. Experimental results further show that the modified method can produce smaller circuits even when the upper bound condition is not satisfied. Additionally, numerical simulations demonstrated that the modified method exhibits greater noise re-silience than the standard method. The evaluation used the two most common noise models: the depolarizing channel and the phase- and amplitude-damping chan-nel. Across multiple problem instances, the modified method consistently produced circuits that achieved the same transformation as the standard method while using fewer gates and exhibiting enhanced noise resistance. These results further underscore the advantages of the modified method in practical quantum computing ap-plications. In summary, the method presented in this study im-proves gate count and noise resistance across a broad class of combinatorial problems, contributing to the re-alization of their full potential for solving complex op-timization problems. 
+
+Acknowledgements 
+
+This research received partial support from the funds assigned to AGH by the Polish Ministry of Science and Higher Education. Authors gratefully acknowledge the Polish high-performance computing infrastructure PLGrid (HPC Center: ACK Cyfronet AGH) for provid-ing computer facilities and support within the computa-tional grant no. PLG /2025 /018379 17 References 
+
+[1] D. Pisinger, P. Toth, Knapsack Problems, Springer US, Boston, MA, 1998, pp. 299–428. 
+
+doi:10.1007/978-1-4613-0303-9\_5 .URL https://doi.org/10.1007/ 978-1-4613-0303-9_5 
+
+[2] G. B. Dantzig, J. H. Ramser, The truck dispatch-ing problem, Management Science 6 (1) (1959) 80–91. URL http://www.jstor.org/stable/ 2627477 
+
+[3] R. Graham, E. Lawler, J. Lenstra, A. Kan, Optimization and approximation in determin-istic sequencing and scheduling: a survey, in: P. Hammer, E. Johnson, B. Korte (Eds.), Discrete Optimization II, Vol. 5 of Annals of Discrete Mathematics, Elsevier, 1979, pp. 287–326. doi:https://doi.org/10.1016/ S0167-5060(08)70356-X .URL https://www.sciencedirect.com/ science/article/pii/S016750600870356X 
+
+[4] D. Tomasiewicz, M. Pawlik, M. Malawski, K. Rycerz, Foundations for Workflow Applica-tion Scheduling on D-Wave System, in: V. V. Krzhizhanovskaya, G. Závodszky, M. H. Lees, J. J. Dongarra, P. M. A. Sloot, S. Brissos, J. Teix-eira (Eds.), Computational Science – ICCS 2020, Vol. 12142, Springer International Publishing, Cham, 2020, pp. 516–530, series Title: Lec-ture Notes in Computer Science. doi:10.1007/ 978-3-030-50433-5_40 .URL http://link.springer.com/10.1007/ 978-3-030-50433-5_40 
+
+[5] R. M. Karp, Reducibility among Combinatorial Problems, Springer US, Boston, MA, 1972, pp. 85–103. doi:10.1007/978-1-4684-2001-2\ _9 .URL https://doi.org/10.1007/ 978-1-4684-2001-2_9 
+
+[6] Y.-C. He, X.-Z. Wang, Y.-L. He, S.-L. Zhao, W.-B. Li, Exact and approximate algorithms for discounted 0-1 knapsack problem, Information Sciences 369 (2016) 634–647. doi:https: //doi.org/10.1016/j.ins.2016.07.037 .URL https://www.sciencedirect.com/ science/article/pii/S0020025516305187 
+
+[7] J. Preskill, Quantum computing and the entangle-ment frontier (2012). arXiv:1203.5813 .URL https://arxiv.org/abs/1203.5813 
+
+[8] J. Preskill, Quantum computing in the nisq era and beyond, Quantum 2 (2018) 79. 
+
+doi:10.22331/q-2018-08-06-79 .URL http://dx.doi.org/10.22331/ q-2018-08-06-79 
+
+[9] E. Farhi, J. Goldstone, S. Gutmann, A quan-tum approximate optimization algorithm (2014). 
+
+arXiv:1411.4028 .[10] R. Shaydulin, C. Li, S. Chakrabarti, M. DeCross, D. Herman, N. Kumar, J. Larson, D. Lykov, P. Minssen, Y. Sun, Y. Alexeev, J. M. Dreil-ing, J. P. Gaebler, T. M. Gatterman, J. A. Ger-ber, K. Gilmore, D. Gresh, N. Hewitt, C. V. Horst, S. Hu, J. Johansen, M. Matheny, T. Mengle, M. Mills, S. A. Moses, B. Neyenhuis, P. Siegfried, R. Yalovetzky, M. Pistoia, Evidence of scaling ad-vantage for the quantum approximate optimiza-tion algorithm on a classically intractable problem (2023). arXiv:2308.02342 .[11] E. Farhi, A. W. Harrow, Quantum supremacy through the quantum approximate optimization al-gorithm (2019). arXiv:1602.07674 .URL https://arxiv.org/abs/1602.07674 
+
+[12] F. Glover, G. Kochenberger, R. Hennig, Y. Du, Quantum bridge analytics I: a tutorial on for-mulating and using QUBO models, Annals of Operations Research 314 (1) (2022) 141–183. 
+
+doi:10.1007/s10479-022-04634-2 .URL https://doi.org/10.1007/ s10479-022-04634-2 
+
+[13] S. Boyd, L. Vandenberghe, Convex Optimization, no. pkt 1 in Berichte über verteilte messysteme, Cambridge University Press, 2004. URL https://books.google.pl/books?id= mYm0bLd3fcoC 
+
+[14] A. Montanez-Barrera, D. Willsch, A. Maldonado-Romo, K. Michielsen, Unbalanced penalization: A new approach to encode inequality constraints of combinatorial problems for quantum optimiza-tion algorithms (2023). arXiv:2211.13914 .[15] P. D. de la Grand’rive, J.-F. Hullo, Knapsack prob-lem variants of qaoa for battery revenue optimisa-tion (2019). arXiv:1908.02210 .18 [16] S. Marsh, J. B. Wang, A quantum walk-assisted approximate algorithm for bounded NP optimisation problems, Quantum In-formation Processing 18 (3) (2019) 61. 
+
+doi:10.1007/s11128-019-2171-3 .URL https://doi.org/10.1007/ s11128-019-2171-3 
+
+[17] N. Samos, R. Bistro´ n, M. Rudzi´ nski, R. M. C. Pereira, K. ˙Zyczkowski, P. Ribeiro, Fidelity decay and error accumulation in random quantum circuits, SciPost Physics 19 (1) (Jul. 2025). 
+
+doi:10.21468/scipostphys.19.1.013 .URL http://dx.doi.org/10.21468/ SciPostPhys.19.1.013 
+
+[18] J. Gulliksen, D. D. B. Rao, K. Mølmer, Character-ization of how errors accumulate in quantum com-puters (2014). arXiv:1404.2709 .URL https://arxiv.org/abs/1404.2709 
+
+[19] D. Azses, M. Dupont, B. Evert, M. J. Reagor, E. G. Dalla Torre, Navigating the noise-depth tradeo ff in adiabatic quantum circuits, Physical Review B 107 (12) (Mar. 2023). 
+
+doi:10.1103/physrevb.107.125127 .URL http://dx.doi.org/10.1103/ PhysRevB.107.125127 
+
+[20] A. M. Childs, E. Farhi, Quantum information processing in continuous time, 2004. URL https://api.semanticscholar.org/ CorpusID:118889126 
+
+[21] M. Suzuki, General theory of higher-order decom-position of exponential operators and symplectic integrators, Physics Letters A 165 (5) (1992) 387–395. doi:https://doi.org/10.1016/ 0375-9601(92)90335-J .URL https://www.sciencedirect.com/ science/article/pii/037596019290335J 
+
+[22] C. P. Williams, Explorations in quantum com-puting, 2nd Edition, Texts in computer science, Springer, New York London, 2011. [23] Y. Ruan, Z. Yuan, X. Xue, Z. Liu, Quantum approximate optimization for combinato-rial problems with constraints, Information Sciences 619 (2023) 98–125. doi:https: //doi.org/10.1016/j.ins.2022.11.020 .URL https://www.sciencedirect.com/ science/article/pii/S0020025522012981 
+
+[24] K. Georgopoulos, C. Emary, P. Zuliani, Modeling and simulating the noisy be-havior of near-term quantum computers, Physical Review A 104 (6) (Dec. 2021). 
+
+doi:10.1103/physreva.104.062432 .URL http://dx.doi.org/10.1103/ PhysRevA.104.062432 
+
+[25] L. Aolita, F. d. Melo, L. Davidovich, Open-System Dynamics of Entanglement, Reports on Progress in Physics 78 (4) (2015) 042001, arXiv:1402.3713 [quant-ph]. doi:10.1088/0034-4885/78/4/ 042001 .URL http://arxiv.org/abs/1402.3713 
+
+[26] T. G. Draper, Addition on a quantum computer (2000). arXiv:quant-ph/0008033 .URL https://arxiv.org/abs/quant-ph/ 0008033 
+
+[27] L. Ruiz-Perez, J. C. Garcia-Escartin, Quantum arithmetic with the quantum fourier transform, Quantum Information Processing 16 (6) (Apr. 2017). doi:10.1007/s11128-017-1603-1 .URL http://dx.doi.org/10.1007/ s11128-017-1603-1 
+
+[28] C. Zalka, Fast versions of shor’s quan-tum factoring algorithm (1998). arXiv: quant-ph/9806084 .URL https://arxiv.org/abs/quant-ph/ 9806084 
+
+[29] S. Beauregard, Circuit for shor’s algorithm using 2n +3 qubits (2003). arXiv:quant-ph/0205095 .URL https://arxiv.org/abs/quant-ph/ 0205095 
+
+[30] A. H. Al-Mohy, N. J. Higham, A new scaling and squaring algorithm for the matrix exponential, SIAM Journal on Matrix Analysis and Applica-tions 31 (3) (2010) 970–989. arXiv:https:// doi.org/10.1137/09074721X , doi:10.1137/ 09074721X .URL https://doi.org/10.1137/09074721X 
+
+[31] R. Jozsa, Fidelity for mixed quantum states, Journal of Modern Optics 41 (12) (1994) 2315–2323. arXiv:https: //doi.org/10.1080/09500349414552171 ,
+
+doi:10.1080/09500349414552171 .URL https://doi.org/10.1080/ 09500349414552171 
+
+19 [32] A. Javadi-Abhari, M. Treinish, K. Krsulich, C. J. Wood, J. Lishman, J. Gacon, S. Martiel, P. D. Na-tion, L. S. Bishop, A. W. Cross, B. R. Johnson, J. M. Gambetta, Quantum computing with qiskit (2024). arXiv:2405.08810 .URL https://arxiv.org/abs/2405.08810 
+
+20

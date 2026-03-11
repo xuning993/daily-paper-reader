@@ -1,0 +1,695 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-03-11T19:40:56.993905+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 11,
+    "deep_cap": 6,
+    "deep_selected": 7,
+    "quick_candidates": 35,
+    "quick_skim_target": 11,
+    "quick_selected": 11
+  },
+  "deep_dive": [
+    {
+      "id": "2603.03388v1",
+      "title": "RADAR: Learning to Route with Asymmetry-aware DistAnce Representations",
+      "abstract": "Recent neural solvers have achieved strong performance on vehicle routing problems (VRPs), yet they mainly assume symmetric Euclidean distances, restricting applicability to real-world scenarios. A core challenge is encoding the relational features in asymmetric distance matrices of VRPs. Early attempts directly encoded these matrices but often failed to produce compact embeddings and generalized poorly at scale. In this paper, we propose RADAR, a scalable neural framework that augments existing neural VRP solvers with the ability to handle asymmetric inputs. RADAR addresses asymmetry from both static and dynamic perspectives. It leverages Singular Value Decomposition (SVD) on the asymmetric distance matrix to initialize compact and generalizable embeddings that inherently encode the static asymmetry in the inbound and outbound costs of each node. To further model dynamic asymmetry in embedding interactions during encoding, it replaces the standard softmax with Sinkhorn normalization that imposes joint row and column distance awareness in attention weights. Extensive experiments on synthetic and real-world benchmarks across various VRPs show that RADAR outperforms strong baselines on both in-distribution and out-of-distribution instances, demonstrating robust generalization and superior performance in solving asymmetric VRPs.",
+      "authors": [
+        "Hang Yi",
+        "Ziwei Huang",
+        "Yining Ma",
+        "Zhiguang Cao"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "published": "2026-03-03T08:13:45+00:00",
+      "link": "https://arxiv.org/pdf/2603.03388v1",
+      "tags": [
+        "keyword:ML CO",
+        "query:ML CO"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "neural solvers for vehicle routing problems with asymmetric distances",
+      "llm_evidence_cn": "针对非对称距离车辆路径问题的神经求解器",
+      "llm_evidence": "针对非对称距离车辆路径问题的神经求解器",
+      "canonical_evidence": "针对非对称距离车辆路径问题的神经求解器",
+      "llm_tldr_en": "Proposes a neural framework to handle asymmetric distance matrices in vehicle routing problems.",
+      "llm_tldr_cn": "提出了一种处理车辆路径问题中非对称距离矩阵的神经框架。",
+      "llm_tldr": "提出了一种处理车辆路径问题中非对称距离矩阵的神经框架。",
+      "llm_tags": [
+        "query:ml-co"
+      ],
+      "matched_query_tag": "query:ml-co",
+      "matched_query_text": "machine learning approaches for traveling salesman problem",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2603.03388v2",
+      "title": "RADAR: Learning to Route with Asymmetry-aware DistAnce Representations",
+      "abstract": "Recent neural solvers have achieved strong performance on vehicle routing problems (VRPs), yet they mainly assume symmetric Euclidean distances, restricting applicability to real-world scenarios. A core challenge is encoding the relational features in asymmetric distance matrices of VRPs. Early attempts directly encoded these matrices but often failed to produce compact embeddings and generalized poorly at scale. In this paper, we propose RADAR, a scalable neural framework that augments existing neural VRP solvers with the ability to handle asymmetric inputs. RADAR addresses asymmetry from both static and dynamic perspectives. It leverages Singular Value Decomposition (SVD) on the asymmetric distance matrix to initialize compact and generalizable embeddings that inherently encode the static asymmetry in the inbound and outbound costs of each node. To further model dynamic asymmetry in embedding interactions during encoding, it replaces the standard softmax with Sinkhorn normalization that imposes joint row and column distance awareness in attention weights. Extensive experiments on synthetic and real-world benchmarks across various VRPs show that RADAR outperforms strong baselines on both in-distribution and out-of-distribution instances, demonstrating robust generalization and superior performance in solving asymmetric VRPs.",
+      "authors": [
+        "Hang Yi",
+        "Ziwei Huang",
+        "Yining Ma",
+        "Zhiguang Cao"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "published": "2026-03-03T08:13:45+00:00",
+      "link": "https://arxiv.org/pdf/2603.03388v2",
+      "tags": [
+        "keyword:ML CO",
+        "query:ML CO"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "neural solvers for vehicle routing problems with asymmetric distance representations",
+      "llm_evidence_cn": "针对具有非对称距离表示的车辆路径问题的神经求解器",
+      "llm_evidence": "针对具有非对称距离表示的车辆路径问题的神经求解器",
+      "canonical_evidence": "针对具有非对称距离表示的车辆路径问题的神经求解器",
+      "llm_tldr_en": "Proposes RADAR, a neural framework for solving asymmetric vehicle routing problems using SVD-based embeddings.",
+      "llm_tldr_cn": "提出了RADAR框架，利用SVD嵌入解决非对称车辆路径问题。",
+      "llm_tldr": "提出了RADAR框架，利用SVD嵌入解决非对称车辆路径问题。",
+      "llm_tags": [
+        "query:ml-co"
+      ],
+      "matched_query_tag": "query:ml-co",
+      "matched_query_text": "end to end learning for combinatorial optimization",
+      "matched_requirement_id": "req-10",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2603.03484v1",
+      "title": "Optimal trajectory-guided stochastic co-optimization for e-fuel system design and real-time operation",
+      "abstract": "E-fuels are promising long-term energy carriers supporting the net-zero transition. However, the large combinatorial design-operation spaces under renewable uncertainty make the use of mathematical programming impractical for co-optimizing e-fuel production systems. Here, we present MasCOR, a machine-learning-assisted co-optimization framework that learns from global operational trajectories. By encoding system design and renewable trends, a single MasCOR agent generalizes dynamic operation across diverse configurations and scenarios, substantially simplifying design-operation co-optimization under uncertainty. Benchmark comparisons against state-of-the-art reinforcement learning baselines demonstrate near-optimal performance, while computational costs are substantially lower than those of mathematical programming, enabling rapid parallel evaluation of designs within the co-optimization loop. This framework enables rapid screening of feasible design spaces together with corresponding operational policies. When applied to four potential European sites targeting e-methanol production, MasCOR shows that most locations benefit from reducing system load below 50 MW to achieve carbon-neutral methanol production, with production costs of 1.0-1.2 USD per kg. In contrast, Dunkirk (France), with limited renewable availability and high grid prices, favors system loads above 200 MW and expanded storage to exploit dynamic grid exchange and hydrogen sales to the market. These results underscore the value of the MasCOR framework for site-specific guidance from system design to real-time operation.",
+      "authors": [
+        "Jeongdong Kim",
+        "Minsu Kim",
+        "Jonggeol Na",
+        "Junghwan Kim"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "published": "2026-03-03T20:00:39+00:00",
+      "link": "https://arxiv.org/pdf/2603.03484v1",
+      "tags": [
+        "keyword:ML CO",
+        "query:ML CO"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "machine-learning-assisted co-optimization for combinatorial spaces",
+      "llm_evidence_cn": "针对组合空间的机器学习辅助协同优化",
+      "llm_evidence": "针对组合空间的机器学习辅助协同优化",
+      "canonical_evidence": "针对组合空间的机器学习辅助协同优化",
+      "llm_tldr_en": "Develops a machine learning framework to solve large combinatorial design-operation optimization problems.",
+      "llm_tldr_cn": "开发了一个机器学习框架，用于解决大规模组合设计与运行协同优化问题。",
+      "llm_tldr": "开发了一个机器学习框架，用于解决大规模组合设计与运行协同优化问题。",
+      "llm_tags": [
+        "query:ml-co"
+      ],
+      "matched_query_tag": "query:ml-co",
+      "matched_query_text": "machine learning for combinatorial optimization",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2603.07370v1",
+      "title": "Learning to Reflect: Hierarchical Multi-Agent Reinforcement Learning for CSI-Free mmWave Beam-Focusing",
+      "abstract": "Reconfigurable Intelligent Surfaces promise to transform wireless environments, yet practical deployment is hindered by the prohibitive overhead of Channel State Information (CSI) estimation and the dimensionality explosion inherent in centralized optimization. This paper proposes a Hierarchical Multi-Agent Reinforcement Learning (HMARL) framework for the control of mechanically reconfigurable reflective surfaces in millimeter-wave (mmWave) systems. We introduce a \"CSI-free\" paradigm that substitutes pilot-based channel estimation with readily available user localization data. To manage the massive combinatorial action space, the proposed architecture utilizes Multi-Agent Proximal Policy Optimization (MAPPO) under a Centralized Training with Decentralized Execution (CTDE) paradigm. The proposed architecture decomposes the control problem into two abstraction levels: a high-level controller for user-to-reflector allocation and decentralized low-level controllers for low-level focal point optimization. Comprehensive ray-tracing evaluations demonstrate that the framework achieves 2.81-7.94 dB RSSI improvements over centralized baselines, with the performance advantage widening as system complexity increases. Scalability analysis reveals that the system maintains sustained efficiency, exhibiting minimal per-user performance degradation and stable total power utilization even when user density doubles. Furthermore, robustness validation confirms the framework's viability across varying reflector aperture sizes (45-99 tiles) and demonstrates graceful performance degradation under localization errors up to 0.5 m. By eliminating CSI overhead while maintaining high-fidelity beam-focusing, this work establishes HMARL as a practical solution for intelligent mmWave environments.",
+      "authors": [
+        "Hieu Le",
+        "Oguz Bedir",
+        "Mostafa Ibrahim",
+        "Jian Tao",
+        "Sabit Ekin"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-03-07T22:46:21+00:00",
+      "link": "https://arxiv.org/pdf/2603.07370v1",
+      "tags": [
+        "keyword:ML CO",
+        "query:ML CO"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "reinforcement learning for massive combinatorial action space",
+      "llm_evidence_cn": "针对大规模组合动作空间的强化学习",
+      "llm_evidence": "针对大规模组合动作空间的强化学习",
+      "canonical_evidence": "针对大规模组合动作空间的强化学习",
+      "llm_tldr_en": "Uses Hierarchical Multi-Agent RL to manage massive combinatorial action spaces in beam-focusing optimization.",
+      "llm_tldr_cn": "使用分层多智能体强化学习来管理波束聚焦优化中的大规模组合动作空间。",
+      "llm_tldr": "使用分层多智能体强化学习来管理波束聚焦优化中的大规模组合动作空间。",
+      "llm_tags": [
+        "query:ml-co"
+      ],
+      "matched_query_tag": "query:ml-co",
+      "matched_query_text": "reinforcement learning for combinatorial optimization",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2603.08322v1",
+      "title": "Agentic Neurosymbolic Collaboration for Mathematical Discovery: A Case Study in Combinatorial Design",
+      "abstract": "We study mathematical discovery through the lens of neurosymbolic reasoning, where an AI agent powered by a large language model (LLM), coupled with symbolic computation tools, and human strategic direction, jointly produced a new result in combinatorial design theory. The main result of this human-AI collaboration is a tight lower bound on the imbalance of Latin squares for the notoriously difficult case $n \\equiv 1 \\pmod{3}$.   We reconstruct the discovery process from detailed interaction logs spanning multiple sessions over several days and identify the distinct cognitive contributions of each component. The AI agent proved effective at uncovering hidden structure and generating hypotheses. The symbolic component consists of computer algebra, constraint solvers, and simulated annealing, which provides rigorous verification and exhaustive enumeration. Human steering supplied the critical research pivot that transformed a dead end into a productive inquiry. Our analysis reveals that multi-model deliberation among frontier LLMs proved reliable for criticism and error detection but unreliable for constructive claims.   The resulting human-AI mathematical contribution, a tight lower bound of $4n(n{-}1)/9$, is achieved via a novel class of near-perfect permutations. The bound was formally verified in Lean 4. Our experiments show that neurosymbolic systems can indeed produce genuine discoveries in pure mathematics.",
+      "authors": [
+        "Hai Xia",
+        "Carla P. Gomes",
+        "Bart Selman",
+        "Stefan Szeider"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.HC",
+        "math.CO"
+      ],
+      "published": "2026-03-09T12:42:56+00:00",
+      "link": "https://arxiv.org/pdf/2603.08322v1",
+      "tags": [
+        "keyword:ML CO",
+        "query:ML CO"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "AI agent for discovery in combinatorial design theory",
+      "llm_evidence_cn": "用于组合设计理论发现的AI智能体",
+      "llm_evidence": "用于组合设计理论发现的AI智能体",
+      "canonical_evidence": "用于组合设计理论发现的AI智能体",
+      "llm_tldr_en": "Uses neurosymbolic AI and LLMs to discover new results in combinatorial design theory, specifically Latin squares.",
+      "llm_tldr_cn": "利用神经符号AI和LLM在组合设计理论（特别是拉丁方）中发现新结果。",
+      "llm_tldr": "利用神经符号AI和LLM在组合设计理论（特别是拉丁方）中发现新结果。",
+      "llm_tags": [
+        "query:ml-co:composite"
+      ],
+      "matched_query_tag": "query:ml-co:composite",
+      "matched_query_text": "Papers central to 查找机器学习解决组合优化相关的论文, especially work that connects or combines: machine learning for combinatorial optimization; reinforcement learning for combinatorial optimization; graph neural networks for combinatorial optimization; machine learning approaches for traveling salesman problem; machine learning for integer linear programming; learning to branch in branch and bound algorithms; meta-learning for combinatorial optimization; survey of machine learning for combinatorial optimization; deep learning methods for solving NP hard problems; end to end learning for combinatorial optimization.",
+      "matched_requirement_id": "req-composite-ml-co",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2603.08447v1",
+      "title": "Efficient Policy Learning with Hybrid Evaluation-Based Genetic Programming for Uncertain Agile Earth Observation Satellite Scheduling",
+      "abstract": "The Uncertain Agile Earth Observation Satellite Scheduling Problem (UAEOSSP) is a novel combinatorial optimization problem and a practical engineering challenge that aligns with the current demands of space technology development. It incorporates uncertainties in profit, resource consumption, and visibility, which may render pre-planned schedules suboptimal or even infeasible. Genetic Programming Hyper-Heuristic (GPHH) shows promise for evolving interpretable scheduling policies; however, their simulation-based evaluation incurs high computational costs. Moreover, the design of the constructive method, denoted as Online Scheduling Algorithm (OSA), directly affects fitness assessment, resulting in evaluation-dependent local optima within the policy space. To address these issues, this paper proposes a Hybrid Evaluation-based Genetic Programming (HE-GP) for effectively solving UAEOSSP. A Hybrid Evaluation (HE) mechanism is integrated into the policy-driven OSA, combining exact and approximate filtering modes: exact mode ensures evaluation accuracy through elaborately designed constraint verification modules, while approximate mode reduces computational overhead via simplified logic. HE-GP dynamically switches between evaluation models based on real-time evolutionary state information. Experiments on 16 simulated instance sets demonstrate that HE-GP significantly outperforms handcrafted heuristics and single-evaluation based GPHH, achieving substantial reductions in computational cost while maintaining excellent scheduling performance across diverse scenarios. Specifically, the average training time of HE-GP was reduced by 17.77\\% compared to GP employing exclusively exact evaluation, while the optimal policy generated by HE-GP achieved the highest average ranks across all scenarios.",
+      "authors": [
+        "Junhua Xue",
+        "Yuning Chen"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-03-09T14:43:36+00:00",
+      "link": "https://arxiv.org/pdf/2603.08447v1",
+      "tags": [
+        "keyword:ML CO",
+        "query:ML CO"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Genetic Programming Hyper-Heuristic for combinatorial optimization scheduling",
+      "llm_evidence_cn": "用于组合优化调度问题的遗传编程超启发式算法",
+      "llm_evidence": "用于组合优化调度问题的遗传编程超启发式算法",
+      "canonical_evidence": "用于组合优化调度问题的遗传编程超启发式算法",
+      "llm_tldr_en": "Develops a Genetic Programming Hyper-Heuristic to evolve scheduling policies for satellite optimization.",
+      "llm_tldr_cn": "开发了一种遗传编程超启发式算法，用于演化卫星调度优化策略。",
+      "llm_tldr": "开发了一种遗传编程超启发式算法，用于演化卫星调度优化策略。",
+      "llm_tags": [
+        "query:ml-co"
+      ],
+      "matched_query_tag": "query:ml-co",
+      "matched_query_text": "machine learning for combinatorial optimization",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2603.09172v1",
+      "title": "Reinforced Generation of Combinatorial Structures: Ramsey Numbers",
+      "abstract": "We present improved lower bounds for five classical Ramsey numbers: $\\mathbf{R}(3, 13)$ is increased from $60$ to $61$, $\\mathbf{R}(3, 18)$ from $99$ to $100$, $\\mathbf{R}(4, 13)$ from $138$ to $139$, $\\mathbf{R}(4, 14)$ from $147$ to $148$, and $\\mathbf{R}(4, 15)$ from $158$ to $159$. These results were achieved using~\\emph{AlphaEvolve}, an LLM-based code mutation agent. Beyond these new results, we successfully recovered lower bounds for all Ramsey numbers known to be exact, and matched the best known lower bounds across many other cases. These include bounds for which previous work does not detail the algorithms used. Virtually all known Ramsey lower bounds are derived computationally, with bespoke search algorithms each delivering a handful of results. AlphaEvolve is a single meta-algorithm yielding search algorithms for all of our results.",
+      "authors": [
+        "Ansh Nagda",
+        "Prabhakar Raghavan",
+        "Abhradeep Thakurta"
+      ],
+      "primary_category": "math.CO",
+      "categories": [
+        "math.CO",
+        "cs.AI",
+        "cs.CC"
+      ],
+      "published": "2026-03-10T04:20:40+00:00",
+      "link": "https://arxiv.org/pdf/2603.09172v1",
+      "tags": [
+        "keyword:ML CO",
+        "query:ML CO"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "LLM-based agent for combinatorial Ramsey numbers",
+      "llm_evidence_cn": "基于大语言模型的智能体用于组合拉姆齐数",
+      "llm_evidence": "基于大语言模型的智能体用于组合拉姆齐数",
+      "canonical_evidence": "基于大语言模型的智能体用于组合拉姆齐数",
+      "llm_tldr_en": "Uses an LLM-based agent to find new lower bounds for classical combinatorial Ramsey numbers.",
+      "llm_tldr_cn": "利用基于大语言模型的智能体发现了经典组合拉姆齐数的新下界。",
+      "llm_tldr": "利用基于大语言模型的智能体发现了经典组合拉姆齐数的新下界。",
+      "llm_tags": [
+        "query:ml-co:composite"
+      ],
+      "matched_query_tag": "query:ml-co:composite",
+      "matched_query_text": "Papers central to 查找机器学习解决组合优化相关的论文, especially work that connects or combines: machine learning for combinatorial optimization; reinforcement learning for combinatorial optimization; graph neural networks for combinatorial optimization; machine learning approaches for traveling salesman problem; machine learning for integer linear programming; learning to branch in branch and bound algorithms; meta-learning for combinatorial optimization; survey of machine learning for combinatorial optimization; deep learning methods for solving NP hard problems; end to end learning for combinatorial optimization.",
+      "matched_requirement_id": "req-composite-ml-co",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2603.02701v1",
+      "title": "Graph-GRPO: Stabilizing Multi-Agent Topology Learning via Group Relative Policy Optimization",
+      "abstract": "Optimizing communication topology is fundamental to the efficiency and effectiveness of Large Language Model (LLM)-based Multi-Agent Systems (MAS). While recent approaches utilize reinforcement learning to dynamically construct task-specific graphs, they typically rely on single-sample policy gradients with absolute rewards (e.g., binary correctness). This paradigm suffers from severe gradient variance and the credit assignment problem: simple queries yield non-informative positive rewards for suboptimal structures, while difficult queries often result in failures that provide no learning signal. To address these challenges, we propose Graph-GRPO, a novel topology optimization framework that integrates Group Relative Policy Optimization. Instead of evaluating a single topology in isolation, Graph-GRPO samples a group of diverse communication graphs for each query and computes the advantage of specific edges based on their relative performance within the group. By normalizing rewards across the sampled group, our method effectively mitigates the noise derived from task difficulty variance and enables fine-grained credit assignment. Extensive experiments on reasoning and code generation benchmarks demonstrate that Graph-GRPO significantly outperforms state-of-the-art baselines, achieving superior training stability and identifying critical communication pathways previously obscured by reward noise.",
+      "authors": [
+        "Yueyang Cang",
+        "Xiaoteng Zhang",
+        "Erlu Zhao",
+        "Zehua Ji",
+        "Yuhang Liu",
+        "Yuchen He",
+        "Zhiyuan Ning",
+        "Chen Yijun",
+        "Wenge Que",
+        "Li Shi"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL"
+      ],
+      "published": "2026-03-03T07:45:40+00:00",
+      "link": "https://arxiv.org/pdf/2603.02701v1",
+      "tags": [
+        "keyword:ML CO",
+        "query:ML CO"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "reinforcement learning for dynamic topology construction",
+      "llm_evidence_cn": "用于动态拓扑构建的强化学习",
+      "llm_evidence": "用于动态拓扑构建的强化学习",
+      "canonical_evidence": "用于动态拓扑构建的强化学习",
+      "llm_tldr_en": "Introduces Graph-GRPO to stabilize reinforcement learning for optimizing multi-agent communication topologies.",
+      "llm_tldr_cn": "引入 Graph-GRPO 以稳定用于优化多智能体通信拓扑的强化学习过程。",
+      "llm_tldr": "引入 Graph-GRPO 以稳定用于优化多智能体通信拓扑的强化学习过程。",
+      "llm_tags": [
+        "query:ml-co"
+      ],
+      "matched_query_tag": "query:ml-co",
+      "matched_query_text": "reinforcement learning for combinatorial optimization",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2603.02356v1",
+      "title": "Learning Optimal Search Strategies",
+      "abstract": "We explore the question of how to learn an optimal search strategy within the example of a parking problem where parking opportunities arrive according to an unknown inhomogeneous Poisson process. The optimal policy is a threshold-type stopping rule characterized by an indifference position. We propose an algorithm that learns this threshold by estimating the integrated jump intensity rather than the intensity function itself. We show that our algorithm achieves a logarithmic regret growth, uniformly over a broad class of environments. Moreover, we prove a logarithmic minimax regret lower bound, establishing the growth optimality of the proposed approach.",
+      "authors": [
+        "Stefan Ankirchner",
+        "Maximilian Philipp Thiel"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "math.PR"
+      ],
+      "published": "2026-03-02T19:56:54+00:00",
+      "link": "https://arxiv.org/pdf/2603.02356v1",
+      "tags": [
+        "keyword:ML CO",
+        "query:ML CO"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "learning optimal search strategies and stopping rules",
+      "llm_evidence_cn": "学习最优搜索策略和停止规则",
+      "llm_evidence": "学习最优搜索策略和停止规则",
+      "canonical_evidence": "学习最优搜索策略和停止规则",
+      "llm_tldr_en": "Explores learning optimal threshold-type stopping rules for search problems with regret analysis.",
+      "llm_tldr_cn": "探索了学习搜索问题的最优阈值型停止规则，并进行了遗憾分析。",
+      "llm_tldr": "探索了学习搜索问题的最优阈值型停止规则，并进行了遗憾分析。",
+      "llm_tags": [
+        "query:ml-co"
+      ],
+      "matched_query_tag": "query:ml-co",
+      "matched_query_text": "learning to search in combinatorial optimization",
+      "matched_requirement_id": "req-12",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2603.02488v1",
+      "title": "Learning-Augmented Moment Estimation on Time-Decay Models",
+      "abstract": "Motivated by the prevalence and success of machine learning, a line of recent work has studied learning-augmented algorithms in the streaming model. These results have shown that for natural and practical oracles implemented with machine learning models, we can obtain streaming algorithms with improved space efficiency that are otherwise provably impossible. On the other hand, our understanding is much more limited when items are weighted unequally, for example, in the sliding-window model, where older data must be expunged from the dataset, e.g., by privacy regulation laws. In this paper, we utilize an oracle for the heavy-hitters of datasets to give learning-augmented algorithms for a number of fundamental problems, such as norm/moment estimation, frequency estimation, cascaded norms, and rectangular moment estimation, in the time-decay setting. We complement our theoretical results with a number of empirical evaluations that demonstrate the practical efficiency of our algorithms on real and synthetic datasets.",
+      "authors": [
+        "Soham Nagawanshi",
+        "Shalini Panthangi",
+        "Chen Wang",
+        "David P. Woodruff",
+        "Samson Zhou"
+      ],
+      "primary_category": "cs.DS",
+      "categories": [
+        "cs.DS",
+        "cs.LG"
+      ],
+      "published": "2026-03-03T00:42:34+00:00",
+      "link": "https://arxiv.org/pdf/2603.02488v1",
+      "tags": [
+        "keyword:ML CO",
+        "query:ML CO"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "learning-augmented algorithms for streaming models",
+      "llm_evidence_cn": "流模型中的学习增强算法",
+      "llm_evidence": "流模型中的学习增强算法",
+      "canonical_evidence": "流模型中的学习增强算法",
+      "llm_tldr_en": "Uses ML oracles to improve space efficiency in streaming algorithms for norm and frequency estimation.",
+      "llm_tldr_cn": "利用机器学习预测器提高流算法在范数和频率估计中的空间效率。",
+      "llm_tldr": "利用机器学习预测器提高流算法在范数和频率估计中的空间效率。",
+      "llm_tags": [
+        "query:ml-co"
+      ],
+      "matched_query_tag": "query:ml-co",
+      "matched_query_text": "machine learning for combinatorial optimization",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2603.02753v1",
+      "title": "Deep learning-guided evolutionary optimization for protein design",
+      "abstract": "Designing novel proteins with desired characteristics remains a significant challenge due to the large sequence space and the complexity of sequence-function relationships. Efficient exploration of this space to identify sequences that meet specific design criteria is crucial for advancing therapeutics and biotechnology. Here, we present BoGA (Bayesian Optimization Genetic Algorithm), a framework that combines evolutionary search with Bayesian optimization to efficiently navigate the sequence space. By integrating a genetic algorithm as a stochastic proposal generator within a surrogate modeling loop, BoGA prioritizes candidates based on prior evaluations and surrogate model predictions, enabling data-efficient optimization. We demonstrate the utility of BoGA through benchmarking on sequence and structure design tasks, followed by its application in designing peptide binders against pneumolysin, a key virulence factor of \\textit{Streptococcus pneumoniae}. BoGA accelerates the discovery of high-confidence binders, demonstrating the potential for efficient protein design across diverse objectives. The algorithm is implemented within the BoPep suite and is available under an MIT license at \\href{https://github.com/ErikHartman/bopep}{GitHub}.",
+      "authors": [
+        "Erik Hartman",
+        "Di Tang",
+        "Johan Malmström"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "q-bio.QM",
+        "stat.ML"
+      ],
+      "published": "2026-03-03T08:53:12+00:00",
+      "link": "https://arxiv.org/pdf/2603.02753v1",
+      "tags": [
+        "keyword:ML CO",
+        "query:ML CO"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "Deep learning-guided evolutionary optimization for sequence design",
+      "llm_evidence_cn": "深度学习引导的序列设计进化优化",
+      "llm_evidence": "深度学习引导的序列设计进化优化",
+      "canonical_evidence": "深度学习引导的序列设计进化优化",
+      "llm_tldr_en": "Combines Bayesian optimization with genetic algorithms for efficient exploration of protein sequence space.",
+      "llm_tldr_cn": "结合贝叶斯优化和遗传算法，实现蛋白质序列空间的高效探索。",
+      "llm_tldr": "结合贝叶斯优化和遗传算法，实现蛋白质序列空间的高效探索。",
+      "llm_tags": [
+        "query:ml-co"
+      ],
+      "matched_query_tag": "query:ml-co",
+      "matched_query_text": "machine learning for combinatorial optimization",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2603.02637v1",
+      "title": "StitchCUDA: An Automated Multi-Agents End-to-End GPU Programing Framework with Rubric-based Agentic Reinforcement Learning",
+      "abstract": "Modern machine learning (ML) workloads increasingly rely on GPUs, yet achieving high end-to-end performance remains challenging due to dependencies on both GPU kernel efficiency and host-side settings. Although LLM-based methods show promise on automated GPU kernel generation, prior works mainly focus on single-kernel optimization and do not extend to end-to-end programs, hindering practical deployment.   To address the challenge, in this work, we propose StitchCUDA, a multi-agent framework for end-to-end GPU program generation, with three specialized agents: a Planner to orchestrate whole system design, a Coder dedicated to implementing it step-by-step, and a Verifier for correctness check and performance profiling using Nsys/NCU. To fundamentally improve the Coder's ability in end-to-end GPU programming, StitchCUDA integrates rubric-based agentic reinforcement learning over two atomic skills, task-to-code generation and feedback-driven code optimization, with combined rubric reward and rule-based reward from real executions. Therefore, the Coder learns how to implement advanced CUDA programming techniques (e.g., custom kernel fusion, cublas epilogue), and we also effectively prevent Coder's reward hacking (e.g., just copy PyTorch code or hardcoding output) during benchmarking. Experiments on KernelBench show that StitchCUDA achieves nearly 100% success rate on end-to-end GPU programming tasks, with 1.72x better speedup over the multi-agent baseline and 2.73x than the RL model baselines.",
+      "authors": [
+        "Shiyang Li",
+        "Zijian Zhang",
+        "Winson Chen",
+        "Yuebo Luo",
+        "Mingyi Hong",
+        "Caiwen Ding"
+      ],
+      "primary_category": "cs.MA",
+      "categories": [
+        "cs.MA",
+        "cs.CL",
+        "cs.PL"
+      ],
+      "published": "2026-03-03T06:04:49+00:00",
+      "link": "https://arxiv.org/pdf/2603.02637v1",
+      "tags": [
+        "keyword:ML CO",
+        "query:ML CO"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "agentic reinforcement learning for program optimization",
+      "llm_evidence_cn": "用于程序优化的智能体强化学习",
+      "llm_evidence": "用于程序优化的智能体强化学习",
+      "canonical_evidence": "用于程序优化的智能体强化学习",
+      "llm_tldr_en": "Proposes a multi-agent reinforcement learning framework for end-to-end GPU program optimization.",
+      "llm_tldr_cn": "提出一种多智能体强化学习框架，用于端到端的 GPU 程序优化。",
+      "llm_tldr": "提出一种多智能体强化学习框架，用于端到端的 GPU 程序优化。",
+      "llm_tags": [
+        "query:ml-co"
+      ],
+      "matched_query_tag": "query:ml-co",
+      "matched_query_text": "reinforcement learning for combinatorial optimization",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2603.02605v1",
+      "title": "Bayesian Optimization in Chemical Compound Sub-Spaces using Low-Dimensional Molecular Descriptors",
+      "abstract": "Efficient optimization of molecules with targeted properties remains a significant challenge due to the vast size and discrete nature of chemical compound space. Conventional machine-learning-based optimization approaches typically require large datasets to construct accurate surrogate models, limiting their applicability in data-scarce settings. In this study, we present a Bayesian optimization (BO) framework that identifies optimal molecular structures with high precision using fewer than 2,000 training data points within a chemical subspace containing more than 133,000 molecules. The framework employs a low-dimensional and physics-informed molecular descriptor vector that facilitates data-efficient surrogate modelling and optimization. A key innovation of the proposed framework is a reliable inverse mapping scheme that translates optimized points in the descriptor space back into chemically valid molecular structures, thereby bridging continuous optimization and discrete molecular design. We demonstrate the effectiveness of our approach on the QM9 benchmark dataset, where the framework successfully identifies organic molecules with the target entropy and zero-point vibrational energy (ZPVE) values.For entropy optimization, our approach achieves a 100% success rate while requiring fewer than 1,000 molecular evaluations in more than 80% of test cases. For ZPVE, the success rate exceeds 80% for molecules containing more than two heavy atoms. These results highlight the critical role of low-dimensional, interpretable descriptors in enabling data-efficient optimization and robust inverse molecular design, and establish Bayesian optimization as a practical tool for molecular discovery in small-data regimes.",
+      "authors": [
+        "Yun-Wen Mao",
+        "Roman V. Krems"
+      ],
+      "primary_category": "physics.chem-ph",
+      "categories": [
+        "physics.chem-ph"
+      ],
+      "published": "2026-03-03T05:12:19+00:00",
+      "link": "https://arxiv.org/pdf/2603.02605v1",
+      "tags": [
+        "keyword:ML CO",
+        "query:ML CO"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Bayesian optimization for discrete chemical compound space",
+      "llm_evidence_cn": "针对离散化学化合物空间的贝叶斯优化",
+      "llm_evidence": "针对离散化学化合物空间的贝叶斯优化",
+      "canonical_evidence": "针对离散化学化合物空间的贝叶斯优化",
+      "llm_tldr_en": "A Bayesian optimization framework using low-dimensional descriptors to efficiently optimize discrete molecular structures.",
+      "llm_tldr_cn": "一种利用低维描述符高效优化离散分子结构的贝叶斯优化框架。",
+      "llm_tldr": "一种利用低维描述符高效优化离散分子结构的贝叶斯优化框架。",
+      "llm_tags": [
+        "query:ml-co"
+      ],
+      "matched_query_tag": "query:ml-co",
+      "matched_query_text": "machine learning for combinatorial optimization",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2603.02771v1",
+      "title": "Changing the Game: The Bounce-Bind Ising Machine",
+      "abstract": "The Ising model, originally proposed a century ago, has become a cornerstone of combinatorial optimization in recent decades. However, Ising machines remain constrained by a fundamental hardware-speed trade-off. We introduce the Bounce-Bind Ising Machine (BBIM), a mechanism with a single tunable parameter that modulates spin dynamics without altering the energy landscape, building upon the classic golf-ball analogy but replacing it with a dynamic tennis ball/shot put system. The Bounce mode (accelerating escapes from local minima) and Bind mode (enabling rapid convergence) dynamically balance speed and quality. Benchmarked on dense MAX-CUT (edge density=0.5), BBIM achieves a peak speedup of 6.15 times at n=200. For sparse 3-Regular 3-XORSAT (second-order), the peak speedup reaches 27.3 times at n=160. Both results incur negligible additional hardware resource consumption. This work demonstrates a critical pathway to circumventing the hardware-speed bottleneck and its practical applicability to large-scale optimization hardware, validated on structurally distinct benchmarks.",
+      "authors": [
+        "Haiyang Zhang",
+        "Hao Wang",
+        "Rui Zhou",
+        "Sheng Chang"
+      ],
+      "primary_category": "cs.AR",
+      "categories": [
+        "cs.AR"
+      ],
+      "published": "2026-03-03T09:11:13+00:00",
+      "link": "https://arxiv.org/pdf/2603.02771v1",
+      "tags": [
+        "keyword:ML CO",
+        "query:ML CO"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "Ising machine for combinatorial optimization problems like MAX-CUT",
+      "llm_evidence_cn": "用于MAX-CUT等组合优化问题的伊辛机",
+      "llm_evidence": "用于MAX-CUT等组合优化问题的伊辛机",
+      "canonical_evidence": "用于MAX-CUT等组合优化问题的伊辛机",
+      "llm_tldr_en": "Introduces the Bounce-Bind Ising Machine to accelerate convergence in combinatorial optimization tasks.",
+      "llm_tldr_cn": "引入Bounce-Bind伊辛机以加速组合优化任务中的收敛。",
+      "llm_tldr": "引入Bounce-Bind伊辛机以加速组合优化任务中的收敛。",
+      "llm_tags": [
+        "query:ml-co:composite"
+      ],
+      "matched_query_tag": "query:ml-co:composite",
+      "matched_query_text": "Papers central to 查找机器学习解决组合优化相关的论文, especially work that connects or combines: machine learning for combinatorial optimization; reinforcement learning for combinatorial optimization; graph neural networks for combinatorial optimization; machine learning approaches for traveling salesman problem; machine learning for integer linear programming; learning to branch in branch and bound algorithms; meta-learning for combinatorial optimization; survey of machine learning for combinatorial optimization; deep learning methods for solving NP hard problems; end to end learning for combinatorial optimization.",
+      "matched_requirement_id": "req-composite-ml-co",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2603.05187v1",
+      "title": "Design and Analysis of an Improved Constrained Hypercube Mixer in Quantum Approximate Optimization Algorithm",
+      "abstract": "The Quantum Approximate Optimization Algorithm (QAOA) is expected to offer advantages over classical approaches when solving combinatorial optimization problems in the Noisy Intermediate-Scale Quantum (NISQ) era. In its standard formulation, however, QAOA is not suited for constrained problems. One way to incorporate certain types of constraints is to restrict the mixing operator to the feasible subspace; however, this substantially increases circuit size, thereby reducing noise robustness. In this work, we refine an existing hypercube mixer method for enforcing hard constraints in QAOA. We present a modification that generates circuits with fewer gates for a broad class of constrained problems defined by linear functions. Furthermore, we calculate an analytical upper bound on the number of binary variables for which this reduction might not apply. Additionally, we present numerical experimental results demonstrating that the proposed approach improves robustness to noise. In summary, the method proposed in this paper allows for more accurate QAOA performance in noisy settings, bringing us closer to practical, real-world NISQ-era applications.",
+      "authors": [
+        "Arkadiusz Wołk",
+        "Karol Capała",
+        "Katarzyna Rycerz"
+      ],
+      "primary_category": "quant-ph",
+      "categories": [
+        "quant-ph",
+        "cs.ET"
+      ],
+      "published": "2026-03-05T13:57:15+00:00",
+      "link": "https://arxiv.org/pdf/2603.05187v1",
+      "tags": [
+        "keyword:ML CO",
+        "query:ML CO"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "Quantum Approximate Optimization Algorithm for combinatorial optimization",
+      "llm_evidence_cn": "用于组合优化的量子近似优化算法",
+      "llm_evidence": "用于组合优化的量子近似优化算法",
+      "canonical_evidence": "用于组合优化的量子近似优化算法",
+      "llm_tldr_en": "Refines the QAOA hypercube mixer to better handle hard constraints in combinatorial problems.",
+      "llm_tldr_cn": "改进了QAOA超立方体混合器，以更好地处理组合问题中的硬约束。",
+      "llm_tldr": "改进了QAOA超立方体混合器，以更好地处理组合问题中的硬约束。",
+      "llm_tags": [
+        "query:ml-co"
+      ],
+      "matched_query_tag": "query:ml-co",
+      "matched_query_text": "machine learning for combinatorial optimization",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2603.03524v1",
+      "title": "Test-Time Meta-Adaptation with Self-Synthesis",
+      "abstract": "As strong general reasoners, large language models (LLMs) encounter diverse domains and tasks, where the ability to adapt and self-improve at test time is valuable. We introduce MASS, a meta-learning framework that enables LLMs to self-adapt by generating problem-specific synthetic training data and performing targeted self-updates optimized for downstream performance at inference time. We train this behavior end-to-end via bilevel optimization: an inner loop adapts on self-generated examples while an outer loop meta-learns data-attribution signals and rewards post-update task performance. The synthetic data is optimized with scalable meta-gradients, backpropagating the downstream loss through the inner updates to reward useful generations. Experiments on mathematical reasoning show that MASS learns to synthesize per-instance curricula that yield effective, data-efficient test-time adaptation.",
+      "authors": [
+        "Zeyneb N. Kaya",
+        "Nick Rui"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "published": "2026-03-03T21:16:18+00:00",
+      "link": "https://arxiv.org/pdf/2603.03524v1",
+      "tags": [
+        "keyword:ML CO",
+        "query:ML CO"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "meta-learning framework for problem-specific adaptation",
+      "llm_evidence_cn": "用于特定问题自适应的元学习框架",
+      "llm_evidence": "用于特定问题自适应的元学习框架",
+      "canonical_evidence": "用于特定问题自适应的元学习框架",
+      "llm_tldr_en": "Introduces a meta-learning framework for LLMs to self-adapt to complex reasoning tasks at test time.",
+      "llm_tldr_cn": "引入元学习框架，使大语言模型在测试时能自适应处理复杂的推理任务。",
+      "llm_tldr": "引入元学习框架，使大语言模型在测试时能自适应处理复杂的推理任务。",
+      "llm_tags": [
+        "query:ml-co"
+      ],
+      "matched_query_tag": "query:ml-co",
+      "matched_query_text": "meta-learning for combinatorial optimization",
+      "matched_requirement_id": "req-7",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2603.07955v1",
+      "title": "RL unknotter, hard unknots and unknotting number",
+      "abstract": "We develop a reinforcement learning pipeline for simplifying knot diagrams. A trained agent learns move proposals and a value heuristic for navigating Reidemeister moves. The pipeline applies to arbitrary knots and links; we test it on ``very hard'' unknot diagrams and, using diagram inflation, on $4_1\\#9_{10}$ where we recover the recently established and surprising upper bound of three for the unknotting number.",
+      "authors": [
+        "Anne Dranowski",
+        "Yura Kabkov",
+        "Daniel Tubbenhauer"
+      ],
+      "primary_category": "math.GT",
+      "categories": [
+        "math.GT",
+        "cs.LG",
+        "stat.ML"
+      ],
+      "published": "2026-03-09T04:43:59+00:00",
+      "link": "https://arxiv.org/pdf/2603.07955v1",
+      "tags": [
+        "keyword:ML CO",
+        "query:ML CO"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "reinforcement learning pipeline for simplifying knot diagrams",
+      "llm_evidence_cn": "用于简化纽结图的强化学习流水线",
+      "llm_evidence": "用于简化纽结图的强化学习流水线",
+      "canonical_evidence": "用于简化纽结图的强化学习流水线",
+      "llm_tldr_en": "Uses reinforcement learning to navigate moves for simplifying complex knot diagrams.",
+      "llm_tldr_cn": "利用强化学习探索简化复杂纽结图的移动路径。",
+      "llm_tldr": "利用强化学习探索简化复杂纽结图的移动路径。",
+      "llm_tags": [
+        "query:ml-co"
+      ],
+      "matched_query_tag": "query:ml-co",
+      "matched_query_text": "reinforcement learning for combinatorial optimization",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2603.05188v1",
+      "title": "Escaping the Hydrolysis Trap: An Agentic Workflow for Inverse Design of Durable Photocatalytic Covalent Organic Frameworks",
+      "abstract": "Covalent organic frameworks (COFs) are promising photocatalysts for solar hydrogen production, yet the most electronically favorable linkages, imines, hydrolyze rapidly in water, creating a stability--activity trade-off that limits practical deployment. Navigating the combinatorial design space of nodes, linkers, linkages, and functional groups to identify candidates that are simultaneously active and durable remains a formidable challenge. Here we introduce Ara, a large-language-model (LLM) agent that leverages pretrained chemical knowledge, donor--acceptor theory, conjugation effects, and linkage stability hierarchies, to guide the search for photocatalytic COFs satisfying joint band-gap, band-edge, and hydrolytic-stability criteria. Evaluated against random search and Bayesian optimization (BO) over a space consisting of candidates with various nodes, linkers, linkages, and r-groups, screened with a GFN1-xTB fragment pipeline, Ara achieves a 52.7\\% hit rate (11.5$\\times$ random, p = 0.006), finds its first hit at iteration 12 versus 25 for random search, and significantly outperforms BO (p = 0.006). Inspection of the agent's reasoning traces reveals interpretable chemical logic: early convergence on vinylene and beta-ketoenamine linkages for stability, node selection informed by electron-withdrawing character, and systematic R-group optimization to center the band gap at 2.0 eV. Exhaustive evaluation of the full search space uncovers a complementary exploitation--exploration trade-off between the agent and BO, suggesting that hybrid strategies may combine the strengths of both approaches. These results demonstrate that LLM chemical priors can substantially accelerate multi-criteria materials discovery.",
+      "authors": [
+        "Iman Peivaste",
+        "Nicolas D. Boscher",
+        "Ahmed Makradi",
+        "Salim Belouettar"
+      ],
+      "primary_category": "physics.chem-ph",
+      "categories": [
+        "physics.chem-ph",
+        "cond-mat.mtrl-sci",
+        "cs.AI",
+        "physics.comp-ph"
+      ],
+      "published": "2026-03-05T13:57:56+00:00",
+      "link": "https://arxiv.org/pdf/2603.05188v1",
+      "tags": [
+        "keyword:ML CO",
+        "query:ML CO"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "LLM agent for navigating combinatorial design space",
+      "llm_evidence_cn": "用于导航组合设计空间的LLM智能体",
+      "llm_evidence": "用于导航组合设计空间的LLM智能体",
+      "canonical_evidence": "用于导航组合设计空间的LLM智能体",
+      "llm_tldr_en": "Uses an LLM agent to guide the search through a combinatorial chemical design space for photocatalysts.",
+      "llm_tldr_cn": "利用LLM智能体引导光催化剂的组合化学设计空间搜索。",
+      "llm_tldr": "利用LLM智能体引导光催化剂的组合化学设计空间搜索。",
+      "llm_tags": [
+        "query:ml-co:composite"
+      ],
+      "matched_query_tag": "query:ml-co:composite",
+      "matched_query_text": "Papers central to 查找机器学习解决组合优化相关的论文, especially work that connects or combines: machine learning for combinatorial optimization; reinforcement learning for combinatorial optimization; graph neural networks for combinatorial optimization; machine learning approaches for traveling salesman problem; machine learning for integer linear programming; learning to branch in branch and bound algorithms; meta-learning for combinatorial optimization; survey of machine learning for combinatorial optimization; deep learning methods for solving NP hard problems; end to end learning for combinatorial optimization.",
+      "matched_requirement_id": "req-composite-ml-co",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    }
+  ]
+}
