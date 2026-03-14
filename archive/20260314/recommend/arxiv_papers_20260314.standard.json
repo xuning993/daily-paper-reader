@@ -1,0 +1,654 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-03-14T19:18:40.483834+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 8,
+    "deep_cap": 6,
+    "deep_selected": 6,
+    "quick_candidates": 39,
+    "quick_skim_target": 11,
+    "quick_selected": 11
+  },
+  "deep_dive": [
+    {
+      "id": "2603.10053v1",
+      "title": "Cluster-Aware Attention-Based Deep Reinforcement Learning for Pickup and Delivery Problems",
+      "abstract": "The Pickup and Delivery Problem (PDP) is a fundamental and challenging variant of the Vehicle Routing Problem, characterized by tightly coupled pickup--delivery pairs, precedence constraints, and spatial layouts that often exhibit clustering. Existing deep reinforcement learning (DRL) approaches either model all nodes on a flat graph, relying on implicit learning to enforce constraints, or achieve strong performance through inference-time collaborative search at the cost of substantial latency. In this paper, we propose \\emph{CAADRL} (Cluster-Aware Attention-based Deep Reinforcement Learning), a DRL framework that explicitly exploits the multi-scale structure of PDP instances via cluster-aware encoding and hierarchical decoding. The encoder builds on a Transformer and combines global self-attention with intra-cluster attention over depot, pickup, and delivery nodes, producing embeddings that are both globally informative and locally role-aware. Based on these embeddings, we introduce a Dynamic Dual-Decoder with a learnable gate that balances intra-cluster routing and inter-cluster transitions at each step. The policy is trained end-to-end with a POMO-style policy gradient scheme using multiple symmetric rollouts per instance. Experiments on synthetic clustered and uniform PDP benchmarks show that CAADRL matches or improves upon strong state-of-the-art baselines on clustered instances and remains highly competitive on uniform instances, particularly as problem size increases. Crucially, our method achieves these results with substantially lower inference time than neural collaborative-search baselines, suggesting that explicitly modeling cluster structure provides an effective and efficient inductive bias for neural PDP solvers.",
+      "authors": [
+        "Wentao Wang",
+        "Lifeng Han",
+        "Guangyu Zou"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-03-09T17:31:34+00:00",
+      "link": "https://arxiv.org/pdf/2603.10053v1",
+      "tags": [
+        "keyword:ML CO",
+        "query:ML CO"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "deep reinforcement learning for pickup and delivery problems",
+      "llm_evidence_cn": "深度强化学习解决取送货问题",
+      "llm_evidence": "深度强化学习解决取送货问题",
+      "canonical_evidence": "深度强化学习解决取送货问题",
+      "llm_tldr_en": "Develops a cluster-aware DRL framework to solve the Pickup and Delivery Problem, a VRP variant.",
+      "llm_tldr_cn": "开发了一种聚类感知的深度强化学习框架，用于解决取送货路径规划问题。",
+      "llm_tldr": "开发了一种聚类感知的深度强化学习框架，用于解决取送货路径规划问题。",
+      "llm_tags": [
+        "query:ml-co"
+      ],
+      "matched_query_tag": "query:ml-co",
+      "matched_query_text": "reinforcement learning for combinatorial optimization",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2603.11456v1",
+      "title": "UniHetCO: A Unified Heterogeneous Representation for Multi-Problem Learning in Unsupervised Neural Combinatorial Optimization",
+      "abstract": "Unsupervised neural combinatorial optimization (NCO) offers an appealing alternative to supervised approaches by training learning-based solvers without ground-truth solutions, directly minimizing instance objectives and constraint violations. Yet for graph node subset-selection problems (e.g., Maximum Clique and Maximum Independent Set), existing unsupervised methods are typically specialized to a single problem class and rely on problem-specific surrogate losses, which hinders learning across classes within a unified framework. In this work, we propose UniHetCO, a unified heterogeneous graph representation for constrained quadratic programming-based combinatorial optimization that encodes problem structure, objective terms, and linear constraints in a single input. This formulation enables training a single model across multiple problem classes with a unified label-free objective. To improve stability under multi-problem learning, we employ a gradient-norm-based dynamic weighting scheme that alleviates gradient imbalance among classes. Experiments on multiple datasets and four constrained problem classes demonstrate competitive performance with state-of-the-art unsupervised NCO baselines, strong cross-problem adaptation potential, and effective warm starts for a commercial classical solver under tight time limits.",
+      "authors": [
+        "Kien X. Nguyen",
+        "Ilya Safro"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-03-12T02:32:19+00:00",
+      "link": "https://arxiv.org/pdf/2603.11456v1",
+      "tags": [
+        "keyword:ML CO",
+        "query:ML CO"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "Unified heterogeneous graph representation for unsupervised neural combinatorial optimization",
+      "llm_evidence_cn": "用于无监督神经组合优化的统一异构图表示",
+      "llm_evidence": "用于无监督神经组合优化的统一异构图表示",
+      "canonical_evidence": "用于无监督神经组合优化的统一异构图表示",
+      "llm_tldr_en": "Proposes a unified GNN-based framework for solving multiple graph-based NP-hard problems without labels.",
+      "llm_tldr_cn": "提出一种基于GNN的统一框架，用于在无标签情况下解决多个基于图的NP难问题。",
+      "llm_tldr": "提出一种基于GNN的统一框架，用于在无标签情况下解决多个基于图的NP难问题。",
+      "llm_tags": [
+        "query:ml-co"
+      ],
+      "matched_query_tag": "query:ml-co",
+      "matched_query_text": "graph neural networks for combinatorial optimization",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2603.09172v2",
+      "title": "Reinforced Generation of Combinatorial Structures: Ramsey Numbers",
+      "abstract": "We present improved lower bounds for five classical Ramsey numbers: $\\mathbf{R}(3, 13)$ is increased from $60$ to $61$, $\\mathbf{R}(3, 18)$ from $99$ to $100$, $\\mathbf{R}(4, 13)$ from $138$ to $139$, $\\mathbf{R}(4, 14)$ from $147$ to $148$, and $\\mathbf{R}(4, 15)$ from $158$ to $159$. These results were achieved using AlphaEvolve, an LLM-based code mutation agent. Beyond these new results, we successfully recovered lower bounds for all Ramsey numbers known to be exact, and matched the best known lower bounds across many other cases. These include bounds for which previous work does not detail the algorithms used. Virtually all known Ramsey lower bounds are derived computationally, with bespoke search algorithms each delivering a handful of results. AlphaEvolve is a single meta-algorithm yielding search algorithms for all of our results.",
+      "authors": [
+        "Ansh Nagda",
+        "Prabhakar Raghavan",
+        "Abhradeep Thakurta"
+      ],
+      "primary_category": "math.CO",
+      "categories": [
+        "math.CO",
+        "cs.AI",
+        "cs.CC"
+      ],
+      "published": "2026-03-10T04:20:40+00:00",
+      "link": "https://arxiv.org/pdf/2603.09172v2",
+      "tags": [
+        "keyword:ML CO",
+        "query:ML CO"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Reinforced generation of combinatorial structures for Ramsey numbers using LLM-based agents",
+      "llm_evidence_cn": "使用基于大模型的智能体强化生成拉姆齐数等组合结构",
+      "llm_evidence": "使用基于大模型的智能体强化生成拉姆齐数等组合结构",
+      "canonical_evidence": "使用基于大模型的智能体强化生成拉姆齐数等组合结构",
+      "llm_tldr_en": "Uses an LLM-based agent to improve lower bounds for Ramsey numbers, a classic combinatorial problem.",
+      "llm_tldr_cn": "使用基于大语言模型的智能体改进了经典组合问题拉姆齐数的下界。",
+      "llm_tldr": "使用基于大语言模型的智能体改进了经典组合问题拉姆齐数的下界。",
+      "llm_tags": [
+        "query:ml-co"
+      ],
+      "matched_query_tag": "query:ml-co",
+      "matched_query_text": "deep learning methods for solving NP hard problems",
+      "matched_requirement_id": "req-9",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2603.06810v1",
+      "title": "Multi-Agent Reinforcement Learning with Submodular Reward",
+      "abstract": "In this paper, we study cooperative multi-agent reinforcement learning (MARL) where the joint reward exhibits submodularity, which is a natural property capturing diminishing marginal returns when adding agents to a team. Unlike standard MARL with additive rewards, submodular rewards model realistic scenarios where agent contributions overlap (e.g., multi-drone surveillance, collaborative exploration). We provide the first formal framework for this setting and develop algorithms with provable guarantees on sample efficiency and regret bound. For known dynamics, our greedy policy optimization achieves a $1/2$-approximation with polynomial complexity in the number of agents $K$, overcoming the exponential curse of dimensionality inherent in joint policy optimization. For unknown dynamics, we propose a UCB-based learning algorithm achieving a $1/2$-regret of $O(H^2KS\\sqrt{AT})$ over $T$ episodes.",
+      "authors": [
+        "Wenjing Chen",
+        "Chengyuan Qian",
+        "Shuo Xing",
+        "Yi Zhou",
+        "Victoria Crawford"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.DS"
+      ],
+      "published": "2026-03-06T19:17:29+00:00",
+      "link": "https://arxiv.org/pdf/2603.06810v1",
+      "tags": [
+        "keyword:ML CO",
+        "query:ML CO"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "multi-agent reinforcement learning for submodular rewards",
+      "llm_evidence_cn": "子模奖励的多智能体强化学习",
+      "llm_evidence": "子模奖励的多智能体强化学习",
+      "canonical_evidence": "子模奖励的多智能体强化学习",
+      "llm_tldr_en": "Provides a MARL framework for submodular rewards with provable guarantees on sample efficiency.",
+      "llm_tldr_cn": "为子模奖励提供了多智能体强化学习框架，并具有可证明的样本效率保证。",
+      "llm_tldr": "为子模奖励提供了多智能体强化学习框架，并具有可证明的样本效率保证。",
+      "llm_tags": [
+        "query:ml-co"
+      ],
+      "matched_query_tag": "query:ml-co",
+      "matched_query_text": "reinforcement learning for combinatorial optimization",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2603.08209v1",
+      "title": "Multi-Objective Evolutionary Optimization of Chance-Constrained Multiple-Choice Knapsack Problems with Implicit Probability Distributions",
+      "abstract": "The multiple-choice knapsack problem (MCKP) is a classic combinatorial optimization with wide practical applications. This paper investigates a significant yet underexplored extension of MCKP: the multi-objective chance-constrained MCKP (MO-CCMCKP) under implicit probability distributions. The goal of the problem is to simultaneously minimize the total cost and maximize the confidence level of satisfying the capacity constraint, capturing essential trade-offs in domains like 5G network configuration. To address the computational challenge of evaluating chance constraints under implicit distributions, we first propose an order-preserving efficient resource allocation Monte Carlo (OPERA-MC) method. This approach adaptively allocates sampling resources to preserve dominance relationships while reducing evaluation time significantly. Further, we develop NHILS, a hybrid evolutionary algorithm that integrates specialized initialization and local search into NSGA-II to navigate sparse feasible regions. Experiments on synthetic benchmarks and real-world 5G network configuration benchmarks demonstrate that NHILS consistently outperforms several state-of-the-art multi-objective optimizers in convergence, diversity, and feasibility. The benchmark instances and source code will be made publicly available to facilitate research in this area.",
+      "authors": [
+        "Xuanfeng Li",
+        "Shengcai Liu",
+        "Wenjie Chen",
+        "Yew-Soon Ong",
+        "Ke Tang"
+      ],
+      "primary_category": "cs.NE",
+      "categories": [
+        "cs.NE"
+      ],
+      "published": "2026-03-09T10:39:58+00:00",
+      "link": "https://arxiv.org/pdf/2603.08209v1",
+      "tags": [
+        "keyword:ML CO",
+        "query:ML CO"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "evolutionary optimization for knapsack problems",
+      "llm_evidence_cn": "背包问题的进化优化",
+      "llm_evidence": "背包问题的进化优化",
+      "canonical_evidence": "背包问题的进化优化",
+      "llm_tldr_en": "Investigates multi-objective evolutionary optimization for chance-constrained multiple-choice knapsack problems.",
+      "llm_tldr_cn": "研究了具有隐式概率分布的多目标机会约束多选背包问题的进化优化方法。",
+      "llm_tldr": "研究了具有隐式概率分布的多目标机会约束多选背包问题的进化优化方法。",
+      "llm_tags": [
+        "query:ml-co"
+      ],
+      "matched_query_tag": "query:ml-co",
+      "matched_query_text": "machine learning for combinatorial optimization",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2603.08514v1",
+      "title": "Beyond Hungarian: Match-Free Supervision for End-to-End Object Detection",
+      "abstract": "Recent DEtection TRansformer (DETR) based frameworks have achieved remarkable success in end-to-end object detection. However, the reliance on the Hungarian algorithm for bipartite matching between queries and ground truths introduces computational overhead and complicates the training dynamics. In this paper, we propose a novel matching-free training scheme for DETR-based detectors that eliminates the need for explicit heuristic matching. At the core of our approach is a dedicated Cross-Attention-based Query Selection (CAQS) module. Instead of discrete assignment, we utilize encoded ground-truth information to probe the decoder queries through a cross-attention mechanism. By minimizing the weighted error between the queried results and the ground truths, the model autonomously learns the implicit correspondences between object queries and specific targets. This learned relationship further provides supervision signals for the learning of queries. Experimental results demonstrate that our proposed method bypasses the traditional matching process, significantly enhancing training efficiency, reducing the matching latency by over 50\\%, effectively eliminating the discrete matching bottleneck through differentiable correspondence learning, and also achieving superior performance compared to existing state-of-the-art methods.",
+      "authors": [
+        "Shoumeng Qiu",
+        "Xinrun Li",
+        "Yang Long"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI"
+      ],
+      "published": "2026-03-09T15:44:23+00:00",
+      "link": "https://arxiv.org/pdf/2603.08514v1",
+      "tags": [
+        "query:ML CO"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "replaces Hungarian algorithm with end-to-end learning",
+      "llm_evidence_cn": "用端到端学习取代匈牙利算法",
+      "llm_evidence": "用端到端学习取代匈牙利算法",
+      "canonical_evidence": "用端到端学习取代匈牙利算法",
+      "llm_tldr_en": "Proposes a match-free training scheme for object detection to eliminate the heuristic Hungarian algorithm.",
+      "llm_tldr_cn": "提出一种无匹配的目标检测训练方案，消除了启发式的匈牙利算法。",
+      "llm_tldr": "提出一种无匹配的目标检测训练方案，消除了启发式的匈牙利算法。",
+      "llm_tags": [
+        "query:ml-co"
+      ],
+      "matched_query_tag": "query:ml-co",
+      "matched_query_text": "end to end learning for combinatorial optimization",
+      "matched_requirement_id": "req-10",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2603.11884v1",
+      "title": "The price of decentralization in managing engineering systems through multi-agent reinforcement learning",
+      "abstract": "Inspection and maintenance (I&M) planning involves sequential decision making under uncertainties and incomplete information, and can be modeled as a partially observable Markov decision process (POMDP). While single-agent deep reinforcement learning provides approximate solutions to POMDPs, it does not scale well in multi-component systems. Scalability can be achieved through multi-agent deep reinforcement learning (MADRL), which decentralizes decision-making across multiple agents, locally controlling individual components. However, this decentralization can induce cooperation pathologies that degrade the optimality of the learned policies. To examine these effects in I&M planning, we introduce a set of deteriorating systems in which redundancy is varied systematically. These benchmark environments are designed such that computation of centralized (near-)optimal policies remains tractable, enabling direct comparison of solution methods. We implement and benchmark a broad set of MADRL algorithms spanning fully centralized and decentralized training paradigms, from value-factorization to actor-critic methods. Our results show a clear effect of redundancy on coordination: MADRL algorithms achieve near-optimal performance in series-like settings, whereas increasing redundancy amplifies coordination challenges and can lead to optimality losses. Nonetheless, decentralized agents learn structured policies that consistently outperform optimized heuristic baselines, highlighting both the promise and current limitations of decentralized learning for scalable maintenance planning.",
+      "authors": [
+        "Prateek Bhustali",
+        "Pablo G. Morato",
+        "Konstantinos G. Papakonstantinou",
+        "Charalampos P. Andriotis"
+      ],
+      "primary_category": "cs.MA",
+      "categories": [
+        "cs.MA"
+      ],
+      "published": "2026-03-12T13:00:21+00:00",
+      "link": "https://arxiv.org/pdf/2603.11884v1",
+      "tags": [
+        "keyword:ML CO",
+        "query:ML CO"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "Multi-agent reinforcement learning for sequential decision making",
+      "llm_evidence_cn": "多智能体强化学习用于序列决策",
+      "llm_evidence": "多智能体强化学习用于序列决策",
+      "canonical_evidence": "多智能体强化学习用于序列决策",
+      "llm_tldr_en": "Analyzes decentralization in multi-agent reinforcement learning for maintenance planning problems.",
+      "llm_tldr_cn": "分析了多智能体强化学习在维护规划问题中的去中心化影响。",
+      "llm_tldr": "分析了多智能体强化学习在维护规划问题中的去中心化影响。",
+      "llm_tags": [
+        "query:ml-co"
+      ],
+      "matched_query_tag": "query:ml-co",
+      "matched_query_text": "reinforcement learning for combinatorial optimization",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2603.06849v1",
+      "title": "Twitch: Learning Abstractions for Equational Theorem Proving",
+      "abstract": "Several successful strategies in automated reasoning rely on human-supplied guidance about which term or clause shapes are interesting. In this paper we aim to discover interesting term shapes automatically. Specifically, we discover abstractions : term patterns that occur over and over again in relevant proofs. We present our tool Twitch which discovers abstractions with the help of Stitch, a tool originally developed for discovering reusable library functions in program synthesis tasks. Twitch can produce abstractions in two ways: (1) from a partial, failed proof of a conjecture; (2) from successful proofs of other theorems in the same domain. We have also extended Twee, an equational theorem prover, to use these abstractions. We evaluate Twitch on a set of unit equality (UEQ) problems from TPTP, and show that it can prove 12 rating-1 problems as well as yielding significant speed-ups on many other problems.",
+      "authors": [
+        "Guy Axelrod",
+        "Moa Johansson",
+        "Nicholas Smallbone"
+      ],
+      "primary_category": "cs.LO",
+      "categories": [
+        "cs.LO",
+        "cs.AI"
+      ],
+      "published": "2026-03-06T20:15:09+00:00",
+      "link": "https://arxiv.org/pdf/2603.06849v1",
+      "tags": [
+        "keyword:ML CO",
+        "query:ML CO"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "learning abstractions for automated reasoning search",
+      "llm_evidence_cn": "学习抽象以用于自动推理搜索",
+      "llm_evidence": "学习抽象以用于自动推理搜索",
+      "canonical_evidence": "学习抽象以用于自动推理搜索",
+      "llm_tldr_en": "Learns reusable patterns to guide search in equational theorem proving, improving solver efficiency.",
+      "llm_tldr_cn": "学习可重用的模式以指导等式定理证明中的搜索，提高求解器效率。",
+      "llm_tldr": "学习可重用的模式以指导等式定理证明中的搜索，提高求解器效率。",
+      "llm_tags": [
+        "query:ml-co"
+      ],
+      "matched_query_tag": "query:ml-co",
+      "matched_query_text": "learning to search in combinatorial optimization",
+      "matched_requirement_id": "req-12",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2603.07422v1",
+      "title": "Dynamic Vehicle Routing Problem with Prompt Confirmation of Advance Requests",
+      "abstract": "Transit agencies that operate on-demand transportation services have to respond to trip requests from passengers in real time, which involves solving dynamic vehicle routing problems with pick-up and drop-off constraints. Based on discussions with public transit agencies, we observe a real-world problem that is not addressed by prior work: when trips are booked in advance (e.g., trip requests arrive a few hours in advance of their requested pick-up times), the agency needs to promptly confirm whether a request can be accepted or not, and ensure that accepted requests are served as promised. State-of-the-art computational approaches either provide prompt confirmation but lack the ability to continually optimize and improve routes for accepted requests, or they provide continual optimization but cannot guarantee serving all accepted requests. To address this gap, we introduce a novel problem formulation of dynamic vehicle routing with prompt confirmation and continual optimization. We propose a novel computational approach for this vehicle routing problem, which integrates a quick insertion search for prompt confirmation with an anytime algorithm for continual optimization. To maximize the number requests served, we train a non-myopic objective function using reinforcement learning, which guides both the insertion and the anytime algorithms towards optimal, non-myopic solutions. We evaluate our computational approach on a real-world microtransit dataset from a public transit agency in the U.S., demonstrating that our proposed approach provides prompt confirmation while significantly increasing the number of requests served compared to existing approaches.",
+      "authors": [
+        "Amutheezan Sivagnanam",
+        "Ayan Mukhopadhyay",
+        "Samitha Samaranayake",
+        "Abhishek Dubey",
+        "Aron Laszka"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-03-08T02:34:41+00:00",
+      "link": "https://arxiv.org/pdf/2603.07422v1",
+      "tags": [
+        "keyword:ML CO",
+        "query:ML CO"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "dynamic vehicle routing problem optimization",
+      "llm_evidence_cn": "动态车辆路径问题优化",
+      "llm_evidence": "动态车辆路径问题优化",
+      "canonical_evidence": "动态车辆路径问题优化",
+      "llm_tldr_en": "Addresses a real-world dynamic vehicle routing problem with advance requests and prompt confirmation needs.",
+      "llm_tldr_cn": "解决了一个具有提前预约和即时确认需求的现实动态车辆路径问题。",
+      "llm_tldr": "解决了一个具有提前预约和即时确认需求的现实动态车辆路径问题。",
+      "llm_tags": [
+        "query:ml-co:composite"
+      ],
+      "matched_query_tag": "query:ml-co:composite",
+      "matched_query_text": "Papers central to 查找机器学习解决组合优化相关的论文, especially work that connects or combines: machine learning for combinatorial optimization; reinforcement learning for combinatorial optimization; graph neural networks for combinatorial optimization; machine learning approaches for traveling salesman problem; machine learning for integer linear programming; learning to branch in branch and bound algorithms; meta-learning for combinatorial optimization; survey of machine learning for combinatorial optimization; deep learning methods for solving NP hard problems; end to end learning for combinatorial optimization.",
+      "matched_requirement_id": "req-composite-ml-co",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2603.12232v1",
+      "title": "Incremental Neural Network Verification via Learned Conflicts",
+      "abstract": "Neural network verification is often used as a core component within larger analysis procedures, which generate sequences of closely related verification queries over the same network. In existing neural network verifiers, each query is typically solved independently, and information learned during previous runs is discarded, leading to repeated exploration of the same infeasible regions of the search space. In this work, we aim to expedite verification by reducing this redundancy. We propose an incremental verification technique that reuses learned conflicts across related verification queries. The technique can be added on top of any branch-and-bound-based neural network verifier. During verification, the verifier records conflicts corresponding to learned infeasible combinations of activation phases, and retains them across runs. We formalize a refinement relation between verification queries and show that conflicts learned for a query remain valid under refinement, enabling sound conflict inheritance. Inherited conflicts are handled using a SAT solver to perform consistency checks and propagation, allowing infeasible subproblems to be detected and pruned early during search. We implement the proposed technique in the Marabou verifier and evaluate it on three verification tasks: local robustness radius determination, verification with input splitting, and minimal sufficient feature set extraction. Our experiments show that incremental conflict reuse reduces verification effort and yields speedups of up to $1.9\\times$ over a non-incremental baseline.",
+      "authors": [
+        "Raya Elsaleh",
+        "Liam Davis",
+        "Haoze Wu",
+        "Guy Katz"
+      ],
+      "primary_category": "cs.LO",
+      "categories": [
+        "cs.LO",
+        "cs.AI"
+      ],
+      "published": "2026-03-12T17:52:12+00:00",
+      "link": "https://arxiv.org/pdf/2603.12232v1",
+      "tags": [
+        "keyword:ML CO",
+        "query:ML CO"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "branch-and-bound-based neural network verifier with learned conflicts",
+      "llm_evidence_cn": "基于分支定界且具有学习冲突机制的神经网络验证器",
+      "llm_evidence": "基于分支定界且具有学习冲突机制的神经网络验证器",
+      "canonical_evidence": "基于分支定界且具有学习冲突机制的神经网络验证器",
+      "llm_tldr_en": "Accelerates NN verification by reusing learned conflicts within a branch-and-bound framework.",
+      "llm_tldr_cn": "通过在分支定界框架中重用学习到的冲突来加速神经网络验证。",
+      "llm_tldr": "通过在分支定界框架中重用学习到的冲突来加速神经网络验证。",
+      "llm_tags": [
+        "query:ml-co"
+      ],
+      "matched_query_tag": "query:ml-co",
+      "matched_query_text": "learning to branch in branch and bound algorithms",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2603.07422v2",
+      "title": "Dynamic Vehicle Routing Problem with Prompt Confirmation of Advance Requests",
+      "abstract": "Transit agencies that operate on-demand transportation services have to respond to trip requests from passengers in real time, which involves solving dynamic vehicle routing problems with pick-up and drop-off constraints. Based on discussions with public transit agencies, we observe a real-world problem that is not addressed by prior work: when trips are booked in advance (e.g., trip requests arrive a few hours in advance of their requested pick-up times), the agency needs to promptly confirm whether a request can be accepted or not, and ensure that accepted requests are served as promised. State-of-the-art computational approaches either provide prompt confirmation but lack the ability to continually optimize and improve routes for accepted requests, or they provide continual optimization but cannot guarantee serving all accepted requests. To address this gap, we introduce a novel problem formulation of dynamic vehicle routing with prompt confirmation and continual optimization. We propose a novel computational approach for this vehicle routing problem, which integrates a quick insertion search for prompt confirmation with an anytime algorithm for continual optimization. To maximize the number requests served, we train a non-myopic objective function using reinforcement learning, which guides both the insertion and the anytime algorithms towards optimal, non-myopic solutions. We evaluate our computational approach on a real-world microtransit dataset from a public transit agency in the U.S., demonstrating that our proposed approach provides prompt confirmation while significantly increasing the number of requests served compared to existing approaches.",
+      "authors": [
+        "Amutheezan Sivagnanam",
+        "Ayan Mukhopadhyay",
+        "Samitha Samaranayake",
+        "Abhishek Dubey",
+        "Aron Laszka"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-03-08T02:34:41+00:00",
+      "link": "https://arxiv.org/pdf/2603.07422v2",
+      "tags": [
+        "keyword:ML CO",
+        "query:ML CO"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "dynamic vehicle routing problem optimization",
+      "llm_evidence_cn": "动态车辆路径问题优化",
+      "llm_evidence": "动态车辆路径问题优化",
+      "canonical_evidence": "动态车辆路径问题优化",
+      "llm_tldr_en": "Addresses the dynamic vehicle routing problem with advance requests and prompt confirmation constraints.",
+      "llm_tldr_cn": "研究了具有提前预约和即时确认约束的动态车辆路径问题。",
+      "llm_tldr": "研究了具有提前预约和即时确认约束的动态车辆路径问题。",
+      "llm_tags": [
+        "query:ml-co:composite"
+      ],
+      "matched_query_tag": "query:ml-co:composite",
+      "matched_query_text": "Papers central to 查找机器学习解决组合优化相关的论文, especially work that connects or combines: machine learning for combinatorial optimization; reinforcement learning for combinatorial optimization; graph neural networks for combinatorial optimization; machine learning approaches for traveling salesman problem; machine learning for integer linear programming; learning to branch in branch and bound algorithms; meta-learning for combinatorial optimization; survey of machine learning for combinatorial optimization; deep learning methods for solving NP hard problems; end to end learning for combinatorial optimization.",
+      "matched_requirement_id": "req-composite-ml-co",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2603.07456v1",
+      "title": "Agentic AI-Driven UAV Network Deployment: A LLM-Enhanced Exact Potential Game Approach",
+      "abstract": "Unmanned Aerial Vehicular Networks (UAVNs) are envisioned to provide flexible connectivity, wide-area coverage, and low-latency services in dynamic environments. From an agentic artificial intelligence (Agentic AI) perspective, UAVNs naturally operate as multi-agent systems, where autonomous UAVs act as intelligent agents that coordinate deployment and networking decisions to achieve global performance objectives. However, the strong coupling between discrete link decisions and continuous deployment parameters makes UAVN topology optimization a mixed-integer nonconvex problem, resulting in challenges in scalability, efficiency, and solution consistency under dynamic network conditions. This paper proposes a dual spatial-scale UAVN topology optimization framework based on exact potential games (EPGs), enhanced by Agentic AI. At the large spatial scale, a log-linear learning based EPG (L3-EPG) algorithm is developed to optimize inter-UAV link configurations, enabling sparse yet connected network topologies while reducing redundant links and interference. At the small spatial scale, an approximate gradient based EPG (AG-EPG) algorithm jointly optimizes UAV deployment, transmission power allocation, and ground user (GU) association to improve network throughput and latency. To further enhance adaptability across heterogeneous scenarios, a large language model (LLM) is incorporated as a knowledge-driven decision enhancer to automatically generate utility weights according to network characteristics, alleviating reliance on manual parameter tuning. Simulation results demonstrate that the proposed framework consistently outperforms baseline methods in terms of energy consumption, end-to-end latency, and system throughput.",
+      "authors": [
+        "Xin Tang",
+        "Qian Chen",
+        "Binhan Liao",
+        "Yaqi Zhang",
+        "Jianxin Chen",
+        "Changyuan Zhao",
+        "Junchuan Fan",
+        "Junxi Tian",
+        "Xiaohuan Li"
+      ],
+      "primary_category": "cs.DC",
+      "categories": [
+        "cs.DC"
+      ],
+      "published": "2026-03-08T04:13:09+00:00",
+      "link": "https://arxiv.org/pdf/2603.07456v1",
+      "tags": [
+        "keyword:ML CO",
+        "query:ML CO"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "LLM-enhanced approach for mixed-integer nonconvex optimization",
+      "llm_evidence_cn": "LLM增强的混合整数非凸优化方法",
+      "llm_evidence": "LLM增强的混合整数非凸优化方法",
+      "canonical_evidence": "LLM增强的混合整数非凸优化方法",
+      "llm_tldr_en": "Combines LLMs with game theory to solve mixed-integer nonconvex topology optimization in UAV networks.",
+      "llm_tldr_cn": "结合LLM与博弈论，解决无人机网络中的混合整数非凸拓扑优化问题。",
+      "llm_tldr": "结合LLM与博弈论，解决无人机网络中的混合整数非凸拓扑优化问题。",
+      "llm_tags": [
+        "query:ml-co:composite"
+      ],
+      "matched_query_tag": "query:ml-co:composite",
+      "matched_query_text": "Papers central to 查找机器学习解决组合优化相关的论文, especially work that connects or combines: machine learning for combinatorial optimization; reinforcement learning for combinatorial optimization; graph neural networks for combinatorial optimization; machine learning approaches for traveling salesman problem; machine learning for integer linear programming; learning to branch in branch and bound algorithms; meta-learning for combinatorial optimization; survey of machine learning for combinatorial optimization; deep learning methods for solving NP hard problems; end to end learning for combinatorial optimization.",
+      "matched_requirement_id": "req-composite-ml-co",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2603.07579v1",
+      "title": "Succinct QUBO formulations for permutation problems by sorting networks",
+      "abstract": "Quadratic Unconstrained Binary Optimization (QUBO) is a standard NP-hard optimization problem. Recently, it has gained renewed interest through quantum computing, as QUBOs directly reduce to the Ising model, on which quantum annealing devices are based. We introduce a QUBO formulation for permutations using compare-exchange networks, with only $O(n \\log^2 n)$ binary variables. This is a substantial improvement over the standard permutation matrix encoding, which requires $n^2$ variables and has a much denser interaction graph. A central feature of our approach is uniformity: each permutation corresponds to a unique variable assignment, enabling unbiased sampling.   Our construction also allows additional constraints, including fixed points and parity. Moreover, it provides a representation of permutations that supports the operations multiplication and inversion, and also makes it possible to check the order of a permutation. This can be used to uniformly generate permutations of a given order or, for example, permutations that commute with a specified permutation. To our knowledge, this is the first result linking oblivious compare-exchange networks with QUBO encodings. While similar functionality can be achieved using permutation matrices, our method yields QUBOs that are both smaller and sparser. We expect this method to be practically useful in areas where unbiased sampling of constrained permutations is important, including cryptography and combinatorial design.",
+      "authors": [
+        "Katalin Friedl",
+        "Levente Gegő",
+        "László Kabódi",
+        "Viktória Nemkin"
+      ],
+      "primary_category": "quant-ph",
+      "categories": [
+        "quant-ph",
+        "cs.DS"
+      ],
+      "published": "2026-03-08T10:37:52+00:00",
+      "link": "https://arxiv.org/pdf/2603.07579v1",
+      "tags": [
+        "keyword:ML CO",
+        "query:ML CO"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "QUBO formulation for NP-hard permutation problems",
+      "llm_evidence_cn": "针对NP-hard排列问题的QUBO建模",
+      "llm_evidence": "针对NP-hard排列问题的QUBO建模",
+      "canonical_evidence": "针对NP-hard排列问题的QUBO建模",
+      "llm_tldr_en": "Introduces a succinct QUBO formulation for permutation problems using sorting networks to reduce variables.",
+      "llm_tldr_cn": "引入一种使用排序网络简化变量的排列问题QUBO建模方法。",
+      "llm_tldr": "引入一种使用排序网络简化变量的排列问题QUBO建模方法。",
+      "llm_tags": [
+        "query:ml-co"
+      ],
+      "matched_query_tag": "query:ml-co",
+      "matched_query_text": "deep learning methods for solving NP hard problems",
+      "matched_requirement_id": "req-9",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2603.07961v1",
+      "title": "SGG-R$^{\\rm 3}$: From Next-Token Prediction to End-to-End Unbiased Scene Graph Generation",
+      "abstract": "Scene Graph Generation (SGG) structures visual scenes as graphs of objects and their relations. While Multimodal Large Language Models (MLLMs) have advanced end-to-end SGG, current methods are hindered by both a lack of task-specific structured reasoning and the challenges of sparse, long-tailed relation distributions, resulting in incomplete scene graphs characterized by low recall and biased predictions. To address these issues, we introduce SGG-R$^{\\rm 3}$, a structured reasoning framework that integrates task-specific chain-of-thought (CoT)-guided supervised fine-tuning (SFT) and reinforcement learning (RL) with group sequence policy optimization (GSPO), designed to engage in three sequential stages to achieve end-to-end unbiased scene graph generation. During the SFT phase, we propose a relation augmentation strategy by leveraging an MLLM and refined via embedding similarity filtering to alleviate relation sparsity. Subsequently, a stage-aligned reward scheme optimizes the procedural reasoning during RL. Specifically, we propose a novel dual-granularity reward which integrates fine-grained and coarse-grained relation rewards, simultaneously mitigating the long-tail issue via frequency-based adaptive weighting of predicates and improving relation coverage through semantic clustering. Experiments on two benchmarks show that SGG-R$^{\\rm 3}$ achieves superior performance compared to existing methods, demonstrating the effectiveness and generalization of the framework.",
+      "authors": [
+        "Jiaye Feng",
+        "Qixiang Yin",
+        "Yuankun Liu",
+        "Tong Mo",
+        "Weiping Li"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-03-09T04:58:03+00:00",
+      "link": "https://arxiv.org/pdf/2603.07961v1",
+      "tags": [
+        "keyword:ML CO",
+        "query:ML CO"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "end-to-end scene graph generation using reinforcement learning",
+      "llm_evidence_cn": "使用强化学习的端到端场景图生成",
+      "llm_evidence": "使用强化学习的端到端场景图生成",
+      "canonical_evidence": "使用强化学习的端到端场景图生成",
+      "llm_tldr_en": "Integrates RL and structured reasoning for end-to-end graph generation in computer vision tasks.",
+      "llm_tldr_cn": "在计算机视觉任务中结合强化学习与结构化推理，实现端到端的图生成。",
+      "llm_tldr": "在计算机视觉任务中结合强化学习与结构化推理，实现端到端的图生成。",
+      "llm_tags": [
+        "query:ml-co"
+      ],
+      "matched_query_tag": "query:ml-co",
+      "matched_query_text": "end to end learning for combinatorial optimization",
+      "matched_requirement_id": "req-10",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2603.07642v1",
+      "title": "Helix: Evolutionary Reinforcement Learning for Open-Ended Scientific Problem Solving",
+      "abstract": "Large language models (LLMs) with reasoning abilities have demonstrated growing promise for tackling complex scientific problems. Yet such tasks are inherently domain-specific, unbounded and open-ended, demanding exploration across vast and flexible solution spaces. Existing approaches, whether purely learning-based or reliant on carefully designed workflows, often suffer from limited exploration efficiency and poor generalization. To overcome these challenges, we present HELIX -- a Hierarchical Evolutionary reinforcement Learning framework with In-context eXperiences. HELIX introduces two key novelties: (i) a diverse yet high-quality pool of candidate solutions that broadens exploration through in-context learning, and (ii) reinforcement learning for iterative policy refinement that progressively elevates solution quality. This synergy enables the discovery of more advanced solutions. On the circle packing task, HELIX achieves state-of-the-art result with a sum of radii of 2.63598308 using only a 14B model. Across standard machine learning benchmarks, HELIX further surpasses GPT-4o with a carefully engineered pipeline, delivering an average F1 improvement of 5.95 points on the Adult and Bank Marketing datasets.",
+      "authors": [
+        "Chang Su",
+        "Zhongkai Hao",
+        "Zhizhou Zhang",
+        "Zeyu Xia",
+        "Youjia Wu",
+        "Hang Su",
+        "Jun Zhu"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-03-08T14:08:52+00:00",
+      "link": "https://arxiv.org/pdf/2603.07642v1",
+      "tags": [
+        "keyword:ML CO",
+        "query:ML CO"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "evolutionary reinforcement learning for problem solving",
+      "llm_evidence_cn": "用于问题解决的演化强化学习",
+      "llm_evidence": "用于问题解决的演化强化学习",
+      "canonical_evidence": "用于问题解决的演化强化学习",
+      "llm_tldr_en": "Presents a hierarchical evolutionary RL framework to improve exploration in complex scientific problem spaces.",
+      "llm_tldr_cn": "提出了一种分层演化强化学习框架，以改进复杂科学问题空间中的探索效率。",
+      "llm_tldr": "提出了一种分层演化强化学习框架，以改进复杂科学问题空间中的探索效率。",
+      "llm_tags": [
+        "query:ml-co"
+      ],
+      "matched_query_tag": "query:ml-co",
+      "matched_query_text": "reinforcement learning for combinatorial optimization",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2603.07705v1",
+      "title": "Deep Incentive Design with Differentiable Equilibrium Blocks",
+      "abstract": "Automated design of multi-agent interactions with desirable equilibrium outcomes is inherently difficult due to the computational hardness, non-uniqueness, and instability of the resulting equilibria. In this work, we propose the use of game-agnostic differentiable equilibrium blocks (DEBs) as modules in a novel, differentiable framework to address a wide variety of incentive design problems from economics and computer science. We call this framework deep incentive design (DID). To validate our approach, we examine three diverse, challenging incentive design tasks: contract design, machine scheduling, and inverse equilibrium problems. For each task, we train a single neural network using a unified pipeline and DEB. This architecture solves the full distribution of problem instances, parameterized by a context, handling all games across a wide range of scales (from two to sixteen actions per player).",
+      "authors": [
+        "Vinzenz Thoma",
+        "Georgios Piliouras",
+        "Luke Marris"
+      ],
+      "primary_category": "cs.GT",
+      "categories": [
+        "cs.GT",
+        "cs.LG"
+      ],
+      "published": "2026-03-08T16:15:03+00:00",
+      "link": "https://arxiv.org/pdf/2603.07705v1",
+      "tags": [
+        "keyword:ML CO",
+        "query:ML CO"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "Differentiable framework for machine scheduling and incentive design",
+      "llm_evidence_cn": "用于机器调度和激励设计的可微框架",
+      "llm_evidence": "用于机器调度和激励设计的可微框架",
+      "canonical_evidence": "用于机器调度和激励设计的可微框架",
+      "llm_tldr_en": "Uses differentiable equilibrium blocks to solve complex incentive design and scheduling optimization tasks.",
+      "llm_tldr_cn": "使用可微平衡块解决复杂的激励设计和机器调度优化任务。",
+      "llm_tldr": "使用可微平衡块解决复杂的激励设计和机器调度优化任务。",
+      "llm_tags": [
+        "query:ml-co"
+      ],
+      "matched_query_tag": "query:ml-co",
+      "matched_query_text": "machine learning for combinatorial optimization",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2603.07705v2",
+      "title": "Deep Incentive Design with Differentiable Equilibrium Blocks",
+      "abstract": "Automated design of multi-agent interactions with desirable equilibrium outcomes is inherently difficult due to the computational hardness, non-uniqueness, and instability of the resulting equilibria. In this work, we propose the use of game-agnostic differentiable equilibrium blocks (DEBs) as modules in a novel, differentiable framework to address a wide variety of incentive design problems from economics and computer science. We call this framework deep incentive design (DID). To validate our approach, we examine three diverse, challenging incentive design tasks: contract design, machine scheduling, and inverse equilibrium problems. For each task, we train a single neural network using a unified pipeline and DEB. This architecture solves the full distribution of problem instances, parameterized by a context, handling all games across a wide range of scales (from two to sixteen actions per player).",
+      "authors": [
+        "Vinzenz Thoma",
+        "Georgios Piliouras",
+        "Luke Marris"
+      ],
+      "primary_category": "cs.GT",
+      "categories": [
+        "cs.GT",
+        "cs.LG"
+      ],
+      "published": "2026-03-08T16:15:03+00:00",
+      "link": "https://arxiv.org/pdf/2603.07705v2",
+      "tags": [
+        "keyword:ML CO",
+        "query:ML CO"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "neural network for machine scheduling and incentive design",
+      "llm_evidence_cn": "用于机器调度和激励设计的神经网络",
+      "llm_evidence": "用于机器调度和激励设计的神经网络",
+      "canonical_evidence": "用于机器调度和激励设计的神经网络",
+      "llm_tldr_en": "Proposes a differentiable framework using neural networks to solve complex scheduling and design tasks.",
+      "llm_tldr_cn": "提出一种使用神经网络解决复杂调度和设计任务的可微框架。",
+      "llm_tldr": "提出一种使用神经网络解决复杂调度和设计任务的可微框架。",
+      "llm_tags": [
+        "query:ml-co"
+      ],
+      "matched_query_tag": "query:ml-co",
+      "matched_query_text": "machine learning for combinatorial optimization",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    }
+  ]
+}

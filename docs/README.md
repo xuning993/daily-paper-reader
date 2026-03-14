@@ -6,76 +6,73 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-03-11
-- 运行时间：2026-03-11 19:43:15 UTC
+- 最新运行日期：2026-03-14
+- 运行时间：2026-03-14 19:20:45 UTC
 - 运行状态：成功
-- 本次总论文数：18
-- 精读区：7
+- 本次总论文数：17
+- 精读区：6
 - 速读区：11
 
 ### 今日简报（AI）
-今日深度研读18篇前沿论文，重点聚焦满分成果 RADAR 在非对称距离表征路径规划上的重大突破。
-研究揭示了非对称感知对路由效率的决定性提升，并同步展示了 GRPO 算法在稳定多智能体拓扑学习中的创新潜力。
-建议读者
-- 详情：[/202603/11/README](/202603/11/README)
+今日深度解析 17 篇 AI 论文，聚焦强化学习在复杂路径规划与统一异构组合优化中的满分突破。
+重点推荐 UniHetCO 框架对多问题学习的统一建模，以及聚类感知注意力机制在取送货难题上的性能飞跃。
+建议从两篇 10 分力作入手，探索无监督神经组合优化与工程系统多智能体协作的前沿解法。
+- 详情：[/202603/14/README](/202603/14/README)
 
 ### 精读区论文标签
-1. [RADAR: Learning to Route with Asymmetry-aware DistAnce Representations](/202603/11/2603.03388v1-radar-learning-to-route-with-asymmetry-aware-distance-representations)  
+1. [Cluster-Aware Attention-Based Deep Reinforcement Learning for Pickup and Delivery Problems](/202603/14/2603.10053v1-cluster-aware-attention-based-deep-reinforcement-learning-for-pickup-and-delivery-problems)  
    标签：评分：10.0/10、query:ml-co
-   evidence：针对非对称距离车辆路径问题的神经求解器
-2. [RADAR: Learning to Route with Asymmetry-aware DistAnce Representations](/202603/11/2603.03388v2-radar-learning-to-route-with-asymmetry-aware-distance-representations)  
+   evidence：深度强化学习解决取送货问题
+2. [UniHetCO: A Unified Heterogeneous Representation for Multi-Problem Learning in Unsupervised Neural Combinatorial Optimization](/202603/14/2603.11456v1-unihetco-a-unified-heterogeneous-representation-for-multi-problem-learning-in-unsupervised-neural-combinatorial-optimization)  
    标签：评分：10.0/10、query:ml-co
-   evidence：针对具有非对称距离表示的车辆路径问题的神经求解器
-3. [Optimal trajectory-guided stochastic co-optimization for e-fuel system design and real-time operation](/202603/11/2603.03484v1-optimal-trajectory-guided-stochastic-co-optimization-for-e-fuel-system-design-and-real-time-operation)  
+   evidence：用于无监督神经组合优化的统一异构图表示
+3. [Reinforced Generation of Combinatorial Structures: Ramsey Numbers](/202603/14/2603.09172v2-reinforced-generation-of-combinatorial-structures-ramsey-numbers)  
    标签：评分：9.0/10、query:ml-co
-   evidence：针对组合空间的机器学习辅助协同优化
-4. [Learning to Reflect: Hierarchical Multi-Agent Reinforcement Learning for CSI-Free mmWave Beam-Focusing](/202603/11/2603.07370v1-learning-to-reflect-hierarchical-multi-agent-reinforcement-learning-for-csi-free-mmwave-beam-focusing)  
-   标签：评分：9.0/10、query:ml-co
-   evidence：针对大规模组合动作空间的强化学习
-5. [Agentic Neurosymbolic Collaboration for Mathematical Discovery: A Case Study in Combinatorial Design](/202603/11/2603.08322v1-agentic-neurosymbolic-collaboration-for-mathematical-discovery-a-case-study-in-combinatorial-design)  
-   标签：评分：9.0/10、query:ml-co
-   evidence：用于组合设计理论发现的AI智能体
-6. [Efficient Policy Learning with Hybrid Evaluation-Based Genetic Programming for Uncertain Agile Earth Observation Satellite Scheduling](/202603/11/2603.08447v1-efficient-policy-learning-with-hybrid-evaluation-based-genetic-programming-for-uncertain-agile-earth-observation-satellite-scheduling)  
-   标签：评分：9.0/10、query:ml-co
-   evidence：用于组合优化调度问题的遗传编程超启发式算法
-7. [Reinforced Generation of Combinatorial Structures: Ramsey Numbers](/202603/11/2603.09172v1-reinforced-generation-of-combinatorial-structures-ramsey-numbers)  
-   标签：评分：9.0/10、query:ml-co
-   evidence：基于大语言模型的智能体用于组合拉姆齐数
+   evidence：使用基于大模型的智能体强化生成拉姆齐数等组合结构
+4. [Multi-Agent Reinforcement Learning with Submodular Reward](/202603/14/2603.06810v1-multi-agent-reinforcement-learning-with-submodular-reward)  
+   标签：评分：8.0/10、query:ml-co
+   evidence：子模奖励的多智能体强化学习
+5. [Multi-Objective Evolutionary Optimization of Chance-Constrained Multiple-Choice Knapsack Problems with Implicit Probability Distributions](/202603/14/2603.08209v1-multi-objective-evolutionary-optimization-of-chance-constrained-multiple-choice-knapsack-problems-with-implicit-probability-distributions)  
+   标签：评分：8.0/10、query:ml-co
+   evidence：背包问题的进化优化
+6. [Beyond Hungarian: Match-Free Supervision for End-to-End Object Detection](/202603/14/2603.08514v1-beyond-hungarian-match-free-supervision-for-end-to-end-object-detection)  
+   标签：评分：8.0/10、query:ml-co
+   evidence：用端到端学习取代匈牙利算法
 
 ### 速读区论文标签
-1. [Graph-GRPO: Stabilizing Multi-Agent Topology Learning via Group Relative Policy Optimization](/202603/11/2603.02701v1-graph-grpo-stabilizing-multi-agent-topology-learning-via-group-relative-policy-optimization)  
+1. [The price of decentralization in managing engineering systems through multi-agent reinforcement learning](/202603/14/2603.11884v1-the-price-of-decentralization-in-managing-engineering-systems-through-multi-agent-reinforcement-learning)  
    标签：评分：8.0/10、query:ml-co
-   evidence：用于动态拓扑构建的强化学习
-2. [Deep learning-guided evolutionary optimization for protein design](/202603/11/2603.02753v1-deep-learning-guided-evolutionary-optimization-for-protein-design)  
+   evidence：多智能体强化学习用于序列决策
+2. [Incremental Neural Network Verification via Learned Conflicts](/202603/14/2603.12232v1-incremental-neural-network-verification-via-learned-conflicts)  
    标签：评分：8.0/10、query:ml-co
-   evidence：深度学习引导的序列设计进化优化
-3. [Changing the Game: The Bounce-Bind Ising Machine](/202603/11/2603.02771v1-changing-the-game-the-bounce-bind-ising-machine)  
-   标签：评分：8.0/10、query:ml-co
-   evidence：用于MAX-CUT等组合优化问题的伊辛机
-4. [RL unknotter, hard unknots and unknotting number](/202603/11/2603.07955v1-rl-unknotter-hard-unknots-and-unknotting-number)  
-   标签：评分：8.0/10、query:ml-co
-   evidence：用于简化纽结图的强化学习流水线
-5. [Learning Optimal Search Strategies](/202603/11/2603.02356v1-learning-optimal-search-strategies)  
+   evidence：基于分支定界且具有学习冲突机制的神经网络验证器
+3. [Twitch: Learning Abstractions for Equational Theorem Proving](/202603/14/2603.06849v1-twitch-learning-abstractions-for-equational-theorem-proving)  
    标签：评分：7.0/10、query:ml-co
-   evidence：学习最优搜索策略和停止规则
-6. [StitchCUDA: An Automated Multi-Agents End-to-End GPU Programing Framework with Rubric-based Agentic Reinforcement Learning](/202603/11/2603.02637v1-stitchcuda-an-automated-multi-agents-end-to-end-gpu-programing-framework-with-rubric-based-agentic-reinforcement-learning)  
+   evidence：学习抽象以用于自动推理搜索
+4. [Dynamic Vehicle Routing Problem with Prompt Confirmation of Advance Requests](/202603/14/2603.07422v2-dynamic-vehicle-routing-problem-with-prompt-confirmation-of-advance-requests)  
    标签：评分：7.0/10、query:ml-co
-   evidence：用于程序优化的智能体强化学习
-7. [Design and Analysis of an Improved Constrained Hypercube Mixer in Quantum Approximate Optimization Algorithm](/202603/11/2603.05187v1-design-and-analysis-of-an-improved-constrained-hypercube-mixer-in-quantum-approximate-optimization-algorithm)  
+   evidence：动态车辆路径问题优化
+5. [Succinct QUBO formulations for permutation problems by sorting networks](/202603/14/2603.07579v1-succinct-qubo-formulations-for-permutation-problems-by-sorting-networks)  
    标签：评分：7.0/10、query:ml-co
-   evidence：用于组合优化的量子近似优化算法
-8. [Escaping the Hydrolysis Trap: An Agentic Workflow for Inverse Design of Durable Photocatalytic Covalent Organic Frameworks](/202603/11/2603.05188v1-escaping-the-hydrolysis-trap-an-agentic-workflow-for-inverse-design-of-durable-photocatalytic-covalent-organic-frameworks)  
+   evidence：针对NP-hard排列问题的QUBO建模
+6. [Helix: Evolutionary Reinforcement Learning for Open-Ended Scientific Problem Solving](/202603/14/2603.07642v1-helix-evolutionary-reinforcement-learning-for-open-ended-scientific-problem-solving)  
    标签：评分：7.0/10、query:ml-co
-   evidence：用于导航组合设计空间的LLM智能体
-9. [Learning-Augmented Moment Estimation on Time-Decay Models](/202603/11/2603.02488v1-learning-augmented-moment-estimation-on-time-decay-models)  
+   evidence：用于问题解决的演化强化学习
+7. [Deep Incentive Design with Differentiable Equilibrium Blocks](/202603/14/2603.07705v1-deep-incentive-design-with-differentiable-equilibrium-blocks)  
+   标签：评分：7.0/10、query:ml-co
+   evidence：用于机器调度和激励设计的可微框架
+8. [Deep Incentive Design with Differentiable Equilibrium Blocks](/202603/14/2603.07705v2-deep-incentive-design-with-differentiable-equilibrium-blocks)  
+   标签：评分：7.0/10、query:ml-co
+   evidence：用于机器调度和激励设计的神经网络
+9. [Dynamic Vehicle Routing Problem with Prompt Confirmation of Advance Requests](/202603/14/2603.07422v1-dynamic-vehicle-routing-problem-with-prompt-confirmation-of-advance-requests)  
    标签：评分：6.0/10、query:ml-co
-   evidence：流模型中的学习增强算法
-10. [Bayesian Optimization in Chemical Compound Sub-Spaces using Low-Dimensional Molecular Descriptors](/202603/11/2603.02605v1-bayesian-optimization-in-chemical-compound-sub-spaces-using-low-dimensional-molecular-descriptors)  
+   evidence：动态车辆路径问题优化
+10. [Agentic AI-Driven UAV Network Deployment: A LLM-Enhanced Exact Potential Game Approach](/202603/14/2603.07456v1-agentic-ai-driven-uav-network-deployment-a-llm-enhanced-exact-potential-game-approach)  
    标签：评分：6.0/10、query:ml-co
-   evidence：针对离散化学化合物空间的贝叶斯优化
-11. [Test-Time Meta-Adaptation with Self-Synthesis](/202603/11/2603.03524v1-test-time-meta-adaptation-with-self-synthesis)  
+   evidence：LLM增强的混合整数非凸优化方法
+11. [SGG-R$^{\rm 3}$: From Next-Token Prediction to End-to-End Unbiased Scene Graph Generation](/202603/14/2603.07961v1-sgg-rrm-3-from-next-token-prediction-to-end-to-end-unbiased-scene-graph-generation)  
    标签：评分：6.0/10、query:ml-co
-   evidence：用于特定问题自适应的元学习框架
+   evidence：使用强化学习的端到端场景图生成
 
 
 <div class="dpr-home-promo-card">
