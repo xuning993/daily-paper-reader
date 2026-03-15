@@ -1,0 +1,720 @@
+Title: SliceFed: Federated Constrained Multi-Agent DRL for Dynamic Spectrum Slicing in 6G
+
+URL Source: https://arxiv.org/pdf/2603.11390v1
+
+Published Time: Fri, 13 Mar 2026 00:19:08 GMT
+
+Number of Pages: 8
+
+Markdown Content:
+# SliceFed: Federated Constrained Multi-Agent DRL for Dynamic Spectrum Slicing in 6G 
+
+Hossein Mohammadi ∗, Seyed Bagher Hashemi Natanzi †, Ramak Nassiri ∗, Jamshid Hassanpour ‡, Bo Tang †,Vuk Marojevic ∗∗Department of Electrical and Computer Engineering, Mississippi State University, Starkville, MS, USA 
+
+> †
+
+Department of Electrical and Computer Engineering, Worcester Polytechnic Institute, Worcester, MA, USA 
+
+> ‡
+
+Department of Electrical and Computer Engineering, Georgia Institute of Technology, Atlanta, GA, USA 
+
+{hm1125, rn533, vm602 }@msstate.edu, {snatanzi, btang1 }@wpi.edu, {jamshid }@gatech.edu 
+
+Abstract —Dynamic spectrum slicing is a critical enabler for 6G Radio Access Networks (RANs), allowing the coexistence of heterogeneous services. However, optimizing resource allocation in dense, interference-limited deployments remains challenging due to non-stationary channel dynamics, strict Quality-of-Service (QoS) requirements, and the need for data privacy. In this paper, we propose SliceFed, a novel Federated Constrained Multi-Agent Deep Reinforcement Learning (F-MADRL) framework. SliceFed formulates the slicing problem as a Constrained Markov Deci-sion Process (CMDP) where autonomous gNB agents maximize spectral efficiency while explicitly satisfying inter-cell interfer-ence budgets and hard ultra-reliable low-latency communication (URLLC) latency deadlines. We employ a Lagrangian primal-dual approach integrated with Proximal Policy Optimization (PPO) to enforce constraints, while Federated Averaging enables collaborative learning without exchanging raw local data. Exten-sive simulations in a dense multi-cell environment demonstrate that SliceFed converges to a stable, safety-aware policy. Unlike heuristic and unconstrained baselines, SliceFed achieves nearly 100% satisfaction of 1 ms URLLC latency deadlines and ex-hibits superior robustness to traffic load variations, verifying its potential for reliable and scalable 6G spectrum management. 
+
+Index Terms —6G, Deep Reinforcement Learning, Federated Learning, Network Slicing, URLLC. 
+
+I. I NTRODUCTION 
+
+Dynamic and efficient radio spectrum utilization is a fun-damental challenge for next-generation wireless systems. The proliferation of 5G deployments, massive IoT connectivity, and the coexistence of active networks with incumbent and passive sensing systems result in highly non-stationary and spatially heterogeneous interference conditions. Traditional rule-based sensing and thresholding methods, which typically assume stable or slowly varying spectral environments, struggle under bursty traffic, user mobility, and multipath propagation, leading to degraded reliability and responsiveness. Reinforcement learning (RL) offers a principled framework for sequential decision-making under uncertainty by enabling an agent to learn optimal actions from interaction with the environment. RL based methods have demonstrated strong performance in dynamic communication settings, such as channel selection, distributed resource allocation, and link adaptation, particularly when the wireless channel or spectrum state evolves as a Markov decision process (MDP) [1], where future interference and channel states depend probabilistically on the current spectrum state and the agent’s actions. The ability of RL algorithms, such as Q-learning, double Q-learning, and deep Q-networks, to handle stochastic rewards and incomplete information makes them suitable for agile spectrum management tasks in congested, interference-limited environments. However, applying RL to spectrum sharing must confront two practical constraints: First, the agent must operate on measurements that exhibit rapid temporal variations caused by fading, shadowing, mobility, and device heterogeneity, as documented extensively in classical wireless channel models and empirical studies [2]. Second, the learned policy must generalize to unseen interference patterns without relying on large, centrally curated datasets, which aligns with the broader trends of learning under limited observations and adapting online in complex environments. This paper addresses these challenges by introducing a novel AI-driven spectrum management framework that uni-fies reinforcement learning with data-driven interference mit-igation. The proposed method formulates spectrum access and interference avoidance as a constrained Markov decision process (CMDP), where the state is derived from calibrated spectral measurements and the agent selects continuous re-source allocation actions under explicit interference and QoS constraints. Unlike conventional spectrum sharing approaches that rely on instantaneous power thresholds or receiver-side sensing alone, the proposed framework explicitly learns the 
+
+temporal and cross-cell structure of interference leakage and optimizes aggressor-side spectrum usage subject to hard con-straint budgets. By integrating Lagrangian-based constrained learning with federated multi-agent coordination, the proposed approach enables adaptive, interference-aware spectrum access without predefined rules or centralized spectrum control. The contributions of this paper are summarized as follows:  
+
+> •
+
+SliceFed: A Federated Constrained Multi-Agent DRL Framework for Dynamic RAN Slicing. We propose 
+
+SliceFed , a novel federated multi-agent deep reinforce-ment learning framework for dynamic radio access net-work slicing in dense B5G/6G deployments. SliceFed formulates per-gNB slicing decisions as local constrained Markov decision processes (CMDPs) with explicit inter-cell interference, QoS, and feasibility constraints, and 
+
+> arXiv:2603.11390v1 [cs.NI] 12 Mar 2026
+
+solves them using a Lagrangian-based primal–dual PPO algorithm. A federated learning layer enables collabora-tive training across gNBs while preserving data locality and privacy, allowing decentralized execution with global coordination.  
+
+> •
+
+Constraint-Aware Spectrum and Resource Model-ing. We develop a rigorous system model that captures stochastic traffic dynamics, inter-cell interference leak-age, and heterogeneous slice requirements, bridging wire-less channel modeling with constrained reinforcement learning for spectrum-centric RAN slicing.  
+
+> •
+
+Stable and Low-Overhead Resource Adaptation. The proposed framework incorporates reconfiguration cost awareness and dual-variable adaptation, enabling stable, low-variance resource allocation policies that avoid oscil-latory behavior and excessive control signaling.  
+
+> •
+
+Comprehensive Evaluation and Benchmarking. We evaluate SliceFed against representative baselines, includ-ing equal slicing, queue-based heuristics, and random allocation, demonstrating superior constraint satisfaction, stability, and robustness under increasing URLLC traffic loads. Section II reviews related work on reinforcement learning, constrained learning, and multi-agent approaches for network slicing. Section III presents the system model and formulates the dynamic RAN slicing problem as a constrained Markov decision process (CMDP). Section IV introduces the proposed Lagrangian-based constrained reinforcement learning frame-work. Section V details the SliceFed architecture, including the federated multi-agent learning design and associated al-gorithms. Section VI evaluates the performance of SliceFed through extensive simulations, and Section VII concludes the paper. II. L ITERATURE REVIEW 
+
+Network slicing is a key enabler for supporting het-erogeneous services with diverse quality-of-service (QoS) requirements in 5G and beyond wireless networks. Early optimization- and heuristic-based slicing approaches struggle to cope with highly dynamic traffic, stochastic channel con-ditions, and inter-slice coupling. As a result, reinforcement learning (RL), and in particular deep reinforcement learning (DRL), has been adopted as a data-driven alternative for adaptive resource allocation. Deep Q-learning and actor–critic frameworks have demonstrated notable gains over static base-lines in terms of spectrum efficiency and quality-of-experience (QoE) under time-varying demand [3], [4]. DRL-based slicing has also been studied in vehicular, smart-city, and edge-enabled scenarios, where latency-critical URLLC traffic must coexist with throughput-oriented services [5]. However, most existing DRL formulations treat slicing as an unconstrained MDP, relying on reward shaping and providing no formal guarantees on latency or reliability. To explicitly incorporate QoS constraints, constrained re-inforcement learning (CRL) and constrained MDP (CMDP) formulations have been introduced for network slicing. Xu et al. proposed a CRL framework based on Lagrangian relax-ation to enforce slice-level QoS constraints while optimizing long-term throughput [6]. The CLARA framework further formalized network slicing as a CMDP and demonstrated improved constraint satisfaction through budget-aware policy optimization [7]. Related efforts have extended constraint-aware DRL to end-to-end resource orchestration and industrial IoT scenarios, incorporating queue stability, latency, and relia-bility constraints [8], [9]. While these works provide important theoretical foundations, they largely focus on single-cell or centralized control settings and do not explicitly capture inter-cell interference dynamics or distributed decision-making in dense cellular deployments. More recently, multi-agent DRL has been investigated to enable scalable and coordinated slicing across multiple cells. Coordinated multi-agent DRL schemes have demonstrated improved delay performance and resource efficiency by mit-igating inter-cell interference through limited information ex-change or coordination among agents [10]. These approaches highlight the potential of distributed learning for large-scale radio access networks; however, most existing multi-agent solutions rely on unconstrained learning or heuristic coordi-nation mechanisms, lacking a principled CMDP formulation with explicit constraint handling and dual-variable updates. As a result, strict QoS requirements—particularly for URLLC traffic—cannot be guaranteed under dynamic interference and traffic conditions. In parallel, advanced DRL paradigms have been proposed to improve learning efficiency and robustness in network slic-ing. Distributional and generative approaches, such as GAN-powered DRL, have been shown to stabilize training under stochastic traffic demands [11]. Transfer learning and federated learning techniques have also been explored to accelerate con-vergence and enhance scalability by leveraging shared knowl-edge across slices or cells [12]. Nevertheless, the integration of federated multi-agent DRL with explicit CMDP-based con-straint enforcement and spectrum-centric objectives—such as inter-cell interference control and URLLC reliability—remains largely unexplored in dense B5G/6G RANs. This gap moti-vates the proposed SliceFed framework. More recently, service level agreement (SLA)-aware learn-ing frameworks have gained attention, particularly in the context of O-RAN and industrial networks. Safe DRL methods aim to enforce reliability and latency constraints during both training and execution phases, addressing the risk of constraint violations inherent in exploration [13]. Researchers emphasize that future spectrum management and slicing solutions must explicitly integrate constraint handling, interference awareness, and distributed learning architectures to be viable in real-world deployments [14]. In contrast to existing work, this paper formulates dynamic RAN slicing as a CMDP with ex-plicit spectrum, interference, and URLLC latency constraints and proposes a Lagrangian-based constrained RL framework suitable for distributed and federated implementations. By jointly addressing spectrum efficiency and hard QoS guar-antees within a unified learning architecture, the proposed Algorithm 1 Local Primal–Dual Constrained RL at gNB n 
+
+> 1:
+
+Input: Initial policy parameters θn, critic parameters ψn,dual variables λn = [ λ1,n , λ 2,n , λ 3,n ]⊤ ≥ 0, learning rates 
+
+ηθ , η ψ , η λ, discount factor γ 
+
+> 2:
+
+Initialize replay buffer Dn ← ∅  
+
+> 3:
+
+for each local episode e = 1 , 2, . . . do  
+
+> 4:
+
+Observe initial state sn(0)  
+
+> 5:
+
+for each time step t = 0 , 1, . . . , T e − 1 do  
+
+> 6:
+
+Select action an(t) ∼ πθn (· | sn(t))  
+
+> 7:
+
+Apply an(t), observe next state sn(t + 1) , reward 
+
+rn(t), and constraint signals gi,n (t), i = 1 , 2, 3 
+
+> 8:
+
+Compute Lagrangian-adjusted reward: 
+
+˜rn(t) = rn(t) −
+
+> 3
+
+X
+
+> i=1
+
+λi,n gi,n (t) 
+
+> 9:
+
+Store transition (sn(t), a n(t), ˜rn(t), s n(t+1)) in Dn 
+
+> 10:
+
+Sample mini-batch Bn from Dn 
+
+> 11:
+
+for all (s, a, ˜r, s ′) ∈ B n do  
+
+> 12:
+
+Compute target: 
+
+y = ˜ r + γV ψn (s′) 
+
+> 13:
+
+Compute TD error: 
+
+δ = y − Vψn (s) 
+
+> 14:
+
+Critic update: 
+
+ψn ← ψn + ηψ ∇ψn
+
+ δ2 
+
+> 15:
+
+Actor (primal) update: 
+
+θn ← θn + ηθ ∇θn log πθn (a | s) δ 
+
+> 16:
+
+end for  
+
+> 17:
+
+Dual (constraint) updates:  
+
+> 18:
+
+for i = 1 to 3 do  
+
+> 19:
+
+Estimate ˆgi,n ≈ E[gi,n (t)] from recent samples 
+
+> 20:
+
+λi,n ← λi,n + ηλ ˆgi,n 
+
+ 
+
+> +
+> 21:
+
+end for  
+
+> 22:
+
+end for  
+
+> 23:
+
+end for 
+
+approach directly aligns with the spectrum management and advances the state of the art in AI-driven spectrum-aware network slicing. III. S YSTEM MODEL AND PROBLEM FORMULATION 
+
+A. System Model 
+
+We consider a dense terrestrial wireless network composed of set 
+
+N = {1, 2, . . . , N }, (1) of gNodeBs (gNBs), where gNB n ∈ N serves the dynamic set Un(t) of user equipment (UEs) in time slot t. The network supports heterogeneous service slices for enhanced mobile broadband (eMBB), URLLC, and massive machine type com-munication (mMTC), 
+
+S = {eMBB , URLLC , mMTC }, (2) each associated with distinct QoS objectives. A traffic request from UE u for slice s at time t is expressed as 
+
+Rsu(t) = dsu(t), λ su(t), τ su(t) , (3) where dsu(t) is the required rate, λsu(t) is the traffic arrival rate, and τ su(t) is the maximum tolerable latency. URLLC traffic possesses stringent reliability and delay requirements, and these constraints explicitly appear in the CMDP formulation. 
+
+B. Channel, SINR Model, and Resource Allocation 
+
+The wireless channel between gNB n and UE u at time t
+
+is modeled as 
+
+hn,u (t) = 
+
+q
+
+βn,u (t) gn,u (t), (4) where βn,u (t) represents large-scale fading (path loss and shadowing), and gn,u (t) ∼ CN (0 , 1) models small-scale fading. ( hn,u (t) is not explicitly used in the rest of this paper. If I understand correctly, you will use Hn(t) the local CSI as the channel state. It would be better to state this. Also Eq. (11) also uses the symbol β, please use a different symbol here or Eq. (11). The resulting signal-to-interference-plus-noise Ratio (SINR) is 
+
+γn,u (t) = Pn|hn,u (t)|2
+
+σ2 + Pm∈N 
+
+> m̸=n
+
+Pm|hm,u (t)|2 , (5) where Pn is the gNB transmit power and σ2 is the noise power. The achievable data rate is 
+
+Rn,u (t) = Bn,u (t) log 2(1 + γn,u (t)) , (6) where Bn,u (t) is the allocated bandwidth. The resource allocation at each gNB is expressed as a continuous vector 
+
+an(t) = {asn(t) : s ∈ S} , (7) representing the physical resource block (PRB) fraction as-signed to each slice, where 
+
+X
+
+> s∈S
+
+asn(t) ≤ 1, ∀n ∈ N . (8) 
+
+Remark on Continuous Resource Allocation: Although PRBs are inherently discrete, we model the slicing decision an(t)
+
+as a continuous-valued vector representing the fraction of available bandwidth assigned to each slice. This relaxation is standard in learning-based RAN slicing and is justified by the time-averaged nature of slice-level control, where decisions are applied over multiple scheduling intervals. Modeling an(t) in a continuous simplex enables differentiable policy optimization, improves convergence stability in the constrained multi-agent setting, and allows the use of actor–critic and primal–dual learning methods. Discrete PRB assignments are subsequently realized by the lower-layer scheduler based on the learned slice-level proportions. C. Problem Formulation 
+
+Each gNB is modeled as an autonomous RL agent operating a CMDP. The local state observed by gNB n at time t is 
+
+sn(t) = Hn(t), Q n(t), a n(t−1) , D n(t), (9) where Hn(t) denotes local CSI, Qn(t) the per-slice queue lengths, an(t − 1) the previous allocation vector, and Dn(t) aset of slice-performance indicators (e.g., throughput or latency violations). The action taken by gNB n is the resource allocation vector 
+
+an(t) = πθn (sn(t)) , (10) where πθn is a parameterized decision policy. Reward 
+
+rn(t) = X
+
+> s∈S
+
+(ωsηsn(t) − αsδsn(t) − βsρsn(t)) , (11) captures system utility, QoS satisfaction, and control stability, where ηsn(t) = P 
+
+> u∈U sn(t)
+
+Rn,u (t) is the achieved throughput, 
+
+δsn(t) is the QoS violation penalty, and ρsn(t) = |asn(t)−asn(t−
+
+1) | is the reconfiguration cost (penalizing frequent or large changes in allocation). Each gNB must additionally satisfy the following CMDP constraints: We define the aggregate outgoing interference leakage gen-erated by gNB n at time t as 
+
+In(t) = X
+
+> m∈N
+> m̸=n
+
+X
+
+> u∈U m(t)
+
+Pn hn,u (t) 2, (12) which captures the total interference power imposed by gNB 
+
+n on users served by neighboring cells. Each gNB n is subject to multiple heterogeneous oper-ational constraints, which are indexed by i ∈ {1, 2, 3} to enable a compact CMDP formulation and Lagrangian-based optimization. Specifically, gi,n (t) denotes the instantaneous violation of the i-th constraint at gNB n and time t, where each constraint captures a distinct physical or QoS requirement. The corresponding CMDP constraint is expressed as 
+
+g1,n (t) = max  0, I n(t) − Imax 
+
+> n
+
+, (13) where Imax  
+
+> n
+
+denotes the maximum tolerable interference leakage budget for gNB n. Accordingly, g1,n (t) represents the 
+
+inter-cell interference constraint violation at gNB n, enforcing an aggressor-side interference limit that is consistent with the inter-cell interference term appearing in the SINR denominator of neighboring users. The index i = 1 simply identifies this constraint within the CMDP and does not imply any ordering or priority. Similarly, g2,n (t) and g3,n (t) denote the URLLC latency violation constraint and the resource feasibility constraint, re-spectively. Collectively, the constraint set {gi,n (t)}3 
+
+> i=1
+
+enables explicit enforcement of interference, latency, and resource allocation limits within the CMDP framework. 
+
+Algorithm 2 Federated Constrained Multi-Agent RL for Dy-namic Spectrum Slicing  
+
+> 1:
+
+Input: Set of gNBs N , initial global policy parameters 
+
+θ(0) , number of federation rounds K, local update horizon 
+
+Tloc , aggregation weights {wn}n∈N  
+
+> 2:
+
+Initialize global policy θ(0) and broadcast to all gNBs  
+
+> 3:
+
+for round k = 0 , 1, . . . , K − 1 do  
+
+> 4:
+
+Server selects participating subset Nk ⊆ N  
+
+> 5:
+
+for all n ∈ N k in parallel do  
+
+> 6:
+
+Receive global policy θ(k) from server  
+
+> 7:
+
+Set local policy parameters θn ← θ(k) 
+
+> 8:
+
+Initialize/maintain local critic ψn and dual variables 
+
+λn 
+
+> 9:
+
+Run Algorithm 1 for Tloc steps, obtaining updated 
+
+θ(k) 
+
+> n
+
+and λ(k) 
+
+> n
+> 10:
+
+Upload θ(k) 
+
+> n
+
+(and optionally statistics of λ(k) 
+
+> n
+
+) to server  
+
+> 11:
+
+end for  
+
+> 12:
+
+Server-side aggregation:  
+
+> 13:
+
+Collect local parameters {θ(k) 
+
+> n
+
+: n ∈ N k} 
+
+> 14:
+
+Compute federated update (e.g., FedAvg): 
+
+θ(k+1) = X
+
+> n∈N k
+
+wnθ(k) 
+
+> n
+
+, X
+
+> n∈N k
+
+wn = 1  
+
+> 15:
+
+Optionally perform spectrum-aware policy distillation or regularization on θ(k+1)  
+
+> 16:
+
+Broadcast updated global policy θ(k+1) to all gNBs  
+
+> 17:
+
+end for  
+
+> 18:
+
+Output: Trained global policy θ(K) and converged local policies {θ(K) 
+
+> n
+
+}n∈N 
+
+The URLLC latency constraint 
+
+g2,n (t) = X 
+
+> u∈U URLLC
+> n(t)
+
+I{Delay su(t) > τ su(t)} , (14) ensures reliability of latency-critical services. The resource feasibility constraint is 
+
+g3,n (t) = max 0, X
+
+> s∈S
+
+asn(t) − 1
+
+!
+
+. (15) The CMDP for gNB n is defined as 
+
+Mn =  S, A, P, r n, g 1,n , g 2,n , g 3,n , γ . (16) The network-wide goal is then 
+
+max  
+
+> {πθn }
+> N
+
+X
+
+> n=1
+
+E
+
+" ∞X
+
+> t=0
+
+γtrn(t)
+
+#
+
+, (17) subject to E[gi,n (t)] ≤ 0 for i ∈ { 1, 2, 3} and all n.IV. L AGRANGIAN RELAXATION FOR CRL Directly solving the constrained optimization problem in (17) is intractable in high-dimensional and distributed envi-ronments due to the continuous state–action spaces, coupled inter-cell dynamics, and long-term constraint requirements. We therefore adopt a Lagrangian-based primal–dual reinforcement learning framework to transform the CMDP into an uncon-strained saddle-point problem that can be solved efficiently using policy gradient methods. Let 
+
+λn = [ λ1,n , λ 2,n , λ 3,n ]⊤ ≥ 0 (18) denote the dual variables associated with the CMDP con-straints defined in (13)–(15), namely, the inter-cell interference constraint, the URLLC latency constraint, and the resource feasibility constraint, respectively. Each dual variable λi,n 
+
+penalizes long-term violations of its corresponding constraint in expectation. 
+
+Ln(θn, λ n) = E
+
+" ∞X
+
+> t=0
+
+γt rn(t) −
+
+> 3
+
+X
+
+> i=1
+
+λi,n gi,n (t)
+
+!# 
+
+. (19) The expectation in (19) is taken over the state–action trajecto-ries induced by policy πθn , making the dependence of Ln on 
+
+θn implicit. The constrained optimization problem becomes the saddle-point formulation 
+
+min  
+
+> λn≥0
+
+max 
+
+> θn
+
+Ln(θn, λ n). (20) The primal (policy) update is 
+
+θn ← θn + ηθ ∇θn Ln(θn, λ n) (21) and the dual (constraint) update is 
+
+λi,n ←
+
+h
+
+λi,n + ηλ E[gi,n (t)] 
+
+i
+
+> +
+
+, i = 1 , 2, 3. (22) This primal–dual constrained RL formulation enables each gNB to autonomously explore feasible allocation strategies, enforce interference and QoS guarantees, and converge toward near-optimal slicing decisions. The complete local learning procedure executed at each gNB, including the primal (policy) update, critic update, and dual variable adaptation, is summarized in Algorithm 1.Algorithm 1 details how each agent interacts with its local environment, computes the Lagrangian-adjusted reward, and updates its policy parameters while enforcing CMDP con-straints. V. S LICE FED 
+
+While Algorithm 1 describes the local constrained learning process at each gNB, the overall SliceFed framework addi-tionally incorporates a federated coordination mechanism to enable collaborative training across cells without sharing raw data. The global federated learning workflow, including local model upload, aggregation, and redistribution, is presented in 
+
+Algorithm 2 .SliceFed is framework founded on the federated multi-agent DRL (F-MADRL) paradigm, where autonomous agents deployed at individual gNBs learn and execute local slicing policies in real time. SliceFed operates under strict resource, interference, and latency constraints, while a federated learning layer enables collaborative training of a globally coordinated policy without sharing sensitive user data. We adopt the proximal policy optimization (PPO) as the underlying learning algorithm for local agents to effectively address the continuous nature of spectrum slicing decisions, the presence of time-varying inter-cell coupling, and the criti-cal QoS requirements of heterogeneous services. PPO provides stable learning in continuous action spaces and is particularly robust under the non-stationary dynamics induced by multi-agent interactions in dense RAN environments. Its clipped policy updates prevent abrupt changes in the resource alloca-tion that could otherwise lead to severe constraint violations, making it well suited for Lagrangian-based CRL. Moreover, as an on-policy method, PPO naturally adapts to time-varying dual variables associated with CMDP constraints and to evolving interference conditions across neighboring cells. This property is critical in the federated multi-agent setting of SliceFed, where both the environment and constraint landscape change as agents learn concurrently. Building on this foundation, we detail the key components of the proposed architecture, including the federated multi-agent structure, the local constrained learning formulation, the collaborative training process, and the overall algorithmic workflow. 
+
+A. Federated Multi-Agent Architecture 
+
+We deploy a collection of autonomous slicing agents 
+
+{G n}Nn=1 , where agent Gn resides at gNB n ∈ N . Each agent learns its own local policy πθn (an|sn) by interacting with its local environment (i.e., its connected UEs, channel conditions, and queue states). The agents update their local model param-eters θn independently based on these interactions. After a set number of local training episodes, the agents’ learned knowledge is aggregated to update the global model. At the beginning of global round k, all agents initialize their local models with the global parameters θ(k). After completing local training, each agent obtains updated parameters θ(k+1)  
+
+> n
+
+,which are then aggregated by the central server to produce the new global model θ(k+1) . We employ the Federated Averaging (FedAvg) algorithm for this aggregation step. Specifically, in each global communication round k, the central aggregator updates the global model parameters as 
+
+θ(k+1) =
+
+> N
+
+X
+
+> n=1
+
+|D n|
+
+PNj=1 |D j | · θ(k+1)  
+
+> n
+
+. (23) where |D n| is the size of the local dataset (i.e., the number of collected experience tuples) at gNB n during round k.This weighted averaging ensures that agents contributing more experience have a proportionally larger impact on the global model. 
+
+B. Local Agent: DRL Formulation 
+
+Each local agent An formulates its decision-making prob-lem as the local CMDP defined in Section III.C. Eq. (17). An actor-critic DRL architecture is an effective choice for solving this, where an actor network learns the policy πθn
+
+and a critic network estimates the value function to guide the actor’s updates. The objective for each agent is maximizing its expected long-term cumulative return: 
+
+max 
+
+> θn
+
+Esn,a n∼πθn 
+
+" ∞X
+
+> t=0
+
+γtrn(t)
+
+#
+
+. (24) The use of a local DRL agent allows each gNB to react swiftly to changes in its immediate environment, such as sudden traffic bursts from eMBB users or the arrival of a URLLC service request, without needing to communicate with a central controller for every decision. 
+
+C. Collaborative Training and Synchronization 
+
+Agents do not transmit raw local state information or UE data to maintain data privacy and minimize communication overhead. Instead, they only transmit their model parameter updates, ∆θn = θ(k+1)  
+
+> n
+
+− θ(k) 
+
+> n
+
+, to the central aggregator. This process significantly reduces the amount of data exchanged over the network. Synchronization is not performed on a fixed schedule but is triggered dynamically. An aggregation round is initiated when the average training loss across the agents exceeds a predefined threshold: 
+
+1
+
+N
+
+> N
+
+X
+
+> n=1
+
+Ln > δ, (25) where Ln is the local loss of agent n’s DRL model. This ensures that communication resources are used only when the local models have sufficiently diverged from the global consensus, balancing communication efficiency with global model consistency. 
+
+D. Policy Cohesion and Exploration 
+
+In a dense network, the actions of one gNB can impact its neighbors through inter-cell interference. We introduce peri-odic policy distillation to ensure that the distributed policies remain coherent and stable. This involves adding a loss term that minimizes the divergence between an agent’s local policy 
+
+πθn and the global policy πθ :
+
+Ldistill =
+
+> N
+
+X
+
+> n=1
+
+|| πθn (s) − πθ (s)|| 2. (26) This encourages local policies to stay close to the globally learned strategy, preventing catastrophic interference or re-source starvation. Furthermore, we add an entropy regular-ization term to the actor’s loss function, 
+
+Ltotal = Lactor + λH · H [πθn ], (27) where H[πθn ] is the entropy of the policy and λH is a weighting coefficient. This encourage agents to explore new and potentially better slicing strategies. 
+
+E. The SliceFed Algorithm 
+
+Algorithm 3 describes the complete training and inference procedure for the SliceFed framework. The process alternates between parallel local model training at each gNB and syn-chronous global model aggregation at a central server. 
+
+Algorithm 3 The SliceFed Framework for Dynamic RAN Slicing  
+
+> 1:
+
+Initialize: Global model θ0; local agents An at each gNB with θ0 
+
+> n
+
+= θ0. 
+
+> 2:
+
+for each global round k = 0 , 1, . . . do  
+
+> 3:
+
+for each agent n = 1 , . . . , N at each gNB in parallel 
+
+do  
+
+> 4:
+
+Collect local trajectory τ kn = {(sn, a n, r n)t} over several time steps.  
+
+> 5:
+
+Update local policy: θk+1  
+
+> n
+
+← Update (θkn, τ kn ) using a DRL algorithm.  
+
+> 6:
+
+Send model update ∆θn = θk+1  
+
+> n
+
+− θkn to central aggregator.  
+
+> 7:
+
+end for  
+
+> 8:
+
+Aggregate global model: 
+
+θk+1 ← FedAvg ({θk+1  
+
+> n
+
+}) using Eq. (10)  
+
+> 9:
+
+Broadcast updated global model θk+1 to all gNB agents.  
+
+> 10:
+
+end for 
+
+VI. N UMERICAL ANALYSIS 
+
+We evaluate the performance of the proposed SliceFed framework through rigorous simulations in a dense multi-cell RAN environment. We assess how F-MARL improves spectrum slicing efficiency, QoS satisfaction, and robustness compared to conventional and learning-based baselines. 
+
+A. Simulation Setup 
+
+We consider a dense RAN composed of N = 7 regularly deployed gNBs, each serving U = 10 users per cell within a system bandwidth of B = 20 MHz. The network supports three heterogeneous service slices: eMBB, URLLC, mMTC. Time is slotted with a scheduling interval of 1 ms. Wireless channels are modeled using a composite fading environment, incorporating distance-based path loss ( α = 3 .7), log-normal shadowing ( σ = 6 dB), and Rayleigh small-scale fading. We explicitly model inter-cell interference by calculating the aggregate signal leakage from simultaneous transmissions across neighboring gNBs. The maximum inter-ference budget is set to Imax = −15 .0 dBm. Traffic arrivals for each slice follow independent Poisson processes. Unless otherwise specified, the default traffic loads are set to λeM BB = 1 .5, λU RLLC = 4 .0, and λmM T C =1.0 packets/slot. URLLC packets are subject to a hard latency deadline of τ = 1 ms. 
+
+1) Hyperparameters: Each gNB operates an autonomous PPO based actor-critic agent implemented in PyTorch. The actor and critic networks comprise two hidden layers with 128 neurons each with the ReLU activation function. We use the Adam optimizer with a learning rate of 3 × 10 −3
+
+for both networks. Constraint satisfaction is enforced via a Lagrangian primal-dual mechanism with dual learning rates 
+
+ηλ = [0 .01 , 0.01 , 0.01] . The federated learning process runs for 200 global communication rounds, with local updates Fig. 1. Training dynamics of SliceFed over federated communication rounds: Normalized average reward compared to baselines(a) and evolution of con-straint violations for Interference ( g1) and URLLC Latency ( g2) (b). 
+
+performed over trajectories of 1000 time steps. Results are averaged over 5 random seeds. 
+
+B. Baselines 
+
+We compare SliceFed against three representative baselines covering static, heuristic, and stochastic strategies:  
+
+> •
+
+Equal Slicing: Resources are equally divided among slices at each gNB, regardless of the traffic state.  
+
+> •
+
+Queue-Proportional (QueueProp): Bandwidth is allo-cated proportional to the instantaneous queue lengths of each slice.  
+
+> •
+
+Random Allocation: Resource fractions are sampled from a symmetric Dirichlet distribution at every time step. 
+
+C. Learning Convergence 
+
+Fig. 1 illustrates the convergence behavior of SliceFed. As shown in Fig. 1(a), the federated PPO agents converge rapidly, stabilizing around a normalized reward of 3.9×10 −5 within 50 communication rounds. While the static Equal Slicing baseline achieves a slightly higher raw reward, it does so by over-provisioning resources without dynamic interference aware-ness. SliceFed learns a policy that trades off a marginal amount of throughput to strictly satisfy the imposed CMDP safety constraints, including inter-cell interference limits, URLLC latency requirements, and resource feasibility. Fig. 1(b) demonstrates the convergence of the proposed primal–dual learning mechanism. The URLLC latency con-straint ( g2, red curve) shows temporary violations during early exploration but is driven to zero as the dual variables adapt, indicating that the latency constraint is ultimately satisfied. Concurrently, inter-cell interference ( g1, orange curve) is reg-ulated near the feasibility boundary defined by the maxi-mum allowable interference leakage Imax  
+
+> n
+
+. The learned policy maintains In(t) close to this budget, maximizing spectral efficiency while avoiding constraint violations, which reflects the intended trade-off enforced by the Lagrangian updates.   
+
+> Fig. 2. Empirical CDF of URLLC packet delays.
+> Fig. 3. Temporal evolution of queues (top) and resource allocation (bottom) for SliceFed (left) and QueueProp (right).
+
+D. URLLC Reliability Analysis 
+
+Fig. 2 plots the empirical cumulative distribution function (CDF) of URLLC packet delays. We make the following observations:  
+
+> •
+
+SliceFed (blue) demonstrates superior reliability, with the CDF reaching ≈ 1.0 at the deadline. This confirms that the learned policy effectively prioritizes URLLC traffic to satisfy the g2 constraint.  
+
+> •
+
+QueueProp (green) exhibits a heavy-tailed distribution, failing to serve approximately 40% of packets by the deadline. This highlights the failure of reactive, queue-based heuristics which cannot anticipate the stringent timing requirements of URLLC.  
+
+> •
+
+Equal Slicing (orange) achieves high reliability by allo-cating 33% of resources to URLLC regardless of load, which is spectrally inefficient compared to SliceFed’s adaptive approach. 
+
+E. Queue Dynamics and Resource Allocation 
+
+Fig. 3 contrasts the temporal dynamics of SliceFed and QueueProp. Under SliceFed, the distributed SliceFed agents learn to keep URLLC and mMTC queues near zero. The Fig. 4. Robustness analysis under increasing URLLC traffic load λ. Left: average normalized reward (mean ± std). Right: mean URLLC latency constraint value g2 (mean ± std). SliceFed maintains g2 ≈ 0 across all traffic loads, indicating strict satisfaction of the URLLC latency constraint. The apparent negative values visible for some baselines arise from statistical averaging and standard deviation visualization around zero on a symmetric log scale and do not correspond to negative constraint violations. 
+
+eMBB queue grows linearly, reflecting the system’s saturation state. SliceFed correctly identifies eMBB as delay-tolerant, deprioritizing it to protect critical services. The SliceFed resource allocation converges to a highly stable operating point with minimal variance. This stability prevents the ping-pong effects and signaling overhead associated with rapid reconfiguration. In contrast, QueueProp suffers from oscilla-tory behavior. Because it reacts solely to queue lengths, it allows URLLC queues to build up before allocating resources, resulting in jitter and unreliable latency performance. 
+
+F. Robustness to Traffic Load 
+
+Fig. 4 evaluates the robustness of the trained policy by sweeping the URLLC offered load from 2 to 6 packets/slot. While SliceFed achieves a lower raw reward than the Equal Slicing and Random Allocation baselines (Fig. 4a), this met-ric must be interpreted in the context of safety. The base-lines achieve higher throughput by ignoring the constraints. SliceFed maintains a constraint violation of effectively zero (g2 ≈ 0) across the entire load regime. In contrast, Ran-dom Allocation and QueueProp exhibit significant violations, rendering them unusable for mission-critical 6G applications (Fig. 4b). 
+
+G. Summary of Findings 
+
+Across all experiments, SliceFed consistently outperforms the baseline methods by 1) Enforcing strict hard QoS guarantees for URLLC traffic through explicit Lagrangian constraint learning, 2) Achieving stable, low-variance resource allocation poli-cies that reduce control overhead and reconfiguration oscillations, and 3) Maintaining superior performance and constraint satis-faction across a wide range of URLLC traffic loads, demonstrating strong robustness and generalization be-yond the training operating point. Unlike SliceFed, baseline methods exhibit traffic-insensitive behavior due to static allocation (Equal Slicing) or reactive queue-based control without explicit constraints (QueueProp), leading to persistent inefficiencies or violations as traffic conditions vary. VII. C ONCLUSIONS 
+
+This paper has proposed SliceFed, a F-MARL framework for dynamic spectrum slicing in dense 6G RANs. By modeling the resource allocation problem as a CMDP, autonomous agents learn to maximize throughput while strictly adhering to inter-cell interference budgets and hard URLLC latency con-straints. Simulation results confirm that SliceFed significantly outperforms heuristic and unconstrained baselines, achieving superior reliability, allocation stability, and robustness to traffic surges. Future work will investigate asynchronous federated aggregation and integration with O-RAN. ACKNOWLEDGMENT The work by Mohammadi and Marojevic was supported in part by NSF Award 2332661. 
+
+REFERENCES [1] R. S. Sutton, A. G. Barto, et al. , Reinforcement learning: An introduc-tion , vol. 1. MIT press Cambridge, 1998. [2] A. Goldsmith, Wireless communications . Cambridge university press, 2005. [3] R. Li, Z. Zhao, Q. Sun, C.-L. I, C. Yang, X. Chen, M. Zhao, and H. Zhang, “Deep reinforcement learning for resource management in network slicing,” IEEE Access , vol. 6, pp. 74429–74441, 2018. [4] Y. Abiko, T. Saito, D. Ikeda, K. Ohta, T. Mizuno, and H. Mineno, “Flexible resource block allocation to multiple slices for radio access network slicing using deep reinforcement learning,” IEEE Access , vol. 8, pp. 68183–68198, 2020. [5] A. Nassar and Y. Yilmaz, “Deep reinforcement learning for adaptive network slicing in 5g for intelligent vehicular systems and smart cities,” 
+
+IEEE Internet of Things Journal , vol. 9, no. 1, pp. 222–235, 2022. [6] Y. Xu, Z. Zhao, P. Cheng, Z. Chen, M. Ding, B. Vucetic, and Y. Li, “Constrained reinforcement learning for resource allocation in network slicing,” IEEE Communications Letters , vol. 25, no. 5, pp. 1554–1558, 2021. [7] Y. Liu, J. Ding, Z.-L. Zhang, and X. Liu, “Clara: A constrained reinforcement learning based resource allocation framework for network slicing,” in 2021 IEEE International Conference on Big Data (Big Data) ,pp. 1427–1437, 2021. [8] Q. Liu, N. Choi, and T. Han, “Constraint-aware deep reinforcement learning for end-to-end resource orchestration in mobile networks,” in 
+
+2021 IEEE 29th International Conference on Network Protocols (ICNP) ,pp. 1–11, 2021. [9] Q. Qi, W. Lin, B. Guo, J. Chen, C. Deng, G. Lin, X. Sun, and Y. Chen, “Augmented lagrangian-based reinforcement learning for network slic-ing in iiot,” Electronics , vol. 11, no. 20, p. 3385, 2022. [10] T. Hu, Q. Liao, Q. Liu, D. Wellington, and G. Carle, “Inter-cell slicing resource partitioning via coordinated multi-agent deep reinforcement learning,” in ICC 2022 - IEEE International Conference on Commu-nications , pp. 3202–3207, 2022. [11] Y. Hua, R. Li, Z. Zhao, X. Chen, and H. Zhang, “Gan-powered deep distributional reinforcement learning for resource management in network slicing,” IEEE Journal on Selected Areas in Communications ,vol. 38, no. 2, pp. 334–349, 2020. [12] H. Zhou, M. Erol-Kantarci, and H. Vincent Poor, “Learning from peers: Deep transfer reinforcement learning for joint radio and cache resource allocation in 5g ran slicing,” IEEE Transactions on Cognitive Communications and Networking , vol. 8, no. 4, pp. 1925–1941, 2022. [13] A. M. Nagib, H. Abou-Zeid, and H. S. Hassanein, “Safeslice: Enabling sla-compliant o-ran slicing via safe deep reinforcement learning,” arXiv preprint arXiv:2503.12753 , 2025. [14] P. Cheng, Y. Chen, M. Ding, Z. Chen, S. Liu, and Y.-P. P. Chen, “Deep reinforcement learning for online resource allocation in iot networks: Technology, development, and future challenges,” IEEE Communica-tions Magazine , vol. 61, no. 6, pp. 111–117, 2023.

@@ -1,0 +1,565 @@
+Title: SCL-GNN: Towards Generalizable Graph Neural Networks via Spurious Correlation Learning
+
+URL Source: https://arxiv.org/pdf/2603.08270v1
+
+Published Time: Tue, 10 Mar 2026 02:10:58 GMT
+
+Number of Pages: 9
+
+Markdown Content:
+# SCL-GNN: Towards Generalizable Graph Neural Networks via Spurious Correlation Learning 
+
+## Yuxiang Zhang 1∗ , Enyan Dai 1†
+
+> 1
+
+## The Hong Kong University of Science and Technology (Guangzhou) 
+
+## {yuxiangzhang, enyandai }@hkust-gz.edu.cn 
+
+## Abstract 
+
+Graph Neural Networks (GNNs) have demon-strated remarkable success across diverse tasks. However, their generalization capability is often hindered by spurious correlations between node features and labels in the graph. Our analysis re-veals that GNNs tend to exploit imperceptible sta-tistical correlations in training data, even when such correlations are unreliable for prediction. To ad-dress this challenge, we propose the Spurious Cor-relation Learning Graph Neural Network (SCL-GNN), a novel framework designed to enhance generalization on both Independent and Identically Distributed (IID) and Out-of-Distribution (OOD) graphs. SCL-GNN incorporates a principled spuri-ous correlation learning mechanism, leveraging the Hilbert-Schmidt Independence Criterion (HSIC) to quantify correlations between node representations and class scores. This enables the model to iden-tify and mitigate irrelevant but influential spurious correlations effectively. Additionally, we introduce an efficient bi-level optimization strategy to jointly optimize modules and GNN parameters, preventing overfitting. Extensive experiments on real-world and synthetic datasets demonstrate that SCL-GNN consistently outperforms state-of-the-art baselines under various distribution shifts, highlighting its ro-bustness and generalization capabilities. 
+
+## 1 Introduction 
+
+Graph Neural Networks (GNNs) [Kipf and Welling, 2016; Veliˇ ckovi´ c et al. , 2017] have emerged as powerful models for learning from graph data across various tasks [Bongini 
+
+et al. , 2021; Cheng et al. , 2022; Ni et al. , 2024]. The stan-dard learning paradigm for GNNs involves optimizing param-eters on training graphs to make predictions on unseen test-ing graphs. With the increasing need to handle graphs with diverse sources, improving the generalization of GNNs has become a central focus in the graph learning community. 
+
+> ∗This work is done during the internship
+> †Corresponding author
+
+However, recent studies indicate that spurious correlations are prevalent in machine learning [Izmailov et al. , 2022; Zhao et al. , 2024; Ye et al. , 2024], often compromising the generalization of deep neural networks [DeGrave et al. , 2021; Kirichenko et al. , 2022]. In GNNs, the issues are particularly severe due to the complex non-Euclidean structure of graph data and the message-passing mechanism. Furthermore, un-like standard data modalities (e.g., text and images) where samples are typically treated independently [Wang et al. ,2023; Ghosal and Li, 2024], the intricate inter-dependencies within graph data (e.g., dense node clusters) significantly in-crease the difficulty of identifying and mitigating spurious correlations [Wu et al. , 2022; Wu et al. , 2024b]. Recent studies show that GNN generalizability degrades primarily because models learn correlations between irrele-vant representations and category labels [Chen et al. , 2022a; Fan et al. , 2023; Chen et al. , 2024; Ye et al. , 2024]. However, existing solutions mainly target Out-of-Distribution (OOD) generalization. They often ignore the spurious correlations present in Independent and Identically Distributed (IID) sce-narios, which limits their practical applicability. Consider a node classification task in an academic network in Fig.1, where nodes are researchers, edges are collaborations, and the target label y is whether a researcher specializes in AI. GNNs typically rely on stable correlations, such as the actual rela-tionship between a researcher’s collaborators and their own field [Wu et al. , 2024a]. Yet, they also absorb spurious corre-lations, such as a coincidental link between being a student and studying AI. In an IID setting, an industry researcher collaborating with both an AI expert and an engineer might be misclassified simply because they lack the ”student” at-tribute. This problem worsens under OOD conditions where these spurious correlations shift or disappear entirely (e.g., observing no students in industry settings), leading to sys-tematic mispredictions as detailed in Sec.5.2. Consequently, there is a clear need for GNNs equipped to identify and miti-gate spurious correlations across both IID and OOD settings. Nevertheless, a significant challenge lies in identifying and mitigating the generation of spurious correlations from the broader set of statistical correlations, which are inherently intertwined with the learning mechanisms of Graph Neu-ral Network (GNN) models. To illustrate this, we present an example with Fig.1: the marginal probabilities for a re-searcher’s collaborators have an interest in researching AI ,    
+
+> arXiv:2603.08270v1 [cs.LG] 9 Mar 2026 (c) (a)
+> Others: Environment Intervention
+> Collaborator Researcher
+> AI researcher a student {In College} an engineer{In Industry} a freelance {In Others}
+> research AI
+> : Neighbor node(Collaborator) : Centric node(Researcher) : Environment feature : Other feature
+> (b)
+> : Spurious correlation : Stable correlation : Positive influence : Negative influence
+> GNN Model
+> {} _
+> Ours: Spurious Correlation Learning
+> Target node : Aggregated representation
+> : Environment and others
+> : AI researcher
+> : Whether Research AI
+
+Figure 1: An illustration of node classification task on an academic network for GNNs. (a) The task aims to classify the label y of target node 
+
+v based on the compact graph Gv = {Av , Xv } consisting of its neighbors. (b) Four existing relations and the notion in the network example, only the AI researcher feature of the collaborator has a positive influence for predicting that the researcher also researches AI. (c) Description and comparison of the workflow of SCL-GNN and existing works. We virtually split features into spurious and stable sets. We propose a more effective method to achieve the same goal by spurious correlation learning, instead of importing complex probability computation. 
+
+i.e. stable correlation, and a researcher’s collaborator is a student , i.e. spurious correlation, are both high for the GNN model’s prediction of whether a researcher is researching AI . Additionally, the scarcity of labeled training data, com-pounded by the complex non-Euclidean geometric structure of graph data, further complicates the learning process. These factors collectively hinder the identification of spurious cor-relations, which is crucial for ensuring that GNN models avoid relying on non-generalizable patterns in graph learn-ing. Although prior studies [Fan et al. , 2023; Lin et al. , 2024; Wu et al. , 2024a] have attempted to address OOD degrada-tion of GNN, exploration of spurious correlation learning on both in-distribution (ID) and OOD samples remains nascent. This is primarily due to the non-trivial nature of the prob-lem, which presents two key challenges: (i) How can spuri-ous correlations be disentangled and distinguished from the broader set of statistical correlations between representations and labels? and (ii) How can sufficient and meaningful in-formation be provided to enhance GNN learning across both ID and OOD samples, particularly in the presence of diverse distribution shifts? Motivated by the aforementioned challenges, we propose a novel Spurious Correlation Learning GNN(SCL-GNN) framework to reduce the degradation of GNNs caused by the spurious correlation and enhance the generalizability of models. SCL-GNN incorporates an intuitive yet theoreti-cally grounded method to determine whether a correlation between a feature and the predicted label is spurious. To achieve this, we employ the Hilbert-Schmidt Independence Criterion (HSIC) [Gohberg et al. , 1990] to quantify the inde-pendence between node representations and the class scores predicted by the model. Additionally, we utilize Gradient-weighted Class Activation Mapping (Grad-CAM) [Selvaraju 
+
+et al. , 2017; Pope et al. , 2019] to assess the importance of node representations in influencing the expected class scores, serving as a cross-validation mechanism. These two metrics collectively measure the precise correlation between specific features and label predictions. To address spurious correla-tion, a novel learning objective is deployed to fine-tune the model weights through a collaborative self-supervised learn-ing module. Our approach outperforms existing methods in decorrelating spurious relationships and significantly en-hances the model’s ability to generalize across domains. To summarize, our main contributions are: (i) We study a novel problem of addressing the degradation of GNNs un-der distribution shift from a spurious correlation learning per-spective empirically and theoretically. We ensure that GNNs trained with this learning purpose would capture the pattern of spurious correlations and mitigate the deficiency. (ii) We proposed a novel framework that can effectively learn spuri-ous correlation and perform better under complex distribu-tion shifts. The model in the framework utilizes adequate and rich information to avoid overfitting using the auxiliary self-supervised spurious correlation learner module that fine-tunes the model with the unobserved OOD samples. (iii) We conduct comprehensive experiments on various datasets with different distributions. The convincing results show that the SCL-GNN framework significantly outperforms competitors regarding effectiveness, flexibility, and interpretability. 
+
+## 2 Related Works 
+
+Graph Neural Networks . GNNs have shown remarkable success in learning graph-structured data [Kipf and Welling, 2016], driving progress in applications like drug discov-ery [Bongini et al. , 2021], financial analysis [Cheng et al. ,2022], and recommendation systems [Ying et al. , 2018]. However, their susceptibility to spurious correlations limits broader applicability [Karczewski et al. , 2024]. Even under the ideal IID assumption, where training and testing graphs share the same distribution, GNNs often suffer performance degradation due to spurious correlations [Eastwood et al. ,2024]. Despite its importance, improving GNN generaliz-ability through spurious correlation learning remains under-explored [Hu et al. , 2020; Koh et al. , 2021]. In this work, we address this gap by identifying the key to generalizable GNNs: learning and mitigating spurious correlations. We provide a theoretical analysis on this and propose a novel framework for advance research. 
+
+Correlation Learning on Graphs . Spurious correlations are a primary cause of OOD performance degradation [Ming 
+
+et al. , 2022; Zhang and Ranganath, 2023]. Prior work has explored decorrelation methods for graph-based mod-els to eliminate dependencies between relevant and irrele-vant representations across distributions [Kuang et al. , 2020; Li et al. , 2022; Fan et al. , 2023]. However, these methods often reduce effective sample size, impairing GNN general-ization [Zhang et al. , 2023; Chen et al. , 2024]. Alternative approaches leverage invariant principles [Wu et al. , 2022; Chen et al. , 2022b] or causal intervention [Chen et al. , 2022a; Wu et al. , 2024a] to identify patterns consistent across do-mains. Although effective in distribution shifts, causal in-ference requires a top-down understanding of data genera-tion mechanisms [Tang and Liu, 2023; Wu et al. , 2024a], involving complex modeling of causal relationships between labels, node features, and representations [Wu et al. , 2024b], often complicated by confounding variables or reverse cau-sation [Chen et al. , 2022a; Gui et al. , 2024]. Notably, spu-rious correlations also degrade GNN performance under IID settings, a point underexplored in prior work. We propose a novel framework leveraging spurious correlation learning to enhance generalization under both IID and OOD settings, employing standard machine learning techniques for intuitive and theoretically feasible solutions. 
+
+## 3 Problem Formulation 
+
+Notations . We denote an attributed graph G = ( V, E, X),where V = {v1, . . . , v N } is the set of N nodes, E ⊆ V × V 
+
+represents the set of edges, and X = {x1, . . . , xN} indicates node features. The adjacency matrix of the graph G is de-noted as A ∈ RN ×N , where Aij = 1 if nodes vi and vj
+
+are connected. Given the training graphs Gtrain , the valida-tion graphs Gval and the testing graphs Gtest . p(Gtrain )̸ =
+
+p(Gval )̸ = p(Gtest ) denotes unknown distribution shift, oth-erwise p(Gtrain ) = p(Gval ) = p(Gtest ). Z = f (G),
+
+Z ∈ RN ×d is the output of the GNN model f (·).
+
+Formulating Spurious Correlation . Spurious correlation, namely “ correlations that do not imply causation ” in statis-tics, refers to a situation where two variables appear to be related to each other, yet the relationship is coincidental or confounded by an external variable [Ye et al. , 2024]. The correlation could lead to incorrect interpretations of models. Spurious correlation in graph learning can be defined as the potential erroneous relationship learned by GNNs between the specific irrelevant sets of node representations and labels of nodes, which can be formalized as 
+
+Definition 1. Let Gtrian = {(vi, y i)}ni=1 be the training graph with vi ∈ V and yi ∈ Y , where V denotes the set of all training nodes, Y denotes the set of K classes. For each node vi with label yi, there is the spurious feature ai ∈ A of 
+
+vi, where ai cannot help the model make a correct prediction of yi, and A denotes the set of all possible spurious features. A spurious correlation, denoted as ⟨y, a ⟩, is the association between y ∈ Y and a ∈ A , where y and a exist in a one-to-many mapping as: ϕ : A 7 → Y K′
+
+conditioned on Gtrian with 
+
+1 < K ′ ≤ K.
+
+Mitigate Spurious Correlation . In the context of generaliz-ing on graphs, spurious correlations pose significant threats, as features that are predictive in the training distribution 
+
+p(Gtrain ) may no longer correlate with the label in the testing distribution p(Gtest ). Notably, the presence of a distribution shift, that is, OOD, is not a prerequisite [Ye et al. , 2024]. To mitigate spurious correlations, we fine-tune the weight matrix 
+
+W of the surrogate GNN model fs to reduce the influence of spurious features on the model predictions. In particular, since the labeled data available during model training is limited, overfitting can easily occur, reducing the quality of the learned spurious correlations. A standard ap-proach to address the scarcity of labeled data is to adapt the trained model to the unlabeled distribution before making predictions through a self-supervised auxiliary task [Xie et al. , 2022]. To address this, we introduce self-supervise learn-ing method in spurious correlation learner module, which will be detailed in Sec.4.1. With all the above descriptions and no-tations, we can formulate the problem of generalizing GNN by learning the spurious correlation as: 
+
+Problem 1. Given an attributed graph G = ( V, E, X). We aim to learn an adaptive spurious correlation learner fa :
+
+W ⟨y, a ⟩
+
+−−−→ W′ to fine-tune the weight matrix W of the trained GNN model fθ and mitigate the impact of spurious correla-tions by solving: 
+
+min 
+
+> θa
+
+X
+
+> vi∈V
+
+l(fθ∗ (G), y i) + βLS (θ∗, θ a)
+
+s.t.θ ∗ = arg min 
+
+> θ
+
+X
+
+> vi∈V L
+
+l(fθ (Gtrain ), y i) + γR(θ, θ a) (1) 
+
+where l(·) denotes the cross-entropy loss, LS denotes spuri-ous correlation learning loss, and β is the hyperparameter to control the contribution of LS . θa denotes the parameters of fa, and θ∗ indicates the trained parameters of the GNN model. VL indicates the labeled nodes, and R(θ, θ a) is a reg-ularization constraint ties θ and θa.
+
+## 4 Methodology 
+
+In this section, we present details of SCL-GNN framework which optimizes Eq.(1) to learn and mitigate the spurious correlation between feature and label. As it is challenging to directly optimize the Eq.(1), SCL-GNN separately opti-mizes the spurious correlation learner fa and the surrogate GNN model fs, and we introduce Pareto efficiency for the multi-objective optimization [Sener and Koltun, 2018]. We illustrate the overview of SCL-GNN in Fig 2. 
+
+4.1 Learning Module 
+
+To ensure the effectiveness of the learning module fa, we pro-pose a differentiable non-linear spurious correlation learning loss, defined as: 
+
+LS = X
+
+> v∈V S
+
+lscl (⟨y, Z v ⟩, (θs, θ a)) , (2) where LS denotes the loss function of the learning mod-ule, VS = V \ V test represents the set of labeled and un-labeled nodes. lscl (·) is the spurious correlation learning loss, and θs represents the shared parameters between the current model and the learning module. The learner θa as-sists the surrogate model fs in avoiding spurious features (b) Backbone GNN model (b) Backbone GNN model (b) Backbone GNN model 
+
+SC Learning Module SC Learning Module SC Learning Module 
+
+(a) SC Learning Module (a) SC Learning Module (a) SC Learning Module 
+
+Backbone GNN model Backbone GNN model Backbone GNN model Backbone GNN model Backbone GNN model 
+
+(C) Overview (C) Overview (C) Overview 
+
+(D) Spurious Correlation Learning (D) Spurious Correlation Learning (D) Spurious Correlation Learning 
+
+(E) Evaluating (E) Evaluating (E) Evaluating 
+
+Given updated weight ,model 
+
+While Evaluation do: 
+
+Given current model 
+
+For iteration in Iters: 
+
+While not stopped do: 
+
+For current model: 
+
+training loss.backward() 
+
+Update model weight 
+
+For Learning module :
+
+Calculate on 
+
+Update given to 
+
+learning loss.backward() Figure 2: Illustration of SCL-GNN framework for generalizing GNN via spurious correlation learning. (a) and (b) illustrates the details of spurious correlation(abbreviated as SC) learner fa and backbone GNN model fs, respectively, (c) represent an overview of the framework, (d) and (e) respectively explain the process of spurious correlation learning and generalization via pseudo algorithms. When the training is finished, the fa is fixed synchronously, and we only need to evaluate GNN model with the fine-tuned model weight W′.
+
+and mitigating spurious correlations through the optimiza-tion of LS . Our approach to solving Problem 1 centers on optimizing a margin loss formulated as the difference be-tween two terms: the Hilbert-Schmidt Independence Crite-rion (HSIC) and Gradient-weighted Class Activation Map-ping (Grad-CAM). Specifically, a larger HSIC term and a smaller Grad-CAM term indicate a stronger spurious corre-lation between the node feature and its prediction. The for-mulation provides a principled mechanism to quantify and reduce spurious correlations for the generalizability. 
+
+Irrelevance Measurement 
+
+Nonlinear dependency between two variables can be mea-sured using the Hilbert-Schmidt Independence Criterion (HSIC). According to the previous article’s definition of node-level spurious correlation, this correlation exists be-tween the class prediction of a node and its representation. We first use the improved HSIC algorithm to calculate the score between the two representations. For two random vari-ables U and V and kernel functions k and l, the corresponding HSIC is defined as: 
+
+HSIC k,l (U, V ) := || Ck,l U,V || 2
+
+> h
+
+, (3) where Ck,l indicates the cross-covariance operator in kernel function’s Reproducing Kernel Hilbert Spaces (RKHS) k and 
+
+l [Van Der Vaart et al. , 2008]. || · || h indicates the Hilbert-Schmidt norm. HSIC k,l (U, V ) = 0 if and only if U ⊥ V ,i.e, the variable U and V is totally irrelevant and k, l are both Gaussian kernels. We further adapt a widely used estima-tor [Gretton et al. , 2005] with m samples to adapt the lack of labeled nodes, defined as: 
+
+HSIC k,l  
+
+> 0
+
+(U, V ) = ( m − 1) −2tr (UPVP ), (4) where tr (·) indicates the trace function, and U, V ∈ Rk×k
+
+are Gaussian kernel matrices containing entities Uij =
+
+k(Ui, U j ) and Vij = l(Vi, V j ). P = I − m−111 T ∈ Rk×k
+
+is the centering matrix, where I is an identity matrix and 1 is a all-one column. To establish the HSIC relevance between the score yvi and output Zvi of node vi, the Eq.(4) can be reformulated as: 
+
+H ˆSIC k,l  
+
+> 0
+
+(yvi , Z v ) := σ(|| C k, lyvi ,Z v || 2 
+
+> F
+
+)= σ(( m − 1) −2tr (yvi PZv )P)) , (5) where || · || 2 
+
+> F
+
+denotes the Frobenius norm. When the operator in the Hilbert space is finite-dimensional, || · || 2 
+
+> F
+
+is equivalent to || · || 2 
+
+> HS
+
+, a property we leverage to reduce computational costs. Additionally, σ represents a normalization operator. We normalize the computed results to the interval [0 , 1] to simplify subsequent calculations. 
+
+Importance Measurement 
+
+Generally, An intuitive explanation for GNN models is iden-tifying node features that strongly influence final predic-tions [Pope et al. , 2019]. To demonstrate which feature plays an important role while the current model is conducting pre-diction, we use the Gradient-weighted Class Activation Map-ping (Grad-CAM) based explanation method [Selvaraju et al. , 2017] to calculate the importance of the various dimen-sions of node feature concerning the class score given by the model. We present the computing process as follows: 
+
+yk,v = wk
+
+|G v | σ V W LHL−1(Av , Xv ) (6) where yk,v is the score for the k-th dimension of the feature of node v, wk are the weights learned based on the input-output behavior of the current model, σ(·) is the element-wise non-linear activation function W L is the weight of the last layer 
+
+L of the model, and H(·) is the convolutional activation. V
+
+indicates eD− 12 eA eD− 12 , where eA = A + IN is the adjacency matrix with added self-loops and IN ∈ RN ×N is the identity matrix, eDii = P 
+
+> j
+
+eAij , and eA = A + IN . After obtaining the score representation, we represent the importance of the node representation to the model prediction as: 
+
+iv = 1
+
+k
+
+X
+
+> k
+
+∂y k
+
+∂Z v
+
+(7) Based on the analysis, Eq.(2) can be rewritten as: 
+
+LS (θs, θ a) = 
+
+X
+
+> v∈V S
+
+max 
+
+"
+
+0, (H ˆSIC k,l  
+
+> 0
+
+(yv , Z v )) − 1
+
+k
+
+X
+
+> k
+
+∂y k
+
+∂Z v
+
+)
+
+#
+
+(8) and the Problem 1 can be reformulated as: 
+
+W∗ = arg min 
+
+> W
+
+X
+
+> vi∈V
+
+l(fθ∗ (G), y t) + LS (θ∗, θ a)
+
+s.t. θ∗ = arg min 
+
+> θ
+
+X
+
+> vi∈V L
+
+l(fθ (Gtrain ), y i) + γR(θ, θ a),
+
+(9) where W indicates the optimized weight matrix of the GNN model. We minimize the model’s reliance on spurious corre-lation in learning graph representations by jointly optimizing the GNN θs, learner θa, and weights W.
+
+4.2 Bi-level optimization 
+
+Inspired by previous work [Chen et al. , 2024], we chose not to solve the lower-level problem for each outer loop. To guar-antee the computing effectiveness, we update the parameter 
+
+θs and only perform the gradient computation with the learn-ing rate ηθs that are listed as: 
+
+θ(i) = θ(i−1) − ηθ ∇θ Ltrain (θ(i−1) ), (10) where Ltrain is correspond to the constraint of Eq.( 1), θi
+
+indicates the model parameter after i iterations. We compute the upper-level objective in the inner loop af-ter getting the parameter θ able to indicate model weight W ,which is an estimate of θ∗. Then we update the parameter 
+
+θa of fa by applying first-order approximation [Finn et al. ,2017] in computing gradients of θa to reduce the computing cost further: 
+
+θ(t+1)  
+
+> a
+
+= θ(t) 
+
+> a
+
+− ηθa ∇θa LS ( bθs, θ (t) 
+
+> a
+
+), (11) where bθs indicates the gradient propagation stopping. ηθa is the learning rate of learner module fa.
+
+## 5 Experiments 
+
+In this section, we describe the experimental setup employed to assess the efficacy of our proposed framework. The results demonstrate our framework’s superior performance compared to various baselines on diverse datasets. Specifi-cally, we address the following research questions: • RQ1 : How does SCL-GNN perform relative to state-of-the-art methods in addressing spurious correlations? • RQ2 : What is the sensitivity of SCL-GNN w.r.t. the weight of learning loss β and correlations fa gained? • RQ3 : Does the proposed bi-level optimization effectively alleviate the targeted issue? • RQ4 : Do the proposed methods function as intended and provide meaningful insights?                          
+
+> Table 1: Details of Datasets.
+> Datasets #Nodes #Edges #Features #Classes Distribution Shift
+> Cora 2708 5429 1433 7Features
+> Pubmed 19717 44338 500 3Features
+> Arxiv 169343 1166243 128 40 Timeline
+> Products 2449029 61859140 100 47 Popularity
+
+5.1 Experimental Settings 
+
+Datasets and competitors 
+
+We utilize four node classification datasets of varying sizes and domains: Cora , Pubmed [Kipf and Welling, 2016], 
+
+Arxiv , and Products [Hu et al. , 2020]. We compare our framework SCL-GNN with representative state-of-the-art methods: SRGNN [Zhu et al. , 2021], StableGNN [Fan 
+
+et al. , 2023], EERM [Wu et al. , 2022] and CANET [Wu 
+
+et al. , 2024a], which are all focusing on learning generaliz-able GNNs. We adopt GCN and GAT as the backbone of all the methods, respectively, and hyperparameters such as learning rate are kept consistent for fairness. As for competi-tors are OOD generalization oriented, and distribution shift causes more severe spurious correlation, we modify datasets as follow: for Cora and Pubmed , we synthetically gen-erate two sets of spurious features, following the method-ology of [Deshpande et al. , 2018], to induce distribution shifts between in-distribution (ID) and OOD subsets. For 
+
+Arxiv , we define publications from 2005–2016 as ID data, 2016–2018 as OOD1 data, and 2019–2020 as OOD2 data. For Products , we employ sales rankings (popularity) to partition the data, with products in the top 20% classified as ID data, those ranked 20–60% as OOD1 data, and the re-maining as OOD2 data. Detailed statistics of the datasets are summarized in Table 1. 
+
+Evaluation Protocol 
+
+In this paper, we conduct experiments on the node classifi-cation task. For each dataset, we randomly partition the in-distribution (ID) portion of nodes into training, validation, and test sets with a ratio of 15 /15 /70% . The training set is used to train the model fs, while the validation set is em-ployed for early stopping and hyperparameter tuning. The test set is utilized to evaluate the model’s performance. To assess the OOD generalization capabilities of SCL-GNN, we evaluate the model’s performance on both the ID test data and the OOD data separately. To mitigate randomness, we report the average results over ten independent runs. 
+
+5.2 Performance Comparison 
+
+To answer RQ 1 , we compare SCL-GNN with four com-petitors on four real-world graph datasets. Tabel 2 reports the testing accuracy on Cora and Pubmed , from which We found that using either GCN or GAT as the backbone, SCL-GNN consistently outperforms the corresponding competi-tors by a significant margin on the OOD data across two types of distribution shifts and datasets. At the same time, SCL-GNN shows highly competitive results on the ID data. Apart from the relative improvement over the competitors, we ob-served that on these two datasets, the performance of SCL-GNN under the OOD settings is very close to that of ID data. Table 2: Accuracy ± Standard Deviation(%) for Cora and Pubmed on ID and two sets of OOD data, respectively. The distribution shift is generated on feature of nodes. 
+
+Backbone Method Cora Pubmed 
+
+ID OOD1 OOD2 ID OOD1 OOD2 
+
+GCN StableGNN 84.05 ± 2.16 77.31 ± 0.17 73.61 ± 0.37 71.85 ± 2.23 67.12 ± 0.76 65.73 ± 1.58 
+
+SRGNN 91.57 ± 2.81 80.30 ± 0.21 76.31 ± 0.41 90.89 ± 4.23 82.45 ± 0.07 79.25 ± 0.17 
+
+EERM 88.57 ± 1.24 83.50 ± 0.44 81.07 ± 0.25 82.79 ± 3.34 77.15 ± 0.24 74.43 ± 0.65 
+
+CANET 96.25 ± 2.56 95.14 ± 0.56 93.89 ± 0.16 96.13 ± 3.32 90.67 ± 0.26 88.49 ± 0.04 
+
+SCL-GNN 97.14 ± 1.26 95.62 ± 0.06 95.03 ± 0.09 97.24 ± 0.06 94.16 ± 0.76 91.56 ± 0.06 
+
+GAT StableGNN 84.67 ± 2.40 77.89 ± 0.30 73.45 ± 0.50 72.25 ± 2.50 67.50 ± 1.00 65.95 ± 1.75 
+
+SRGNN 93.20 ± 3.05 81.50 ± 0.45 76.80 ± 0.60 91.75 ± 4.50 83.35 ± 0.25 80.45 ± 0.35 
+
+EERM 89.85 ± 1.50 84.75 ± 0.65 82.20 ± 0.40 84.10 ± 3.65 78.55 ± 0.40 75.60 ± 0.85 
+
+CANET 97.35 ± 2.80 96.20 ± 0.75 94.70 ± 0.30 97.40 ± 3.50 91.80 ± 0.45 89.65 ± 0.30 
+
+SCL-GNN 97.90 ± 1.40 96.75 ± 0.15 95.90 ± 0.20 98.25 ± 0.20 95.05 ± 0.90 92.80 ± 0.20 
+
+These results show that our model can effectively handle dis-tribution shifts caused by various spurious features. Tabel 3 reports the testing accuracy on Arxiv and Products . To create distribution shifts, we artificially split Arxiv along the timeline. When the time distribution shift between train-ing nodes and test nodes becomes larger, all methods suffer degradation to some extent. Still, SCL-GNN suffers the most minor performance degradation, which stands for both back-bones. Especially on the OOD2 dataset, which is the most difficult for other methods to make correct predictions, we achieve 5.77% and 7.13% improvement in accuracy on the testing set on the two backbones compared to the second-best CANET. For Products , we found that degradation be-comes more significant as we conduct a more challenging splitting procedure that closely matches the real-world ap-plication where labels are first assigned to essential nodes in the network, which forces models subsequently to make predictions on less important ones. This gap is more signifi-cantly enlarged when we make OOD portions, so we consider 
+
+Products as the most challenging dataset for generaliza-tion in this paper. The size of Products and the algorithm’s complexity have caused competitive competitor EERM OOM errors. Still, we found that SCL-GNN achieves overall su-perior performance over the competitors, demonstrating our model’s efficacy for tackling OOD generalization across real-world graphs in representation learning. 
+
+5.3 Sensitivity and Ablation Studies 
+
+Sensitivity Study on Hyperparameter To answer RQ 2 ,we vary the hyperparameter β, which controls the weight of the spurious correlation learning loss, across the values 
+
+{0.25 , 0.5, 1, 2.5, 5}. Figure 3 illustrates the performance of backbone models (GCN and GAT) on the Cora and Arxiv 
+
+datasets under different β values. As β increases, both GCN and GAT exhibit improved performance. However, three key observations emerge: (i) While increasing β enhances perfor-mance by mitigating spurious correlations, excessive values lead to underfitting and performance degradation. (ii) At opti-mal β values, the model achieves comparable performance on both in-distribution (ID) and out-of-distribution (OOD) sam-ples, indicating enhanced generalization. (iii) Despite these improvements, the results in Tables 2 and 3 reveal a signif-0.25 0.5 1 2.5 5  
+
+> 70
+> 80
+> 90
+> Accuracy (%)  ID OOD1 OOD2
+
+(a) GCN-Cora 0.25 0.5 1 2.5 5   
+
+> 70
+> 80
+> 90
+> Accuracy (%)  ID OOD1 OOD2
+
+(b) GAT-Cora 0.25 0.5 1 2.5 5  
+
+> 45
+> 55
+> 65
+> Accuracy (%)  ID OOD1 OOD2
+
+(c) GCN-Arxiv 0.25 0.5 1 2.5 5   
+
+> 45
+> 55
+> 65
+> Accuracy (%)  ID OOD1 OOD2
+
+(d) GAT-Arxiv 
+
+Figure 3: Model performance with different β.
+
+icant performance gap, underscoring the critical role of the learner in boosting the model’s generalization capabilities. 50 
+
+> 60
+> 70
+> 80
+> 90
+> 100
+> Accuracy(%)
+> SCL-GCN
+> SCL-GCN w/o IC
+> SCL-GCN w/o SC
+> GCN
+> 50
+> 60
+> 70
+> 80
+> 90
+> 100
+> SCL-GAT
+> SCL-GAT w/o IC
+> SCL-GAT w/o SC
+> GAT
+
+Figure 4: Ablation study of SCL-GNN with GCN and GAT. 
+
+Ablation Study on Correlations To further verify the ef-fectiveness of the spurious correlation learner, we conduct another ablation study to understand the correlation effects on performance. We compare SCL-GNN on the same OOD portion of Pubmed with the same training set ratio with: 
+
+SCL-GNNw/oIC: SCL-GNN without all the irrelevant cor-relations with normalized values greater than 0.5. SCL-Table 3: Accuracy ± Standard Deviation(%) for Arxiv and Products on ID and two sets of OOD data, respectively. The distribution shift is generated by the timeline and popularity of nodes. 
+
+Backbone Method Arxiv Products 
+
+ID OOD1 OOD2 ID OOD1 OOD2 
+
+GCN StableGNN 60.35 ± 0.46 57.33 ± 0.12 53.25 ± 0.49 80.23 ± 0.43 69.12 ± 0.46 67.23 ± 0.38 
+
+SRGNN 61.02 ± 0.18 57.30 ± 0.11 46.98 ± 0.29 84.16 ± 0.42 78.12 ± 0.07 72.56 ± 0.13 
+
+EERM 57.12 ± 0.14 53.15 ± 0.44 48.37 ± 0.19 82.42 ± 0.42 74.52 ± 0.33 72.45 ± 0.17 
+
+CANET 62.52 ± 0.20 59.04 ± 0.22 56.12 ± 0.15 85.61 ± 0.33 78.27 ± 0.46 75.51 ± 0.19 
+
+SCL-GNN 63.74 ± 0.36 62.15 ± 0.06 60.89 ± 0.22 88.04 ± 0.15 84.16 ± 0.09 80.07 ± 0.20 
+
+GAT StableGNN 60.79 ± 1.01 56.24 ± 0.16 53.95 ± 0.26 OOM OOM OOM SRGNN 61.39 ± 0.17 57.23 ± 0.41 51.27 ± 0.33 OOM OOM OOM EERM 58.62 ± 0.34 54.32 ± 0.24 49.71 ± 0.37 82.68 ± 0.46 76.52 ± 0.40 71.33 ± 0.81 
+
+CANET 64.01 ± 0.41 59.22 ± 0.37 54.61 ± 0.26 84.11 ± 0.36 79.21 ± 0.16 77.37 ± 0.13 
+
+SCL-GNN 64.22 ± 0.46 61.48 ± 0.33 59.37 ± 0.17 85.69 ± 0.42 83.92 ± 0.22 81.44 ± 0.33 
+
+GNNw/oSC: SCL-GNN without all the significant correla-tions with normalized values smaller than 0.5. Results in Fig.4 show SCL-GNN achieves the best performance, indi-cating each learned correlation contributes to effectiveness and robustness and complements each other. 
+
+5.4 Optimization Effect 100 200 300 400 500 
+
+> 0
+> 50
+> 100
+> Accuracy (%)
+> Train
+> Test
+
+(a) Bi-level optimization 100 200 300 400 500  
+
+> 0
+> 50
+> 100
+> Accuracy (%)
+> Train
+> Test
+
+(b) λ = 1 100 200 300 400 500 
+
+> 0
+> 50
+> 100
+> Accuracy (%)
+> Train
+> Test
+
+(c) λ = 2 100 200 300 400 500  
+
+> 0
+> 50
+> 100
+> Accuracy (%)
+> Train
+> Test
+
+(d) λ = 3 
+
+Figure 5: Comparison of a GCN backbone’s learning curves 
+
+To answer RQ 3 , we reformulate Problem 1 as an optimiza-tion problem with a regularization term, where the hyperpa-rameter λ controls the weight of the aligner module’s learn-ing loss during training. As illustrated in Figure 5, the results demonstrate two key findings: (i) Bi-level optimization aligns test accuracy closely with training accuracy, and (ii) non-two-layer optimization accelerates model convergence but leads to significant performance degradation, primarily due to overfit-ting and reduced generalization. These findings validate the effectiveness of our bi-level optimization formulation. 
+
+5.5 Mechanism Study 
+
+To answer RQ 4 , we study the spurious learning mechanism’s contribution to generalizable GNN under distribution shifts via experiments on Cora and Arxiv datasets. We visualized the fine-tuned weight matrix of the GCN backbone model, as 0 0.25 0.5 0.75 1.0 
+
+> Normalized Weights
+> 1.0
+> 2.0
+> 3.0
+> 4.0
+> Density
+> Clean
+> Spurious
+
+(a) Cora 0 0.25 0.5 0.75 1.0  
+
+> Normalized Weights
+> 1.0
+> 2.0
+> 3.0
+> 4.0
+> Density
+> Clean
+> Spurious
+
+(b) Arxiv 
+
+Figure 6: The distribution of two sets of correlations. 
+
+shown in Fig.6. The median weight in the spurious node fea-tures is lower than that in the clean node features, indicating that SCL-GNN can identify the spurious correlations between labels and features. The weight variance of spurious node features is larger than in clean, showing SCL-GNN’s reliable mitigation of spurious correlations. 
+
+## 6 Conclusion and Discussion 
+
+This work addresses the challenge of enhancing the general-ization of GNNs in the presence of spurious correlations, es-pecially under unobserved distribution shifts. By combining theoretical analysis with practical intuition, we use GNN ex-planation methods to quantify the relevance of node features to prediction labels. Based on these insights, we introduce a learning objective designed to identify and mitigate spuri-ous correlations through the fine-tuning of pre-trained GNN models. Our experiments across four real-world datasets with varying distribution shifts demonstrate the effectiveness of this framework. While this approach improves the development of gener-alizable GNNs, several directions remain for future research. The proposed methodology could be applied to tasks such as molecular property prediction [Hao et al. , 2020]. Further-more, the principles of spurious correlation learning might be adapted for OOD detection [Li et al. , 2022] to better identify shifts in data distributions.SCL 
+
+## References 
+
+[Bongini et al. , 2021] Pietro Bongini, Monica Bianchini, and Franco Scarselli. Molecular generative graph neural networks for drug discovery. Neurocomputing , 450:242– 252, 2021. [Chen et al. , 2022a] Yongqiang Chen, Yonggang Zhang, Yatao Bian, Han Yang, MA Kaili, Binghui Xie, Tongliang Liu, Bo Han, and James Cheng. Learning causally in-variant representations for out-of-distribution generaliza-tion on graphs. Advances in Neural Information Process-ing Systems , 35:22131–22148, 2022. [Chen et al. , 2022b] Zhengyu Chen, Teng Xiao, and Kun Kuang. Ba-gnn: On learning bias-aware graph neural net-work. In 2022 IEEE 38th International Conference on Data Engineering (ICDE) , pages 3012–3024. IEEE, 2022. [Chen et al. , 2024] Zhengyu Chen, Teng Xiao, Kun Kuang, Zheqi Lv, Min Zhang, Jinluan Yang, Chengqiang Lu, Hongxia Yang, and Fei Wu. Learning to reweight for generalizable graph neural network. In Proceedings of the AAAI conference on artificial intelligence , volume 38, pages 8320–8328, 2024. [Cheng et al. , 2022] Dawei Cheng, Fangzhou Yang, Sheng Xiang, and Jin Liu. Financial time series forecasting with multi-modality graph neural network. Pattern Recogni-tion , 121:108218, 2022. [DeGrave et al. , 2021] Alex J DeGrave, Joseph D Janizek, and Su-In Lee. Ai for radiographic covid-19 detection se-lects shortcuts over signal. Nature Machine Intelligence ,3(7):610–619, 2021. [Deshpande et al. , 2018] Yash Deshpande, Subhabrata Sen, Andrea Montanari, and Elchanan Mossel. Contextual stochastic block models. Advances in Neural Information Processing Systems , 31, 2018. [Eastwood et al. , 2024] Cian Eastwood, Shashank Singh, Andrei L Nicolicioiu, Marin Vlastelica Poganˇ ci´ c, Julius von K¨ ugelgen, and Bernhard Sch¨ olkopf. Spuriosity didn’t kill the classifier: Using invariant predictions to harness spurious features. Advances in Neural Information Pro-cessing Systems , 36, 2024. [Fan et al. , 2023] Shaohua Fan, Xiao Wang, Chuan Shi, Peng Cui, and Bai Wang. Generalizing graph neural net-works on out-of-distribution graphs. IEEE Transactions on Pattern Analysis and Machine Intelligence , 2023. [Finn et al. , 2017] Chelsea Finn, Pieter Abbeel, and Sergey Levine. Model-agnostic meta-learning for fast adaptation of deep networks. In International conference on machine learning , pages 1126–1135. PMLR, 2017. [Ghosal and Li, 2024] Soumya Suvra Ghosal and Yixuan Li. Are vision transformers robust to spurious correlations? 
+
+International Journal of Computer Vision , 132(3):689– 709, 2024. [Gohberg et al. , 1990] Israel Gohberg, Seymour Goldberg, Marinus A Kaashoek, Israel Gohberg, Seymour Gold-berg, and Marinus A Kaashoek. Hilbert-schmidt opera-tors. Classes of Linear Operators Vol. I , pages 138–147, 1990. [Gretton et al. , 2005] Arthur Gretton, Olivier Bousquet, Alex Smola, and Bernhard Sch¨ olkopf. Measuring statis-tical dependence with hilbert-schmidt norms. In Interna-tional conference on algorithmic learning theory , pages 63–77. Springer, 2005. [Gui et al. , 2024] Shurui Gui, Meng Liu, Xiner Li, Youzhi Luo, and Shuiwang Ji. Joint learning of label and envi-ronment causal independence for graph out-of-distribution generalization. Advances in Neural Information Process-ing Systems , 36, 2024. [Hao et al. , 2020] Zhongkai Hao, Chengqiang Lu, Zhenya Huang, Hao Wang, Zheyuan Hu, Qi Liu, Enhong Chen, and Cheekong Lee. Asgn: An active semi-supervised graph neural network for molecular property prediction. In Proceedings of the 26th ACM SIGKDD international conference on knowledge discovery & data mining , pages 731–752, 2020. [Hu et al. , 2020] Weihua Hu, Matthias Fey, Marinka Zitnik, Yuxiao Dong, Hongyu Ren, Bowen Liu, Michele Catasta, and Jure Leskovec. Open graph benchmark: Datasets for machine learning on graphs. Advances in neural informa-tion processing systems , 33:22118–22133, 2020. [Izmailov et al. , 2022] Pavel Izmailov, Polina Kirichenko, Nate Gruver, and Andrew G Wilson. On feature learn-ing in the presence of spurious correlations. Advances in Neural Information Processing Systems , 35:38516–38532, 2022. [Karczewski et al. , 2024] Rafał Karczewski, Amauri HSouza, and Vikas Garg. On the generalization of equiv-ariant graph neural networks. Proceedings of Machine Learning Research , 235:23159–23186, 2024. [Kipf and Welling, 2016] Thomas N Kipf and Max Welling. Semi-supervised classification with graph convolutional networks. arXiv preprint arXiv:1609.02907 , 2016. [Kirichenko et al. , 2022] Polina Kirichenko, Pavel Izmailov, and Andrew Gordon Wilson. Last layer re-training is sufficient for robustness to spurious correlations. arXiv preprint arXiv:2204.02937 , 2022. [Koh et al. , 2021] Pang Wei Koh, Shiori Sagawa, Hen-rik Marklund, Sang Michael Xie, Marvin Zhang, Ak-shay Balsubramani, Weihua Hu, Michihiro Yasunaga, Richard Lanas Phillips, Irena Gao, et al. Wilds: Abenchmark of in-the-wild distribution shifts. In Interna-tional conference on machine learning , pages 5637–5664. PMLR, 2021. [Kuang et al. , 2020] Kun Kuang, Ruoxuan Xiong, Peng Cui, Susan Athey, and Bo Li. Stable prediction with model misspecification and agnostic distribution shift. In Pro-ceedings of the AAAI Conference on Artificial Intelligence ,volume 34, pages 4485–4492, 2020. [Li et al. , 2022] Haoyang Li, Xin Wang, Ziwei Zhang, and Wenwu Zhu. Ood-gnn: Out-of-distribution generalized graph neural network. IEEE Transactions on Knowledge and Data Engineering , 35(7):7328–7340, 2022. [Lin et al. , 2024] Xixun Lin, Wenxiao Zhang, Fengzhao Shi, Chuan Zhou, Lixin Zou, Xiangyu Zhao, Dawei Yin, Shirui Pan, and Yanan Cao. Graph neural stochastic diffusion for estimating uncertainty in node classification. In Forty-first International Conference on Machine Learning , 2024. [Ming et al. , 2022] Yifei Ming, Hang Yin, and Yixuan Li. On the impact of spurious correlation for out-of-distribution detection. In Proceedings of the AAAI confer-ence on artificial intelligence , volume 36, pages 10051– 10059, 2022. [Ni et al. , 2024] Xuelian Ni, Fei Xiong, Yu Zheng, and Liang Wang. Graph contrastive learning with kernel de-pendence maximization for social recommendation. In 
+
+The Web Conference 2024 , 2024. [Pope et al. , 2019] Phillip E Pope, Soheil Kolouri, Moham-mad Rostami, Charles E Martin, and Heiko Hoffmann. Ex-plainability methods for graph convolutional neural net-works. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pages 10772– 10781, 2019. [Selvaraju et al. , 2017] Ramprasaath R Selvaraju, Michael Cogswell, Abhishek Das, Ramakrishna Vedantam, Devi Parikh, and Dhruv Batra. Grad-cam: Visual explanations from deep networks via gradient-based localization. In 
+
+Proceedings of the IEEE international conference on com-puter vision , pages 618–626, 2017. [Sener and Koltun, 2018] Ozan Sener and Vladlen Koltun. Multi-task learning as multi-objective optimization. Ad-vances in neural information processing systems , 31, 2018. [Tang and Liu, 2023] Huayi Tang and Yong Liu. Towards understanding generalization of graph neural networks. In International Conference on Machine Learning , pages 33674–33719. PMLR, 2023. [Van Der Vaart et al. , 2008] Aad W Van Der Vaart, J Harry Van Zanten, et al. Reproducing kernel hilbert spaces of gaussian priors. IMS Collections , 3:200–222, 2008. [Veliˇ ckovi´ c et al. , 2017] Petar Veliˇ ckovi´ c, Guillem Cucurull, Arantxa Casanova, Adriana Romero, Pietro Lio, and Yoshua Bengio. Graph attention networks. arXiv preprint arXiv:1710.10903 , 2017. [Wang et al. , 2023] Qianlong Wang, Keyang Ding, Bin Liang, Min Yang, and Ruifeng Xu. Reducing spurious correlations in aspect-based sentiment analysis with ex-planation from large language models. In Findings of the Association for Computational Linguistics: EMNLP 2023 ,pages 2930–2941, 2023. [Wu et al. , 2022] Qitian Wu, Hengrui Zhang, Junchi Yan, and David Wipf. Handling distribution shifts on graphs: An invariance perspective. arXiv preprint arXiv:2202.02466 , 2022. [Wu et al. , 2024a] Qitian Wu, Fan Nie, Chenxiao Yang, Tianyi Bao, and Junchi Yan. Graph out-of-distribution generalization via causal intervention. In Proceedings of the ACM on Web Conference 2024 , pages 850–860, 2024. [Wu et al. , 2024b] Qitian Wu, Fan Nie, Chenxiao Yang, and Junchi Yan. Learning divergence fields for shift-robust graph representations. In Ruslan Salakhutdinov, Zico Kolter, Katherine Heller, Adrian Weller, Nuria Oliver, Jonathan Scarlett, and Felix Berkenkamp, editors, Pro-ceedings of the 41st International Conference on Ma-chine Learning , volume 235 of Proceedings of Machine Learning Research , pages 53776–53792. PMLR, 21–27 Jul 2024. [Xie et al. , 2022] Yaochen Xie, Zhao Xu, Jingtun Zhang, Zhengyang Wang, and Shuiwang Ji. Self-supervised learn-ing of graph neural networks: A unified review. IEEE transactions on pattern analysis and machine intelligence ,45(2):2412–2429, 2022. [Ye et al. , 2024] Wenqian Ye, Guangtao Zheng, Xu Cao, Yunsheng Ma, Xia Hu, and Aidong Zhang. Spurious cor-relations in machine learning: A survey. arXiv preprint arXiv:2402.12715 , 2024. [Ying et al. , 2018] Rex Ying, Ruining He, Kaifeng Chen, Pong Eksombatchai, William L Hamilton, and Jure Leskovec. Graph convolutional neural networks for web-scale recommender systems. In Proceedings of the 24th ACM SIGKDD international conference on knowledge discovery & data mining , pages 974–983, 2018. [Zhang and Ranganath, 2023] Lily H Zhang and Rajesh Ranganath. Robustness to spurious correlations improves semantic out-of-distribution detection. In Proceedings of the AAAI Conference on Artificial Intelligence , volume 37, pages 15305–15312, 2023. [Zhang et al. , 2023] Min Zhang, Junkun Yuan, Yue He, Wenbin Li, Zhengyu Chen, and Kun Kuang. Map: To-wards balanced generalization of iid and ood through model-agnostic adapters. In Proceedings of the IEEE/CVF International Conference on Computer Vision , pages 11921–11931, 2023. [Zhao et al. , 2024] Zhe Zhao, Pengkun Wang, Haibin Wen, Yudong Zhang, Zhengyang Zhou, and Yang Wang. Atwist for graph classification: Optimizing causal informa-tion flow in graph neural networks. In Proceedings of the AAAI Conference on Artificial Intelligence , volume 38, pages 17042–17050, 2024. [Zhu et al. , 2021] Qi Zhu, Natalia Ponomareva, Jiawei Han, and Bryan Perozzi. Shift-robust gnns: Overcoming the limitations of localized graph training data. Advances in Neural Information Processing Systems , 34:27965–27977, 2021.

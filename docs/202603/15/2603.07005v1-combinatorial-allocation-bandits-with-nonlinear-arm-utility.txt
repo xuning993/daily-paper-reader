@@ -1,0 +1,3296 @@
+Title: Combinatorial Allocation Bandits with Nonlinear Arm Utility
+
+URL Source: https://arxiv.org/pdf/2603.07005v1
+
+Published Time: Tue, 10 Mar 2026 00:25:38 GMT
+
+Number of Pages: 32
+
+Markdown Content:
+# Combinatorial Allocation Bandits with Nonlinear Arm Utility 
+
+Yuki Shibukawa ∗ Koichi Tanaka † Yuta Saito ‡ Shinji Ito §
+
+March 10, 2026 
+
+Abstract 
+
+A matching platform is a system that matches different types of participants, such as compa-nies and job-seekers. In such a platform, merely maximizing the number of matches can result in matches being concentrated on highly popular participants, which may increase dissatisfaction among other participants, such as companies, and ultimately lead to their churn, reducing the platform’s profit opportunities. To address this issue, we propose a novel online learning problem, Combinatorial Allocation Bandits (CAB), which incorporates the notion of arm satisfaction . In CAB, at each round t = 1 , . . . , T , the learner observes K feature vectors corresponding to K
+
+arms for each of N users, assigns each user to an arm, and then observes feedback following a generalized linear model (GLM). Unlike prior work, the learner’s objective is not to maximize the number of positive feedback, but rather to maximize the arm satisfaction. For CAB, we provide an upper confidence bound algorithm that achieves an approximate regret upper bound, which matches the existing lower bound for the special case. Furthermore, we propose a TS algorithm and provide an approximate regret upper bound. Finally, we conduct experiments on synthetic data to demonstrate the effectiveness of the proposed algorithms compared to other methods. 
+
+# 1 Introduction 
+
+Online learning is a framework in which decisions are made sequentially based on observed infor-mation. It has a wide range of potential applications, such as recommender systems, and has been studied extensively from a theoretical perspective (Auer et al., 2002a; Cesa-Bianchi and Lugosi, 2006; Li et al., 2010). Although these studies make important theoretical contributions, they mainly focus on maxi-mizing the number of positive feedback, such as matches or clicks, which sometimes fail to describe real-world business objectives. For example, under unconstrained settings, a match-maximizing al-gorithm often yields an imbalanced selection of arms, leading to dissatisfaction among infrequently selected arms. In job-matching platforms that recommend companies to visiting users, the revenue model typically relies on fees paid by the companies participating in the platform to hire qualified applicants. Thus, the economic cost of company churn can outweigh raw match counts. Such a structure also appears in dating apps and paper review processes. Dating apps can be viewed as a match between users. When matches concentrate on a small number of highly popular users,     
+
+> ∗The University of Tokyo and RIKEN; shibu-yu762@g.ecc.u-tokyo.ac.jp .
+> †Keio University; kouichi 1207@keio.jp .
+> ‡Hanuku-kaso, Co., Ltd.; saito@hanjuku-kaso.com .
+> §The University of Tokyo and RIKEN; shinji@mist.i.u-tokyo.ac.jp .
+
+1
+
+> arXiv:2603.07005v1 [cs.LG] 7 Mar 2026
+
+many others receive few or no matches, which in turn reduces their incentives to remain active. This decline in active participation is undesirable from the platform’s perspective. Similarly, paper review processes can be regarded as a match between authors and reviewers. If authors are not sufficiently satisfied with the quality of the reviews, they may submit their work to other journals, resulting in a loss of feature submissions. The key point in the above discussions is that companies whose satisfaction falls below a certain level are expected to have a higher probability of leaving the platform. Here, incorporating principles of economics and the cost of interviewing many applicants 1, we model each arm’s satisfaction as a concave function of the number of matches it secures. Under this model, it is business-aligned to minimize the number of arms that receive few or no matches and are at risk of churn, rather than to create a small subset of arms that monopolize many matches. As illustrated on the right side of fig. 1, our goal is to ensure that many arms satisfy, even at the cost of reducing the number of matches. Here, satisfaction refers, in the context of a job-matching platform, to the evaluation that a company assigns to the platform, which depends on factors such as the quality and suitability of the users allocated to it. For the functional form, we consider concave functions to capture diminishing marginal utility. By leveraging the concept of satisfaction, we assume that the concentration and dispersion of matches are appropriately balanced, without imposing explicit fairness constraints. As an illustration of why linear reward maximization may be undesirable, consider the following scenario using fig. 1: an arm is recommended to a user, and the user decides whether to match with the recommended arm. There are 4 arms, A, B, C, and D, and arm A is assumed to be a ”good” arm that is easy to match with. In this setting, if a goal is to maximize the number of matches, the optimal action is to recommend only arm A, as shown on the left side of fig. 1. 2 Moreover, even for arm A, which receives many assignments, real-world constraints such as budget limits and capacity restrictions, as well as the economic principle of diminishing marginal utility, imply that the satisfaction obtained does not necessarily grow proportionally with the reward. To address such concentration, several approaches have been considered, including adding con-straints to the learning procedure or incorporating fairness. The former contains the bandits with knapsacks (Badanidiyuru et al., 2013; Agrawal and Devanur, 2016; Sankararaman and Slivkins, 2018), which extends the multi-armed bandit by introducing constraints. However, this problem mainly targets situations with well-specified quantitative constraints, such as resource limitations in clinical trials or budget constraints. It thus cannot capture aspects of our interest, such as the satisfaction of arms or the diminishing property of the utility function. One of the latter approaches is to promote fairness by requiring that each arm be selected at least a certain number of times (Joseph et al., 2016; Li et al., 2019; Xu et al., 2020). While this strategy indeed guarantees a formal notion of fairness in terms of selection counts, it does not take into account which users are assigned to each arm, and thus may not necessarily lead to actual satisfaction. For example, suppose that there are users whose evaluations from the perspective of an arm range from 0 .1 to 0 .9 in increments of 0 .1, and three arms A, B, and C that yield rewards equal to the evaluation multiplied by 1, 0 .9, and 0 .8, respectively. If we require that at least two users be assigned to each arm, then the five highest-evaluation users will be assigned to A, the two lowest-evaluation users to C, and the remaining users to B. In this case, although formal fairness in terms of the number of selections is maintained, arms B and C end up being allocated lower-evaluation users, which may lead to dissatisfaction. Moreover, excessive fairness may lead a good 
+
+> 1Similar costs arise in dating apps through going on dates and in paper review processes through responding to reviews.
+> 2Indeed, in a simple multi-armed bandits setting, the arm with the largest average reward is optimal.
+
+22
+
+# 3
+
+# 4
+
+# 5
+
+# 1 A
+
+# B
+
+# C
+
+# D
+
+# Focusing on matches Using satisfaction 
+
+## user 
+
+## female 
+
+## reviewer 
+
+## company 
+
+## male 
+
+## author 
+
+## satisfaction 
+
+# 1
+
+# 0
+
+# 0
+
+# 0
+
+# 0.8 
+
+# 0.4 
+
+# 0.4 
+
+# 0
+
+# :match :recommended, but no -match 
+
+# 2
+
+# 3
+
+# 4
+
+# 5
+
+# 1 A
+
+# B
+
+# C
+
+# D
+
+# ・・・ 
+
+# ・・・ 
+
+# ・・・ 
+
+# ・・・ 
+
+# ・・・ 
+
+# ・・・ 
+
+# ・・・ 
+
+# ・・・ 
+
+## user 
+
+## female 
+
+## reviewer 
+
+## company 
+
+## male 
+
+## author 
+
+## satisfaction Figure 1: This figure provides a schematic illustration comparing the results obtained by maximizing the number of matches with the desired matches obtained using satisfaction. We assume that arm A is the most popular firm, and that popularity decreases toward arm D. arm to recognize that it is being treated disadvantageously. When designing algorithms for bandit settings, it is important to balance exploration and ex-ploitation, since the learner has to make decisions sequentially under an unknown environment. To this end, there are some types of algorithms. For example, the upper confidence bound algorithm, which performs optimistic evaluation with respect to uncertainty (Lai, 1987; Auer et al., 2002b; Qin et al., 2014; Li et al., 2017; Lattimore and Szepesv´ ari, 2020), and the Thompson sampling algorithm, which assumes a model for unknown parameters and samples parameters from the posterior distri-bution (Thompson, 1933; Agrawal and Goyal, 2013; Takemura and Ito, 2019; Abeille and Lazaric, 2017), have been proposed. For space constraints, we provide a discussion of the related work in Section B. 
+
+1.1 Our Contributions 
+
+Our contributions consist of proposing CAB, developing algorithms, analysing regrets, and conduct-ing experiments. Most importantly, we propose the Combinatorial Allocation Bandits (CAB), which directly addresses the issues discussed above. In the CAB setting, at each round t = 1 , . . . , T , the learner observes K feature vectors in Rd corresponding to the K arms for each of the N users. Based on these observations, the learner assigns each user to an arm and then receives feedback according to a generalized linear model (GLM). The learner’s goal is to maximize the cumulative expected arm satisfaction. The objective function we consider is the sum of satisfactions over arms. As mentioned in Section 4.3, it has a structure close to that of a submodular welfare problem, so it is different from the submodular functions dealt with in Chen et al. (2018). The technical contribution of our work is to propose algorithms for CAB and to provide regret analyses. We use α-approximate regret defined in (3) as a measurement, which captures the perfor-3mance gap between the chosen allocation and an α-approximation to the optimum. CAB belongs to the class of contextual combinatorial semi-bandits with feedback given by a GLM (we call it CCGLS). However, to the best of our knowledge, no algorithms have been developed for CCGLS, and thus our algorithms and analyses are novel in this respect (see more details in Section B). We propose an upper confidence bound (UCB) algorithm, CAB-UCB (Algorithm 1), and a Thompson sampling (TS) algorithm, CAB-TS (Algorithm 2). In Section 4.1, we show that CAB-UCB achieves an α-approximate regret upper bound of eO(d√N T + dN ) (Theorem 4.1), where eO(·)ignores logarithm factors. This upper bound is optimal in terms of d, N , and T when compared with the lower bound for the special case in which the feedback follows a linear model (Takemura et al., 2021). In Section 4.2, we show that CAB-TS achieves an α-approximate regret upper bound of eO(dN √T + dN 3/2) (Theorem 4.2). For CAB-TS, we carefully construct the sampling from the distribution to handle the combinatorial setting with generalized linear feedback. Finally, in Section 5, we compare our algorithm with algorithms to maximize the number of matches or to emphasize fairness. In our experiments, CAB-UCB yielded the best results. This result is consistent with the theoretical results. 
+
+1.2 Technical Challenges 
+
+Although the literature on GLM and that on combinatorial settings have each advanced, there are aspects of CCGLS that cannot be addressed by a straightforward combination of these two lines of research. For the UCB algorithm, the extension is relatively straightforward: the key idea is to construct confidence bounds for each arm’s expected reward under the GLM, and then apply the standard optimistic principle. Although designing an appropriate bonus term requires careful analysis to account for the GLM structure, the overall approach follows established techniques. In contrast, the TS algorithm poses two main challenges. First, unlike standard TS, where a single parameter sample suffices per round, our combinatorial setting requires sampling model parameters separately for each user i. This is because assessing the variability introduced by sampling across the combinatorial structure necessitates independent samples (see Theorem D.9 for details). Although Takemura and Ito (2019) also considers a TS algorithm in a combinatorial setting, their approach assumes linear feedback and a linear objective function, which allows for a single sampling per round using different analytical techniques. Second, handling the nonlinearity of the objective function is more challenging in TS than in UCB. In UCB, the bonus term can be designed to directly account for the nonlinearity, providing a deterministic upper bound on the estimation error. In contrast, in CAB-TS, we must exploit the probabilistic properties of the sampled parameters to obtain tight bounds. A naive analysis that does not carefully leverage these properties not only requires additional assumptions on the objective function but also leads to a worse upper bound (see Theorem D.15 for details). 
+
+# 2 Preliminaries 
+
+In this section, we describe the setting of the GLM and the submodular welfare problem used in the implementation of our algorithms. 
+
+Notations For n ∈ N, let [ n] = {1, . . . , n }. For x ∈ Rd, denote the transpose by x⊤. For a positive definite matrix A, define ∥x∥A = √x⊤Ax , and let λmin (A) and λmax (A) denote its minimum and 4maximum eigenvalues, respectively. Let 0 be the all-zero vector. For a set X, let f : 2 X → R
+
+be a set function. f is monotone if f (S) ≤ f (T ) whenever S ⊆ T ⊆ X, and f is submodular if 
+
+f (S ∪ T ) + f (S ∩ T ) ≤ f (S) + f (T ) for any S, T ⊆ X. We denote the Lipschitz constant of the function g by Lg. Let Π = {π : [ N ] → [K]}.
+
+2.1 Generalized Linear Models 
+
+Within the framework of GLM (McCullagh and Nelder, 1983), the conditional distribution of the response variable Y given the explanatory variable X belongs to the exponential family. Formally, the probability density function parameterized by θ is given by 
+
+P(Y |θ; X) ∝ exp 
+
+n
+
+Y X ⊤θ − m(X⊤θ)
+
+o
+
+, (1) where m : R → R is a known twice differentiable function and m satisfies ˙m(X⊤θ) = E[Y |X] and ¨m(X⊤θ) = V (Y |X). In what follows, we set μ(X⊤θ) = ˙ m(X⊤θ). The exponential family includes various distributions, such as the Gaussian, Gamma, Poisson, and Bernoulli distributions. In this setting, given independent samples Y1, . . . , Y n conditional on X1, . . . , X n, and we de-note the dataset by D = {(Xi, Y i)}ni=1 . Then, the negative log-likelihood function is given by 
+
+L(D; θ) = Pni=1 [m(X⊤ 
+
+> i
+
+θ) − YiX⊤ 
+
+> i
+
+θ] + constant. Then, since m is differentiable, the maximum like-lihood estimator (MLE) is given by the maximizer of Pni=1 [m(X⊤ 
+
+> i
+
+θ) − YiX⊤ 
+
+> i
+
+θ] (see Filippi et al. (2010); Li et al. (2017) for details). However, in the problem considered in our study, using the MLE requires an initial exploration. To avoid this issue, we employ a regularized MLE with ridge regularization. Here, the regularized negative log-likelihood corresponding to the regularized MLE takes the form eL(D; θ, λ ) = L(D; θ) +  
+
+> λ
+> 2
+
+∥θ∥22.
+
+2.2 Submodular Welfare Problem 
+
+The submodular welfare problem was first studied by Lehmann et al. (2001) and is defined as follows: 
+
+the submodular welfare problem, given m items and n players with submodular utility functions 
+
+wi : 2 [m] → R≥0, is the problem of maximizing Pni=1 wi(Si), where S1, . . . , S n are disjoint subsets of the item set. A limitation for the submodular welfare problem is that no approximation better than 1 − 1/e can be achieved unless P = N P (Khot et al., 2008). There are two commonly considered oracle models, the value oracle model and the demand oracle model. The former model returns the value of utility wi(S), and the latter model returns the set S which maximizes wi(S) − P 
+
+> j∈S
+
+pj
+
+given an assignment of prices to items p : [ m] → R. We call an algorithm ε-approximate algorithm if the value obtained by the algorithm (we denote it ALG ) satisfies the inequality εOPT sub ≤ ALG, where OPT sub denotes the optimal value. Under the value oracle model, there exists an approximate algorithm that achieves the following approximation: 
+
+Lemma 2.1 (Vondrak 2008, Section 5) . There is a 1−1/e -approximate algorithm for the submodular welfare problem when the utility functions are monotone submodular, under the value oracle model. 
+
+In addition, even without the monotonicity assumption, Lee et al. (2009) implies the existence of a 1 /4-approximate solution, since the submodular welfare problem is maximizing a submodular function under matroid constraints. 5Problem 1 Combinatorial Allocation Bandits (CAB)  
+
+> 1:
+
+for t = 1 , . . . , T do  
+
+> 2:
+
+Context: Observe {ϕt(i, a )}a∈[K] for each i ∈ [N ].  
+
+> 3:
+
+Action: Choose allocation πt ∈ Π.  
+
+> 4:
+
+Feedback: Observe yt(i) ∼ P(·| θ∗; ϕt(i, π t(i))) for each i ∈ [N ].  
+
+> 5:
+
+Reward (unobserved): Receive ft(πt; θ∗) = P 
+
+> a∈[K]
+
+r(P  
+
+> i∈π−1
+> t(a)
+
+μ(ϕt(i, a )⊤θ∗)). 
+
+# 3 Combinatorial Allocation Bandits 
+
+This section introduces a setting of Combinatorial Allocation Bandits (CAB) and our intention for constructing the problem. 
+
+3.1 Problem Setting 
+
+CAB (Problem 1) is a novel problem in online learning that we propose in this study. Let T be the total number of rounds. At round t, for each user i ∈ [N ], the learner obtains a context set {ϕt(i, a )}a∈[K] with ∥ϕt(i, a )∥ ≤ 1, where the contexts are chosen by an oblivious adversary before the learning process begins. Note that i is not associated with a particular user, but instead denotes the index reflecting the order of observation. Given the observations, the learner determines the allocation πt ∈ Π at round t. Subsequently, based on πt, the learner observes the feedback 
+
+yt(i) = yt(i, π t(i)) for each i ∈ [N ]. Let Ft = σ(y1(1) , . . . , y 1(N ), . . . , y t(1) , . . . , y t(N ), π 1, . . . , π t), where σ(A) is the smallest σ-algebra containing A. Then, ( Ft)t is a filtration. Denote the conditional probability and expectation given the history of observations by 
+
+Pt(·) = P(· | F t−1) and Et[·] = E[· | F t−1].
+
+We consider that the feedback yt(i) observed by the learner follows a GLM with an unknown parameter θ∗ ∈ Rd (Section 2.1). We assume that ∥θ∗∥2 ≤ D for some constant D > 0. Accord-ingly, the probability density function (or the probability mass function) of yt(i) can be expressed using (1) as P(yt(i)|θ∗; ϕt(i, π t(i))), whose mean is given by μ(ϕt(i, π t(i)) ⊤θ∗). In this problem, we assume that the deviation between the observation and its mean, yt(i) − μ(ϕt(i, π t(i)) ⊤θ∗), is sub-Gaussian with parameter σ > 0. That is, for any t ∈ [T ], i ∈ [N ], and ξ ∈ R it holds that 
+
+Et[eξ(yt(i)−μ(ϕt(i,π t(i)) ⊤θ∗)) ] ≤ eξ2σ2/2. Furthermore, similar to Li et al. (2017); Jun et al. (2021); Liu et al. (2025), we impose the following assumption on μ.
+
+Assumption 3.1. We assume that μ is first-order differentiable and Lipschitz continuous, and 
+
+κμ = inf {∥ x∥≤ 1, ∥θ−θ∗∥≤ D+1 } ˙μ(x⊤θ) > 0. At the end of each round, an unknown satisfaction is generated for each arm according to the allocation πt. Specifically, we consider the satisfaction r(P  
+
+> i∈π−1
+> t(a)
+
+μ(ϕt(i, a )⊤θ∗)), where r : R≥0 →
+
+R≥0 is a known concave and monotone increasing function bounded by M . We assume that r is Lipschitz continuous. For convenience, we define 
+
+ft(π; θ) = X
+
+> a∈[K]
+
+r
+
+ X
+
+> i∈π−1(a)
+
+μ(ϕt(i, a )⊤θ)
+
+
+
+. (2) 6In CAB, the goal of the learner is to maximize the cumulative satisfaction PTt=1 ft(πt; θ∗). How-ever, in general, maximizing ft is NP-hard even when θ∗ is known (Theorem C.1). For this reason, we assume that the learner has access to a α-approximate oracle ( α ∈ (0 , 1]) that returns an approx-imate solution to the maximization of r and a linear term. Formally, given v = {vi(a)}i∈[N ],a ∈[K]
+
+and w = {wi(a)}i∈[N ],a ∈[K], the learner can obtain an allocation π satisfying 
+
+X
+
+> a∈[K]
+
+r
+
+ X
+
+> i∈π−1(a)
+
+vi(a)
+
+
+
++
+
+> N
+
+X
+
+> i=1
+
+wi(π(i)) ≥ αOPT( v, w ),
+
+where OPT( v, w ) = max π∈Π
+
+  P  
+
+> a∈[K]
+
+r(P 
+
+> i∈π−1(a)
+
+vi(a)) + PNi=1 wi(π(i)) . For instance, when 
+
+vi(a) = μ(ϕt(i, a )⊤θ∗) and wi(a) = 0, the allocation π satisfies ft(π; θ∗) ≥ αf t(π∗ 
+
+> t
+
+; θ∗), where 
+
+π∗ 
+
+> t
+
+= arg max π∈Π ft(π; θ∗). To evaluate the learner’s performance, it is natural to use regret, which is defined as the cumula-tive difference between the achieved value and the optimal value at each round. However, since the learner has access only to a α-approximate oracle, a direct comparison with the optimal solution would be unfair. Thus, we define the α-approximate regret RαT (hereinafter, referred to as regret for simplicity), which measures performance relative to the α-scaled optimal solution: 
+
+RαT =
+
+> T
+
+X
+
+> t=1
+
+(αf t(π∗ 
+
+> t
+
+; θ∗) − ft(πt; θ∗)) . (3) When α = 1, this definition reduces to the standard regret. Next, we explain the intention behind formulating the problem in the formulation described above. To simplify the explanation of our modeling intention, we take the case of a job-matching platform as an example, where the observed yt(i) takes values 0 or 1. Here, yt(i) is a binary variable indicating whether a match occurs, and μ(ϕt(i, a )⊤θ∗) can be interpreted as the expected number of matches. We regard μ(ϕt(i, a )⊤θ∗) as the affinity between a user and an arm. Therefore, if the affinity is high, matches are more likely to occur, and the expected value of the average number of matches 
+
+yt(i), μ(ϕt(i, a )⊤θ∗), becomes large. As the argument of the satisfaction function r, we use P  
+
+> i∈π−1
+> t(a)
+
+μ(ϕt(i, a )⊤θ∗). From the arm’s perspective, it is desirable to allocate users with high affinity. Accordingly, using P  
+
+> i∈π−1
+> t(a)
+
+μ(ϕt(i, a )⊤θ∗)as the argument of satisfaction r captures the notion that the arm’s satisfaction should increase under such allocations. We consider the satisfaction r to be a concave and monotone increasing function. This assump-tion is intended to capture diminishing marginal utility (Pratt, 1964; Mas-Colell et al., 1995) and to reflect the presence of upper bounds on budgets or resources. Moreover, concavity imposes a penalty on excessively biased allocations. As a result, it is possible to remove the concentration and obtain allocations that are closer to fair without making fairness an explicit objective. 
+
+# 4 Algorithm and Theoretical Results 
+
+In this section, we present algorithms for CAB and regret analyses. We provide UCB and TS algorithms. 7Algorithm 1 CAB-UCB 
+
+Input: The total rounds T , the number of users N , and tuning parameter λ0 and c1. 
+
+> 1:
+
+D0 = ∅. 
+
+> 2:
+
+V1 ← λ0I. 
+
+> 3:
+
+for t = 1 , . . . , T do  
+
+> 4:
+
+θt ← arg min θ∈Rd eL(Dt; θ, κ μλ0).  
+
+> 5:
+
+Choose πt = arg max π∈Π(ft(π; θt) + gt(π)), where ft and gt are defined in (2) and (4).  
+
+> 6:
+
+Observe yt(i) for any i ∈ [N ].  
+
+> 7:
+
+xt(i) ← ϕt(i, π t(i)) for any i ∈ [N ] and Dt+1 ← D t ∪ { (xt, (i), y t(i)) }i∈[N ]. 
+
+> 8:
+
+Vt+1 ← λ0I + Pts=1 
+
+PNi=1 xs(i)xs(i)⊤.
+
+4.1 Upper Confidence Bound Algorithm 
+
+Our proposed UCB method, CAB-UCB, is based on the UCB principle, which is commonly used in bandit algorithm design (Lai, 1987; Auer et al., 2002b; Qin et al., 2014; Li et al., 2017). CAB-UCB has two parameters, λ0 > 0 and c1 > 0. The parameter λ0 determines the regular-ization strength for MLE. In addition, λ0 plays the role of ensuring that λmin (Vt) is strictly positive. The parameter c1 controls exploration, and a larger value results in a greater degree of exploration. In each round, we compute θt, the MLE of θ∗, using the set of observations Dt = {(xs(i), y s(i)) }i∈[N ],s<t ,where xs(i) = ϕs(i, π s(i)). In calculating πt, we balance both exploitation and exploration by max-imizing the sum of the estimated expected value ft(π; θt) in (2), and the bonus term 
+
+gt(π) = c1
+
+> N
+
+X
+
+> i=1
+
+∥ϕt(i, π (a)) ∥V −1
+
+> t
+
+, (4) where Vt = λ0I + Pt−1
+
+> s=1
+
+PNi=1 xs(i)xs(i)⊤. The bonus term is related to the width of the confidence interval. 
+
+4.1.1 Regret Analysis 
+
+Algorithm 1 achieves the following regret: 
+
+Theorem 4.1. Fix any δ ∈ (0 , 1) . If we run Algorithm 1 with c1 = Lr Lμ
+
+> κμ
+
+
+
+σ
+
+r
+
+d log 
+
+
+
+1 + N T dλ 0
+
+
+
++ 2 log 1 
+
+> δ
+
++
+
+κμD√λ0
+
+
+
+and λ0 ≥ σ2
+
+> κ2
+> μ
+
+ d log  1 + N T d
+
+ + 2 log 1
+
+> δ
+
+, then, with probability at least 1 − 2δ, the regret is upper bounded by 
+
+RαT = eO(κ−1 
+
+> μ
+
+LrLμD(d√N T + dN )) .
+
+This bound matches the lower bound for contextual combinatorial linear bandit, the special case of CAB (Takemura et al., 2021, Theorem 7) in terms of d, T , and N , up to logarithmic factors. If 
+
+f (π; θ1) − f (π; θ2) ≤ C P
+
+> i
+
+|μ(xt(i)⊤θ1) − μ(xt(i)⊤θ2)| holds for any π ∈ Π and θ1, θ 2 ∈ Rd, where 
+
+C > 0 is a constant, then we can derive a similar bound for a general CCGLS as well. While we use the regularization in Algorithm 1, a similar bound can be obtained via an initial exploration. Using 8Algorithm 2 CAB-TS 
+
+Input: The total rounds T , the number of users N , and tuning parameter λ0 and a. 
+
+> 1:
+
+D0 = ∅. 
+
+> 2:
+
+V1 ← λ0I and H1 ← Lμλ0I. 
+
+> 3:
+
+for t = 1 , . . . , T do  
+
+> 4:
+
+θt ← arg min θ∈Rd eL(Dt; θ, κ μλ0).  
+
+> 5:
+
+for i = 1 , . . . , N do  
+
+> 6:
+
+eεt(i) i.i.d. 
+
+∼ N (0, a 2H−1 
+
+> t
+
+).  
+
+> 7:
+
+Choose πt = arg max π∈Π(ft(π; θt) + ht(π; eεt)), where ft and ht are defined in (2) and (5).  
+
+> 8:
+
+Observe yt(i) for any i ∈ [N ].  
+
+> 9:
+
+xt(i) ← ϕt(i, π t(i)) for any i ∈ [N ] and Dt+1 ← D t ∪ { (xt, (i), y t(i)) }i∈[N ]. 
+
+> 10:
+
+Vt+1 ← λ0I + Pts=1 
+
+PNi=1 xs(i)xs(i)⊤. 
+
+> 11:
+
+Ht+1 ← Pts=1 
+
+PNi=1 ˙μ(xs(i)⊤θt)( xs(i)xs(i)⊤ + λ0 
+
+> N t
+
+I). the initial exploration, however, introduces an additional regret term and requires assumptions on 
+
+ϕt 3. The complete statement and proof of Theorem 4.1 are given in Section D.2. 
+
+4.2 Thompson Sampling Algorithm 
+
+Here, we introduce CAB-TS, which is based on the TS method (Thompson, 1933). The TS algo-rithm has been proposed for various problems, such as multi-armed bandits and contextual bandits. Theoretically, in these problems, the TS algorithm often has worse regret upper bounds than the UCB algorithms (Agrawal and Goyal, 2013; Takemura and Ito, 2019; Abeille and Lazaric, 2017). However, previous studies have shown that the TS algorithm is empirically comparable to or out-performs the UCB algorithms (Chapelle and Li, 2011; May et al., 2012; Wang and Chen, 2018). CAB-TS has parameters λ0 > 0 and a > 0, which control the regularization strength and the degree of exploration, respectively. Up to the step of computing θt via the regularized MLE, the procedure is identical to Algorithm 1. However, the subsequent method for computing πt differs. In CAB-TS, after computing θt, for each i ∈ [N ], we independently sample eεt(i) from N (0, a 2H−1 
+
+> t
+
+), where H1 = Lμλ0I and Ht = Pt−1
+
+> s=1
+
+PNi=1 (xs(i)⊤θt)( xs(i)xs(i)⊤ + λ0 
+
+> N t
+
+I) for t ≥ 2. In what follows, we collectively denote these samples by eεt = {eεt(1) , . . . , eεt(N )}. We choose the allocation πt to maximize the objective function ft(π; θt) + ht(π; eεt), where 
+
+ht(π; ε) = 
+
+> N
+
+X
+
+> i=1
+
+ϕt(i, π (i)) ⊤ε(i). (5) We approximate the posterior of θ∗ using the Laplace approximation. In this setting, we adopt the procedure described in line 7 of Algorithm 2, because sampling eεt(i) i.i.d. plays an important role, although using a common eεt(i) for all i is also a natural idea (see Theorem D.9 for more details). Furthermore, while the objective function in line 8 of Algorithm 2 is de-signed so that eεt affects it linearly, it is possible to establish theoretical guarantees even when    
+
+> 3E.g., Li et al. (2017) study generalized linear contextual bandits using initial exploration, where ϕtis generated in a stochastic manner and additional regularity assumptions are imposed.
+
+9(a) Comparisons of cumulative satisfaction (our ob-jective) and match (typical objective) at each round. 
+
+(b) Comparisons of cumulative satisfaction and match with varying satisfaction parameters ( β). 
+
+(c) Comparisons of cumulative satisfaction and match with varying arm popularity parameters ( λ). 
+
+(d) Probability of select-ing each arm 
+
+(e) Sum of expected matches. 
+
+Figure 2: Comparisons of cumulative satisfaction and match (a) at each time step, and with varying (b) satisfaction parameters ( β), (c) arm popularity parameters ( λ). Note that the results in (b) and (c) are normalized by those of the optimal algorithm. We show empirical selection probabilities of each arm under each method in (d), average sum of expected matches in the last 10 steps in (e). 
+
+πt = arg max π∈Π
+
+P 
+
+> a∈[K]
+
+r P  
+
+> i∈π−1
+
+μ(ϕt(i, a )⊤(θt(i) + eεt(i)) , provided that suitable assumptions are imposed on r (see Section D.4 for details). 
+
+4.2.1 Regret Analysis 
+
+Algorithm 2 achieves the following regret bound: 
+
+Theorem 4.2. Algorithm 2 with a = c1
+
+pLμN and λ0 ≥ σ2
+
+> κ2
+> μ
+
+ d log  1 + N T d
+
+ + 2 log 1
+
+> δ
+
+ achieves the following regret upper bound for any δ ∈ (0 , 1/T ):
+
+E[RαT ] = eO(κ−1 
+
+> μ
+
+LrLμD(dN √T + dN 3/2)) .
+
+where c1 = Lr Lμ
+
+> κμ
+
+
+
+σ
+
+q
+
+d log  1 + N T dλ 0
+
+ + 2 log 1 
+
+> δ
+
++ κμD√λ0
+
+
+
+.
+
+Compared with CAB-UCB, the dependence on the regret upper bound is worse by a factor of √N . The complete statement and proof of Theorem 4.2 are given in Section D.3. Also, in Sec-tion D.4, we provide the other type TS algorithm, which maximizes P 
+
+> a∈[K]
+
+r  P   
+
+> i∈π−1
+> t(a)
+
+μ(ϕt(i, a )⊤(θt+
+
+eεt(i))) . Similar to CAB-UCB, the analysis for CAB-TS can also be extended to a general CCGLS under the appropriate assumption. 
+
+4.3 Implementation of Algorithms 
+
+We present the construction of the α-approximation oracle assumed in our framework. To con-struct the oracle, we use the submodular welfare problem (Section 2.2). Define ga : 2 [N ] → R≥0
+
+10 by ga(S; θ) = r(P 
+
+> i∈S
+
+μ(ϕt(i, a )⊤θ)). Then, ga is a submodular function due to the concavity of 
+
+r. We express ft as ft(π; θ) = P 
+
+> a∈[K]
+
+ga(π−1(a)). Since ft(π; θ) is written as a sum of submod-ular functions, maximizing ft(π; θ) corresponds to the submodular welfare problem. In addition, max π∈Π(ft(π; θ) + gt(π)) is maximizing ft(π; θ) with an additive function, which is also the submod-ular welfare problem. Therefore, by applying the result of Theorem 2.1, we can efficiently obtain an approximate solution and construct the desired oracle. On the other hand, max π∈Π(ft(π; θ) + ht(π; εt)) is not monotone because ht may take negative values. This can be addressed by adding a suitable constant during optimization to guarantee non-negativity, and then the oracle can be constructed by the argument of Lee et al. (2009). 
+
+# 5 Experiments 
+
+This section empirically evaluates CAB-UCB and CAB-TS using synthetic data. Our code to reproduce the experimental results is shared as Supplementary Material. 
+
+5.1 Setting 
+
+To conduct synthetic experiments, we define the 5-dimensional feature vector ϕ(i, a ) as follows. 
+
+ϕ(i, a ) = λ · ϕpop (i, a ) + (1 − λ) · ϕbase (i, a ), (6) where ϕpop and ϕbase are sampled from the standard normal distribution. The element of ϕpop is strictly increasing with respect to the arm index, satisfying ϕpop (i, a j ) > ϕ pop (i, a j+1 ) for all j. λ is an experimental parameter to control the structure of arm popularities. A large λ represents that all users prefer arms in the same order, making it difficult to simultaneously maximize the number of matches and arm satisfaction. We use μ(x) = 1 /(1 + exp ( −x)) and r(x) = min {x, β } as reward and satisfaction functions, meaning that matches more than β has NO effect on satisfaction When 
+
+β is small, satisfaction saturates quickly. We compare CAB-UCB (Algorithm 1), CAB-TS ( ε) (Algorithm 2), and CAB-TS ( θ) (Algo-rithm 3) to three different baselines, “Random”, “Max match”, and “FairX”. Random selects an arm uniformly at random. Max match is a UCB algorithm that aims to maximize cumulative ex-pected matches. FairX is a UCB-based fairness algorithm proposed by Wang et al. (2021). This method ensures that each arm receives a share of exposure that is proportional to its expected match, aiming to mitigate the over-selection of specific arms. We describe the rigorous algorithms of the baselines in Section E.1. 
+
+5.2 Results 
+
+We use the default experiment parameters of N = 50, K = 10, T = 500, λ = 0 .5, and β = 5 .0. We compare the CAB as variants to the baselines in terms of cumulative arm satisfaction (our objective) and matches (typical objective) in Figures 2a to 2c. Note that the results of Figure 2b and 2c are normalized by those of optimal algorithms, which use the true θ to maximize matches and satisfaction, respectively. Figure 2a shows cumulative satisfaction and matches of every method at each step. We observe that CAB-UCB improves cumulative satisfaction compared to the baselines by directly modeling satisfaction rather than matches. On the other hand, the cumulative satisfaction of Max match is smaller than Random, even though Max match provides high performance in terms of cumulative 11 matches. This suggests that simply maximizing cumulative matches produces many matches that do not lead to arm satisfaction. Moreover, we can see that CAB-UCB outperforms FairX in terms of satisfaction. FairX does not directly maximize satisfaction, so it still fails to improve satisfaction as effectively as our satisfaction-aware algorithm. Among CAB variants, CAB-UCB exhibits the best performance in terms of satisfaction, which is consistent with the theoretical results presented in Section 4. Although CAB-TS ( ε) is theoretically superior to CAB-TS ( θ), CAB-TS ( ε) shows smaller satisfaction empirically. One possible reason for this discrepancy is the difference in implementation. In Algorithm 3, the optimization objective can be expressed as a sum of monotone submodular functions, whereas the optimization problem in Algorithm 2 does not satisfy monotonicity. Therefore, we use different optimization approaches (see Section E.1 for details). In Figure 2b, we vary the satisfaction parameter ( β). Since matches that exceed the value of 
+
+β do not lead to the arm’s satisfaction, when this value is small, there arises a significant differ-ence between maximizing matches and maximizing satisfaction. The results show that CAB-UCB provides nearly the same performance as the optimal algorithm in terms of cumulative satisfaction with various satisfaction parameters. It is reasonable that Max match gradually increases cumu-lative satisfaction as β increases. This is because maximizing cumulative matches becomes similar to maximizing cumulative satisfaction when β is large. Moreover, CAB-UCB improves satisfac-tion compared to FairX, which is consistent with the result of Figure 2a. In terms of matches, we observe that CAB-UCB and CAB-TS ( θ) improve cumulative matches as β increases, while Max-Match performs best for smaller values of β. This is because CAB improves cumulative matches by maximizing cumulative satisfaction when β is large. Figure 2c varies the popularity of arms ( λ). The larger value of λ represents the situation where all users prefer arms in the same order. We observe that the difference in cumulative satisfaction between CAB-UCB and Max match increases with larger values of λ. When all users prefer specific arms, Max match mostly selects the most or second most popular arms as shown in Figure 2d, which reports empirical arm selection probabilities when λ = 1 .0 under each method. Moreover, Figure 2e reports the average sum of expected matches for selected arms in the last 10 steps, and the black horizontal line indicates the value of β. It illustrates that Max match chooses the specific arms excessively, assigning more than β matches. We can see a similar trend from the results of FairX, although FairX reduces excessive assignments. In contrast, CAB-UCB improves cumulative satisfaction effectively in the situation where Max match, and FairX fail severely, by being aware of the arm satisfaction structure. 
+
+# 6 Conclusions 
+
+We proposed CAB, developed its algorithm, established regret upper bounds, and further conducted experimental evaluations of its performance. We conclude by discussing several directions for future research. One possible direction is to improve the dependence on κμ. An approach toward this improvement is considered in Liu et al. (2025); Zhang et al. (2025). However, instead of assuming Lipschitz continuity with respect to μ,they adopt a different assumption from ours, namely self-concordance. Another natural extension is to consider dynamic environments, in which the set of available arms is not fixed but may evolve, with some arms leaving as a result of the allocation process and new arms emerging. Addressing such settings would require algorithms that can adapt to both statistical uncertainty and changes 12 in the action set. 
+
+# References 
+
+Yasin Abbasi-yadkori, D´ avid P´ al, and Csaba Szepesv´ ari. Improved algorithms for linear stochastic bandits. In Advances in Neural Information Processing Systems , volume 24. Curran Associates, Inc., 2011. Marc Abeille and Alessandro Lazaric. Linear thompson sampling revisited. In Proceedings of the 20th International Conference on Artificial Intelligence and Statistics , volume 54 of Proceedings of Machine Learning Research , pages 176–184. PMLR, 2017. Shipra Agrawal and Nikhil Devanur. Linear contextual bandits with knapsacks. Advances in neural information processing systems , 29, 2016. Shipra Agrawal and Navin Goyal. Thompson sampling for contextual bandits with linear payoffs. In 
+
+Proceedings of the 30th International Conference on Machine Learning , volume 28 of Proceedings of Machine Learning Research , pages 127–135. PMLR, 2013. Peter Auer, Nicol` o Cesa-Bianchi, and Paul Fischer. Finite-time analysis of the multiarmed bandit problem. Machine learning , 47(2):235–256, 2002a. Peter Auer, Nicol` o Cesa-Bianchi, Yoav Freund, and Robert E. Schapire. The nonstochastic multi-armed bandit problem. SIAM Journal on Computing , 32(1):48–77, 2002b. Ashwinkumar Badanidiyuru, Robert Kleinberg, and Aleksandrs Slivkins. Bandits with knapsacks. In IEEE Symp. on Foundations of Computer Science (FOCS) , volume 54, 2013. Ashwinkumar Badanidiyuru, John Langford, and Aleksandrs Slivkins. Resourceful contextual ban-dits. In Conference on Learning Theory , pages 1109–1134. PMLR, 2014. Semih Cayci, Swati Gupta, and Atilla Eryilmaz. Group-fair online allocation in continuous time. In Advances in Neural Information Processing Systems , volume 33, pages 13750–13761. Curran Associates, Inc., 2020. Nicol` o Cesa-Bianchi and G´ abor Lugosi. Prediction, Learning, and Games . Cambridge university press, 2006. Olivier Chapelle and Lihong Li. An empirical evaluation of thompson sampling. In Advances in Neural Information Processing Systems , volume 24. Curran Associates, Inc., 2011. Kani Chen, Inchi Hu, and Zhiliang Ying. Strong consistency of maximum quasi-likelihood estimators in generalized linear models with fixed and adaptive designs. The Annals of Statistics , 27(4):1155 – 1163, 1999. Lixing Chen, Jie Xu, and Zhuo Lu. Contextual combinatorial multi-armed bandits with volatile arms and submodular reward. In Advances in Neural Information Processing Systems , volume 31. Curran Associates, Inc., 2018. 13 Qin Ding, Cho-Jui Hsieh, and James Sharpnack. An efficient algorithm for generalized linear bandit: Online stochastic gradient descent and thompson sampling. In Proceedings of The 24th International Conference on Artificial Intelligence and Statistics , volume 130 of Proceedings of Machine Learning Research , pages 1585–1593. PMLR, 2021. Sarah Filippi, Olivier Cappe, Aur´ elien Garivier, and Csaba Szepesv´ ari. Parametric bandits: The generalized linear case. In Advances in Neural Information Processing Systems , volume 23. Curran Associates, Inc., 2010. Michael R. Garey and David S. Johnson. Computers and Intractability; A Guide to the Theory of NP-Completeness . Freeman, USA, 1979. Zhiming Huang, Yifan Xu, Bingshan Hu, Qipeng Wang, and Jianping Pan. Thompson sampling for combinatorial semi-bandits with sleeping arms and long-term fairness constraints. arXiv preprint arXiv:2005.06725 , 2020. Matthew Joseph, Michael Kearns, Jamie H Morgenstern, and Aaron Roth. Fairness in learning: Classic and contextual bandits. Advances in neural information processing systems , 29, 2016. Kwang-Sung Jun, Aniruddha Bhargava, Robert Nowak, and Rebecca Willett. Scalable generalized linear bandits: Online computation and hashing. In Advances in Neural Information Processing Systems , volume 30. Curran Associates, Inc., 2017. Kwang-Sung Jun, Lalit Jain, Blake Mason, and Houssam Nassif. Improved confidence bounds for the linear logistic model and applications to bandits. In Proceedings of the 38th International Conference on Machine Learning , volume 139, pages 5148–5157. PMLR, 2021. Subhash Khot, Richard J. Lipton, Evangelos Markakis, and Aranyak Mehta. Inapproximability results for combinatorial auctions with submodular utility functions. In Algorithmica , 52, pages 3–18. Springer-Verlag, 2008. Wonyoung Kim, Kyungbok Lee, and Myunghee Cho Paik. Double doubly robust thompson sam-pling for generalized linear contextual bandits. Proceedings of the AAAI Conference on Artificial Intelligence , 37(7):8300–8307, 2023. Branislav Kveton, Zheng Wen, Azin Ashkan, and Csaba Szepesvari. Tight regret bounds for stochas-tic combinatorial semi-bandits. In Artificial Intelligence and Statistics , pages 535–543. PMLR, 2015. Branislav Kveton, Manzil Zaheer, Csaba Szepesvari, Lihong Li, Mohammad Ghavamzadeh, and Craig Boutilier. Randomized exploration in generalized linear bandits. In Proceedings of the Twenty Third International Conference on Artificial Intelligence and Statistics , volume 108, pages 2066–2076. PMLR, 2020. Tze Leung Lai. Adaptive treatment allocation and the multi-armed bandit problem. The Annals of Statistics , 15(3):1091 – 1114, 1987. Tor Lattimore and Csaba Szepesv´ ari. Bandit Algorithms . Cambridge University Press, 2020. 14 Jon Lee, Vahab S. Mirrokni, Viswanath Nagarajan, and Maxim Sviridenko. Non-monotone sub-modular maximization under matroid and knapsack constraints. In Proceedings of the Forty-First Annual ACM Symposium on Theory of Computing , STOC ’09, page 323–332, New York, NY, USA, 2009. Association for Computing Machinery. Jungyhun Lee, Se-Young Yun, and Kwang-Sung Jun. A unified confidence sequence for general-ized linear models, with applications to bandits. In Advances in Neural Information Processing Systems , volume 37. Curran Associates, Inc., 2024. Benny Lehmann, Daniel Lehmann, and Noam Nisan. Combinatorial auctions with decreasing marginal utilities. In Proceedings of the 3rd ACM Conference on Electronic Commerce , EC ’01, page 18–28. Association for Computing Machinery, 2001. Fengjiao Li, Jia Liu, and Bo Ji. Combinatorial sleeping bandits with fairness constraints. IEEE Transactions on Network Science and Engineering , 7(3):1799–1813, 2019. Lihong Li, Wei Chu, John Langford, and Robert E Schapire. A contextual-bandit approach to personalized news article recommendation. In Proceedings of the 19th international conference on World wide web , pages 661–670, 2010. Lihong Li, Yu Lu, and Dengyong Zhou. Provably optimal algorithms for generalized linear con-textual bandits. In Proceedings of the 34th International Conference on Machine Learning , vol-ume 70, pages 2071–2080. PMLR, 2017. Qingsong Liu, Weihang Xu, Siwei Wang, and Zhixuan Fang. Combinatorial bandits with linear constraints: Beyond knapsacks and fairness. Advances in Neural Information Processing Systems ,35:2997–3010, 2022. Xutong Liu, Xiangxiang Dai, Xuchuang Wang, Mohammad Hajiesmaili, and John C.S. Lui. Combi-natorial logistic bandits. In Abstracts of the 2025 ACM SIGMETRICS International Conference on Measurement and Modeling of Computer Systems , SIGMETRICS ’25, page 112–114, New York, NY, USA, 2025. Association for Computing Machinery. Andreu Mas-Colell, Michael D. Whinston, and Jerry R. Green. Microeconomic Theory , volume None of OUP Catalogue . Oxford University Press, 1995. Benedict C. May, Nathan Korda, Anthony Lee, and David S. Leslie. Optimistic bayesian sampling in contextual-bandit problems. Journal of Machine Learning Research , 13(67):2069–2106, 2012. Peter McCullagh and John A. Nelder. Generalized linear models . Champion & Hall, London; New York, 1983. John W. Pratt. Risk aversion in the small and in the large. Econometrica , 32(1-2):122–136, 1964. ISSN 00129682, 14680262. Lijing Qin, Shouyuan Chen, and Xiaoyan Zhu. Contextual combinatorial bandit and its application on diversified online recommendation. In Proceedings of the 2014 SIAM International Conference on Data Mining , pages 461–469. SIAM, 2014. 15 Karthik Abinav Sankararaman and Aleksandrs Slivkins. Combinatorial semi-bandits with knap-sacks. In International Conference on Artificial Intelligence and Statistics , pages 1760–1770. PMLR, 2018. Tareq Si Salem, Georgios Iosifidis, and Giovanni Neglia. Enabling long-term fairness in dynamic resource allocation. Proc. ACM Meas. Anal. Comput. Syst. , 6(3), 2022. Abhishek Sinha, Ativ Joshi, Rajarshi Bhattacharjee, Cameron Musco, and Mohammad Hajiesmaili. No-regret algorithms for fair resource allocation. In Advances in Neural Information Processing Systems , volume 36, pages 48083–48109. Curran Associates, Inc., 2023. Kei Takemura and Shinji Ito. An arm-wise randomization approach to combinatorial linear semi-bandits. In 2019 IEEE International Conference on Data Mining (ICDM) , pages 1318–1323, 2019. Kei Takemura, Shinji Ito, Daisuke Hatano, Hanna Sumita, Takuro Fukunaga, Naonori Kakimura, and Ken-ichi Kawarabayashi. Near-optimal regret bounds for contextual combinatorial semi-bandits with linear payoff functions. In Proceedings of the AAAI Conference on Artificial Intel-ligence , volume 35, pages 9791–9798, 2021. William R Thompson. On the likelihood that one unknown probability exceeds another in view of the evidence of two samples. Biometrika , 25(3-4):285–294, 1933. Jan Vondrak. Optimal approximation for the submodular welfare problem in the value oracle model. Proceedings of 40th Annual ACM Symposium on Theory of Computing (STOC), 2008 ,pages 67–74, 2008. Lequn Wang, Yiwei Bai, Wen Sun, and Thorsten Joachims. Fairness of exposure in stochastic bandits. In Proceedings of the 38th International Conference on Machine Learning , volume 139 of Proceedings of Machine Learning Research , pages 10686–10696. PMLR, 2021. Siwei Wang and Wei Chen. Thompson sampling for combinatorial semi-bandits. In Proceedings of the 35th International Conference on Machine Learning , volume 80, pages 5114–5122. PMLR, 2018. Huanle Xu, Yang Liu, Wing Cheong Lau, and Rui Li. Combinatorial multi-armed bandits with concave rewards and fairness constraints. In IJCAI , pages 2554–2560, 2020. Yu-Jie Zhang, Sheng-An Xu, Peng Zhao, and Masashi Sugiyama. Generalized linear bandits: Almost optimal regret with one-pass update, 2025. URL https://arxiv.org/abs/2507.11847. 16 A Notations 
+
+Table 1 summarizes the symbols used in this paper. Table 1: Notation Symbol Meaning 
+
+T ∈ N time horizon 
+
+N ∈ N the number of users 
+
+K ∈ N the number of arms 
+
+d ∈ N dimension of feature vector 
+
+σ parameter about sub-Gaussian 
+
+κμ parameter satisfies Theorem 3.1 
+
+κr parameter satisfies Theorem D.10 
+
+Lg Lipschitz constant of function gD > 0 Upper bound on ∥θ∗∥2
+
+μ : R≥0 → R≥0 expectation of feedback 
+
+r : R≥0 → R≥0 satifaction function 
+
+ϕt(i, a ) feature vector according to to user i and arm a at round txt(i) = ϕt(i, π t(i)) chosen feature vector for user i at round tyt(i) feedback for i at round tθ∗ unknown parameter 
+
+θt MLE of θ∗ at round tVt = Pt−1
+
+> s=1
+
+PNi=1 xs(i)xs(i)⊤ + λI information matrix at round t
+
+Π = {π : [ N ] → [K]} set of all functions from [ N ] to [ K]
+
+ft(π; θ) = P 
+
+> a∈[K]
+
+r(P 
+
+> i∈π−1(a)
+
+μ(ϕt(i, a )⊤θ)) cumulative expected satisfaction at round tπt ∈ Π chosen allocation at round tπ∗ 
+
+> t
+
+= arg max π∈Π ft(π; θ∗) optimal allocation at round t
+
+RαT = PTt=1 (αf t(π∗ 
+
+> t
+
+; θ∗) − ft(πt; θ∗)) approximate regret 
+
+# B Related Work 
+
+We introduce several related works. 
+
+Contextual Combinatorial Semi-bandits and Generalized Linear Models From a tech-nical perspective, a closely related problem setting is that of contextual combinatorial semi-bandits (CCS). CCS was first studied by Qin et al. (2014). CCS are problems in which, at each round, one first observes the arms together with their associated contexts, then selects a combination of arms based on these observations and past outcomes, and finally observes the reward, which de-pends on the chosen contexts and an unknown parameter. They consider a general framework that includes nonlinear reward functions and propose a UCB algorithm, while assuming a linear model for the feedback. Under CAB with μ(x) = x, their algorithm achieves a regret upper bound of 17 eO(max {√d, √N }√dN T ). To the best of our knowledge, the best known bound is eO(d√N T + dN ), which is achieved by the UCB algorithm of Takemura et al. (2021). In Takemura and Ito (2019), in addition to UCB algorithms, a TS algorithm was studied under the setting where the reward is lin-ear in the feedback, and it was shown that a regret upper bound of RT = eO(max {d, √dN }√dN T )can be achieved. For CCS with linear reward functions, the existing works have investigated lower bounds in addition to upper bounds. 4 In Kveton et al. (2015), a lower bound of Ω(min {√dN T , N T })was established for combinatorial semi-bandits (non-contextual), whereas for CCS, an improved lower bound of Ω(min {d√N T + dN, N T }) was derived by Takemura et al. (2021). As a related research direction, generalized linear (contextual) bandits have also been studied. In this framework, a generalized linear model is adopted as the feedback model, rather than a linear model, and the contextual bandits setting was first investigated by Filippi et al. (2010). In the non-combinatorial case, existing work on GLM has primarily focused on UCB algorithms (Li et al., 2017; Jun et al., 2017; Lee et al., 2024; Zhang et al., 2025), while TS algorithms have also been developed (Jun et al., 2017; Ding et al., 2021; Kim et al., 2023). On the other hand, to the best of our knowledge, there are only a few studies that consider combinatorial settings. One notable example is Liu et al. (2025), which uses the UCB algorithm and considers a non-contextual setting in which the feedback is sampled from a Bernoulli distribution with its mean specified by a logistic model. 
+
+Fair Allocation One line of research with a closely related idea is fair resource allocation, al-though the technical relevance is limited. Among them, some studies use an evaluation metric called 
+
+α-fairness, namely f air α(x) = x1−α−11−α (0 ≥ α < 1). The function f air α(x) is concave, and its use is close in spirit to the idea of this work (Cayci et al., 2020; Si Salem et al., 2022; Sinha et al., 2023). However, they consider an objective function of the form P 
+
+> i
+
+f air (PTt=1 wt(i)), where wt(i)denotes the utility for i at round t, which evaluates the overall fairness across the entire horizon. This differs from our setting. If one emphasizes the final fairness of the allocation over the whole period, their objective function is more appropriate. In contrast, we consider that dissatisfaction over a short period may also lead to churn. Therefore, as an objective function in CAB, we argue that PTt=1 ft is appropriate. Moreover, there are technical differences. Representative aspects are the feedback model and the action space. Since the true utility function or the reward vector is observed at the end of each round in their works, their feedback assumption is stronger than the setting we consider ( e.g., the platform observes only whether a match occurred). Regarding the action space, while Sinha et al. (2023, Section 4) discusses integrality constraints, their formulation essentially considers fractional decisions rather than combinatorial ones. Thus, although the high-level idea is similar to our work, the technical setting is entirely different, and a direct comparison of theoretical results is impossible. 
+
+Bandits With Fairness Constraints One line of research addressing fairness in the context of the bandit problem is Joseph et al. (2016). In their work, fairness is defined as allocating arms without favoring any particular arm, based on their expected rewards. On the other hand, a problem that deals with a concept of fairness similar to that considered in this study is the combinatorial sleeping bandits with fairness constraints proposed by Li et al. (2019). In this problem, for each arm a, a minimum selection count na is specified, and the objective is to maximize the cumulative 
+
+> 4Lower bounds for general reward functions are not meaningful. Indeed, if the reward is constant, the regret can always be reduced to 0.
+
+18 expected reward under this constraint. Li et al. (2019) provided a UCB algorithm, while Huang et al. (2020) later proposed a TS algorithm. Xu et al. (2020) focused on the objective function, considering a setting where the total reward R, obtained as a linear combination of the rewards from the arms, is transformed by a strictly concave function f , resulting in the objective function 
+
+f (R). More recently, studies have considered constraints that combine knapsack constraints with fairness constraints (Liu et al., 2022). 
+
+Bandits With Knapsacks The Bandits with Knapsacks (BwK) problem extends the standard bandit setting by introducing knapsack-type resource constraints. Given budget limitations on multiple resources, the learner can no longer obtain rewards once any resource budget is depleted. The goal is to maximize the cumulative expected reward. As a method of introducing constraints into the multi-armed bandits, Badanidiyuru et al. (2013) proposed the BwK framework, which incorporates budget constraints. Building on this framework, subsequent studies have extended the knapsack constraints to linear contextual bandits (Badanidiyuru et al., 2014; Agrawal and Devanur, 2016) and combinatorial semi-bandits (Sankararaman and Slivkins, 2018). 
+
+# C NP-hardness 
+
+We discuss the computational complexity of this problem and introduce the notion of approximate regret to address it. As the following theorem shows, computing π∗ 
+
+> t
+
+and πt is NP-hard. 
+
+Theorem C.1. Consider a set of N items and K players, and let r : R → R≥0 be a monotone concave function. We consider the problem of maximizing P 
+
+> i∈[K]
+
+vi(Si) subject to ∪i∈[K]Si = [ N ]
+
+and Si ∩ Sj = ∅ for i̸ = j, where va : 2 [N ] → R≥ 0 is defined by va(S) = r  P  
+
+> i∈S
+
+wi,a 
+
+, and wi,a > 0
+
+denotes the value of item i for agent a. Then, there exists a concave and monotone increasing function r for which the above problem is NP-hard. 
+
+Our proof uses an approach similar to that of Lehmann et al. (2001, Theorem 10). 
+
+Proof. We will perform a reduction from the well-known NP-complete problem ’Knapsack’ (as detailed in Garey and Johnson (1979)). The problem is as follows: given a sequence of integers 
+
+a1, . . . , a m and a target total t, the objective is to determine if a subset S of these integers exists such that the sum of the elements in S equals t (i.e., P 
+
+> i∈S
+
+ai = t). Based on this input, we will construct two valuations for the m items. We consider the decision problem of determining whether max f (F) = V t + V − t holds for 
+
+F = {U1, U 2} with U1 ∩ U2 = ∅, U1 ∪ U2 = U , f (F) = v1(U1) + v2(U2), r(x) = min {V t, x }, and 
+
+V = P 
+
+> i∈U
+
+ai. Let wi, 1 = V a i, w i, 2 = ai. We allocate S to valuation 1 and Sc to valuation 2. We examine three cases: P 
+
+> i∈S
+
+ai = t, P 
+
+> i∈S
+
+ai < t , and P 
+
+> i∈S
+
+ai > t .
+
+• If P 
+
+> i∈S
+
+ai = t, then v1(S) + v2(Sc) = V t + V − t.
+
+• If P 
+
+> i∈S
+
+ai < t , then v1(S) + v2(Sc) = V P 
+
+> i∈S
+
+ai + V − P 
+
+> i∈S
+
+ai < V t + V − t.
+
+• If P 
+
+> i∈S
+
+ai > t , then v1(S) + v2(Sc) = V P 
+
+> i∈S
+
+t + V − P 
+
+> i∈S
+
+ai < V t + V − t.Therefore, the instance of “Knapsack” is a Yes-instance precisely when the proposition is satisfied, and a No-instance otherwise. 19 D Details of Section 4 
+
+In this section, we provide the omitted proofs in Section 4. 
+
+D.1 Technical Lemmas 
+
+Here, in preparation for the proofs of the theorems, we introduce technical lemmas that are com-monly used in the proofs of Theorems 4.1 and 4.2. The following lemma guarantees that the estimator θt, obtained by the regularized MLE, “good” estimates the true parameter with high probability. While Kveton et al. (2020, Lemma 9) relies on an initial exploration phase to establish this property, an analogous result can be derived by employing regularization instead. 
+
+Lemma D.1. Assume that λ0 ≥ σ2
+
+> κ2
+> μ
+
+ d log  1 + N T d
+
+ + 2 log 1
+
+> δ
+
+. Then, For any δ ∈ (0 , 1) , with probability at least 1 − δ, for all t ∈ [T ],
+
+∥θt − θ∗∥2 ≤ D + 1 .
+
+Proof. Let St = Pt−1
+
+> s=1
+
+PNi=1 
+
+ ys(i) − μ(xs(i)⊤θ∗)xs(i). First, using Chen et al. (1999, Lemma A), we show that the following proposition holds: 
+
+∥St − κμλ0θ∗∥V −1
+
+> t
+
+≤ κμ(D + 1) pλ0 ⇒ ∥ θt − θ∗∥2 ≤ D + 1 .
+
+Define the map Ht(θ) = Pt−1
+
+> s=1
+
+PNi=1 μ(xs(i)⊤θ)xs(i) + κμλ0θ. From the definition of θt, we have 
+
+Ht(θt) = Pt−1
+
+> s=1
+
+PNi=1 ys(i)xs(i). Thus, it holds that 
+
+Ht(θt) − Ht(θ∗) = 
+
+> t−1
+
+X
+
+> s=1
+> N
+
+X
+
+> i=1
+
+(ys(i) − μ(xs(i)⊤θ∗)) xs(i) − κμλ0θ∗ = St − κμλ0θ∗.
+
+Moreover, for any θ ∈ { θ | ∥ θ − θ∗∥2 ≤ D + 1 }, from Theorem 3.1, we have 
+
+∇θHt(θ) = 
+
+> t−1
+
+X
+
+> s=1
+> N
+
+X
+
+> i=1
+
+˙μ(xs(i)⊤θ)xs(i)xs(i)⊤ + κμλ0I ⪰ κμt−1X
+
+> s=1
+> N
+
+X
+
+> i=1
+
+xs(i)xs(i)⊤ + κμλ0I = κμVt.
+
+Therefore, applying Chen et al. (1999, Lemma A) to the map θ 7 → V −1/2 
+
+> t
+
+(Ht(θ) − Ht(θ∗)) yields the proposition 
+
+∥St − κμλ0θ∗∥V −1
+
+> t
+
+≤ κμ(D + 1) pλmin (Vt) ⇒ ∥ θt − θ∗∥2 ≤ D + 1 .
+
+Since λmin (Vt) ≥ λ0, we obtain 
+
+∥St − κμλ0θ∗∥V −1
+
+> t
+
+≤ κμ(D + 1) pλ0 ⇒ ∥ θt − θ∗∥2 ≤ D + 1 .
+
+Next, we upper bound ∥St − κμλ0θ∗∥V −1
+
+> t
+
+. By the triangle inequality and Vt ⪰ λ0I, we have 
+
+∥St − κμλ0θ∗∥V −1
+
+> t
+
+≤ ∥ St∥V −1
+
+> t
+
++ κμλ0∥θ∗∥V −1
+
+> t
+
+≤ ∥ St∥V −1
+
+> t
+
++ κμ
+
+pλ0∥θ∗∥2 ≤ ∥ St∥V −1
+
+> t
+
++ κμDpλ0,
+
+where the last inequality follows from ∥θ∗∥2 ≤ D. Thus, we have 
+
+∥St∥V −1
+
+> t
+
+≤ κμ
+
+pλ0 ⇒ ∥ θt − θ∗∥2 ≤ D + 1 . (7) 20 Here, from Abbasi-yadkori et al. (2011, Theorem 1), with probability at least 1 − δ, for all t ≥ 1, it holds that 
+
+∥St∥2 
+
+> V−1
+> t
+
+≤ 2σ2 log det( Vt)1/2 det( λ0I)−1/2
+
+δ
+
+!
+
+≤ σ2d
+
+
+
+log 
+
+
+
+1 + N t dλ 0
+
+
+
++ 2 log 1
+
+δ
+
+
+
+, (8) where the second inequality follows from det( Vt) ≤ ((tr( λ0I) + N t )/d )d = ( λ0 + N t/d )d. Thus, using (8) and the definiton of λ0, it holds that ∥St∥V −1
+
+> t
+
+≤ κμ
+
+√λ0. Therefore, by (7), we have 
+
+∥θt − θ∗∥2 ≤ D + 1 for any t with probability at least 1 − δ.The following lemma shows that the regularized MLE also controls the error of the objective function. 
+
+Lemma D.2. Assume that it holds that ∥θt − θ∗∥2 ≤ D + 1 . Then, For any δ ∈ (0 , 1) , with probability at least 1 − δ, for all t ∈ [T ],
+
+|ft(π; θ∗) − ft(π; θt)| ≤ c1
+
+> N
+
+X
+
+> i=1
+
+∥ϕt(i, π (i)) ∥V −1
+
+> t
+
+,
+
+where c1 = κ−1 
+
+> μ
+
+LrLμ
+
+
+
+σ
+
+r
+
+d log 
+
+
+
+1 + N T dλ 0
+
+
+
++ 2 log 1 
+
+> δ
+
++ κμD√λ0
+
+
+
+.Proof. Let St = Pt−1
+
+> s=1
+
+PNi=1 (ys(i) − μ(xs(i)⊤θ∗)) xs(i), D1 = {xs(i), y s(i)}i∈[N ],s<t , and D2 =
+
+{xs(i), μ (xs(i)⊤θ∗)}i∈[N ],s<t .First, we expand Kveton et al. (2020, Lemma 1) to the regularized MLE. It holds that 
+
+St = ∇θL(D2; θ∗) − ∇ θL(D1; θ∗) = ∇θ eL(D1; θt, κ μλ0) − ∇ θL(D1; θ∗)= ∇θ eL(D1; θt, κ μλ0) − ∇ θ eL(D1; θ∗, κ μλ0) + κμλ0θ∗ = ∇2 
+
+> θ
+
+eL(D1; θ′, κ μλ0)( θt − θ∗) + κμλ0θ∗
+
+= V (θt − θ∗) + κμλ0θ∗,
+
+where θ′ is a convex combination of θt and θ∗, and V = ∇2 
+
+> θ
+
+eL(D1; θ′, κ μλ0). We used ∇θL(D2; θ∗) = 
+
+∇θ eL(D1; θt, κ μλ0) = 0 in the second equality. Next, we bound |ft(π; θ∗) − ft(π; θt)|.
+
+|ft(π; θ∗) − ft(π; θt)| ≤ LrLμNX
+
+> i=1
+
+|xt(i)⊤(θ∗ − θt)|≤ LrLμNX
+
+> i=1
+
+∥xt(i)∥V −1
+
+> t
+
+∥θ∗ − θt∥Vt = LrLμNX
+
+> i=1
+
+∥xt(i)∥V −1
+
+> t
+
+∥V −1St − κμλ0V −1θ∗∥Vt
+
+≤ LrLμNX
+
+> i=1
+
+∥xt(i)∥V −1
+
+> t
+
+(∥V −1St∥Vt + κμλ0∥V −1θ∗∥Vt )
+
+≤ LrLμNX
+
+> i=1
+
+∥xt(i)∥V −1
+
+> t
+
+(
+
+q
+
+S⊤ 
+
+> t
+
+V −1VtV −1St + κμλ0
+
+pθ∗⊤ V −1VtV −1θ∗)
+
+≤ κ−1 
+
+> μ
+
+LrLμNX
+
+> i=1
+
+∥xt(i)∥V −1
+
+> t
+
+(∥St∥V −1
+
+> t
+
++ κμDpλ0),
+
+21 where the second inequality follows from the Cauchy-Schwarz inequality, and the last inequality follows from the κμVt ⪯ V on ∥θt − θ∗∥2 ≤ D + 1. Therefore, combining the above ineqaulity with (8) in the proof of Theorem D.1, we have that, with probability at least 1 − δ, for all t ≥ 1, 
+
+|ft(π; θ∗) − ft(π; θt)| ≤ κ−1 
+
+> μ
+
+LrLμ σ
+
+s
+
+d log 
+
+
+
+1 + N t dλ 0
+
+
+
++ 2 log 1
+
+δ + κμDpλ0
+
+! NX
+
+> i=1
+
+∥xt(i)∥V −1
+
+> t
+
+.
+
+We can bound PTt=1 
+
+PNi=1 ∥xt(i)∥2 
+
+> V−1
+> t
+
+using the following lemma: 
+
+Lemma D.3 (Takemura et al. 2021, Lemma 2) . Let {xt(i)}(i,t )∈[N ]×N a sequence in Rd satisfying 
+
+∥xt(i)∥2 ≤ 1. For all t ≥ 1, define Vt = λ0I + Pt−1
+
+> s=1
+
+PNi=1 xs(i)xs(i)⊤, where λ0 ≥ 0. It holds that 
+
+> T
+
+X
+
+> t=1
+> N
+
+X
+
+> i=1
+
+min 
+
+ 1
+
+√N , ∥xt(i)∥V −1
+
+> t
+
+
+
+≤
+
+s
+
+2dN T log 
+
+
+
+1 + N T dλ 0
+
+
+
+, and 
+
+> T
+
+X
+
+> t=1
+> N
+
+X
+
+> i=1
+
+1
+
+
+
+∥xt(i)∥V −1
+
+> t
+
+> 1
+
+√N
+
+
+
+< 2dN log 
+
+
+
+1 + N T dλ 0
+
+
+
+.
+
+This lemma implies that 
+
+> T
+
+X
+
+> t=1
+> N
+
+X
+
+> i=1
+
+∥xt(i)∥V −1
+
+> t
+
+=
+
+> T
+
+X
+
+> t=1
+> N
+
+X
+
+> i=1
+
+
+
+1
+
+
+
+∥xt(i)∥V −1
+
+> t
+
+> 1
+
+√N
+
+
+
++ 1
+
+
+
+∥xt(i)∥V −1
+
+> t
+
+≤ 1
+
+√N
+
+ 
+
+∥xt(i)∥V −1
+
+> t
+
+≤
+
+s
+
+2dN T log 
+
+
+
+1 + N T dλ 0
+
+
+
++ 2dN 
+
+√λ0
+
+log 
+
+
+
+1 + N T dλ 0
+
+
+
+(9) 
+
+D.2 Details of Section 4.1 
+
+We provide the complete version of Theorem 4.1. 
+
+Theorem D.4. Fix any δ ∈ (0 , 1) . If we run Algorithm 1 with c1 = Lr Lμ
+
+> κμ
+
+ σ
+
+r
+
+d log 
+
+
+
+1 + N t dλ 0
+
+
+
++ 2 log 1 
+
+> δ
+
++
+
+κμD√λ0
+
+ and λ0 ≥ σ2
+
+> κ2
+> μ
+
+ d log  1 + N T d
+
+ + 2 log 1
+
+> δ
+
+, then, with probability at least 1 − 2δ, the regret of algorithm is upper bounded by 
+
+RαT ≤ 2c1
+
+s
+
+2dN T log 
+
+
+
+1 + N T dλ 0
+
+
+
++ 2dN 
+
+√λ0
+
+log 
+
+
+
+1 + N T dλ 0
+
+!
+
+.
+
+If we set λ0 = κ−2 
+
+> μ
+
+σ2 d log  1 + N T d
+
+ + 2 log 1
+
+> δ
+
+, we have 
+
+RT = eO(d√N T + dN ).
+
+22 Proof. We define x∗ 
+
+> t
+
+(i) = ϕt(i, π ∗ 
+
+> t
+
+(i)), ∆ t = θt − θ∗. First, we bound the one-step regret, ft(π∗ 
+
+> t
+
+; θ∗) −
+
+ft(πt; θ∗), for fixed t > τ . Here, we want to bound the following terms: 
+
+αf t(π∗ 
+
+> t
+
+; θ∗) − ft(πt; θ∗) = ( αf t(π∗ 
+
+> t
+
+; θt) − ft(πt; θt)) + α(ft(π∗ 
+
+> t
+
+; θ∗) − ft(π∗ 
+
+> t
+
+; θt)) + ( ft(πt; θt) − ft(πt; θ∗)) .
+
+From the definition of πt, the first term is bounded as 
+
+αf t(π∗ 
+
+> t
+
+; θt) − ft(πt; θt) ≤ gt(πt) − αg t(π∗ 
+
+> t
+
+) = c1
+
+> N
+
+X
+
+> i=1
+
+(∥xt(i)∥V −1
+
+> t
+
+− α∥x∗ 
+
+> t
+
+(i)∥V −1
+
+> t
+
+). (10) The second and third term is bounded as 
+
+α(ft(π∗ 
+
+> t
+
+; θ∗) − ft(π∗ 
+
+> t
+
+; θt)) ≤ αc 1
+
+> N
+
+X
+
+> i=1
+
+∥x∗ 
+
+> t
+
+(i)∥V −1
+
+> t
+
+, (11) 
+
+ft(πt; θt) − ft(πt; θ∗) ≤ c1
+
+> N
+
+X
+
+> i=1
+
+∥xt(i)∥V −1
+
+> t
+
+(12) from Theorem D.2. Combining (10), (11), and (12), with probability at least 1 − 2δ, it holds that 
+
+ft(π∗ 
+
+> t
+
+; θ∗) − ft(πt; θ∗) ≤ 2c1
+
+> N
+
+X
+
+> i=1
+
+∥xt(i)∥V −1
+
+> t
+
+.
+
+Since ∥xt(i)∥2 ≤ 1, we have 
+
+> T
+
+X
+
+> t=1
+
+(ft(π∗ 
+
+> t
+
+; θ∗) − ft(πt; θ∗)) ≤ 2c1
+
+> T
+
+X
+
+> t=1
+> N
+
+X
+
+> i=1
+
+∥xt(i)∥V −1
+
+> t
+
+≤ 2c1
+
+√N T 
+
+vuut TX
+
+> t=1
+> N
+
+X
+
+> i=1
+
+∥xt(i)∥2 
+
+> V−1
+> t
+
+≤ 2c1
+
+s
+
+2dN T log 
+
+
+
+1 + N T dλ 0
+
+
+
++ 2dN 
+
+√λ0
+
+log 
+
+
+
+1 + N T dλ 0
+
+!
+
+, (13) where the second inequality follows from the Cauchy–Schwartz inequality and the last inequality follows from eq. (9). This is the desired upper bound. 
+
+D.3 Details of Section 4.2.1 
+
+Here is the complete version of Theorem 4.2. 
+
+Theorem D.5. Algorithm 2 with a = c1
+
+pLμN and λ0 ≥ κ−2 
+
+> μ
+
+σ2 d log  1 + N T d
+
+ + 2 log 1
+
+> δ
+
+ achieves the following regret bound for any δ ∈ (0 , 1/T ):
+
+E[RαT ] ≤ (c1 + c2)
+
+
+
+1 + 20.15 − 2δ
+
+ s
+
+2dN T log 
+
+
+
+1 + N T dλ 0
+
+
+
++ 2dN 
+
+√λ0
+
+log 
+
+
+
+1 + N T dλ 0
+
+!
+
++ 4 δM T, 
+
+where c1 = κ−1 
+
+> μ
+
+LrLμ
+
+
+
+σ
+
+r
+
+d log 
+
+
+
+1 + N t dλ 0
+
+
+
++ 2 log 1 
+
+> δ
+
++ κμD√λ0
+
+
+
+and c2 = c1
+
+q
+
+2κ−1 
+
+> μ
+
+LμN log KN δ .
+
+23 If we set λ0 = κ−2 
+
+> μ
+
+σ2 d log  1 + N T d
+
+ + 2 log 1
+
+> δ
+
+, we have 
+
+RT = eO(dN √T + dN 3/2).
+
+To prove Theorem D.5, we first bound the one-step regret. For convenience, we define 
+
+E1,t = {∀π ∈ Π | | ft(π; θ∗) − ft(π; θt)| ≤ c1
+
+> N
+
+X
+
+> i=1
+
+∥ϕt(i, π (i)) ∥V −1
+
+> t
+
+}. (14) 
+
+Lemma D.6. Define events E2,t and E3,t as 
+
+E2,t =
+
+(
+
+> ∀
+
+π ∈ Π | | ht(π; eεt)| ≤ c2
+
+> N
+
+X
+
+> i=1
+
+∥ϕt(i, π (i)) ∥V −1
+
+> t
+
+)
+
+, and 
+
+E3,t =
+
+(
+
+ht(π∗ 
+
+> t
+
+; eεt) > c 1
+
+> N
+
+X
+
+> i=1
+
+∥ϕt(i, π ∗ 
+
+> t
+
+(i)) ∥V −1
+
+> t
+
+)
+
+.
+
+Let Pt(E2,t ) ≥ 1 − p2 and Pt(E3,t ) ≥ p3 (p3 > p 2). If E1,t holds, then we have 
+
+Et[αf t(π∗ 
+
+> t
+
+; θ∗) − ft(πt; θ∗)] ≤ (c1 + c2)
+
+
+
+1 + 2αp3 − p2
+
+
+
+Et
+
+" NX
+
+> i=1
+
+∥xt(i)∥V −1
+
+> t
+
+#
+
++ p2M
+
+Proof. Let c = c1 + c2, St = {π ∈ Π | c PNi=1 ∥xt(i)∥V −1
+
+> t
+
+< f t(π∗ 
+
+> t
+
+; θ∗) − ft(π; θ∗)}, St = At/St, and 
+
+π′ 
+
+> t
+
+= arg min π∈S t
+
+PNi=1 ∥ϕt(i, π (i)) ∥V −1
+
+> t
+
+.First, we will bound αf t(π∗ 
+
+> t
+
+; θ∗) − ft(πt; θ∗) on E2,t . At round t on E2,t , we have 
+
+ft(π∗ 
+
+> t
+
+; θ∗) − ft(πt; θ∗) ≤ ft(π∗ 
+
+> t
+
+; θ∗) − ft(π′
+
+> t
+
+; θ∗) + ( ft(π′
+
+> t
+
+; θt) + ht(π′
+
+> t
+
+; eεt)) − (ft(πt; θt) + ht(πt; eεt)) + ht(πt; eεt) − ht(π′
+
+> t
+
+; eεt) + c1
+
+> N
+
+X
+
+> i=1
+
+(∥ϕt(i, π ′
+
+> t
+
+(i)) ∥V −1
+
+> t
+
++ ∥ϕt(i, π t(i)) ∥V −1
+
+> t
+
+)
+
+≤ (c1 + c2)
+
+> N
+
+X
+
+> i=1
+
+(2 ∥ϕt(i, π ′
+
+> t
+
+(i)) ∥V −1
+
+> t
+
++ ∥ϕt(i, π t(i)) ∥V −1
+
+> t
+
+),
+
+where the first inequality follows from the definition of E1,t and E2,t , and the second inequality follows from the property of α-approximation oracle, and the definition of St and π′
+
+> t
+
+.Second, we want to bound Et
+
+hPNi=1 ∥ϕt(i, π ′
+
+> t
+
+(i)) ∥V −1
+
+> t
+
+i
+
+by Et
+
+hPNi=1 ∥ϕt(i, π t(i)) ∥V −1
+
+> t
+
+i
+
+. Note that 
+
+Et[
+
+> N
+
+X
+
+> i=1
+
+∥ϕt(i, π t(i)) ∥V −1
+
+> t
+
+] ≥ Et[
+
+> N
+
+X
+
+> i=1
+
+∥ϕt(i, π ′
+
+> t
+
+(i)) ∥V −1
+
+> t
+
+| πt ∈ S t]Pt(πt ∈ S t)
+
+≥
+
+> N
+
+X
+
+> i=1
+
+∥ϕt(i, π ′
+
+> t
+
+(i)) ∥V −1
+
+> t
+
+Pt(πt ∈ S t).
+
+Thus, Et[ft(π∗ 
+
+> t
+
+; θ∗) − ft(πt; θ∗)] ≤ c(1 + 2 /Pt(πt ∈ S t)) PNi=1 ∥ϕt(i, π t(i)) ∥V −1
+
+> t
+
+on E2,t .24 Third, we will lower-bound Pt(πt ∈ S t). 
+
+Pt(πt ∈ S t) ≥ Pt
+
+∃π ∈ S t, f t(π; θt) + ht(π; eεt) > max 
+
+> π′∈S t
+
+ft(π′; θt) + ht(π′; eεt)
+
+
+
+≥ Pt
+
+
+
+ft(π∗ 
+
+> t
+
+; θt) + ht(π∗ 
+
+> t
+
+; eεt) > max 
+
+> π′∈S t
+
+ft(π′; θt) + ht(π′; eεt)
+
+
+
+≥ Pt
+
+ ft(π∗ 
+
+> t
+
+; θt) + ht(π∗ 
+
+> t
+
+; eεt) > f t(π∗ 
+
+> t
+
+; θ∗), E 2,t 
+
+
+
+≥ Pt ft(π∗ 
+
+> t
+
+; θt) + ht(π∗ 
+
+> t
+
+; eεt) > f t(π∗ 
+
+> t
+
+; θt) + c1
+
+> N
+
+X
+
+> i=1
+
+∥ϕt(i, π ∗ 
+
+> t
+
+(i)) ∥V −1
+
+> t
+
+!
+
+− P E2,t 
+
+
+
+≥ Pt ht(π∗ 
+
+> t
+
+; eεt) > c 1
+
+> N
+
+X
+
+> i=1
+
+∥ϕt(i, π ∗ 
+
+> t
+
+(i)) ∥V −1
+
+> t
+
+!
+
+− P E2,t 
+
+,
+
+where the first inequality follows from the definition of St, the second inequality follows from the fact that A∗ 
+
+> t
+
+∈ S t, the forth inequality follows from ft(π; θt) + ht(π; eεt) ≤ ft(π; θ∗) + ( c1 +
+
+c2) PNi=1 ∥ϕt(i, π (i)) ∥V −1
+
+> t
+
+≤ ft(π∗ 
+
+> t
+
+; θ∗) for any π ∈ S t on E1,t and E2,t , and the last inequality follows from the definition of E1,t .Finally, we can achieve the desired bound, using the inequality, 
+
+Et[ft(π∗ 
+
+> t
+
+; θ∗) − ft(πt; θ∗)] = Et[( ft(π∗ 
+
+> t
+
+; θ∗) − ft(πt; θ∗)) 1[E2,t ]] + Et[( ft(π∗ 
+
+> t
+
+; θ∗) − ft(πt; θ∗)) 1[E2,t ]] 
+
+≤ Et[( ft(π∗ 
+
+> t
+
+; θ∗) − ft(πt; θ∗)) 1[E2,t ]] + M Pt(E2,t ).p2 and p3 in Theorem D.6 can be bounded as follows, respectively. 
+
+Lemma D.7. For each t ≥ 1, E2,t holds with probability at least 1 − 2δ.
+
+Lemma D.8. E3,t holds with probability at least 0.15 .
+
+We prove these lemmas. 
+
+Proof of Theorem D.7. From Kveton et al. (2020, Lemma 4), E′ 
+
+> 2,t
+
+= {∀(i, a ) ∈ [N ]×[K] | | ϕt(i, a )⊤ eεt(i)| ≤ 
+
+c2∥ϕt(i, a )∥V −1
+
+> t
+
+} holds with probability at least 1 − 2δ. Their proof uses the union bound, so we can apply that lemma to our algorithm, which samples eεt(i) independently for each i ∈ [N ]. On 
+
+E′
+
+> 2,t
+
+, we have PNi=1 |ϕt(i, π (i)) ⊤ eεt(i)| ≤ c2
+
+PNi=1 ∥ϕt(i, π (i)) ∥V −1
+
+> t
+
+for any π ∈ Π. In addition, we have 
+
+|ht(π; eεt)| ≤ PNi=1 |ϕt(i, π (i)) ⊤ eεt(i)| from the triangle inequality. Theorefore, on E′
+
+> 2,t
+
+, it holds that 
+
+|ht(π; eεt)| ≤ c2
+
+PNi=1 ∥ϕt(i, π (i)) ∥V −1
+
+> t
+
+for any π ∈ Π. In other words, E2,t holds with probability at least 1 − 2δ.
+
+Proof of Theorem D.8. Using Ht ⪯ LμVt, and Cauchy–Schwarz inequality, we have 
+
+Pt ht(π∗ 
+
+> t
+
+; eεt) > c 1
+
+> N
+
+X
+
+> i=1
+
+∥ϕt(i, π ∗ 
+
+> t
+
+(i)) ∥V −1
+
+> t
+
+!
+
+≥ Pt
+
+ht(π∗ 
+
+> t
+
+; eεt) > c 1
+
+vuutLμN
+
+> N
+
+X
+
+> i=1
+
+∥ϕt(i, π ∗ 
+
+> t
+
+(i)) ∥2
+
+> H−1
+> t
+
+
+
+= Pt
+
+
+
+> N
+
+X
+
+> i=1
+
+ϕt(i, π ∗ 
+
+> t
+
+(i)) ⊤ eεt(i) > a 
+
+vuut NX
+
+> i=1
+
+∥ϕt(i, π ∗ 
+
+> t
+
+(i)) ∥2
+
+> H−1
+> t
+
+
+
+(15) 25 Next, we derive a lower bound. From eεt(i) ∼ N (0, a 2H−1 
+
+> t
+
+), we have ϕt(i, π ∗ 
+
+> t
+
+(i)) ⊤ eεt(i) ∼N (0 , a 2∥ϕt(i, π ∗ 
+
+> t
+
+(i)) ∥2
+
+> H−1
+> t
+
+). Moreover, since {eεt(i)}Ni=1 are independent, it follows that PNi=1 ϕt(i, π ∗ 
+
+> t
+
+(i)) ⊤ eεt(i) ∼N (0 , a 2 PNi=1 ∥ϕt(i, π ∗ 
+
+> t
+
+(i)) ∥2
+
+> H−1
+> t
+
+). Consequently, we obtain 
+
+Pt
+
+
+
+> N
+
+X
+
+> i=1
+
+ϕt(i, π ∗ 
+
+> t
+
+(i)) ⊤ eεt(i) > a 
+
+vuut NX
+
+> i=1
+
+∥ϕt(i, π ∗ 
+
+> t
+
+(i)) ∥2
+
+> H−1
+> t
+
+ ≥ 0.15 . (16) Combining (15) with (16) yields the desired bound. We are now ready to prove Theorem D.5. 
+
+Proof of Theorem D.5. Let E4,t = {∥ θt − θ∗∥2 ≤ D + 1 }, P(E4,t ) ≥ 1 − p4, p1 ≥ P(E1,t ∧ E4,t ), 
+
+Pt(E2,t ) ≥ 1 − p2 on the event E4,t , and Pt(E3,t ) ≥ 1 − p3.
+
+E[RαT ] = 
+
+> T
+
+X
+
+> t=1
+
+E[ft(π∗ 
+
+> t
+
+; θ∗) − ft(πt; θ∗)] 
+
+≤
+
+> T
+
+X
+
+> t=1
+
+E[( ft(π∗ 
+
+> t
+
+; θ∗) − ft(πt; θ∗)) 1[E1,t , E 4,t ]] + ( p1 + p4)M T 
+
+≤
+
+> T
+
+X
+
+> t=1
+
+E[Et[( ft(π∗ 
+
+> t
+
+; θ∗) − ft(πt; θ∗)) 1[E1,t , E 4,t ]]] + ( p1 + p4)M T 
+
+From Theorem D.6, it holds that 
+
+E[RαT ] ≤ (c1 + c2)
+
+
+
+1 + 2
+
+p3 − p2
+
+
+
+E
+
+" TX
+
+> t=1
+> N
+
+X
+
+> i=1
+
+∥xt(i)∥V −1
+
+> t
+
+#
+
++ ( p1 + p2 + p4)M T 
+
+≤ (c1 + c2)
+
+
+
+1 + 2
+
+p3 − p2
+
+
+
+E
+
+vuutN T 
+
+> T
+
+X
+
+> t=1
+> N
+
+X
+
+> i=1
+
+∥xt(i)∥2 
+
+> V−1
+> t
+
+ + ( p1 + p2 + p4)M T, 
+
+where we used the Cauchy-Schwarz inequality in the last inequality. Next, we bound p1, p2, p3, and p4. From Theorems D.1, D.2, D.7 and D.8, we have p1 ≤ δ,
+
+p2 ≤ 2δ, p3 ≥ 0.15, and p4 ≤ δ. In addition, from the definition of λ0, we have p4 ≤ δ from Kveton et al. (2020, Lemma 9). Therefore, using these bounds and eq. (9), we can achieve the desired bound. 
+
+Remark D.9 . For each i, sampling i.i.d. from a Gaussian distribution is used to obtain a lower bound for (15). Indeed, PNi=1 ϕt(i, π ∗ 
+
+> t
+
+(i)) ⊤ eεt(i) ∼ N (0 , a 2 PNi=1 ∥ϕt(i, π ∗ 
+
+> t
+
+(i)) ∥2
+
+> H−1
+> t
+
+), which leads to the bound in (16), is derived from the independence. On the other hand, if we sample a single εt from 
+
+N (0 , a 2 PNi=1 ∥ϕt(i, π ∗ 
+
+> t
+
+(i)) ∥2
+
+> H−1
+> t
+
+) and set eεt(i) = εt for any i ∈ [N ], then PNi=1 ϕt(i, π ∗ 
+
+> t
+
+(i)) ⊤ eεt(i) ∼N (0 , a 2∥PNi=1 ϕt(i, π ∗ 
+
+> t
+
+(i)) ∥2
+
+> H−1
+> t
+
+), and this prevents us from obtaining a desirable probability bound. 26 D.4 Variant of Algorithm 2 
+
+In this section, we provide a variant of the TS algorithm. In Algorithm 2, we sample eεt(i) from N (0, a 2H−1 
+
+> t
+
+) for any i ∈ [N ], and maximize ft(π; θt) + 
+
+ht(π; eεt). However, it is also a natural idea to sample eθt(i) from N (θt, a 2H−1 
+
+> t
+
+) and instead maximize 
+
+eft, defined as follows: 
+
+eft(π; θ) = X
+
+> a∈[K]
+
+r
+
+ X
+
+> i∈π−1(a)
+
+μ(ϕt(i, a )⊤θ(i)) 
+
+. (17) The algorithm can be written as Algorithm 3. Note that from a theoretical standpoint, this algo-rithm has weaknesses compared with Algorithm 2, as discussed in Theorem D.15. 
+
+Algorithm 3 CAB-TS (variant) 
+
+Input: The total rounds T , the number of users N , and tuning parameter λ0 and a. 
+
+> 1:
+
+D0 = ∅ 
+
+> 2:
+
+for t = 1 , . . . , T do  
+
+> 3:
+
+Vt ← λ0I + Pt−1
+
+> s=1
+
+PNi=1 xs(i)xs(i)⊤. 
+
+> 4:
+
+θt ← arg min θ∈Rd eL(Dt; θ, κ μλ0).  
+
+> 5:
+
+Ht ← Pt−1
+
+> s=1
+
+PNi=1 ˙μ(xs(i)⊤θt)( xs(i)xs(i)⊤ + λ0  
+
+> N(t−1)
+
+I).  
+
+> 6:
+
+for i = 1 , . . . , N do  
+
+> 7:
+
+eθt(i) i.i.d. 
+
+∼ N (θt, a 2H−1 
+
+> t
+
+).  
+
+> 8:
+
+Choose πt = arg max π∈Π eft(π; eθt), where eft is defined in (17).  
+
+> 9:
+
+Observe yt(i) for any i ∈ [N ].  
+
+> 10:
+
+Let xt(i) ← ϕt(i, π t(i)) for any i ∈ [N ] and Dt+1 ← D t ∪ { (xt, (i), y t(i)) }i∈[N ].
+
+D.4.1 Regret Analysis 
+
+In the following part, let 
+
+c⋆ 
+
+> 1
+
+= κ−1 
+
+> μ
+
+LrLμ σ
+
+s
+
+d log 
+
+
+
+1 + N t dλ 0
+
+
+
++ 2 log 1
+
+δ + κμDpλ0
+
+!
+
+, and 
+
+c⋆ 
+
+> 2
+
+= c⋆
+
+> 1
+
+κ−1 
+
+> r
+
+κ−3/2 
+
+> μ
+
+LrL3/2
+
+> μ
+
+r
+
+2N log KN δ .
+
+First, we introduce an additional assumption that is necessary for the theoretical analysis. 
+
+Assumption D.10. We assume that κr = inf {x∈R≥0} ˙r(x) > 0, and r is first-order differentiable. Under this assumption, the following theorem holds. 
+
+Theorem D.11. Algorithm 2 with a = c⋆
+
+> 1
+
+κ−1 
+
+> r
+
+κ−1
+
+> μ
+
+pLμN and λ0 ≥ κ−2 
+
+> μ
+
+σ2 d log  1 + N T d
+
+ + 2 log 1
+
+> δ
+
+
+
+achieves the following regret bound for any δ ∈ (0 , 1/T ):
+
+E[RαT ] ≤ (c⋆ 
+
+> 1
+
++ c⋆
+
+> 2
+
+)
+
+
+
+1 + 20.15 − 2δ
+
+ s
+
+2dN T log 
+
+
+
+1 + N T dλ 0
+
+
+
++ 2dN 
+
+√λ0
+
+log 
+
+
+
+1 + N T dλ 0
+
+!
+
++ 4 δM T. 
+
+27 For convenience, we define 
+
+E⋆ 
+
+> 1,t
+
+= {∀π ∈ Π | | ft(π; θ∗) − ft(π; θt)| ≤ c⋆
+
+> 1
+> N
+
+X
+
+> i=1
+
+∥ϕt(i, π (i)) ∥V −1
+
+> t
+
+}. (18) To prove Theorem D.11, we introduce the following lemma, similar to the proof of Theorem D.5. 
+
+Lemma D.12. Define events E⋆ 
+
+> 2,t
+
+and E⋆ 
+
+> 3,t
+
+as 
+
+E⋆ 
+
+> 2,t
+
+= {∀π ∈ Π : | eft(π; eθt) − ft(π; θt)| ≤ c⋆
+
+> 2
+
+X
+
+> i∈A
+
+∥ϕt(i, π (i)∥V −1
+
+> t
+
+}, and 
+
+E⋆ 
+
+> 3,t
+
+= {ft(π∗ 
+
+> t
+
+; eθt) − ft(π∗ 
+
+> t
+
+; θt) > c ⋆
+
+> 1
+
+X
+
+> i∈π∗
+> t
+
+∥ϕt(i, π ∗(i)) ∥V −1
+
+> t
+
+}.
+
+Let Pt(E⋆
+
+> 2,t
+
+) ≥ 1 − p2 and Pt(E⋆
+
+> 3,t
+
+) ≥ p3 (p3 > p 2). If E⋆ 
+
+> 1,t
+
+holds, then we have 
+
+Et[αf t(π∗ 
+
+> t
+
+; θ∗) − ft(πt; θ∗)] ≤ (c⋆ 
+
+> 1
+
++ c⋆
+
+> 2
+
+)
+
+
+
+1 + 2αp3 − p2
+
+
+
+Et
+
+" NX
+
+> i=1
+
+∥xt(i)∥V −1
+
+> t
+
+#
+
++ p2M
+
+Proof. Although the definitions of E⋆ 
+
+> 2,t
+
+and E⋆ 
+
+> 3,t
+
+are different, it can be proved by the same procedure as in Theorem D.6. 
+
+p2 and p3 in Theorem D.6 can be bounded as follows, respectively. 
+
+Lemma D.13. For each t ≥ 1, E⋆ 
+
+> 2,t
+
+holds with probability at least 1 − 2δ.
+
+Lemma D.14. E⋆ 
+
+> 3,t
+
+holds with probability at least 0.15 .
+
+We prove these lemmas. 
+
+Proof of Theorem D.7. Using the bound | ef (π; eθt) − f (π; θt)| ≤ LrLμ
+
+PNi=1 |ϕt(i, π (i)) ⊤(eθt(i) − θt)|,this lemma can be proved by the same approach as in Theorem D.7. We use Theorem D.10 to prove Theorem D.14. 
+
+Proof of Theorem D.14. First, we derive two inequalities from the assumptions. From the assump-tion regarding r, we have 
+
+eft(π∗ 
+
+> t
+
+; eθt) − ft(π∗ 
+
+> t
+
+; θt) ≥ κr
+
+> N
+
+X
+
+> i=1
+
+(μ(ϕt(i, π ∗ 
+
+> t
+
+(i)) ⊤ eθt(i)) − μ(ϕt(i, π ∗ 
+
+> t
+
+(i)) ⊤θt)) 
+
+!
+
+≥ κrκμ
+
+> N
+
+X
+
+> i=1
+
+ϕt(i, π ∗ 
+
+> t
+
+(i)) ⊤(eθt(i) − θt)
+
+!
+
+. (19) 28 Using this inequalities, Ht ⪯ LμVt, and Cauchy–Schwarz inequality, we have 
+
+Pt eft(π∗ 
+
+> t
+
+; eθt) − ft(π∗ 
+
+> t
+
+; θt) > c ⋆
+
+> 1
+> N
+
+X
+
+> i=1
+
+∥ϕt(i, π ∗ 
+
+> t
+
+(i)) ∥V −1
+
+> t
+
+!
+
+≥ Pt
+
+κrκμNX
+
+> i=1
+
+ϕt(i, π ∗ 
+
+> t
+
+(i)) ⊤(eθt(i) − θt) > c ⋆
+
+> 1
+
+vuutLμN
+
+> N
+
+X
+
+> i=1
+
+∥ϕt(i, π ∗ 
+
+> t
+
+(i)) ∥2
+
+> H−1
+> t
+
+
+
+= Pt
+
+
+
+> N
+
+X
+
+> i=1
+
+ϕt(i, π ∗ 
+
+> t
+
+(i)) ⊤(eθt(i) − θt) > a 
+
+vuut NX
+
+> i=1
+
+∥ϕt(i, π ∗ 
+
+> t
+
+(i)) ∥2
+
+> H−1
+> t
+
+ (20) Next, we derive a lower bound from the definition of eθt. Since eθt(i) ∼ N (θt, a 2H−1 
+
+> t
+
+), we have 
+
+ϕt(i, π ∗ 
+
+> t
+
+(i)) ⊤(eθt(i) − θt) ∼ N (0 , a 2∥ϕt(i, π ∗ 
+
+> t
+
+(i)) ∥2
+
+> H−1
+> t
+
+). Moreover, because {eθt(i)}Ni=1 are independent, it follows that PNi=1 ϕt(i, π ∗ 
+
+> t
+
+(i)) ⊤(eθt(i) − θt) ∼ N (0 , a 2 PNi=1 ∥ϕt(i, π ∗ 
+
+> t
+
+(i)) ∥2
+
+> H−1
+> t
+
+). Consequently, we obtain 
+
+Pt
+
+
+
+> N
+
+X
+
+> i=1
+
+ϕt(i, π ∗ 
+
+> t
+
+(i)) ⊤(eθt(i) − θt) > a 
+
+vuut NX
+
+> i=1
+
+∥ϕt(i, π ∗ 
+
+> t
+
+(i)) ∥2
+
+> H−1
+> t
+
+ ≥ 0.15 . (21) Combining (15) with (16) yields the desired bound. Using the same techniques as the proof of Theorem D.5, we can prove Theorem D.11 easily. 
+
+Remark D.15 . Although the idea of Algorithm 3 is natural, it is theoretically unattractive for two reasons: it worsens the upper bound, and it necessitates an additional assumption. Indeed, the upper bound is degraded by κ−1 
+
+> r
+
+κ−1 
+
+> μ
+
+LrLμ. This loss originates from the inequality used in the proof of Theorem D.13, | eft(π; eθt) − ft(π; θt)| ≤ LrLμ
+
+PNi=1 |ϕt(i, π (i)) ⊤(eθt(i) − θt)|, and from (19) in the proof of Theorem D.14. These analyses arise from using maximization of eft. Furthermore, while we need Theorem D.10 to control (19), this assumption is somewhat restrictive. For instance, in a scenario where satisfaction does not increase once a sufficient match with a user is obtained, we can consider r(x) = min( a, x ) ( a ∈ R≥0). However, in this case, r is not differentiable at x = a, and its derivative becomes 0 for x > a , and thus Theorem D.10 is not satisfied. 
+
+# E Details of Section 5 
+
+This section describes the detailed experiment settings and reports additional results. 
+
+E.1 Baseline Algorithms 
+
+We first describe detailed algorithms of “Max match” and “FairX”. First, we show the detailed algorithm of Max match in Algorithm 4, which is a UCB-based algorithm maximizing the sum of matches. We can see the important difference between Max match and CAB-UCB in line 6. Max match chooses arms with the highest sum of expected matches instead of satisfaction. Algorithm 5 shows FairX’s algorithm in detail. FairX is a UCB-based fairness algorithm pro-posed by Wang et al. (2021). This method ensures that each arm receives a share of exposure that 29 Algorithm 4 Max match 
+
+Input: The total rounds T , the number of users N , and tuning parameter λ0 and α. 
+
+> 1:
+
+D0 = ∅. 
+
+> 2:
+
+V1 ← λ0I. 
+
+> 3:
+
+for t = 1 , . . . , T do  
+
+> 4:
+
+θt ← arg min θ∈Rd eL(Dt; θ, κ μλ0).  
+
+> 5:
+
+Choose πt = arg max π
+
+P 
+
+> i∈π−1(a)
+
+μ(ϕt(i, a )⊤θ) + gt(π)
+
+
+
+, where gt is defined in (4).  
+
+> 6:
+
+Observe yt(i) for any i ∈ [N ].  
+
+> 7:
+
+xt(i) ← ϕt(i, π t(i)) for any i ∈ [N ] and Dt+1 ← D t ∪ { (xt, (i), y t(i)) }i∈[N ]. 
+
+> 8:
+
+Vt+1 ← λ0I + Pts=1 
+
+PNi=1 xs(i)xs(i)⊤.
+
+Algorithm 5 FairX 
+
+Input: The total rounds T , the number of users N , and tuning parameter λ0 and γ. 
+
+> 1:
+
+D0 = ∅. 
+
+> 2:
+
+V1 ← λ0I. 
+
+> 3:
+
+for t = 1 , . . . , T do  
+
+> 4:
+
+θt ← arg min θ∈Rd eL(Dt; θ, κ μλ0).  
+
+> 5:
+
+Set CR t = ( θ : ∥θ − θ∥Vt ≤ √γ).  
+
+> 6:
+
+Choose θt = arg max θ∈CR t
+
+P 
+
+> i∈[N]
+
+P  
+
+> a∈[K]
+> μ(ϕt(i,a )⊤θ)P
+> a′∈[K]μ(ϕt(i,a ′)⊤θ)
+
+· μ(ϕt(i, a )⊤θ)
+
+
+
+. 
+
+> 7:
+
+Construct policy Pt(i, a ) = μ(ϕt(i,a )⊤θ)P  
+
+> a∈[K]μ(ϕt(i,a )⊤θ)
+
+. 
+
+> 8:
+
+Sample πt ∼ Pt. 
+
+> 9:
+
+Observe yt(i) for any i ∈ [N ].  
+
+> 10:
+
+xt(i) ← ϕt(i, π t(i)) for any i ∈ [N ] and Dt+1 ← D t ∪ { (xt, (i), y t(i)) }i∈[N ]. 
+
+> 11:
+
+Vt+1 ← λ0I + Pts=1 
+
+PNi=1 xs(i)xs(i)⊤.is proportional to its expected match, aiming to mitigate the over-selection of specific arms. Wang et al. (2021) proposes UCB-based and TS-based algorithms in the stochastic linear bandit setting. For fair comparisons, we use the UCB-based algorithm and extend it to CAB. To implement the term of argmax, we calculate P 
+
+> i∈[N]
+
+P   
+
+> a∈[K]
+> μ(ϕt(i,a )⊤θ)P
+> a′∈[K]μ(ϕt(i,a ′)Tθ)
+
+· μ(ϕt(i, a )⊤θ) with sampled θ from CR t 50 times. We then describe the implementation of ”CAB-TS ( ε)” in Algorithm 2. The optimization problem in Algorithm 2 does not satisfy monotonicity since ht(π; eεt) might be a negative value. For convenience, we set wi(S ∪ j) − wi(S) to 0 to retain monotonicity if wi(S ∪ j) − wi(S) < 0. Finally, we describe the hyperparameters of these algorithms. In the main text, we use λ0 = d,
+
+c1 = √d for CAB-UCB and Max match, a = √dN for CAB-TS, and γ = 0 .1 for FairX. 
+
+E.2 Details Setup 
+
+In this subsection, we provide the detailed setup of the synthetic experiments. We first define the 5-dimensional feature vector ϕ(i, a ) as follows. 
+
+ϕ(i, a ) = λ · ϕpop (i, a ) + (1 − λ) · ϕbase (i, a ), (22) 30 where ϕpop and ϕbase are sampled from the standard normal distribution. The element of ϕpop is strictly increasing with respect to the arm index, satisfying ϕpop (i, a j ) > ϕ pop (i, a j+1 ) for all j. Then, we synthesize the unknown true parameter θ∗, sampled from the standard uniform distribution. We use the default experiment parameters of N = 50, K = 10, T = 500, λ = 0 .5, and 
+
+β = 5 .0. We evaluate the performance of four algorithms in terms of cumulative arm satisfaction (our objective) and matches (typical objective). These evaluation metrics are calculated as follows. Cumulative arm satisfaction = 
+
+> T
+
+X
+
+> t=1
+
+ft(πt; θ)Cumulative matches = 
+
+> T
+
+X
+
+> t=1
+
+X
+
+> a∈[K]
+
+X 
+
+> i∈π−1
+> t(a)
+
+yt(i),
+
+All experiments were performed on a MacBook Air (13-inch, Apple M3, 24 GB RAM). 
+
+E.3 Additional Results 
+
+In Figure 3 to 4, we report additional results on synthetic experiments in order to demonstrate that CAB-UCB and CAB-TS perform better than the baselines in various situations. We vary the number of arms and γ in FairX. We compare CAB-UCB and CAB-TS to the baselines in terms of cumulative arm satisfaction (our objective) and matches (typical objective) normalized by those of the optimal algorithms, which use the true θ. Unless otherwise specified, we set N = 50, K = 10, 
+
+T = 500, λ = 0 .5, and β = 5 .0. 
+
+How does CAB-UCB perform with varying the number of arms? In Figure 3, we compare CAB-UCB with the baselines by varying the number of arms. The results show that CAB-UCB improves cumulative satisfaction across various numbers of arms. We also observe that CAB-UCB is superior to the other CAB variants, which is consistent with the result of the main text. 
+
+How does CAB-UCB perform with varying γ in FairX? Figure 4 compares the per-formance of the methods with varying γ in FairX. Figure 4 shows that CAB-UCB is superior to all baselines with respect to satisfaction. This result suggests that FairX fails to maximize arm satisfaction effectively, regardless of the value of γ, since FairX does not directly maximize arm satisfaction. 31 Figure 3: Comparisons of cumulative satisfaction (our objective) and match (typical objective) with varying the number of arms. 
+
+Figure 4: Comparisons of cumulative satisfaction (our objective) and match (typical objective) with varying γ in FairX. 32

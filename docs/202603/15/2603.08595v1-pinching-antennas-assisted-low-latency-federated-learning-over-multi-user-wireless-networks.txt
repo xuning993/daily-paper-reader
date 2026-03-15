@@ -1,0 +1,1902 @@
+Title: Pinching Antennas-Assisted Low-Latency Federated Learning Over Multi-User Wireless Networks
+
+URL Source: https://arxiv.org/pdf/2603.08595v1
+
+Published Time: Tue, 10 Mar 2026 02:35:21 GMT
+
+Number of Pages: 13
+
+Markdown Content:
+> 1
+
+# Pinching Antennas-Assisted Low-Latency Federated Learning Over Multi-User Wireless Networks 
+
+Saba Asaad ∗ , Hina Tabassum , Senior Member, IEEE, and Ping Wang , Fellow, IEEE, 
+
+Abstract —Federated learning (FL) over wireless networks is fundamentally constrained by unreliable communication links, particularly when uplink channels suffer from blockage, fading, or weak line-of-sight (LoS) conditions. Pinching-antenna systems (PASSs) offer a new physical-layer capability to dynamically reposition radiating points along a dielectric waveguide, enabling controllable LoS connectivity and significantly improved channel quality. This paper develops FedPASS, a novel framework for low-latency wireless FL assisted by PASS. We formulate a multi-objective optimization problem that jointly minimizes the end-to-end round latency and an upper bound on the FL optimality gap. The resulting formulation is a mixed-integer nonlinear program subject to practical constraints on scheduling, transmit power, local CPU frequency, and PA placement. To address the resulting computational challenges, we develop a two-tier iterative algorithm: an outer loop that updates scheduling, communication time allocation, and power control via block coordinate descent, and an inner loop that optimizes PA locations using a Gauss–Seidel–based coordinate update with grid search under spacing constraints. Numerical results on MNIST and CIFAR-10 demonstrate that FedPASS achieves accuracy com-parable to idealized FL baselines while drastically reducing the total training latency compared to conventional wireless FL. 
+
+Index Terms —Federated learning, pinching antennas, multi-objective optimization 
+
+I. I NTRODUCTION 
+
+The performance of wireless networks has been funda-mentally constrained by the characteristics of the propagation channel, which were long regarded beyond human control. However, recent developments in wireless communications have challenged this paradigm by introducing mechanisms that enable dynamic reconfiguration of channel properties. In par-ticular, flexible and reconfigurable antenna architectures have opened new possibilities for manipulating the propagation en-vironment [1]. Technologies such as reconfigurable intelligent surfaces (RISs) [2], fluid antennas [3], and movable antenna systems [4] provide substantial control over the end-to-end channel by tuning their physical configurations. Specifically, RISs employ programmable phase shifts to reshape reflected signal paths [5], while fluid-antenna and movable-antenna systems adjust the position of radiating elements within a confined region to realize favorable propagation [6], [7]. Despite their advantages, both fluid and movable antenna designs restrict element displacement to only a few wave-lengths, offering limited influence on large-scale path loss. As a result, when a direct line-of-sight (LoS) link is blocked, such limited repositioning range is often insufficient to restore 
+
+S. Asaad, H. Tabassum, and P. Wang are with the Department of Electrical Engineering and Computer Science, York University, Toronto, Canada (e-mails: {hinat, pingw }@yorku.ca). 
+
+the LoS component. This issue becomes more pronounced at higher carrier frequencies, where the shorter wavelengths further reduce the effective repositioning. In this context, the emerging pinching-antenna technology provides a solution with the objective of preserving strong LoS connectivity between transmitters and receivers [8], [9]. A pinching-antenna system (PASS) employs a long di-electric waveguide that can span tens of meters, enabling flexible placement of pinching antennas (PAs) without requir-ing dedicated RF chains or supplementary hardware. Each PA is formed by attaching a small dielectric element to the waveguide, thereby activating that location as a controlled radiation point. By selectively activating different points along the waveguide, PASS enables reconfiguration of the propaga-tion environment with high precision. This allows PASS to maintain reliable LoS connectivity even in scenarios where conventional antenna-based solutions fail. Furthermore, the ability to flexibly tune both the number and placement of active PAs, combined with a low-cost modular structure that enables effortless antenna addition, removal, or repositioning, makes PASS a highly versatile and cost-effective solution for next-generation wireless edge learning, distributed learning and computing solutions [10], [11]. Wireless edge learning is inherently constrained by the latency of uplink communications. In federated learning (FL), multiple devices collaboratively train a shared model without exchanging raw data [12], [13]. Each training round involves (i) uplink model aggregation, where devices transmit local updates to the server for weighted averaging, and (ii) downlink broadcasting of the updated global model [14]. By communi-cating model parameters rather than raw datasets, FL preserves privacy and significantly reduces backhaul load. However, the frequent uplink and downlink exchange inherent in FL renders its performance highly sensitive to the stochastic nature of wireless channels. In particular, unreliable or weak uplink channels can delay aggregation, induce stragglers, and ulti-mately slow convergence and degrade model accuracy. PASS enables dynamic repositioning of radiation points closer to scheduled devices, thereby compensating for large-scale path-loss and stabilizing uplink transmission quality. This reduces latency of FL per round, and expands the set of devices that can reliably contribute to model aggregation, influencing both communication efficiency and statistical convergence. In this work, we analyze the feasibility and significance of FedPASS, a PASS-enabled FL framework, with the objective of jointly maximizing learning performance and minimizing communication latency, compared to conventional approaches. 
+
+> arXiv:2603.08595v1 [cs.IT] 9 Mar 2026 2
+
+A. Background Work 1) Related Work on PASS: Early investigations established the fundamental signal behavior of PASS, examining how dielectric-waveguide propagation and localized PA activation work together to shape the radiation mechanism [15]. Subse-quent studies have demonstrated that PASS achieves superior performance compared to conventional fixed-antenna systems and current reconfigurable-antenna architectures. For instance, by optimizing the number and spatial spacing of PAs along the dielectric waveguide, PASS has been shown to achieve significantly higher array gains than traditional antenna array [16]. In addition, non-orthogonal multiple access (NOMA)-assisted PASS configurations with dynamically activated PAs have been shown to deliver markedly higher sum rates than their fixed-antenna counterparts [17]. Beyond rate enhance-ment, physics-based modeling and joint transmit–pinching beamforming strategies developed in [18] reveal that PASS can reduce the required transmit power significantly relative to conventional massive multiple-input multiple-output (MIMO) systems while maintaining comparable performance. In [19], the authors investigated the energy efficiency of PASS in a point-to-point communication setting and showed that dy-namic tuning of pinching locations can significantly boost system efficiency. PASS has also demonstrated notable advan-tages in secure communications, consistently outperforming fixed-location antenna architectures [10], [20], [21]. In addition to modeling and performance analysis, PA posi-tion optimization has become a central research focus in PASS. Several low-complexity or data-driven optimization strategies have been proposed in the literature. For example, probability-learning–based algorithms for PA placement were introduced in [19], [22], while a two-stage position adjustment approach was developed in [23] to iteratively refine PA locations. In addition, [24] proposed a low-complexity placement design to maximize the downlink sum-rate for multiple users. More recently, a graph neural network (GNN)-enabled joint opti-mization framework for PA placement and power allocation was explored in [25], demonstrating the potential of learning-based methods in enhancing scalability. 
+
+2) FL over PASS: The integration of PASS into FL has only recently been explored in a handful of research studies. In [26], the authors demonstrated that PASS can fundamentally alleviate the wireless straggler bottleneck in FL by dynami-cally shortening worst-case uplink distances. They analyzed synchronous and asynchronous FL and showed that PASS mitigates stragglers, reduces latency tails, and improves con-vergence. This work primarily focused on straggler mitigation. In [27], a hybrid conventional and pinching antenna network was developed for straggler-resilient FL, where fuzzy-logic client classification and DRL-based optimization were used to minimize latency under NOMA transmission. In [28], PASS was investigated for analog over-the-air FL, where PASS placement, scheduling, and power scaling were optimized under a computation-rate framework for AirComp-based ag-gregation. This work fundamentally targets analog aggregation efficiency and does not address the interaction between PA placement and the latency–learning tradeoff in digital FL. 
+
+B. Contributions 
+
+Despite recent advances, a unified optimization framework that explicitly couples PA placement with the learning dynam-ics of digital FL remains largely unexplored. Existing studies primarily address either physical-layer straggler mitigation or analog over-the-air aggregation, without jointly characterizing how antenna reconfiguration impacts both training latency and statistical convergence performance. As a result, the interplay between communication design and learning performance in PASS-enabled digital FL is not yet fully understood. To the best of our knowledge, although prior works have investi-gated PASS-assisted federated learning, none has developed a unified optimization framework that explicitly captures the latency–learning tradeoff through joint PA placement, device scheduling, and wireless resource control. Accordingly, the contributions of this article are summarized as follows: 
+
+• We propose a novel framework, namely FedPASS, that integrates PASS into wireless FL to enhance uplink reliability and aggregation quality. By optimizing PA placement to strengthen uplink channels, FedPASS enables more effective device participation and reduces aggregation error, thereby accelerating FL convergence. However, increased participation also raises communication latency, necessitating a principled latency–learning tradeoff design. 
+
+• We formalize the inherent latency–learning tradeoff as a multi-objective optimization problem that jointly minimizes communication–computation latency in each FL round and a learning convergence metric referred to as optimality gap .Particularly, this metric quantifies the amount of training data excluded in each FL round and captures how partial device participation affects convergence behavior of FL. The resulting formulation is a mixed-integer nonlinear program (MINLP) in-volving discrete scheduling and PA-position variables coupled with continuous power-control decisions. Solving this problem characterizes the Pareto frontier of achievable latency–learning tradeoffs in PASS-enabled FL systems. 
+
+• We develop a two-tier iterative algorithm tailored to the MINLP structure. The outer tier employs block coordinate descent (BCD) to optimize scheduling, communication time allocation, and power control through a sequence of convex subproblems. The inner tier addresses the non-convex PA-placement problem using a Gauss–Seidel coordinate-update method that enforces minimum antenna-spacing constraints. This hierarchical decomposition yields a scalable and com-putationally efficient approach for solving PASS-assisted FL optimization. We further provide computational complexity characterization of the proposed algorithm. 
+
+• Through extensive experiments on MNIST and CIFAR-10 datasets, we demonstrate that the proposed FedPASS framework achieves a final test accuracy closely matching the Perfect FL benchmark and consistently attains higher accuracy across communication rounds compared to the conventional fixed-antenna scheme. Moreover, FedPASS reduces training latency by up to 6.4× relative to conventional wireless FL schemes. 3
+
+> Fig. 1: Graphical illustration of the considered system model for FL over pinching antenna system.
+
+C. Paper Organization and Notations 
+
+The rest of this paper is organized as follows: In Section II, we present the system model and assumptions. Section III provides a formulation to the design problem and casts it as a multi-objective optimization. We develop a two-tier iterative algorithm to solve the design problem in Section IV. Section V provides numerical validation of the proposed scheme followed by the conclusion in Section VI. Notation: Scalars, vectors, and matrices are denoted by non-bold, bold lower-case, and bold upper-case letters, respec-tively. The transpose, conjugate and conjugate transpose of 
+
+H are denoted by HT, H∗ and HH, respectively. The sets R
+
+and C are the real axis and the complex plane, respectively. 
+
+CN  η, σ 2 is the complex Gaussian distribution with mean η
+
+and variance σ2. † denotes the pseudo-inverse. E {.} denotes the expectation. {1, . . . , N } is abbreviated as [N ] and ∇
+
+denotes the gradient operator. II. S YSTEM MODEL AND ASSUMPTIONS 
+
+As illustrated in Fig. (1), we consider a wireless network comprising a parameter server (PS) equipped with a PASS that serves K single-antenna edge devices. This work consid-ers an orthogonal multiple access (OMA)-based transmission strategy. Specifically, we adopt Time Division Multiple Access (TDMA), where the K users are served in separate time slots. We assume that the devices are deployed in a rectangular area on the x-y plane with dimensions Dx × Dy . The position of the k-th device is denoted by ψk = [ xU 
+
+> k
+
+, y U 
+
+> k
+
+, 0] , where 
+
+0 ≤ xU 
+
+> k
+
+≤ Dx and −Dy /2 ≤ yU 
+
+> k
+
+≤ Dy /2. The PS is equipped with N active PAs mounted on a waveguide aligned parallel to the x-axis at height d, with the n-th PA at ϕn = [ xP 
+
+> n
+
+, 0, d ],where xP 
+
+> n
+
+∈ [0 , D x] denotes the location of the PA on the waveguide. The PS feed-point is at ϕ0 = [0 , 0, d ].
+
+A. Over-the-Air FL Setting 
+
+The devices aim to train a global model on their distributed data using the FL framework. More precisely, we consider a supervised learning setting, in which each device indexed by k
+
+possesses a local training dataset of size |D k|, represented as 
+
+Dk = {(uk,i , v k,i ) : 1 ≤ i ≤ |D k|} , where uk,i ∈ RD is the 
+
+i-th data sample, and vk,i ∈ R is its corresponding label. The goal of the system is to collaboratively train a global model 
+
+Gω : RD 7 → R over the entire dataset, i.e., D = D1 ∪. . . ∪D K ,
+
+without sharing the local datasets over the network. For this model, the local empirical loss that can be computed on Dk at device k is given by: 
+
+Fk(ω|D k) = 1
+
+|D k|
+
+X  
+
+> (uk,v k)∈D k
+
+ℓ(Gω (uk), v k), (1) where ℓ(·) denotes the loss function used for training, e.g., cross-entropy. The global loss function is then defined as: 
+
+F (ω|D ) = 
+
+> K
+
+X
+
+> k=1
+
+|D k||D| Fk(ω|D k). (2) The global training on D can then be formulated as 
+
+min  
+
+> ω
+
+F (ω|D ), (3) which clearly needs the knowledge of local datasets at the PS. FL uses an iterative approach to solve the global training problem in (3). Each iteration of the algorithm is referred to as a communication round . In the t-th communication round, the following steps are performed: 1) Global Model Broadcasting: At the beginning of the t-th communication round, the PS broadcasts the global model parameter vector ωt−1 to all participating devices. 2) Local Model Computation: After receiving the global model ωt−1, each device performs ϑ steps of a gradient-based optimization algorithm, e.g., stochastic gradient descent (SGD), to update its local model using its lo-cal dataset. Specifically, device k initializes its local parameter as ω(0)  
+
+> k
+
+= ωt−1, and iteratively updates it according to ω(j+1)  
+
+> k
+
+= ω(j) 
+
+> k
+
+− ζ∇Fk
+
+
+
+ω(j) 
+
+> k
+
+| D k
+
+
+
+for 
+
+j = 0 , 1, . . . , ϑ − 1 where ζ is the learning rate. After completing the ϑ local update steps, the local model is set to ωk,t = ω(ϑ) 
+
+> k
+
+.3) Device Scheduling and Uplink Transmission: The PS performs scheduling and selects a subset of devices to participate in each communication round. Let S ⊆ [K]
+
+denote the subset of devices that are scheduled to share their model in round t. We can represent this set using a scheduling mask variable: for each device k ∈ S , the scheduling mask stk ∈ { 0, 1} represents its activity in iteration t, where stk = 1 indicates that the device is scheduled for the t-th round, and stk = 0 otherwise. The selected devices upload their local model parameters 
+
+ωk,t to the PS over the wireless channel. After receiving the local models from all scheduled devices, the PS aggregates them to update the global model as: 
+
+ωt = 1
+
+D(st)
+
+> K
+
+X
+
+> k=1
+
+stk|D k|ωk,t , (4) where D(st) = PKk=1 stk|D k| for st = [ st
+
+> 1
+
+, . . . , s tK ].
+
+B. Communication Model 
+
+The channel between the k-th device and the PS consists of two segments: a free-space channel from the device to the PAs and a guided channel along the waveguide to the PS. The 4
+
+> Fig. 2: Time line of FL-assisted PASS based on TDMA.
+
+free-space channel for device k can be represented by a linear model with channel vector hk(x) ∈ CN being given by: 
+
+hk(x) = √η
+
+"
+
+e−j 2πλ ∥ψk −ϕ1∥
+
+∥ψk − ϕ1∥ , . . . , e−j 2πλ ∥ψk −ϕN ∥
+
+∥ψk − ϕN ∥
+
+#T
+
+, (5) which is a function of the pinching antenna positions x =[xP1 , · · · , x P 
+
+> N
+
+], η = c2/(16 π2f 2 
+
+> c
+
+) with c and fc being the speed of light and carrier frequency, respectively, and λ = c/f c is the wavelength. The term ∥ψk − ϕn∥ denotes the Euclidean distance between device k and PA n. The guided channel from PAs to the PS feed-point is further given by: 
+
+g(x) = 
+
+h
+
+e−j 2πλg ∥ϕ0−ϕ1∥, . . . , e −j 2πλg ∥ϕ0−ϕN ∥iT
+
+, (6) where λg = λ/n neff is the g uided wavelength with nneff denot-ing the effective refractive index of the dielectric waveguide. Given (5) and (6), the effective uplink channel from device 
+
+k to PS through PASS can be compactly represented as 
+
+Hk(x) = gT(x)hk(x). (7) Following standard PA-assisted transmission models [8], we adopt a TDMA protocol for uplink, as illustrated in Fig. 2. Under this protocol, each communication round is divided into orthogonal time slots allocated to the scheduled devices. III. E VALUATION METRICS AND PROBLEM FORMULATION 
+
+In this section, we present the end-to-end training latency and energy consumption models for the considered PASS-assisted FL system, as well as the metric for measuring the learning performance in the FL setting. Invoking these models, we formulate the multi-objective optimization problem. 
+
+A. End-to-End Training Latency Model 
+
+In a typical FL setup, each communication round involves multiple steps carried out by both edge devices and the PS. The total latency of a round, defined as the time required to complete one full cycle of training and communication, is hence influenced by two primary factors: the time required for local computation at each device, and the time required for model exchange over the wireless channel. Consequently, we decompose the total latency into two fundamental components: (i) computation latency , which captures the time consumed for local training at the edge devices, ( ii ) communication latency , which accounts for the time required to exchange model parameters between the PS and the devices. Due to the high transmit power at the server, the downlink transmis-sion delay is negligible compared to the uplink transmission time. Therefore, in our analysis, we focus primarily on the latency associated with local model computation and uplink transmission of model parameters [29], [30]. 
+
+1) Local Computation Latency: Let Ck denote the number of CPU cycles required to process a single data sample on device k, which can be estimated beforehand through offline profiling. The total computational workload for a single local training round on device k amounts to Ck|D k| CPU cycles. If the processing frequency of device k is given by fk, then, the corresponding computation time of device k is given by: 
+
+τ cp  
+
+> k
+
+= Ck|D k|
+
+fk
+
+. (8) Assuming synchronous training across all participating de-vices, which is consistent with common practices in FL (e.g., [31], [32]), the overall computation latency in the t-th communication round is determined by the slowest device among those scheduled to participate. More precisely, the computation latency of communication round t is given by: 
+
+τ cp  
+
+> t
+
+= max  
+
+> k∈S
+
+{stkτ cp  
+
+> k
+
+}, (9) where stk ∈ { 0, 1} is the scheduling mask of device k in the communication round t.
+
+2) Communication latency: Since the local model has a fixed dimension across devices, the data size that each device must upload remains constant and is denoted by Db bits. To ensure successful transmission of the local model during the communication phase, device k requires to meet 
+
+Dbstk
+
+Rk
+
+≤ τ cm  
+
+> k
+
+, (10) where τ cm  
+
+> k
+
+denotes the communication time allocated to device 
+
+k, and Rk represents its achievable data rate, given by 
+
+Rk = B log 2
+
+
+
+1 + PkηN σ 2 Gk(x)
+
+
+
+, (11) where B denotes the signal bandwidth, Pk is the transmit power of device k, and σ2 is the noise variance at the PS. Moreover, 
+
+Gk(x) = |Hk(x)|2 =
+
+> N
+
+X
+
+> n=1
+
+e−j     
+
+> 2πλ∥ψk−ϕn∥+2πλg ∥ϕ0−ϕn∥
+> 
+
+∥ψk − ϕn∥
+
+> 2
+
+, (12) being the channel gain from device k to the PS through the pinching antenna system. As a result, the total commu-nication time across all selected devices is given by τ cm  
+
+> t
+
+=PKk=1 stkτ cm  
+
+> k
+
+, which models the total communication latency in iteration t. The end-to-end latency in the t-th communica-tion round can thus be given by: 
+
+τt = τ cm  
+
+> t
+
++ τ cp  
+
+> t
+
+=
+
+> K
+
+X
+
+> k=1
+
+stkτ cm  
+
+> k
+
++ τ cp  
+
+> t
+
+. (13) 
+
+B. Energy Consumption Model 
+
+Similar to latency, the total energy consumed at each device comprises two main components, i.e., (i) the energy required 5
+
+for local computation, and (ii) the energy spent for uploading the local model over the wireless network. 
+
+1) Energy for Local Computation: Following [29], the energy consumed for local model training on device k can be modeled as follows: 
+
+Ecp  
+
+> k
+
+= ξf 3 
+
+> k
+
+τ cp  
+
+> k
+
+= ξC k|D k|f 2 
+
+> k
+
+, (14) where ξ is a device-dependent constant reflecting hardware-specific characteristics. For sake of simplicity, in the sequel, we consider the same ξ across the local devices. 
+
+2) Energy for Local Model Uploading: The energy con-sumption of device k for uploading its local model to the PS in each round is given by Ecm  
+
+> k
+
+= Pkτ cm  
+
+> k
+
+, with τ cm  
+
+> k
+
+being the communication time allocated to device k.The total energy consumed in each communication round by the local device k can thus be given by: 
+
+Ek = Ecm  
+
+> k
+
++ Ecp  
+
+> k
+
+= Pkτ cm  
+
+> k
+
++ ξC k|D k|f 2 
+
+> k
+
+. (15) 
+
+C. Learning Performance: Optimality Gap 
+
+To evaluate the learning performance of the distributed FL setting, we use the notion of optimality gap , which is standard in convex optimization [33], [34]. In our setting, the optimality gap is defined as Ot = F (ωt) − F (ω⋆), where 
+
+F (ωt) denotes the global loss after t communication rounds, 1
+
+and ω⋆ ∈ arg min ω F (ω) represents a global minimizer of the empirical loss. The characterization of the optimality gap de-pends on the underlying loss function and model architecture. In the considered PASS-assisted FL system, communication quality directly affects device scheduling and, consequently, convergence behavior. To obtain a tractable performance met-ric that captures this interaction, we derive an upper bound on the optimality gap under standard smoothness and gradient assumptions, following the analytical framework in [35], [36]. 
+
+1) Bounding Optimality Gap: To establish the upper bound, we impose the following commonly adopted assumptions. A.1 The local loss functions Fk(ω|D k) are continuously differentiable, i.e., ∇Fk(ω) exists and is continuous. A.2 The gradient of the global loss F (ω|D ) is Lipschitz continuous with constant L, i.e., 
+
+∥∇ F (ω1) − ∇ F (ω2)∥2 ≤ L∥ω1 − ω2∥2, (16) for any ω1̸ = ω2.A.3 The loss satisfies the Polyak-Łojasiewicz condition with parameter δ, which indicates 
+
+∥∇ F (ω)∥22 ≥ 2δ(F (ω) − F (ω⋆)) , (17) at any point ω.A.4 The sample local gradients are bounded in norm with some positive constant ε, i.e., 
+
+∥∇ ℓ(Gω (uk), v k)∥2 ≤ ε, (18) for any (uk, v k) ∈ D k.Under the above assumptions, the decrease in the global em-pirical loss after each communication round can be bounded, as stated in the following lemma.   
+
+> 1For the sake of brevity, we drop Din the sequel.
+
+Lemma 1: Let assumptions (A.1)-(A.4) hold. For the learn-ing rate ζ = 1 /L , the global loss in the communication round 
+
+t satisfies 
+
+F (ωt) ≤F (ωt−1) − ϑ
+
+2L ∥∇ F (ωt−1)∥22 + ϑ
+
+2L ∥et−1∥22
+
++ ϑ3ε2
+
+2L|D| D(st) , (19) where et−1 is defined as 
+
+et−1 = ∇F (ωt−1) − 1
+
+D(st)
+
+> K
+
+X
+
+> k=1
+
+stk|D k|∇ Fk(ωt−1), (20) and defines the aggregation error induced by partial device scheduling. 
+
+Proof: Proof is given in Appendix A .Using Lemma 1, we can bound the optimality gap as given in the following theorem. 
+
+Theorem 1: Under the assumptions (A.1)-(A.4), the opti-mality gap after T communication rounds is bounded as: 
+
+OT ≤
+
+
+
+1 − δϑ L
+
+T
+
+O0 +
+
+> T
+
+X
+
+> t=1
+
+At
+
+
+
+1 − δϑ L
+
+T −t
+
+, (21) where At is given by 
+
+At = 2ϑε 2
+
+L|D| 2
+
+ |D| − D(st)2 + ϑ3ε2
+
+2L|D| 2 , (22) and O0 denotes the optimality gap in the initial round. 
+
+Proof: Proof is given in Appendix B .The first term in At quantifies the aggregation error due to partial participation, while the second term captures the local-drift effect accumulated over ϑ local steps. See Appendix B for the detailed derivations and constants. 
+
+2) Learning Performance: The ultimate goal of distributed learning is to converge to the optimal global empirical risk. From Theorem 1, the optimality gap is upper bounded by a weighted sum of At. For a fixed learning setup, the quantities 
+
+L, δ, ϑ, ε, and |D| are determined by the model, loss function, and local training configuration, and are therefore treated as constants. In this setting, the only term in At that depends on the scheduling variable st is D(st). Hence, minimizing At
+
+with respect to st is equivalent to minimizing 
+
+argmin 
+
+> st
+
+At = argmin 
+
+> st
+
+|D| − D(st). (23) This motivates defining the learning performance metric 
+
+Flearn = |D| − D(st), (24) which captures the scheduling-dependent component of the upper bound in Theorem 1. Minimizing Flearn therefore minimizes the scheduling-dependent component of the upper bound in Theorem 1. 
+
+D. Multi-Objective Problem Formulation 
+
+The bound in Theorem 1 characterizes the convergence behavior of the optimality gap across communication rounds. Let the total training time be defined as τT = PTt=1 τt.Minimizing τT while achieving a desired accuracy level requires jointly controlling both the per-round latency τt
+
+and the convergence behavior governed by At. Scheduling more devices per round improves the convergence rate by 6
+
+reducing At, but increases communication latency. Conversely, reducing per-round latency typically decreases the number of participating devices, which increases the aggregation error term At and may slow the decay of the optimality gap, thereby requiring more rounds to reach a target accuracy. To capture this fundamental trade-off in a tractable manner, we formulate a per-round bi-objective optimization problem that jointly minimizes latency and the scheduling-dependent component of the optimality-gap bound: 
+
+P1 min    
+
+> x,f k,P k,st,τ
+
+{τt, F learn }
+
+s. t. C1 : Dbstk
+
+Rk
+
+≤ τ cm  
+
+> k
+
+, ∀k ∈ [K], (25a) 
+
+C2 : Pkτ cm  
+
+> k
+
++ ξC k|D k|f 2 
+
+> k
+
+≤ Emax  
+
+> k
+
+, ∀k ∈ [K], (25b) 
+
+C3 : st ∈ { 0, 1}K , τ ∈ RK 
+
+> +
+
+, ∀k ∈ [K], (25c) 
+
+C4 : stk
+
+Ck|D k|
+
+fk
+
+≤ τ cp  
+
+> t
+
+, ∀k ∈ [K], (25d) 
+
+C5 : xP 
+
+> n+1
+
+− xP 
+
+> n
+
+≥ ∆ℓ ∀n ∈ [N ], (25e) 
+
+C6 : 0 ≤ Pk ≤ P, 0 ≤ fk ≤ fmax , ∀k ∈ [K], (25f) where the objectives τt and Flearn are defined in (13) and (24), respectively. Furthermore, τ = [ τ cm  
+
+> 1
+
+, · · · , τ cm  
+
+> K
+
+, τ cp  
+
+> t
+
+]T and x =[x1, . . . , x N ]T denote the location of the pinching antennas on the waveguide. The constraints are given as follows: 
+
+C1: This constraint guarantees successful uplink model trans-mission by device k.
+
+C2: It constrains the consumed energy at device k to remain below the maximum energy budget. 
+
+C3: Constrains the support of scheduling mask st and the scheduled time intervals, i.e., the computation and com-munication delays, to be in the feasible set. 
+
+C4: This constraint guarantees that the allocated computation time τ cp  
+
+> t
+
+is larger than the maximum computation time of scheduled devices. 
+
+C5: It constrains the minimum distance between two neigh-boring pinching antennas on the waveguide. 
+
+C6: This constraint guarantees that the transmit power and computation clock frequency remain below the available power and frequency budget. The optimization problem P1 is a MINLP due to the discrete nature of the scheduling mask st, nonlinear constraints with tightly coupled optimization variables, and nonconvex objective functions. IV. J OINT LATENCY -L EARNING OPTIMIZATION IN 
+
+PASS-A SSISTED FL S YSTEMS 
+
+A. Equivalent Problem Reformulation 
+
+Due to the competing objectives in P1, i.e., minimizing communication latency and maximizing learning performance, the problem does not generally yield a unique global optimum. The classical approach is to define the so-called Pareto front ,which consists of Pareto-optimal solutions, where no objective can be improved without degrading the other. 
+
+Definition 1: Let u = {x, f 1, . . . , f K , P 1, . . . , P K , st, τ }
+
+denote the design variables. A feasible solution u⋆ is called 
+
+Pareto optimal if there does not exist another feasible solution 
+
+u such that τt ≤ τ ⋆t , Flearn ≤ F ⋆ 
+
+> learn
+
+and at least one of the inequalities is strict. Here, τ ⋆t and F ⋆ 
+
+> learn
+
+denote the objective values computed at u⋆. The Pareto front is then defined as the set of all Pareto optimal objective pairs, i.e., 
+
+P = {(τt, F learn ) : u is Pareto optimal } .
+
+Similar to single-objective optimization problems (SOOPs), Pareto-optimal solutions can be classified as local or global. In the convex setting, where both objective functions and the feasible region are convex, any local Pareto-optimal solution is also globally optimal. In the non-convex case, however, only local Pareto-optimal solutions can generally be computed using algorithmic approaches [37]. We adopt the scalarization approach, which allows us to convert the bi-objective prob-lem into a single-objective formulation. This transformation enables algorithmic tractability while facilitating exploration of the Pareto front. Before applying scalarization, we first simplify the constraint set in P1 to reduce problem complexity. In particular, we begin by reformulating constraint C4 as a strict equality, followed by additional simplifications. Once the problem structure is streamlined, we proceed with the scalarization to obtain a tractable single-objective formulation. 
+
+Preposition 1: For any point in the Pareto front of problem 
+
+P1, constraint C4 holds with equality. 
+
+Proof: Assume that an optimal solution {f ⋆k , τ cp ⋆t } sat-isfies constraint C4 with strict inequality for some device k,i.e., stk Ck |D k | 
+
+> f⋆k
+
+< τ cp ⋆t . Now consider reducing the processing frequency to ˜fk = stk Ck |D k | 
+
+> τcp ⋆t
+
+. Recalling that the computation energy at user k is given by Ecp  
+
+> k
+
+= ξC k|D k|f 2 
+
+> k
+
+, the energy consumption at processing frequency ˜fk becomes 
+
+˜Ecp  
+
+> k
+
+= ξC k|D k| ˜f 2 
+
+> k
+
+< ξC k|D k|(f ⋆k )2 = Ecp ⋆k . (26) Since stk Ck |D k | 
+
+> f⋆k
+
+< τ cp ⋆t , device k is not the bottleneck in the computation phase. Hence, reducing fk decreases the computation energy while keeping τ cp  
+
+> t
+
+unchanged, so the overall latency τt and the learning metric Flearn remain unaffected and all constraints remain satisfied. Therefore, at any Pareto-optimal solution, constraint C4 cannot hold with strict inequality, and must hold with equality. Based on Proposition 1, we can enforce C4 in P1 with equality. This yields fk = stk Ck |D k | 
+
+> τcp
+> t
+
+, for all k ∈ [K]. We next use the fact that Pk = Ecm  
+
+> k
+
+/τ cm  
+
+> k
+
+to substitute the variable 
+
+Pk in P1 by Ecm  
+
+> k
+
+= Pkτ cm  
+
+> k
+
+. Under this variable exchange, the constraint C2 can be written as Ecm  
+
+> k
+
++ ξs tk     
+
+> (Ck|D k|)3
+> (τcp
+> t)2
+
+≤ Emax  
+
+> k
+
+,
+
+which leads to the following variational form: 
+
+P2 min   
+
+> x,E cm
+> k,st,τ
+
+{τt, F learn } ,
+
+s. t. ¯C1 : Dbstk
+
+Rk
+
+≤ τ cm  
+
+> k
+
+, (27a) 
+
+¯C2 : Ecm  
+
+> k
+
++ ξs tk
+
+(Ck|D k|)3
+
+(τ cp  
+
+> t
+
+)2 ≤ Emax  
+
+> k
+
+, (27b) 
+
+¯C3 : st ∈ { 0, 1}K , τ ∈ RK 
+
+> +
+
+, (27c) 
+
+¯C4 : xP 
+
+> n+1
+
+− xP 
+
+> n
+
+≥ ∆ℓ, (27d) 
+
+¯C5 : 0 ≤ Ecm  
+
+> k
+
+≤ P τ cm  
+
+> k
+
+, (27e) 
+
+¯C6 : stkCk|D k|
+
+τ cp 
+
+> t
+
+≤ fmax . (27f) 7
+
+B. MOOP to SOOP Transformation 
+
+Starting with P2, we reformulate the underlying MOOP as a single-objective problem, denoted as P3, in which a weighted average of the two objectives is to be optimized. More precisely, we define Fλ (u) = λτ t + (1 − λ) Flearn 
+
+for some scalarization factor λ ∈ (0 , 1) . Using scalarization, weighted combinations of the two objectives allow us to explore the tradeoff between latency and learning performance within the feasible region. Hence, by sweeping λ ∈ (0 , 1) ,we obtain a set of tradeoff solutions that provide an inner approximation of the Pareto front: 
+
+P3 : min   
+
+> x,E cm
+> k,st,τ
+
+Fλ (u) s. t. ( ¯C1) − ( ¯C6).
+
+In the sequel, we solve P3 for a given λ ∈ (0 , 1) . Expanding 
+
+Fλ(u) yields 
+
+Fλ (u) = λ(
+
+> K
+
+X
+
+> k=1
+
+stkτ cm  
+
+> k
+
++ τ cp  
+
+> t
+
+) + (1 − λ) ( |D| − 
+
+> K
+
+X
+
+> k=1
+
+stk|D k|),
+
+= λτ cp  
+
+> t
+
++
+
+> K
+
+X
+
+> k=1
+
+stk (λτ cm  
+
+> k
+
+− (1 − λ) |D k|) + (1 − λ) |D| ,
+
+= λ
+
+"
+
+τ cp  
+
+> t
+
++
+
+> K
+
+X
+
+> k=1
+
+stk (τ cm  
+
+> k
+
++ |D k|)
+
+#
+
+− D  st + (1 − λ) |D| .
+
+We can hence re-write P3 as follows: 
+
+˜P3 : min 
+
+> u
+
+˜Fλ (u) s. t. ( ¯C1) − ( ¯C6), (28) where ˜Fλ is defined as 
+
+˜Fλ (u) = λ
+
+"
+
+τ cp  
+
+> t
+
++
+
+> K
+
+X
+
+> k=1
+
+stk (τ cm  
+
+> k
+
++ |D k|)
+
+#
+
+− D  st . (29) To develop an algorithmic solution to the problem ˜P3, we note that there are three major challenges which lead to computational hardness: 1) The scheduling mask is integer-valued. 2) The objective and constraints contain several cross-product terms which make them non-convex. 3) The term 
+
+Gk (x) depends on the location of antennas through an extremely non-linear term. To address these challenges, we develop a two-tier iterative algorithm. Particularly, we address the integer problem by relaxing st to the convex set [0 , 1] K
+
+and approximating the scheduling mask by thresholding the relaxed solution. This reduces the problem to a non-convex problem whose all marginals, i.e., optimization over a subset of variables in u while the others are kept fixed, except the marginal on x, are convex. We hence develop an outer loop which uses block-coordinate descent (BCD) method to approximate the optimal design for a fixed x. Considering the highly-oscillating nature of Gk (x), we further develop an inner loop which handles the marginal optimization over x.The details are given in the next section. 
+
+C. Proposed Two-Tier Block Coordinate Descent Algorithm 
+
+We start our derivation by extending the scheduling mask 
+
+st to belong to the hypercube [0 , 1] K . This relaxation trans-forms the original problem into a more tractable form. Based on this relaxed formulation, we design a two-tier iterative algorithm to progressively approximate the solution. To this end, we divide the optimization variables as u = [x, v],where v = {Ecm 1 , . . . , E cm  
+
+> K
+
+, st, τ }. Using the BCD method, we approximate the solution of ˜P3 by iterating between the solutions of the marginal problems on x and v. Namely, let 
+
+xi be the solution for x in iteration i. We update v to vi+1 
+
+which is the solution to the following marginal problem: 
+
+M1 : min 
+
+> v
+
+˜Fλ ([ xi, v]) 
+
+s. t. ˇC1 : Dbstk
+
+Rk
+
+≤ τ cm  
+
+> k
+
+, (30a) 
+
+ˇC2 : Ecm  
+
+> k
+
++ ξs tk
+
+(Ck|D k|)3
+
+(τ cp  
+
+> t
+
+)2 ≤ Emax  
+
+> k
+
+, (30b) 
+
+ˇC3 : st ∈ [0 , 1] K , τ ∈ RK 
+
+> +
+
+, (30c) 
+
+ˇC4 : 0 ≤ Ecm  
+
+> k
+
+≤ P τ cm  
+
+> k
+
+, (30d) 
+
+ˇC5 : stkCk|D k|
+
+τ cp 
+
+> t
+
+≤ fmax . (30e) where ˇCi denote the constraints obtained from ¯Ci after fixing 
+
+x = xi. Using this solution, we update x to xi+1 by solving 
+
+M2 : min 
+
+> x
+
+˜Fλ ([ x, vi+1 ]) 
+
+s. t. ˆC1 : Dbstk
+
+Rk
+
+≤ τ cm  
+
+> k
+
+, (31a) 
+
+ˆC2 : xP 
+
+> n+1
+
+− xP 
+
+> n
+
+≥ ∆ℓ. (31b) where ˆCi denote the subset of constraints relevant to x
+
+obtained from ¯Ci after fixing v = vi+1 .
+
+D. Outer Loop 
+
+To construct the inner loop, we first observe that the objective function is marginally linear in terms of st and τ .Furthermore, we note that 
+
+Rk = B log 2
+
+
+
+1 + Ecm  
+
+> k
+
+ητ cm  
+
+> k
+
+σ2 Gk(x)
+
+
+
+, (32) is concave in Ecm  
+
+> k
+
+, while τ cm  
+
+> k
+
+B log 2
+
+
+
+1 + Ecm     
+
+> kητcm
+> kσ2
+
+Gk(x)
+
+
+
+, is concave in τ cm  
+
+> k
+
+. This indicates that constraint ˇC1 is marginally convex for Ecm  
+
+> k
+
+and τ . Since τ cp  
+
+> t
+
+> 0 and Ecm  
+
+> k
+
+< E max  
+
+> k
+
+for feasible points, we can equivalently rewrite ˇC2 as the following convex constraint (affine in τ cp  
+
+> t
+
+): 
+
+τ cp  
+
+> t
+
+≥
+
+s
+
+ξs tk
+
+(Ck|D k|)3
+
+Emax  
+
+> k
+
+− Ecm 
+
+> k
+
+. (33) This suggests that we can address the marginal problem M1
+
+via BCD approach, where we split the optimization variables as v = {τ } ∪ { st} ∪ { Ecm 1 , . . . , E cm  
+
+> K
+
+}. The inner problem for each of these variables describes a convex program. The first inner problem is given by: 
+
+I1 : min  
+
+> τ
+
+τ cp  
+
+> t
+
++
+
+> K
+
+X
+
+> k=1
+
+stkτ cm 
+
+> k
+
+s. t. Dbstk − τ cm  
+
+> k
+
+B log 2
+
+
+
+1 + Ecm  
+
+> k
+
+ητ cm  
+
+> k
+
+σ2 Gk(x)
+
+
+
+≤ 0, (34) 
+
+s
+
+ξs tk
+
+(Ck|D k|)3
+
+Emax  
+
+> k
+
+− Ecm 
+
+> k
+
+− τ cp  
+
+> t
+
+≤ 0, (35) 
+
+stkCk|D k| − fmax τ cp  
+
+> t
+
+≤ 0, τ ∈ RK 
+
+> +
+
+. (36) 8
+
+The problem is convex in τ , as the objective is linear and all constraints are convex. We solve I1 via an interior-point method in CVX. The second inner problem is given by: 
+
+I2 : min  
+
+> st
+
+τ cp  
+
+> t
+
++
+
+> K
+
+X
+
+> k=1
+
+stkτ cm 
+
+> k
+
+s. t. Dbstk − τ cm  
+
+> k
+
+B log 2
+
+
+
+1 + Ecm  
+
+> k
+
+ητ cm  
+
+> k
+
+σ2 Gk(x)
+
+
+
+≤ 0, (37) 
+
+Ecm  
+
+> k
+
+− Emax  
+
+> k
+
++ ξs tk
+
+(Ck|D k|)3
+
+(τ cp  
+
+> t
+
+)2 ≤ 0, (38) 
+
+stkCk|D k| − fmax τ cp  
+
+> t
+
+≤ 0, (39) 
+
+st ∈ [0 , 1] K . (40) With (τ , {Ecm  
+
+> k
+
+}) fixed, the problem is linear in st, and can be solved via linear programming. (iii) The third inner problem depends only through the constraints on the optimization variables. We hence find a solution by a point in the Pareto front of the following MOOP 
+
+I3 : max 
+
+> Ecm
+> k
+
+{R1, . . . , R K }
+
+s. t. Ecm  
+
+> k
+
++ ξs tk
+
+(Ck|D k|)3
+
+(τ cp  
+
+> t
+
+)2 − Emax  
+
+> k
+
+≤ 0, (41) 
+
+0 ≤ Ecm  
+
+> k
+
+≤ P τ cm  
+
+> k
+
+. (42) Noting that this problem is convex, one can readily find the Pareto front by solving the following sum-rate optimization: 
+
+˜I3 : max 
+
+> Ecm
+> k
+> K
+
+X
+
+> k=1
+
+θkRk
+
+s. t. Ecm  
+
+> k
+
++ ξs tk
+
+(Ck|D k|)3
+
+(τ cp  
+
+> t
+
+)2 − Emax  
+
+> k
+
+≤ 0, (43) 
+
+0 ≤ Ecm  
+
+> k
+
+≤ P τ cm  
+
+> k
+
+. (44) The scalarized problem is convex because Rk is concave in 
+
+Ecm  
+
+> k
+
+and all constraints are affine. We solve ˜I3 using CVX. 
+
+E. Inner Loop 
+
+To construct the inner loop, we note that the objective in the marginal problem M2 depends on x only through ˆC1, so a solution can be found by solving the following: 
+
+˜M2 : max  
+
+> x
+
+{R1, . . . , R K }
+
+s. t. ˆC2 : xP 
+
+> n+1
+
+− xP 
+
+> n
+
+≥ ∆ℓ, (45a) which can be scalarized as follows: 
+
+ˆM2 : max 
+
+> x
+> K
+
+X
+
+> k=1
+
+θkRk,
+
+s. t. ˆC2 : xP 
+
+> n+1
+
+− xP 
+
+> n
+
+≥ ∆ℓ, (46a) for some convex coefficients θ1, . . . , θ K . Since the system operates in TDMA mode, each device’s data rate Rk can be optimized individually. Therefore, we solve ˆM2 separately for each device k as follows: 
+
+max 
+
+> xP
+> k
+
+Rk,
+
+s. t. ˆC2 : xP 
+
+> n+1 ,k
+
+− xP 
+
+> n,k
+
+≥ ∆ℓ, (47) where xP 
+
+> k
+
+= [xP1,k , x P2,k , . . . , x P
+
+> N,k
+
+] denotes the vector of scheduling locations for device k.
+
+1) Gauss–Seidel coordinate update: We start from the scalarized objective of ˆM2:
+
+J (x) ≜
+
+> K
+
+X
+
+> k=1
+
+θkRk(x) = 
+
+> K
+
+X
+
+> k=1
+
+θk log 2
+
+
+
+1 + akGk(x)
+
+
+
+,
+
+where ak ≜ Pk ηN σ 2 and Gk(x) is the squared-magnitude channel gain in (12). Since the scalar function f (z) = log 2(1 + z) is concave for z ≥ 0, Jensen’s inequality yields 
+
+> K
+
+X
+
+> k=1
+
+θk log 2
+
+ 1 + akGk
+
+ ≤ log 2
+
+
+
+1 + 
+
+> K
+
+X
+
+> k=1
+
+θkakGk
+
+
+
+. (48) where θk ≥ 0 and PKk=1 θk = 1 . Let wk ≜ θkak denote the combined user weights. Because log 2(1 + ·) is monotonically increasing, maximizing the Jensen upper bound (the right-hand side of (48)) is equivalent to 
+
+max 
+
+> x
+> K
+
+X
+
+> k=1
+
+wk Gk(x) s.t. xP 
+
+> n+1
+
+− xP 
+
+> n
+
+≥ ∆ℓ, ∀n. (49) Thus, we adopt the weighted-sum-of-gains in (49) as atractable surrogate objective to optimize the placement. 
+
+Coordinate isolation: The objective in (49) couples all antenna positions through Gk(x). We address this via aGauss–Seidel-type approach [38], where the antenna positions are updated sequentially. For a given index n, we treat xn as the only optimization variable and hold all other coordinates fixed. Define the single-antenna contribution function 
+
+Πk(x) ≜ exp   − j(κD k(x) + κg ℓ(x)) 
+
+Dk(x) , (50) where Dk(x) ≜
+
+q
+
+(xU 
+
+> k
+
+− x)2 + ( yU 
+
+> k
+
+)2 + d2 is the free-space distance from user k to coordinate x, ℓ(x) is the guided-path length from the feed-point to x, and κ = 2 π/λ , κg = 2 π/λ g
+
+are the free-space and guided wavenumbers, respectively. Let Ck,n ≜ PNm=1  
+
+> m̸=n
+
+Πk(xm) be the (fixed) sum of contri-butions from all other antennas when antenna n is excluded. Then the user-k channel gain can be written as 
+
+Gk(x) = Πk(x) + Ck,n 
+
+> 2
+
+. (51) Plugging into (49) and collecting terms that depend on x, the objective to maximize is 
+
+Φn(x) ≜
+
+> K
+
+X
+
+> k=1
+
+wk Πk(x) + Ck,n 
+
+> 2
+
+, (52) 
+
+=
+
+> K
+
+X
+
+> k=1
+
+wk
+
+
+
+|Ck,n |2 + 2 ℜ{ C∗
+
+> k,n
+
+Πk(x)} + |Πk(x)|2
+
+.
+
+Only the middle and last terms depend on x. By dropping the constant term P 
+
+> k
+
+wk|Ck,n |2, we obtain 
+
+Φn(x) = 2 ℜ
+
+n KX
+
+> k=1
+
+ζk,n Πk(x)
+
+o
+
++
+
+> K
+
+X
+
+> k=1
+
+ϑk,n |Πk(x)|2, (53) where ζk,n ≜ wk C∗ 
+
+> k,n
+
+and ϑk,n ≜ wk. Hence, the coordinate update for antenna n becomes the 1-D optimization 
+
+x⋆n = arg max 
+
+> x∈X n
+
+Φn(x), (54) with feasible set 
+
+Xn = {x ∈ [0 , L 1] : |x − xm| ≥ ∆ℓ, ∀m̸ = n} .9
+
+Algorithm 1 Two-tier Iterative Optimization  
+
+> 1:
+
+Initialize: Set initial configuration u(0) , antenna posi-tions x(0) , tolerances ϵouter , ϵ inner , and max iterations 
+
+Touter , T inner . 
+
+> 2:
+
+for touter = 1 , 2, . . . , T outer do  
+
+> 3:
+
+(Outer-1) Solve I1 (Delay minimization) via convex programming.  
+
+> 4:
+
+(Outer-2) Solve I2 (scheduling) via linear program-ming.  
+
+> 5:
+
+(Outer-3) Choose convex coefficients θ1, . . . , θ K . 
+
+> 6:
+
+(Outer-4) Solve ˜I3 (power allocation).  
+
+> 7:
+
+Inner Loop: Gauss–Seidel Antenna Placement  
+
+> 8:
+
+for tinner = 1 , 2, . . . , T inner do  
+
+> 9:
+
+for n = 1 , 2, . . . , N do  
+
+> 10:
+
+Compute Ck,n = PNm=1  
+
+> m̸=n
+
+Πk(xm) for all k. 
+
+> 11:
+
+Evaluate Φn(x) from (53).  
+
+> 12:
+
+Construct feasible grid set X grid  
+
+> n
+
+excluding points violating spacing.  
+
+> 13:
+
+Update xn ← arg max x∈X grid  
+
+> n
+
+Φn(x). 
+
+> 14:
+
+if antenna positions converge within ϵinner then  
+
+> 15:
+
+break 
+
+We solve (54) via an exhaustive grid search over Xn. In prac-tice, we evaluate (54) over a uniform L-point grid on [0 , L 1],discarding candidate locations that violate the minimum spac-ing constraint. The feasible discrete set for coordinate n is 
+
+X grid  
+
+> n
+
+=
+
+ ℓL 1
+
+L − 1:ℓ = 0 , . . . , L − 1, |x − xm| ≥ ∆ℓ, ∀m̸ = n
+
+
+
+.
+
+The coordinate update is then approximated by 
+
+x⋆n ≈ arg max  
+
+> x∈X grid
+> n
+
+Φn(x).
+
+F. Computational Complexity 
+
+In general, the proposed two-tier optimization algorithm al-ternates between an outer BCD procedure and an inner Gauss-Seidel antenna-placement refinement. Let Tout and Tin denote the numbers of outer and inner iterations, respectively. In the outer loop, the delay optimization, scheduling, and power allocation subproblems involve O(K) variables, where K is the number of devices. Since these subproblems are convex (or linear) programs solved via interior-point methods, their worst-case complexity scales as O(K3) per outer iteration. Within each outer iteration, the inner loop sequentially updates the N antenna positions. For each antenna, a one-dimensional grid search over L candidate points is performed, and evaluating the objective at each grid point requires O(K)
+
+operations. Hence, one Gauss-Seidel sweep incurs O(N KL )
+
+complexity, and the total inner-loop cost is O(Tin N KL ).The overall complexity of the proposed algorithm is 
+
+O Tout 
+
+K3 + Tin N KL  . When L, N , and Tin are moderate and do not scale with K, the dominant term is O(K3),implying cubic scaling with respect to the number of devices. V. N UMERICAL RESULT AND DISCUSSIONS 
+
+In this section, we present numerical experiments to validate the derived expressions and evaluate the performance of PA under an FL setting. We begin by describing the simulation setup, followed by the presentation of the numerical results. 
+
+A. Communication Settings 
+
+In the numerical simulations, we consider a rectangular area of size 30 m × 20 m, with the server located at the midpoint of the left boundary and a total of K = 12 users randomly placed within the region. The height of the pinching antenna is set to d = 3 m. The carrier frequency is set to fc = 28 GHz, the noise power spectral density is fixed at −174 dBm/Hz, and the effective noise factor is set to neff = 1 .44 . Each device has a maximum transmit power budget of P = 0 .2 W and a maximum local CPU frequency of fmax = 1 .8 GHz. The computation load per data sample is set to Ck = 10 6 CPU cycles. The maximum computation energy budget per global round is constrained to Emax  
+
+> k
+
+= 0 .1 J for all devices. The distance between the pinching elements is set to be larger than ∆ℓ = λ 
+
+> 2
+
+. We compare against three reference schemes:  
+
+> •
+
+Conventional FL : The conventional fixed-antenna base-line, where the base station is equipped with N antennas at the center of the square region. The same scheduling and resource allocation procedure as in the proposed method is applied.  
+
+> •
+
+PASS-Uniform : A PASS equipped with N equally spaced antenna elements along the dielectric waveguide. The scheduling and power allocation follow the same opti-mization framework.  
+
+> •
+
+Perfect FL : The ideal setting, where all devices partici-pate in every round over perfect communication links. In this case, the server aggregates the local updates using standard FedAvg. Since the wireless channel is ideal, this benchmark reflects the best achievable learning performance. 
+
+B. Learning Model and Datasets 
+
+We evaluate PASS-aided FL on image-classification tasks with MNIST and CIFAR-10 datasets. The MNIST dataset contains 10 classes of grayscale handwritten digit images, with 60,000 training samples and 10,000 test samples [39]. The CIFAR-10 dataset consists of 10 classes of color images, with 6,000 images per class. Each class is split into 5,000 training images and 1,000 test images [40]. For MNIST, we adopt a four-layer convolutional network with two 3 × 3
+
+convolutional layers (32 and 64 channels, respectively), each followed by ReLU activation and 2 × 2 max-pooling, and two fully connected layers with 128 hidden units. For CIFAR-10, we use a slightly deeper CNN with four 3 × 3 convolutional layers (with 32, 32, 64 and 64 channels, respectively) grouped into two blocks, each block followed by 2 × 2 max-pooling. A final 3 × 3 convolution with 128 channels and an adaptive average pooling to a 4 × 4 spatial resolution are applied to the output of the second block. The output is computed by a classifier with a 256-dimensional fully connected layer. All hidden layers use ReLU activation. 10 
+
+To simulate the inherent non-uniformity of data in practical FL systems, the training dataset is randomly shuffled and then partitioned across devices in a non-i.i.d. manner. We employ a Dirichlet-based label distribution with concentration parameter 
+
+α = 0 .35 . Specifically, for each class, its samples are allocated to the K devices according to a Dirichlet (α) draw. Smaller values of α yield more skewed partitions, meaning that indi-vidual devices observe imbalanced and device-specific class distributions. This setup reflects realistic FL environments where clients hold statistically diverse local data [41]. 
+
+C. Results and Discussions 1) PASS-Aided Training Accuracy : Fig. 3 illustrates the performance of FedPASS on the MNIST dataset and compares it with the benchmark schemes. The figure plots the test accuracy as a function of the number of communication rounds. As observed, the proposed FedPASS achieves a test accuracy that is remarkably close to the ideal Perfect FL benchmark, and it significantly outperforms both the conven-tional fixed-antenna baseline and the uniformly spaced PASS configuration. This improvement stems from the deployment of pinching antennas, which can be repositioned to locations closest to the active user in each time slot. By doing so, the system maximally reduces large-scale path loss and enhances the effective channel gain, thereby enabling more reliable and efficient model aggregation across rounds. Fig. 4 shows the performance of the proposed PASS-aided framework on the CIFAR-10 dataset. Similar to the MNIST results, the PASS-optimized scheme consistently outperforms both benchmark methods. However, the performance gap between the proposed method and the benchmarks becomes more pronounced in this case. This arises because CIFAR-10 presents a substantially more challenging classification task with higher-dimensional inputs and more complex visual patterns compared to MNIST. Under such conditions, com-munication inefficiencies in the benchmark schemes lead to less reliable model updates, which amplifies their degradation in learning performance. In contrast, the PASS-aided design maintains strong uplink channels through optimized pinching-antenna placement, allowing more devices to successfully par-ticipate in each round. This reduces the aggregation error term and improves the convergence behavior, thereby preserving learning performance even in more challenging scenarios. 
+
+2) Total Latency : Fig. 5 illustrates the test accuracy versus total latency for the proposed FedPASS framework and the benchmark schemes, evaluated across different values of K.As the figure shows, FedPASS reaches the target accuracy approximately 6.4× faster than the baseline methods. For all choices of K, the proposed PASS-FL design achieves the tar-get accuracy significantly earlier than the conventional fixed-antenna baseline. Moreover, the performance gap becomes more pronounced as the number of users increases. As K grows, the conventional method experiences a signif-icant increase in communication delay because more devices must complete their uplink transmissions before each round can proceed. This results in longer round duration and slower learning process. In contrast, the proposed PASS-FL method 
+
+> Fig. 3: Test accuracy vs the number of rounds for MNIST dataset
+> Fig. 4: Test accuracy vs the number of rounds for CIFAR dataset
+
+effectively mitigates large-scale path loss and improves the communication quality of users with weak channels through adaptive pinching-antenna placement. This leads to a substan-tially lower per-round latency and accelerates the completion of each global iteration. The comparison in Fig. 5 demon-strates that the proposed method scales more favorably with the number of participating users and consistently ensures faster round execution under identical system settings. These results highlight that the physical-layer enhancements intro-duced by PASS directly lead to a faster convergence rate in practice, achieving higher accuracy in significantly less time. Fig. 6 illustrates the impact of the transmit-power budget on the test accuracy versus total latency for the considered FL schemes. The results clearly show that the proposed FedPASS approach maintains a substantial advantage across both low- and high-power regimes. When the transmit power is small (e.g., P = 0 .05 W), the performance gap becomes particularly pronounced. In this regime, the conventional fixed-antenna baseline suffers from severe uplink bottlenecks due to limited channel quality, resulting in long transmission delays (imposed by the stragglers in the network) and degraded model aggregation. Similarly, the PASS-Uniform scheme cannot fully overcome these channel impairments, as its antenna placement 11  
+
+> Fig. 5: Accuracy vs total latency for different values of K.
+> Fig. 6: Accuracy vs total latency for various values of transmit power.
+
+is not tailored to individual device locations. In contrast, the FedPASS design adaptively positions the pinching antennas to strengthen the LoS component for each scheduled user. This targeted antenna placement significantly mitigates the effect of low transmit power by enhancing effective channel gains, thereby reducing per-round latency and enabling more reliable model uploads. As a result, PASS achieves noticeably faster convergence and higher accuracy. When the transmit power increases (e.g., P = 0 .5 W), all schemes naturally benefit from improved SNR. However, the FedPASS design continues to perform superiorly, demonstrating that even when power is abundant, optimized antenna placement still accelerates convergence due to strong uplink channels. 
+
+3) Latency-Learning Tradeoff : Fig. 7 shows the Pareto-front that describes tradeoff between the total latency and the learning-performance metric for different transmit-power budgets. The shape of the Pareto-front follows from the fact that both the objectives are set to be minimized: as the opti-mized total latency increases Flearn decreases, and vice versa. Note that smaller values of Flearn correspond to scheduling more devices per round, which improves learning quality but increases communication load and round duration. Conversely, relaxing the learning objective, i.e., larger Flearn allows the system to schedule fewer devices, reducing communication time and yielding lower latency. The comparison among different transmit-power budgets further reveals that higher P
+
+> Fig. 7: Trade-off between latency and learning quality under different power budget.
+> Fig. 8: Total latency vs the number of pinching antenna
+
+shifts the entire Pareto front downward: with more available power, devices achieve higher uplink data rates, reducing communication time and enabling more devices to satisfy the energy constraint. As a result, higher-power configurations can operate at lower latency for the same learning level, or achieve better learning performance for the same latency budget. Lower transmit powers, by contrast, restrict feasible scheduling and yield significantly slower rounds, pushing the Pareto-front upward. 
+
+4) Impact of PASS Size : Fig. 8 depicts the total latency as a function of the number of pinching antennas N . As expected, the latency of the conventional fixed-antenna baseline remains constant since it does not depend on N . For both PASS-based schemes, however, the latency decreases as N increases, following the fact that a larger number of antennas provides more spatial flexibility to place radiation points closer to the users. We further note that, the FedPASS scheme achieves the lowest latency across all values of N . Nevertheless, the latency reduction saturates beyond a certain threshold. This saturation occurs because the waveguide has a minimum required spacing between adjacent pinching antennas, imposed to avoid electromagnetic coupling and maintain independent radiation behavior. 
+
+5) Impact of Transmit Power : Fig. 9 illustrates the impact of the transmit-power budget P on the total latency. As shown, 12 
+
+> Fig. 9: Total latency vs the transmit power
+> Fig. 10: Total latency vs the user data size
+
+increasing the transmit power leads to a reduction in latency for all wireless schemes. This occurs because higher power improves the uplink SNR, resulting in higher achievable data rates and shorter model-upload times per device. Among the approaches, the conventional fixed-antenna baseline exhibits the highest latency, since it cannot enhance the LoS compo-nent or compensate for users with inherently weak channels. The PASS-Uniform scheme moderately improves latency by enabling radiation points along the waveguide, but its non-optimized antenna placement limits the achievable gains. In contrast, FedPASS achieves the lowest latency across all power levels. By adaptively positioning the pinching antennas, FedPASS strengthens uplink channels even for users located in challenging positions, enabling much faster transmissions. 
+
+6) Impact of Local Data-Size : Fig. 10 illustrates how the total latency varies with the data size Db that each device must upload during the uplink phase. As expected, increasing 
+
+Db leads to a growth in total latency across all schemes. Since each device must transmit a larger number of bits, its individual uplink time increases accordingly. Noting that uploading larger updates also consumes more energy, fewer devices are able to meet the energy constraint in each round. As a result, fewer users are scheduled and the system needs more time to complete each global iteration. These two effects together cause the total latency to grow as Db becomes larger. Similar to earlier experiments, FedPASS consistently achieves the lowest latency among the approaches due to its ability to strengthen uplink channels via optimized pinching-antenna placement, partially mitigating the communication burden imposed by larger model sizes. VI. C ONCLUSION 
+
+This paper introduces FedPASS, a framework that leverages PASS to accelerate the training process of wireless FL. We formulated a bi-objective mixed-integer optimization problem that jointly minimizes training latency and an upper bound on the FL optimality gap. A two-tier iterative algorithm was developed to solve the resulting problem through coordinated updates of scheduling, power control, and PA placement. Numerical results on the MNIST and CIFAR-10 datasets demonstrate that FedPASS reduces the total training latency by up to 6.4× compared to benchmark schemes, while achieving learning accuracy close to that of idealized baselines. Future work may explore asynchronous FL, more advanced PA activation strategies, and large-scale distributed optimization. APPENDIX AGiven (A.2), by L-smoothness we have 
+
+F (ωt) ≤ F (ωt−1)+ ⟨∇ F (ωt−1), ωt−ωt−1⟩+ L
+
+2 ∥ωt−ωt−1∥22.
+
+After some calculation, we can write the global update as 
+
+ωt = ωt−1 − ϑL gt−1, where 
+
+gt−1 = 1
+
+D(st)
+
+> K
+
+X
+
+> k=1
+
+stk|D k|
+
+ 1
+
+ϑ
+
+> ϑ−1
+
+X
+
+> j=0
+
+∇Fk(ω(j) 
+
+> k
+
+)
+
+ .
+
+Hence, we obtain 
+
+F (ωt) ≤ F (ωt−1) − ϑL ∇F (ωt−1), gt−1 + ϑ2
+
+2L gt−1
+
+> 22
+
+.
+
+(55) Let gt−1 = ∇F (ωt−1) − et−1 + dt−1, where et−1 and 
+
+dt−1 are gradient-sampling error and the local-drift term, respectively. et−1 is defined in (20) and dt−1 can be written as 
+
+dt−1 = 1
+
+D(st)
+
+> K
+
+X
+
+> k=1
+
+stk|D k|
+
+ 1
+
+ϑ
+
+> ϑ−1
+
+X
+
+> j=0
+
+∇Fk(ω(j) 
+
+> k
+
+) − ∇ Fk(ωt−1) .
+
+(56) Applying inequality −⟨ a, b ⟩ ≥ − 12γ ∥a∥2 − γ 
+
+> 2
+
+∥b∥2 [42] with 
+
+γ = 2 to both cross terms, we can bound inner product as 
+
+∇F (ωt−1), gt−1 ≥ 12 ∇F (ωt−1) 22 − 12 et−1 
+
+> 22
+
+− 12 dt−1
+
+> 22
+
+.
+
+Substituting the above equation into (55) yields 
+
+F (ωt) ≤ F (ωt−1) − ϑ
+
+2L ∇F (ωt−1) 22 + ϑ
+
+2L et−1
+
+> 22
+
++ ϑ
+
+2L dt−1
+
+> 22
+
+. (57) By Assumption A.4 and L-smoothness, we have 
+
+∇Fk(ω(j) 
+
+> k
+
+) − ∇ Fk(ωt−1) 2 ≤ L ω(j) 
+
+> k
+
+− ωt−1 2. (58) Using (56), and Jensen/Cauchy–Schwarz on the weighted sum over scheduled devices, and summing over the ϑ local steps 13 
+
+yields an extra factor of ϑ2. Hence we obtain the squared-norm bound 
+
+dt−1 
+
+> 22
+
+≤ ϑ2 ε2
+
+|D| D(st) . (59) Finally, substituting (59) into (57) completes the proof. APPENDIX BApplying Lemma 1 and invoking the Polyak–Łojasiewicz inequality in A.3, the one-step descent yields 
+
+Ot ≤
+
+
+
+1 − δϑ L
+
+
+
+Ot−1 + ϑ
+
+2L ∥et−1∥22 + ϑ3ε2
+
+2L|D| D(st) .
+
+The last term represents the contribution of the local-drift error. Since D(st) ≤ |D| , we upper-bound it by ϑ3ε2 
+
+> 2L|D| 2
+
+, which is included in At as a drift component. Using the boundedness of sample gradients and unrolling the recursion over T rounds gives the stated upper bound. REFERENCES [1] S. Basharat, S. A. Hassan, H. Pervaiz, A. Mahmood, Z. Ding, and M. Gidlund, “Reconfigurable intelligent surfaces: Potentials, applica-tions, and challenges for 6g wireless networks,” IEEE Wireless Com-mun. , vol. 28, no. 6, pp. 184–191, 2021. [2] A. Bereyhi, S. Asaad, C. Ouyang, R. R. M¨ uller, R. F. Schaefer, and H. V. Poor, “Channel hardening of irs-aided multi-antenna systems: How should IRSs scale?” IEEE J. Sel Areas Commun. , vol. 41, no. 8, pp. 2321–2335, 2023. [3] K.-K. Wong, A. Shojaeifard, K.-F. Tong, and Y. Zhang, “Fluid antenna systems,” IEEE Trans. Wireless Commun. , vol. 20, no. 3, pp. 1950–1962, Mar. 2021. [4] L. Zhu, W. Ma, and R. Zhang, “Movable antennas for wireless commu-nication: Opportunities and challenges,” IEEE Commun. Mag. , vol. 62, no. 6, pp. 114–120, Jun. 2024. [5] A. Bereyhi, S. Asaad, C. Ouyang, R. R. M¨ uller, R. F. Schaefer, and H. V. Poor, “How should irss scale to harden multi-antenna channels?” in 2022 IEEE 12th Sensor Array and Multichannel Signal Processing Workshop (SAM) . IEEE, 2022, pp. 276–280. [6] M. D. Renzo, M. Debbah, D.-T. Phan-Huy, A. Zappone, M.-S. Alouini, C. Yuen, V. Sciancalepore, G. C. Alexandropoulos, J. Hoydis, H. Gacanin et al. , “Smart radio environments empowered by reconfig-urable ai meta-surfaces: An idea whose time has come,” EURASIP Jrnl. on Wireless Commun. and Networking , vol. 2019, no. 1, pp. 1–20, 2019. [7] Q. Wu, S. Zhang, B. Zheng, C. You, and R. Zhang, “Intelligent reflecting surface-aided wireless communications: A tutorial,” IEEE Trans. on Commun. , vol. 69, no. 5, pp. 3313–3351, 2021. [8] Z. Ding, R. Schober, and H. V. Poor, “Flexible-antenna systems: A pinching-antenna perspective,” IEEE Trans. on Commun. , 2025. [9] A. Fukuda, H. Yamamoto, H. Okazaki, Y. Suzuki, and K. Kawai, “Pinching antenna: Using a dielectric waveguide as an antenna,” NTT DOCOMO Tech. J. , vol. 23, no. 3, pp. 5–12, 2022. [10] K. Wang, Z. Ding, and N. Al-Dhahir, “Pinching-antenna systems for physical layer security,” IEEE Wireless Commun. Letters , 2025. [11] Y. Liu, Z. Wang, X. Mu, C. Ouyang, X. Xu, and Z. Ding, “Pinching-antenna systems (pass): Architecture designs, opportunities, and out-look,” arXiv preprint arXiv:2501.18409 , 2025. [12] J. Koneˇ cn` y, H. B. McMahan, F. X. Yu, P. Richt´ arik, A. T. Suresh, and D. Bacon, “Federated learning: Strategies for improving communication efficiency,” arXiv preprint arXiv:1610.05492 , 2016. [13] A. Bereyhi, A. Vagollari, S. Asaad, R. R. M¨ uller, W. Gerstacker, and H. V. Poor, “Device scheduling in over-the-air federated learning via matching pursuit,” IEEE Trans. on Signal Processing , vol. 71, pp. 2188– 2203, 2023. [14] S. M. Hamidi and A. Bereyhi, “Rate-constrained quantization for communication-efficient federated learning,” in ICASSP 2025-2025 IEEE International Conference on Acoustics, Speech and Signal Pro-cessing (ICASSP) . IEEE, 2025, pp. 1–5. [15] Z. Ding, R. Schober, and H. V. Poor, “Flexible-antenna systems: A pinching-antenna perspective,” arXiv preprint arXiv:2412.02376 , 2024. [16] C. Ouyang, Z. Wang, Y. Liu, and Z. Ding, “Array gain for pinching-antenna systems (PASS),” arXiv preprint arXiv:2501.05657 , 2025. [17] K. Wang, Z. Ding, and R. Schober, “Antenna activation for noma assisted pinching-antenna systems,” IEEE Wireless Commun. Letters ,2025. [18] Z. Wang, C. Ouyang, X. Mu, Y. Liu, and Z. Ding, “Modeling and beam-forming optimization for pinching-antenna systems,” arXiv preprint arXiv:2502.05917 , 2025. [19] S. Asaad, C. Ouyang, A. Bereyhi, and Z. Ding, “Dynamic and static energy efficient design of pinching antenna systems,” arXiv preprint arXiv:2511.08720 , 2025. [20] G. Zhu, X. Mu, L. Guo, S. Xu, Y. Liu, and N. Al-Dhahir, “Pinching-antenna systems (pass)-enabled secure wireless communications,” arXiv preprint arXiv:2504.13670 , 2025. [21] O. S. Badarneh, H. S. Silva, and Y. H. A. Badarneh, “Physical-layer security of pinching-antenna systems,” arXiv preprint arXiv:2503.18322 ,2025. [22] J.-C. Chen, P.-C. Wu, and K.-K. Wong, “Dynamic placement of pinching antennas for multicast mu-miso downlinks,” IEEE Open Jrnl. of the Commun. Society , 2025. [23] Y. Xu, Z. Ding, and G. K. Karagiannidis, “Rate maximization for downlink pinching-antenna systems,” IEEE Wireless Commun. Letters ,2025. [24] X. Xie, F. Fang, Z. Ding, and X. Wang, “A low-complexity placement design of pinching-antenna systems,” IEEE Commun. Letters , 2025. [25] X. Xie, Y. Lu, and Z. Ding, “Graph neural network enabled pinching antennas,” IEEE Wireless Commun. Letters , 2025. [26] Y. Lin, Z. Chen, and Z. Ding, “Pinching-antenna-enabled federated learning: Tail latency, participation, and convergence analysis,” arXiv preprint arXiv:2510.23315 , 2025. [27] B. Wu, F. Fang, M. Zeng, and X. Wang, “Straggler-resilient federated learning over a hybrid conventional and pinching antenna network,” 
+
+IEEE Trans. on Vehicular Technology , 2026. [28] S. Asaad and A. Bereyhi, “Energy-efficient over-the-air federated learn-ing via pinching antenna systems,” arXiv preprint arXiv:2602.14250 ,2026. [29] Z. Yang, M. Chen, W. Saad, C. S. Hong, and M. Shikh-Bahaei, “Energy efficient federated learning over wireless communication networks,” 
+
+IEEE Trans. on Wireless Commun. , vol. 20, no. 3, pp. 1935–1949, 2020. [30] X. Zhang, W. Chen, H. Zhao, Z. Chang, and Z. Han, “Joint accuracy and latency optimization for quantized federated learning in vehicular networks,” IEEE Internet of Things Journal , vol. 11, no. 17, pp. 28 876– 28 890, 2024. [31] P. S. Bouzinis, P. D. Diamantoulakis, and G. K. Karagiannidis, “Wireless quantized federated learning: A joint computation and communication design,” IEEE Trans. on Commun. , vol. 71, no. 5, pp. 2756–2770, 2023. [32] M. M. Amiri and D. G¨ und¨ uz, “Federated learning over wireless fading channels,” IEEE Trans. on wireless Commun. , vol. 19, no. 5, pp. 3546– 3557, 2020. [33] J. Zheng, W. Ni, H. Tian, D. G¨ und¨ uz, T. Q. Quek, and Z. Han, “Semi-federated learning: Convergence analysis and optimization of a hybrid learning framework,” IEEE Transactions on Wireless Communications ,vol. 22, no. 12, pp. 9438–9456, 2023. [34] X. Cao, G. Zhu, J. Xu, Z. Wang, and S. Cui, “Optimized power control design for over-the-air federated edge learning,” IEEE Journal on Selected Areas in Communications , vol. 40, no. 1, pp. 342–358, 2021. [35] H. Xing, O. Simeone, and S. Bi, “Federated learning over wireless device-to-device networks: Algorithms and convergence analysis,” IEEE Jrnl. on Sel. Areas in Commun. , vol. 39, no. 12, pp. 3723–3741, 2021. [36] W. Guo, R. Li, C. Huang, X. Qin, K. Shen, and W. Zhang, “Joint device selection and power control for wireless federated learning,” IEEE Jrnl. on Sel. Areas in Commun. , vol. 40, no. 8, pp. 2395–2410, 2022. [37] K. Miettinen, Nonlinear multiobjective optimization . Springer Science & Business Media, 1999, vol. 12. [38] G. Dahlquist and ˚ A. Bj¨ orck, Numerical methods in scientific computing, volume I . SIAM, 2008. [39] H. Xiao, K. Rasul, and R. Vollgraf, “Fashion-mnist: a novel image dataset for benchmarking machine learning algorithms,” arXiv preprint arXiv:1708.07747 , 2017. [40] A. Krizhevsky and G. Hinton, “Learning multiple layers of features from tiny images,” Master’s thesis, Comp. Science Dept., Univ. Toronto , 2009. [41] O. Marfoq, G. Neglia, A. Bellet, L. Kameni, and R. Vidal, “Federated multi-task learning under a mixture of distributions,” Advances in Neural Information Processing Systems , vol. 34, pp. 15 434–15 447, 2021. [42] S. Lang, Algebra . Springer Science & Business Media, 2012.

@@ -1,0 +1,499 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-03-15T19:19:19.869979+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 2,
+    "deep_cap": 6,
+    "deep_selected": 2,
+    "quick_candidates": 24,
+    "quick_skim_target": 11,
+    "quick_selected": 11
+  },
+  "deep_dive": [
+    {
+      "id": "2603.12136v1",
+      "title": "Folding Mixed-Integer Linear Programs and Reflection Symmetries",
+      "abstract": "For mixed-integer linear programming and linear programming it is well known that symmetries can have a negative impact on the performance of branch-and-bound and linear optimization algorithms. A common strategy to handle symmetries in linear programs is to reduce the dimension of the linear program by aggregating symmetric variables and solving a linear program of reduced dimension. In their work ``Dimension Reduction via Color Refinement'' (DRCR), Grohe, Kersting, Mladenov and Selman show that it is sufficient to run a fast color refinement algorithm to detect permutation symmetries and reduce the dimension of the linear program. We extend DRCR in two directions. First, we show that DRCR can be extended to reflection symmetries, which generalize permutation symmetries. Second, we show the folklore result that DRCR can be applied to the continuous columns of mixed-integer linear programs. In order to derive additional reductions on the integer variables we use affine totally unimodular decompositions to reformulate mixed-integer linear programs into mixed-integer linear programs with fewer integer variables. Computational experiments on MIPLIB 2017 collection set using SCIP 10 show that DRCR is an effective tool for handling symmetries. For the linear programming relaxations, DRCR with reflection symmetries yields a modest reduction in running time compared to the original DRCR procedure. For mixed-integer linear programming models, DRCR is very effective at reducing the solution time compared to the default configuration of SCIP. Moreover, the developed DRCR detection algorithms are fast and scale well to large problem instances.",
+      "authors": [
+        "Rolf van der Hulst"
+      ],
+      "primary_category": "math.OC",
+      "categories": [
+        "math.OC"
+      ],
+      "published": "2026-03-12T16:40:31+00:00",
+      "link": "https://arxiv.org/pdf/2603.12136v1",
+      "tags": [
+        "keyword:ML CO",
+        "query:ML CO"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "mixed-integer linear programming and branch-and-bound performance",
+      "llm_evidence_cn": "混合整数线性规划与分支定界性能",
+      "llm_evidence": "混合整数线性规划与分支定界性能",
+      "canonical_evidence": "混合整数线性规划与分支定界性能",
+      "llm_tldr_en": "Extends dimension reduction techniques for MILP by detecting reflection symmetries to improve solver performance.",
+      "llm_tldr_cn": "通过检测反射对称性扩展 MILP 的降维技术，以提升分支定界算法的性能。",
+      "llm_tldr": "通过检测反射对称性扩展 MILP 的降维技术，以提升分支定界算法的性能。",
+      "llm_tags": [
+        "query:ml-co"
+      ],
+      "matched_query_tag": "query:ml-co",
+      "matched_query_text": "machine learning for integer linear programming",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2603.11390v1",
+      "title": "SliceFed: Federated Constrained Multi-Agent DRL for Dynamic Spectrum Slicing in 6G",
+      "abstract": "Dynamic spectrum slicing is a critical enabler for 6G Radio Access Networks (RANs), allowing the coexistence of heterogeneous services. However, optimizing resource allocation in dense, interference-limited deployments remains challenging due to non-stationary channel dynamics, strict Quality-of-Service (QoS) requirements, and the need for data privacy. In this paper, we propose SliceFed, a novel Federated Constrained Multi-Agent Deep Reinforcement Learning (F-MADRL) framework. SliceFed formulates the slicing problem as a Constrained Markov Decision Process (CMDP) where autonomous gNB agents maximize spectral efficiency while explicitly satisfying inter-cell interference budgets and hard ultra-reliable low-latency communication (URLLC) latency deadlines. We employ a Lagrangian primal-dual approach integrated with Proximal Policy Optimization (PPO) to enforce constraints, while Federated Averaging enables collaborative learning without exchanging raw local data. Extensive simulations in a dense multi-cell environment demonstrate that SliceFed converges to a stable, safety-aware policy. Unlike heuristic and unconstrained baselines, SliceFed achieves nearly 100% satisfaction of 1~ms URLLC latency deadlines and exhibits superior robustness to traffic load variations, verifying its potential for reliable and scalable 6G spectrum management.",
+      "authors": [
+        "Hossein Mohammadi",
+        "Seyed Bagher Hashemi Natanzi",
+        "Ramak Nassiri",
+        "Jamshid Hassanpour",
+        "Bo Tang",
+        "Vuk Marojevic"
+      ],
+      "primary_category": "cs.NI",
+      "categories": [
+        "cs.NI",
+        "eess.SY"
+      ],
+      "published": "2026-03-12T00:08:05+00:00",
+      "link": "https://arxiv.org/pdf/2603.11390v1",
+      "tags": [
+        "keyword:ML CO",
+        "query:ML CO"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "multi-agent DRL for spectrum slicing resource allocation",
+      "llm_evidence_cn": "多智能体深度强化学习用于频谱切片资源分配",
+      "llm_evidence": "多智能体深度强化学习用于频谱切片资源分配",
+      "canonical_evidence": "多智能体深度强化学习用于频谱切片资源分配",
+      "llm_tldr_en": "Applies federated multi-agent DRL to optimize resource allocation in 6G spectrum slicing.",
+      "llm_tldr_cn": "应用联邦多智能体深度强化学习来优化6G频谱切片中的资源分配。",
+      "llm_tldr": "应用联邦多智能体深度强化学习来优化6G频谱切片中的资源分配。",
+      "llm_tags": [
+        "query:ml-co"
+      ],
+      "matched_query_tag": "query:ml-co",
+      "matched_query_text": "reinforcement learning for combinatorial optimization",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2603.06843v1",
+      "title": "How Physical Dynamics Shape the Properties of Ising Machines: Evaluating Oscillators vs. Bistable Latches as Ising Spins",
+      "abstract": "Ising machines exploit the natural dynamics of physical systems to minimize the Ising Hamiltonian and thereby address computationally hard combinatorial optimization problems. This paradigm has motivated a range of physical implementations. In the electronic domain, coupled networks of oscillators and bistable latches have emerged as two prominent realizations of Ising machines and are the focus of the present work. Despite this common abstraction, we demonstrate that differences in the underlying physical dynamics of oscillators and latches lead to fundamentally different stability properties and computational behavior of the resulting dynamical systems. Specifically, we show analytically that in Bistable Latch Ising Machines (BLIMs) all discrete Ising configurations possess identical linear stability, whereas in Oscillator Ising Machines (OIMs) the Jacobian spectrum depends explicitly on the spin configuration, enabling selective destabilization of higher-energy states. Evaluating the performance of both models on MaxCut instances of varying sizes, we find that this difference in stability structure yields consistently higher-quality solutions with OIMs. These results highlight how the characteristics of the device nonlinearity directly shape the dynamical and functional properties of Ising machine implementations.",
+      "authors": [
+        "Abir Hasan",
+        "Nikhil Shukla"
+      ],
+      "primary_category": "physics.comp-ph",
+      "categories": [
+        "physics.comp-ph"
+      ],
+      "published": "2026-03-06T20:06:06+00:00",
+      "link": "https://arxiv.org/pdf/2603.06843v1",
+      "tags": [
+        "keyword:ML CO",
+        "query:ML CO"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "Ising machines for NP-hard combinatorial optimization",
+      "llm_evidence_cn": "用于NP-hard组合优化的伊辛机",
+      "llm_evidence": "用于NP-hard组合优化的伊辛机",
+      "canonical_evidence": "用于NP-hard组合优化的伊辛机",
+      "llm_tldr_en": "Analyzes how physical dynamics of Ising machines affect their ability to solve hard combinatorial problems.",
+      "llm_tldr_cn": "分析了伊辛机的物理动力学如何影响其解决困难组合优化问题的能力。",
+      "llm_tldr": "分析了伊辛机的物理动力学如何影响其解决困难组合优化问题的能力。",
+      "llm_tags": [
+        "query:ml-co"
+      ],
+      "matched_query_tag": "query:ml-co",
+      "matched_query_text": "deep learning methods for solving NP hard problems",
+      "matched_requirement_id": "req-9",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2603.07970v1",
+      "title": "Advancing Automated Algorithm Design via Evolutionary Stagewise Design with LLMs",
+      "abstract": "With the rapid advancement of human science and technology, problems in industrial scenarios are becoming increasingly challenging, bringing significant challenges to traditional algorithm design. Automated algorithm design with LLMs emerges as a promising solution, but the currently adopted black-box modeling deprives LLMs of any awareness of the intrinsic mechanism of the target problem, leading to hallucinated designs. In this paper, we introduce Evolutionary Stagewise Algorithm Design (EvoStage), a novel evolutionary paradigm that bridges the gap between the rigorous demands of industrial-scale algorithm design and the LLM-based algorithm design methods. Drawing inspiration from CoT, EvoStage decomposes the algorithm design process into sequential, manageable stages and integrates real-time intermediate feedback to iteratively refine algorithm design directions. To further reduce the algorithm design space and avoid falling into local optima, we introduce a multi-agent system and a \"global-local perspective\" mechanism. We apply EvoStage to the design of two types of common optimizers: designing parameter configuration schedules of the Adam optimizer for chip placement, and designing acquisition functions of Bayesian optimization for black-box optimization. Experimental results across open-source benchmarks demonstrate that EvoStage outperforms human-expert designs and existing LLM-based methods within only a couple of evolution steps, even achieving the historically state-of-the-art half-perimeter wire-length results on every tested chip case. Furthermore, when deployed on a commercial-grade 3D chip placement tool, EvoStage significantly surpasses the original performance metrics, achieving record-breaking efficiency. We hope EvoStage can significantly advance automated algorithm design in the real world, helping elevate human productivity.",
+      "authors": [
+        "Chen Lu",
+        "Ke Xue",
+        "Chengrui Gao",
+        "Yunqi Shi",
+        "Siyuan Xu",
+        "Mingxuan Yuan",
+        "Chao Qian",
+        "Zhi-Hua Zhou"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-03-09T05:13:44+00:00",
+      "link": "https://arxiv.org/pdf/2603.07970v1",
+      "tags": [
+        "keyword:ML CO",
+        "query:ML CO"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "automated algorithm design with LLMs for industrial problems",
+      "llm_evidence_cn": "利用大模型进行工业问题的自动化算法设计",
+      "llm_evidence": "利用大模型进行工业问题的自动化算法设计",
+      "canonical_evidence": "利用大模型进行工业问题的自动化算法设计",
+      "llm_tldr_en": "Introduces EvoStage to bridge LLM-based design with rigorous industrial-scale algorithm requirements.",
+      "llm_tldr_cn": "引入 EvoStage 进化范式，利用大语言模型实现工业级规模的自动化算法设计。",
+      "llm_tldr": "引入 EvoStage 进化范式，利用大语言模型实现工业级规模的自动化算法设计。",
+      "llm_tags": [
+        "query:ml-co:composite"
+      ],
+      "matched_query_tag": "query:ml-co:composite",
+      "matched_query_text": "Papers central to 查找机器学习解决组合优化相关的论文, especially work that connects or combines: machine learning for combinatorial optimization; reinforcement learning for combinatorial optimization; graph neural networks for combinatorial optimization; machine learning approaches for traveling salesman problem; machine learning for integer linear programming; learning to branch in branch and bound algorithms; meta-learning for combinatorial optimization; survey of machine learning for combinatorial optimization; deep learning methods for solving NP hard problems; end to end learning for combinatorial optimization.",
+      "matched_requirement_id": "req-composite-ml-co",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2603.07005v1",
+      "title": "Combinatorial Allocation Bandits with Nonlinear Arm Utility",
+      "abstract": "A matching platform is a system that matches different types of participants, such as companies and job-seekers. In such a platform, merely maximizing the number of matches can result in matches being concentrated on highly popular participants, which may increase dissatisfaction among other participants, such as companies, and ultimately lead to their churn, reducing the platform's profit opportunities. To address this issue, we propose a novel online learning problem, Combinatorial Allocation Bandits (CAB), which incorporates the notion of *arm satisfaction*. In CAB, at each round $t=1,\\dots,T$, the learner observes $K$ feature vectors corresponding to $K$ arms for each of $N$ users, assigns each user to an arm, and then observes feedback following a generalized linear model (GLM). Unlike prior work, the learner's objective is not to maximize the number of positive feedback, but rather to maximize the arm satisfaction. For CAB, we provide an upper confidence bound algorithm that achieves an approximate regret upper bound, which matches the existing lower bound for the special case. Furthermore, we propose a TS algorithm and provide an approximate regret upper bound. Finally, we conduct experiments on synthetic data to demonstrate the effectiveness of the proposed algorithms compared to other methods.",
+      "authors": [
+        "Yuki Shibukawa",
+        "Koichi Tanaka",
+        "Yuta Saito",
+        "Shinji Ito"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "stat.ML"
+      ],
+      "published": "2026-03-07T02:57:27+00:00",
+      "link": "https://arxiv.org/pdf/2603.07005v1",
+      "tags": [
+        "keyword:ML CO",
+        "query:ML CO"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "online learning for combinatorial allocation problems",
+      "llm_evidence_cn": "组合分配问题的在线学习",
+      "llm_evidence": "组合分配问题的在线学习",
+      "canonical_evidence": "组合分配问题的在线学习",
+      "llm_tldr_en": "Proposes a novel online learning problem for combinatorial allocation with arm satisfaction constraints.",
+      "llm_tldr_cn": "提出了一种考虑臂满意度约束的组合分配在线学习问题。",
+      "llm_tldr": "提出了一种考虑臂满意度约束的组合分配在线学习问题。",
+      "llm_tags": [
+        "query:ml-co"
+      ],
+      "matched_query_tag": "query:ml-co",
+      "matched_query_text": "machine learning for combinatorial optimization",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2603.08036v1",
+      "title": "Samyama: A Unified Graph-Vector Database with In-Database Optimization, Agentic Enrichment, and Hardware Acceleration",
+      "abstract": "Modern data architectures are fragmented across graph databases, vector stores, analytics engines, and optimization solvers, resulting in complex ETL pipelines and synchronization overhead. We present \\textbf{Samyama}, a high-performance graph-vector database written in Rust that unifies these workloads into a single engine. Samyama combines a RocksDB-backed persistent store with a versioned-arena MVCC model, a vectorized query executor with 35 physical operators, a cost-based query planner with plan enumeration and predicate pushdown, a dedicated CSR-based analytics engine, and native RDF/SPARQL support. The system integrates 22 metaheuristic optimization solvers directly into its query language, implements HNSW vector indexing~\\citep{malkov2020hnsw} with Graph RAG capabilities, and introduces ``Agentic Enrichment'' for autonomous graph expansion via LLMs. The \\textbf{Enterprise Edition} adds GPU acceleration via wgpu, production-grade observability, point-in-time recovery, and hardened high availability with HTTP/2 Raft transport.   Our evaluation on commodity hardware (Mac Mini M4, 16\\,GB RAM) demonstrates: ingestion at 255K nodes/s (CPU) and 412K nodes/s (GPU-accelerated); 115K Cypher queries/sec at 1M nodes; 4.0--4.7$\\times$ latency reduction from late materialization on multi-hop traversals; 8.2$\\times$ GPU PageRank speedup at 1M nodes; and 100\\% LDBC Graphalytics validation (28/28 tests). These results demonstrate that a unified graph-vector-optimization engine can achieve competitive performance on commodity hardware while maintaining Rust's memory safety guarantees.",
+      "authors": [
+        "Madhulatha Mandarapu",
+        "Sandeep Kunkunuru"
+      ],
+      "primary_category": "cs.DB",
+      "categories": [
+        "cs.DB"
+      ],
+      "published": "2026-03-09T07:17:17+00:00",
+      "link": "https://arxiv.org/pdf/2603.08036v1",
+      "tags": [
+        "keyword:ML CO",
+        "query:ML CO"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "integrating optimization solvers into a database system",
+      "llm_evidence_cn": "将优化求解器集成到数据库系统中",
+      "llm_evidence": "将优化求解器集成到数据库系统中",
+      "canonical_evidence": "将优化求解器集成到数据库系统中",
+      "llm_tldr_en": "Presents a graph-vector database that integrates 22 metaheuristic optimization solvers directly.",
+      "llm_tldr_cn": "介绍了一个直接集成22种元启发式优化求解器的图向量数据库系统。",
+      "llm_tldr": "介绍了一个直接集成22种元启发式优化求解器的图向量数据库系统。",
+      "llm_tags": [
+        "query:ml-co"
+      ],
+      "matched_query_tag": "query:ml-co",
+      "matched_query_text": "integrating machine learning into combinatorial solvers",
+      "matched_requirement_id": "req-11",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2603.09371v1",
+      "title": "Flow Field Reconstruction via Voronoi-Enhanced Physics-Informed Neural Networks with End-to-End Sensor Placement Optimization",
+      "abstract": "(short version abstract, full in article)High-fidelity flow field reconstruction is important in fluid dynamics, but it is challenged by sparse and spatiotemporally incomplete sensor measurements, as well as failures of pre-deployed measurement points that can invalidate pre-trained reconstruction models. Physics-informed neural networks (PINNs) alleviate dependence on large labeled datasets by incorporating governing physics, yet sensor placement optimization, a key factor in reconstruction accuracy and robustness, remains underexplored. In this study, we propose a PINN with Voronoi-enhanced Sensor Optimization (VSOPINN). VSOPINN enables differentiable soft Voronoi construction for sparse sensor data rasterization, end-to-end fusion of centroidal Voronoi tessellation (CVT) with PINNs for adaptive sensor placement, and unified layout optimization for multi-condition flow reconstruction through a shared encoder-multi-decoder architecture. We validate VSOPINN on three representative problems: lid-driven cavity flow, vascular flow, and annular rotating flow. Results show that VSOPINN significantly improves reconstruction accuracy across different Reynolds numbers, adaptively learns effective sensor layouts, and remains robust under partial sensor failure. The study clarifies the intrinsic relationship between sensor placement and reconstruction precision in PINN-based flow field reconstruction.",
+      "authors": [
+        "Renjie Xiao",
+        "Bingteng Sun",
+        "Yiling Chen",
+        "Lin Lu",
+        "Qiang Du",
+        "Junqiang Zhu"
+      ],
+      "primary_category": "physics.flu-dyn",
+      "categories": [
+        "physics.flu-dyn",
+        "cs.LG"
+      ],
+      "published": "2026-03-10T08:46:52+00:00",
+      "link": "https://arxiv.org/pdf/2603.09371v1",
+      "tags": [
+        "keyword:ML CO",
+        "query:ML CO"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "end-to-end sensor placement optimization using neural networks",
+      "llm_evidence_cn": "使用神经网络进行端到端传感器布局优化",
+      "llm_evidence": "使用神经网络进行端到端传感器布局优化",
+      "canonical_evidence": "使用神经网络进行端到端传感器布局优化",
+      "llm_tldr_en": "Proposes a PINN-based framework for end-to-end differentiable sensor placement optimization.",
+      "llm_tldr_cn": "提出了一种基于物理信息神经网络的端到端可微传感器布局优化框架。",
+      "llm_tldr": "提出了一种基于物理信息神经网络的端到端可微传感器布局优化框架。",
+      "llm_tags": [
+        "query:ml-co"
+      ],
+      "matched_query_tag": "query:ml-co",
+      "matched_query_text": "end to end learning for combinatorial optimization",
+      "matched_requirement_id": "req-10",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2603.08036v2",
+      "title": "Samyama: A Unified Graph-Vector Database with In-Database Optimization, Agentic Enrichment, and Hardware Acceleration",
+      "abstract": "Modern data architectures are fragmented across graph databases, vector stores, analytics engines, and optimization solvers, resulting in complex ETL pipelines and synchronization overhead. We present Samyama, a high-performance graph-vector database written in Rust that unifies these workloads into a single engine. Samyama combines a RocksDB-backed persistent store with a versioned-arena MVCC model, a vectorized query executor with 35 physical operators, a cost-based query planner with plan enumeration and predicate pushdown, a dedicated CSR-based analytics engine, and native RDF/SPARQL support. The system integrates 22 metaheuristic optimization solvers directly into its query language, implements HNSW vector indexing with Graph RAG capabilities, and introduces Agentic Enrichment for autonomous graph expansion via LLMs. The Enterprise Edition adds GPU acceleration via wgpu, production-grade observability, point-in-time recovery, and hardened high availability with HTTP/2 Raft transport.   Our evaluation on commodity hardware (Mac Mini M4, 16 GB RAM) demonstrates: ingestion at 255K nodes/s (CPU) and 412K nodes/s (GPU-accelerated); 115K Cypher queries/sec at 1M nodes; 4.0-4.7x latency reduction from late materialization on multi-hop traversals; 8.2x GPU PageRank speedup at 1M nodes; and 100% LDBC Graphalytics validation (28/28 tests). These results demonstrate that a unified graph-vector-optimization engine can achieve competitive performance on commodity hardware while maintaining Rust's memory safety guarantees.",
+      "authors": [
+        "Madhulatha Mandarapu",
+        "Sandeep Kunkunuru"
+      ],
+      "primary_category": "cs.DB",
+      "categories": [
+        "cs.DB"
+      ],
+      "published": "2026-03-09T07:17:17+00:00",
+      "link": "https://arxiv.org/pdf/2603.08036v2",
+      "tags": [
+        "keyword:ML CO",
+        "query:ML CO"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "integrates 22 metaheuristic optimization solvers",
+      "llm_evidence_cn": "集成了22个元启发式优化求解器",
+      "llm_evidence": "集成了22个元启发式优化求解器",
+      "canonical_evidence": "集成了22个元启发式优化求解器",
+      "llm_tldr_en": "A unified graph-vector database that integrates metaheuristic optimization solvers directly into its query engine.",
+      "llm_tldr_cn": "一种统一的图向量数据库，直接在其查询引擎中集成了22个元启发式优化求解器。",
+      "llm_tldr": "一种统一的图向量数据库，直接在其查询引擎中集成了22个元启发式优化求解器。",
+      "llm_tags": [
+        "query:ml-co"
+      ],
+      "matched_query_tag": "query:ml-co",
+      "matched_query_text": "integrating machine learning into combinatorial solvers",
+      "matched_requirement_id": "req-11",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2603.09481v1",
+      "title": "GenePlan: Evolving Better Generalized PDDL Plans using Large Language Models",
+      "abstract": "We present GenePlan (GENeralized Evolutionary Planner), a novel framework that leverages large language model (LLM) assisted evolutionary algorithms to generate domain-dependent generalized planners for classical planning tasks described in PDDL. By casting generalized planning as an optimization problem, GenePlan iteratively evolves interpretable Python planners that minimize plan length across diverse problem instances. In empirical evaluation across six existing benchmark domains and two new domains, GenePlan achieved an average SAT score of 0.91, closely matching the performance of the state-of-the-art planners (SAT score 0.93), and significantly outperforming other LLM-based baselines such as chain-of-thought (CoT) prompting (average SAT score 0.64). The generated planners solve new instances rapidly (average 0.49 seconds per task) and at low cost (average $1.82 per domain using GPT-4o).",
+      "authors": [
+        "Andrew Murray",
+        "Danial Dervovic",
+        "Alberto Pozanco",
+        "Michael Cashmore"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-03-10T10:32:05+00:00",
+      "link": "https://arxiv.org/pdf/2603.09481v1",
+      "tags": [
+        "keyword:ML CO",
+        "query:ML CO"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "LLM-assisted evolutionary algorithms for generalized planning",
+      "llm_evidence_cn": "大模型辅助的演化算法用于通用规划",
+      "llm_evidence": "大模型辅助的演化算法用于通用规划",
+      "canonical_evidence": "大模型辅助的演化算法用于通用规划",
+      "llm_tldr_en": "Uses LLMs and evolutionary algorithms to evolve interpretable Python planners for PDDL tasks.",
+      "llm_tldr_cn": "利用大模型和演化算法为PDDL任务生成可解释的Python规划器。",
+      "llm_tldr": "利用大模型和演化算法为PDDL任务生成可解释的Python规划器。",
+      "llm_tags": [
+        "query:ml-co"
+      ],
+      "matched_query_tag": "query:ml-co",
+      "matched_query_text": "learning to search in combinatorial optimization",
+      "matched_requirement_id": "req-12",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2603.08270v1",
+      "title": "SCL-GNN: Towards Generalizable Graph Neural Networks via Spurious Correlation Learning",
+      "abstract": "Graph Neural Networks (GNNs) have demonstrated remarkable success across diverse tasks. However, their generalization capability is often hindered by spurious correlations between node features and labels in the graph. Our analysis reveals that GNNs tend to exploit imperceptible statistical correlations in training data, even when such correlations are unreliable for prediction. To address this challenge, we propose the Spurious Correlation Learning Graph Neural Network (SCL-GNN), a novel framework designed to enhance generalization on both Independent and Identically Distributed (IID) and Out-of-Distribution (OOD) graphs. SCL-GNN incorporates a principled spurious correlation learning mechanism, leveraging the Hilbert-Schmidt Independence Criterion (HSIC) to quantify correlations between node representations and class scores. This enables the model to identify and mitigate irrelevant but influential spurious correlations effectively. Additionally, we introduce an efficient bi-level optimization strategy to jointly optimize modules and GNN parameters, preventing overfitting. Extensive experiments on real-world and synthetic datasets demonstrate that SCL-GNN consistently outperforms state-of-the-art baselines under various distribution shifts, highlighting its robustness and generalization capabilities.",
+      "authors": [
+        "Yuxiang Zhang",
+        "Enyan Dai"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "published": "2026-03-09T11:42:06+00:00",
+      "link": "https://arxiv.org/pdf/2603.08270v1",
+      "tags": [
+        "keyword:ML CO",
+        "query:ML CO"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Generalizable Graph Neural Networks framework",
+      "llm_evidence_cn": "可泛化的图神经网络框架",
+      "llm_evidence": "可泛化的图神经网络框架",
+      "canonical_evidence": "可泛化的图神经网络框架",
+      "llm_tldr_en": "Proposes a framework to improve GNN generalization by learning and removing spurious correlations.",
+      "llm_tldr_cn": "提出一种通过学习和消除伪相关性来提高图神经网络泛化能力的框架。",
+      "llm_tldr": "提出一种通过学习和消除伪相关性来提高图神经网络泛化能力的框架。",
+      "llm_tags": [
+        "query:ml-co"
+      ],
+      "matched_query_tag": "query:ml-co",
+      "matched_query_text": "graph neural networks for combinatorial optimization",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2603.10318v1",
+      "title": "Optimising two-block averaging kernels to speed up Markov chains",
+      "abstract": "We study the problem of selecting optimal two-block partitions to accelerate the mixing of finite Markov chains under group-averaging transformations. The main objectives considered are the Kullback-Leibler (KL) divergence and the Frobenius distance to stationarity. We establish explicit connections between these objectives and the induced projection chain. In the case of the KL divergence, this reduction yields explicit decay rates in terms of the log-Sobolev constant. For the Frobenius distance, we identify a Cheeger-type functional that characterises optimal cuts. This formulation recasts two-block selection as a structured combinatorial optimisation problem admitting difference-of-submodular decompositions. We further propose several algorithmic approximations, including majorisation-minimisation and coordinate descent schemes, as computationally feasible alternatives to exhaustive combinatorial search. Our numerical experiments reveal that optimal cuts under the two objectives can substantially reduce total variation distance to stationarity and demonstrate the practical effectiveness of the proposed approximation algorithms.",
+      "authors": [
+        "Ryan J. Y. Lim",
+        "Michael C. H. Choi"
+      ],
+      "primary_category": "math.PR",
+      "categories": [
+        "math.PR",
+        "cs.IT",
+        "math.CO",
+        "math.OC",
+        "stat.CO"
+      ],
+      "published": "2026-03-11T01:40:02+00:00",
+      "link": "https://arxiv.org/pdf/2603.10318v1",
+      "tags": [
+        "keyword:ML CO",
+        "query:ML CO"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "Recasts selection as a structured combinatorial optimization problem",
+      "llm_evidence_cn": "将选择问题重构为结构化组合优化问题",
+      "llm_evidence": "将选择问题重构为结构化组合优化问题",
+      "canonical_evidence": "将选择问题重构为结构化组合优化问题",
+      "llm_tldr_en": "Formulates Markov chain mixing as a combinatorial optimization problem with submodular decompositions.",
+      "llm_tldr_cn": "将马尔可夫链混合建模为具有次模分解特性的组合优化问题。",
+      "llm_tldr": "将马尔可夫链混合建模为具有次模分解特性的组合优化问题。",
+      "llm_tags": [
+        "query:ml-co:composite"
+      ],
+      "matched_query_tag": "query:ml-co:composite",
+      "matched_query_text": "Papers central to 查找机器学习解决组合优化相关的论文, especially work that connects or combines: machine learning for combinatorial optimization; reinforcement learning for combinatorial optimization; graph neural networks for combinatorial optimization; machine learning approaches for traveling salesman problem; machine learning for integer linear programming; learning to branch in branch and bound algorithms; meta-learning for combinatorial optimization; survey of machine learning for combinatorial optimization; deep learning methods for solving NP hard problems; end to end learning for combinatorial optimization.",
+      "matched_requirement_id": "req-composite-ml-co",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2603.08595v1",
+      "title": "Pinching Antennas-Assisted Low-Latency Federated Learning Over Multi-User Wireless Networks",
+      "abstract": "Federated learning (FL) over wireless networks is fundamentally constrained by unreliable communication links, particularly when uplink channels suffer from blockage, fading, or weak line-of-sight (LoS) conditions. Pinching-antenna systems (PASSs) offer a new physical-layer capability to dynamically reposition radiating points along a dielectric waveguide, enabling controllable LoS connectivity and significantly improved channel quality. This paper develops FedPASS, a novel framework for low-latency wireless FL assisted by PASS. We formulate a multi-objective optimization problem that jointly minimizes the end-to-end round latency and an upper bound on the FL optimality gap. The resulting formulation is a mixed-integer nonlinear program subject to practical constraints on scheduling, transmit power, local CPU frequency, and PA placement. To address the resulting computational challenges, we develop a two-tier iterative algorithm: an outer loop that updates scheduling, communication time allocation, and power control via block coordinate descent, and an inner loop that optimizes PA locations using a Gauss-Seidel-based coordinate update with grid search under spacing constraints. Numerical results on MNIST and CIFAR-10 demonstrate that FedPASS achieves accuracy comparable to idealized FL baselines while drastically reducing the total training latency compared to conventional wireless FL.",
+      "authors": [
+        "Saba Asaad",
+        "Hina Tabassum",
+        "Ping Wang"
+      ],
+      "primary_category": "cs.IT",
+      "categories": [
+        "cs.IT"
+      ],
+      "published": "2026-03-09T16:45:14+00:00",
+      "link": "https://arxiv.org/pdf/2603.08595v1",
+      "tags": [
+        "keyword:ML CO",
+        "query:ML CO"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "mixed-integer nonlinear programming for federated learning",
+      "llm_evidence_cn": "联邦学习中的混合整数非线性规划",
+      "llm_evidence": "联邦学习中的混合整数非线性规划",
+      "canonical_evidence": "联邦学习中的混合整数非线性规划",
+      "llm_tldr_en": "Formulates a mixed-integer nonlinear problem for low-latency federated learning in wireless networks.",
+      "llm_tldr_cn": "针对无线网络中的低延迟联邦学习，构建并解决混合整数非线性规划问题。",
+      "llm_tldr": "针对无线网络中的低延迟联邦学习，构建并解决混合整数非线性规划问题。",
+      "llm_tags": [
+        "query:ml-co"
+      ],
+      "matched_query_tag": "query:ml-co",
+      "matched_query_text": "machine learning for combinatorial optimization",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2603.10545v1",
+      "title": "Learning to Score: Tuning Cluster Schedulers through Reinforcement Learning",
+      "abstract": "Efficiently allocating incoming jobs to nodes in large-scale clusters can lead to substantial improvements in both cluster utilization and job performance. In order to allocate incoming jobs, cluster schedulers usually rely on a set of scoring functions to rank feasible nodes. Results from individual scoring functions are usually weighted equally, which could lead to sub-optimal deployments as the one-size-fits-all solution does not take into account the characteristics of each workload. Tuning the weights of scoring functions, however, requires expert knowledge and is computationally expensive.   This paper proposes a reinforcement learning approach for learning the weights in scheduler scoring algorithms with the overall objective of improving the end-to-end performance of jobs for a given cluster. Our approach is based on percentage improvement reward, frame-stacking, and limiting domain information. We propose a percentage improvement reward to address the objective of multi-step parameter tuning. The inclusion of frame-stacking allows for carrying information across an optimization experiment. Limiting domain information prevents overfitting and improves performance in unseen clusters and workloads. The policy is trained on different combinations of workloads and cluster setups. We demonstrate the proposed approach improves performance on average by 33\\% compared to fixed weights and 12\\% compared to the best-performing baseline in a lab-based serverless scenario.",
+      "authors": [
+        "Martin Asenov",
+        "Qiwen Deng",
+        "Gingfung Yeung",
+        "Adam Barker"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-03-11T08:54:30+00:00",
+      "link": "https://arxiv.org/pdf/2603.10545v1",
+      "tags": [
+        "keyword:ML CO",
+        "query:ML CO"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "reinforcement learning for cluster scheduler scoring",
+      "llm_evidence_cn": "强化学习用于集群调度评分",
+      "llm_evidence": "强化学习用于集群调度评分",
+      "canonical_evidence": "强化学习用于集群调度评分",
+      "llm_tldr_en": "Applies reinforcement learning to tune weights in cluster scheduler scoring algorithms for better job allocation.",
+      "llm_tldr_cn": "应用强化学习调整集群调度评分算法的权重，以实现更好的作业分配。",
+      "llm_tldr": "应用强化学习调整集群调度评分算法的权重，以实现更好的作业分配。",
+      "llm_tags": [
+        "query:ml-co"
+      ],
+      "matched_query_tag": "query:ml-co",
+      "matched_query_text": "reinforcement learning for combinatorial optimization",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    }
+  ]
+}
