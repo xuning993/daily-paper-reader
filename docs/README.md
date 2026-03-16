@@ -6,59 +6,58 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-03-15
-- 运行时间：2026-03-15 19:20:59 UTC
+- 最新运行日期：2026-03-16
+- 运行时间：2026-03-16 19:51:27 UTC
 - 运行状态：成功
-- 本次总论文数：13
-- 精读区：2
+- 本次总论文数：12
+- 精读区：1
 - 速读区：11
 
 ### 今日简报（AI）
-今日聚焦 13 篇前沿成果，深度攻克混合整数线性规划的对称性优化与 6G 频谱切片的
-- 详情：[/202603/15/README](/202603/15/README)
+今日聚焦 NP 难题的高效求解，深度解析了基于 ReRAM 的低功耗 Ising 机硬件架构。
+重点关注利用 ReRAM 交叉阵列加速组合优化，以及通过排序网络精简 QUBO 建模的新方法。
+建议对硬件加速和离散优化感兴趣的读者，深入了解 Ising 机器在处理复杂计算时的能效优势。
+- 详情：[/202603/16/README](/202603/16/README)
 
 ### 精读区论文标签
-1. [Folding Mixed-Integer Linear Programs and Reflection Symmetries](/202603/15/2603.12136v1-folding-mixed-integer-linear-programs-and-reflection-symmetries)  
-   标签：评分：9.0/10、query:ml-co
-   evidence：混合整数线性规划与分支定界性能
-2. [SliceFed: Federated Constrained Multi-Agent DRL for Dynamic Spectrum Slicing in 6G](/202603/15/2603.11390v1-slicefed-federated-constrained-multi-agent-drl-for-dynamic-spectrum-slicing-in-6g)  
+1. [Ising-ReRAM: A Low Power Ising Machine ReRAM Crossbar for NP Problems](/202603/16/2603.12415v1-ising-reram-a-low-power-ising-machine-reram-crossbar-for-np-problems)  
    标签：评分：8.0/10、query:ml-co
-   evidence：多智能体深度强化学习用于频谱切片资源分配
+   evidence：用于解决NP完全问题3-SAT的伊辛机
 
 ### 速读区论文标签
-1. [How Physical Dynamics Shape the Properties of Ising Machines: Evaluating Oscillators vs. Bistable Latches as Ising Spins](/202603/15/2603.06843v1-how-physical-dynamics-shape-the-properties-of-ising-machines-evaluating-oscillators-vs-bistable-latches-as-ising-spins)  
+1. [Succinct QUBO formulations for permutation problems by sorting networks](/202603/16/2603.07579v2-succinct-qubo-formulations-for-permutation-problems-by-sorting-networks)  
    标签：评分：7.0/10、query:ml-co
-   evidence：用于NP-hard组合优化的伊辛机
-2. [Combinatorial Allocation Bandits with Nonlinear Arm Utility](/202603/15/2603.07005v1-combinatorial-allocation-bandits-with-nonlinear-arm-utility)  
+   evidence：针对NP难排列问题的QUBO建模
+2. [WME: Extending CDCL-based Model Enumeration with Weights](/202603/16/2603.10236v1-wme-extending-cdcl-based-model-enumeration-with-weights)  
    标签：评分：7.0/10、query:ml-co
-   evidence：组合分配问题的在线学习
-3. [Flow Field Reconstruction via Voronoi-Enhanced Physics-Informed Neural Networks with End-to-End Sensor Placement Optimization](/202603/15/2603.09371v1-flow-field-reconstruction-via-voronoi-enhanced-physics-informed-neural-networks-with-end-to-end-sensor-placement-optimization)  
+   evidence：基于CDCL的加权模型枚举算法
+3. [Sample-and-Search: An Effective Algorithm for Learning-Augmented k-Median Clustering in High dimensions](/202603/16/2603.10721v1-sample-and-search-an-effective-algorithm-for-learning-augmented-k-median-clustering-in-high-dimensions)  
    标签：评分：7.0/10、query:ml-co
-   evidence：使用神经网络进行端到端传感器布局优化
-4. [GenePlan: Evolving Better Generalized PDDL Plans using Large Language Models](/202603/15/2603.09481v1-geneplan-evolving-better-generalized-pddl-plans-using-large-language-models)  
+   evidence：学习增强的k-中值聚类算法
+4. [RL-Augmented MPC for Non-Gaited Legged and Hybrid Locomotion](/202603/16/2603.10878v1-rl-augmented-mpc-for-non-gaited-legged-and-hybrid-locomotion)  
    标签：评分：7.0/10、query:ml-co
-   evidence：大模型辅助的演化算法用于通用规划
-5. [Optimising two-block averaging kernels to speed up Markov chains](/202603/15/2603.10318v1-optimising-two-block-averaging-kernels-to-speed-up-markov-chains)  
+   evidence：强化学习减轻了接触时机的组合负担
+5. [Learning Tree-Based Models with Gradient Descent](/202603/16/2603.11117v1-learning-tree-based-models-with-gradient-descent)  
    标签：评分：7.0/10、query:ml-co
-   evidence：将选择问题重构为结构化组合优化问题
-6. [Learning to Score: Tuning Cluster Schedulers through Reinforcement Learning](/202603/15/2603.10545v1-learning-to-score-tuning-cluster-schedulers-through-reinforcement-learning)  
+   evidence：学习决策树以解决组合复杂性和离散性问题
+6. [Learning to Unscramble: Simplifying Symbolic Expressions via Self-Supervised Oracle Trajectories](/202603/16/2603.11164v1-learning-to-unscramble-simplifying-symbolic-expressions-via-self-supervised-oracle-trajectories)  
    标签：评分：7.0/10、query:ml-co
-   evidence：强化学习用于集群调度评分
-7. [Advancing Automated Algorithm Design via Evolutionary Stagewise Design with LLMs](/202603/15/2603.07970v1-advancing-automated-algorithm-design-via-evolutionary-stagewise-design-with-llms)  
+   evidence：通过专家轨迹学习解开符号表达式
+7. [Amortizing Maximum Inner Product Search with Learned Support Functions](/202603/16/2603.08001v1-amortizing-maximum-inner-product-search-with-learned-support-functions)  
    标签：评分：6.0/10、query:ml-co
-   evidence：利用大模型进行工业问题的自动化算法设计
-8. [Samyama: A Unified Graph-Vector Database with In-Database Optimization, Agentic Enrichment, and Hardware Acceleration](/202603/15/2603.08036v1-samyama-a-unified-graph-vector-database-with-in-database-optimization-agentic-enrichment-and-hardware-acceleration)  
+   evidence：学习预测最大内积搜索的解
+8. [Multi-level meta-reinforcement learning with skill-based curriculum](/202603/16/2603.08773v1-multi-level-meta-reinforcement-learning-with-skill-based-curriculum)  
    标签：评分：6.0/10、query:ml-co
-   evidence：将优化求解器集成到数据库系统中
-9. [Samyama: A Unified Graph-Vector Database with In-Database Optimization, Agentic Enrichment, and Hardware Acceleration](/202603/15/2603.08036v2-samyama-a-unified-graph-vector-database-with-in-database-optimization-agentic-enrichment-and-hardware-acceleration)  
+   evidence：用于复杂序列任务的多级元强化学习
+9. [Unpacking Interpretability: Human-Centered Criteria for Optimal Combinatorial Solutions](/202603/16/2603.08856v1-unpacking-interpretability-human-centered-criteria-for-optimal-combinatorial-solutions)  
    标签：评分：6.0/10、query:ml-co
-   evidence：集成了22个元启发式优化求解器
-10. [SCL-GNN: Towards Generalizable Graph Neural Networks via Spurious Correlation Learning](/202603/15/2603.08270v1-scl-gnn-towards-generalizable-graph-neural-networks-via-spurious-correlation-learning)  
+   evidence：以人为中心的组合优化（如装箱问题）最优解准则
+10. [OptBench: An Interactive Workbench for AI/ML-SQL Co-Optimization[Extended Demonstration Proposal]](/202603/16/2603.08880v1-optbench-an-interactive-workbench-for-aiml-sql-co-optimizationextended-demonstration-proposal)  
    标签：评分：6.0/10、query:ml-co
-   evidence：可泛化的图神经网络框架
-11. [Pinching Antennas-Assisted Low-Latency Federated Learning Over Multi-User Wireless Networks](/202603/15/2603.08595v1-pinching-antennas-assisted-low-latency-federated-learning-over-multi-user-wireless-networks)  
+   evidence：将机器学习算子集成到SQL查询优化中
+11. [Beyond Test-Time Training: Learning to Reason via Hardware-Efficient Optimal Control](/202603/16/2603.09221v1-beyond-test-time-training-learning-to-reason-via-hardware-efficient-optimal-control)  
    标签：评分：6.0/10、query:ml-co
-   evidence：联邦学习中的混合整数非线性规划
+   evidence：通过硬件高效的最优控制和规划学习推理
 
 
 <div class="dpr-home-promo-card">

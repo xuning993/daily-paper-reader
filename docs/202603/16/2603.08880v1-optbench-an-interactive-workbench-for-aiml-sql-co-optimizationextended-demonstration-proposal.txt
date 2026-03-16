@@ -1,0 +1,1790 @@
+Title: OptBench: An Interactive Workbench for AI/ML-SQL Co-Optimization[Extended Demonstration Proposal]
+
+URL Source: https://arxiv.org/pdf/2603.08880v1
+
+Published Time: Wed, 11 Mar 2026 00:08:28 GMT
+
+Number of Pages: 12
+
+Markdown Content:
+# OptBench : An Interactive Workbench for AI/ML-SQL Co-Optimization [Extended Demonstration Proposal] 
+
+## Jaykumar Tandel 
+
+Arizona State University Tempe, Arizona, USA jrtandel@asu.edu 
+
+## Douglas Oscarson 
+
+Arizona State University Tempe, Arizona, USA doscarso@asu.edu 
+
+## Jia Zou 
+
+Arizona State University Tempe, USA jia.zou@asu.edu 
+
+Abstract 
+
+Database workloads are increasingly nesting artificial intelligence (AI) and machine learning (ML) pipelines and AI/ML model infer-ences with data processing, yielding hybrid “SQL+AI/ML” queries that mix relational operators with expensive, opaque AI/ML opera-tors (often expressed as UDFs). These workloads are challenging to optimize: (1) ML operators behave like black boxes, data-dependent effects (e.g., sparsity, selectivity, or cardinalities) can dominate run-time; (2) domain experts often rely on practical heuristics that are difficult to develop with monolithic optimizers; (3) introducing AI/ML operators will bring numerous co-optimization opportu-nities, such as factorization and pushdown, ML to SQL, linear al-gebra to relational algebra, etc., which will significantly enlarge the search space of equivalent execution plans and require new optimization strategies. At the same time, research prototypes for SQL+ML optimization are difficult to evaluate with fair, apples-to-apples comparisons, because each optimizer is typically developed on different platforms, and evaluated using different queries. We present OptBench , an interactive workbench for build-ing and benchmarking query optimizers for hybrid “SQL+AI/ML” queries in a transparent, apples-to-apples manner. OptBench runs all optimizers on a unified backend using DuckDB and exposes an interactive web interface that allows users to (i) construct query op-timizers by leveraging and/or extending our abstracted logical plan rewrite actions; (ii) benchmark and compare different optimizer implementations over a suite of diverse queries while recording de-cision traces and latency; and (iii) visualize logical plans produced by different optimizers side-by-side. The demo illustrates how prac-titioners and researchers can prototype optimizer ideas, inspect plan transformations, and quantitatively compare optimizer designs on multi-modal inference queries within a single workbench. Demon-stration video can be found at : https://youtu.be/hHZAkUXhEWw 
+
+ACM Reference Format: 
+
+Jaykumar Tandel, Douglas Oscarson, and Jia Zou. 2018. OptBench : An Interactive Workbench for AI/ML-SQL Co-Optimization [Extended Demon-stration Proposal]. In Proceedings of Make sure to enter the correct conference title from your rights confirmation email (Conference acronym ’XX). ACM, New York, NY, USA, 12 pages. https://doi.org/XXXXXXX.XXXXXXX 
+
+1 Introduction 
+
+SQL engines are increasingly used as end-to-end execution sub-strates for data science and ML applications over relational data [ 2 –4, 6 , 7, 9, 10 , 12 , 14 –18 ]. In modern pipelines, feature extraction, data transformations, and even model inference are executed “in-database” alongside joins, filters, and aggregations, producing SQL+ML queries that interleave relational operators with ML operators such as vector transformations, deep neural networks, convolutional neu-ral networks, transformer models, and tree-based models. While this integration can simplify deployment, reduce data movement [ 4 ], and alleviate privacy issues [ 5 ], it also introduces new performance pathologies. For example, a missed opportunity to exploit data spar-sity, factorize an ML function, or convert a linear algebra operator to SQL, could dominate end-to-end latency. Unfortunately, optimizing SQL+ML workloads remains challeng-ing for several reasons. First, it is hard to extend traditional query optimizers to sup-port SQL-ML co-optimizations. On one hand, ML operators are often expressed as UDFs or compound expressions that appear opaque to traditional optimizers, which are primarily designed around relational algebra and well-understood physical operators. In addition, effective heuristic rules, such as “apply strong filters before invoking an expensive model” or “switch between dense and sparse kernels depending on sparsity” are hard to encode and validate inside a monolithic optimizer due to the lack of first-class extensibility and cost introspection for ML operators in traditional relational database systems. Second, research and prototype optimizers for SQL+ML are dif-ficult to compare fairly: each is typically implemented inside a different system or codebase, exposing different plan representa-tions, statistics interfaces, and evaluation pipelines. For example, MADLib [ 6] was an extension of PostgreSQL, Raven [ 10 ] was de-veloped on SQLServer, LMFAO [ 12 ] was implemented from scratch, Morpheus [ 2] was built on R and Oracle Enterprise. IMBridge [ 15 ]was developed on OceanBase and DuckDB, and InferF [ 3] was im-plemented on top of Velox. As a result, there is no easy way to compare the SQL-ML co-optimization techniques implemented in these systems in an apples-to-apples manner.   
+
+> Permission to make digital or hard copies of all or part of this work for personal or classroom use is granted without fee provided that copies are not made or distributed for profit or commercial advantage and that copies bear this notice and the full citation on the first page. Copyrights for components of this work owned by others than the author(s) must be honored. Abstracting with credit is permitted. To copy otherwise, or republish, to post on servers or to redistribute to lists, requires prior specific permission and/or a fee. Request permissions from permissions@acm.org.
+> Conference acronym ’XX, Woodstock, NY
+> ©2018 Copyright held by the owner/author(s). Publication rights licensed to ACM. ACM ISBN 978-1-4503-XXXX-X/2018/06 https://doi.org/XXXXXXX.XXXXXXX
+> arXiv:2603.08880v1 [cs.DB] 9 Mar 2026 Conference acronym ’XX, June 03–05, 2018, Woodstock, NY Trovato et al.
+
+Underlying Database (DuckDB used for this work) 
+
+Extensible SQL -ML Co -Optimization Libraries Extensible SQL -ML Queries on Diverse Databases 
+
+Flights  Expedia  CreditCard  TPCx -AI  IDNet  …  
+
+> Optimizer Development Query Plan Visualization Benchmark Results Visualization
+
+ML Function 
+
+Library 
+
+Rewrite Action 
+
+Library 
+
+# OPTBench 
+
+Statistics 
+
+Estimation 
+
+Figure 1: OptiBench System Overview 
+
+Third, performance is often governed by data-dependent and workload-dependent effects, and it requires a set of diverse work-loads and datasets to evaluate different optimization techniques. However, different SQL-ML co-optimization systems adopt differ-ent workloads and datasets in their evaluation plans, without a standard. Moreover, the optimization process is often treated as a black box, where users see only final runtimes or costs, with little visibility into which decisions were made, which rules fired, or how those decisions depended on data and workload statistics. This demo paper addresses these gaps with OptBench , an inter-active workbench for transparent optimizer design and benchmark-ing on SQL and SQL+ML workloads. OptBench is motivated by three common user stories, where the users can be system builders, researchers, and data scientists: (1) SQL-ML optimizer devel-opment and performance evaluation. A user designed a new SQL-ML co-optimization strategy (e.g., a new heuristic rule or a new optimal-plan search algorithm) for SQL+ML workloads and needs to fairly compare its efficiency and effectiveness against other opti-mization strategies, under controlled access to plan structure and statistics. (2) SQL-ML optimizer benchmark and comparison. 
+
+A user may want to compare different optimizer design decisions and algorithms on a set of common workloads with the same hard-ware resources and software configuration. (3) SQL-ML optimizer debugging and enhancement. A user found that running some data science pipelines inside a relational database is unexpectedly slow, but lacks insight into whether the issue stems from join order-ing, premature ML evaluation, or incorrect cardinality assumptions. They need to modify the optimizer (e.g., to enable or disable some rules) and run it for debugging purposes. OptBench supports all of these scenarios by providing a unified and extensible environment, where optimizer can be constructed, inspected, and evaluated. 
+
+OptBench is built on DuckDB, consisting of several key compo-nents: (1) An extensible library of ML functions encapsulated as DuckDB C++ UDFs, which can be used to compose complex ML inference workflows; (2) An extensible library of query plan rewrite actions , with each applying a certain SQL-ML co-optimization technique, converting the input query plan to an out-put query plan that will achieve equivalent query results but with different performance implications; (3) An extensible library of statistics methods for computing and caching data statistics, predicate selectivities, and intermediate result cardinalities; (4) An extensible library of diverse SQL-ML queries for evaluating different optimizers fairly; (5) A web-based user interface for developing, uploading, inspecting, and evaluating optimizers. The reason we select DuckDB as the foundation system of OptBench 
+
+is that it provides a compact, modern, and highly hackable opti-mizer and execution engine with strong support for UDFs and plan rewrites, enabling rapid prototyping and controlled benchmarking of SQL-ML optimizers. In addition, DuckDB’s in-process execution model, Python/R integration, and low deployment overhead make 
+
+OptBench directly accessible to data scientists, allowing them to experiment with in-database ML pipelines, inspect execution plans, and diagnose performance issues without setting up complex dis-tributed systems. In the future, we will also extend the framework to other systems. 
+
+Contributions. This demo makes the following contributions: (1) We propose and have prototyped OptBench , an interactive optimizer workbench for easily developing new SQL-ML query optimizers, executing SQL+ML queries with different optimizers for transparent inspection and apples-to-apples comparison; (2) We provide a web-based user-interface for developing or upload-ing new optimizers, executing selected queries using two or more query optimizers with side-by-side query plan and performance results visualization. We also provide suite-level benchmarking that enables controlled, apples-to-apples comparison of heterogeneous optimizers; and (3) We designed two different types of interactive demonstration scenarios: (i) Using OptBench library or directly using the web interface to develop and upload new query optimiz-ers; (ii) Using OptBench user interface to select different queries OptBench : An Interactive Workbench for AI/ML-SQL Co-Optimization [Extended Demonstration Proposal] Conference acronym ’XX, June 03–05, 2018, Woodstock, NY 
+
+Table 1: Example of ML functions used to express SQL+ML inference queries in the OptBench demo.                       
+
+> Function Role in SQL+ML queries
+> matrix_multiply (mat_mul )Core linear operator used to express NN layers.
+> matrix_addition (mat_add )Linear layer bias/addition and intermediate composition.
+> conv2d 2-dimensional convolutional operator.
+> softmax Normalization for classification/ranking logits.
+> sigmoid Activation for binary/logistic inference.
+> distance L1 or L2 distances between two vectors.
+> cosine_sim Cosine similarity between two vectors.
+> argmax Prediction operator over class scores.
+> torch_dnn Fused neural-network inference operator (backend-supported).
+> min_max_scaler Feature preprocessing / normalization.
+> one_hot_encoder Categorical feature expansion.
+> kmeans Clustering operator for customer segmen-tation / grouping.
+> naive_bayes Text/feature classification using Naive Bayes scoring.
+> llm LLM-based inference call (black-box model call).
+> decision_tree Tree-model inference primitive.
+> decision_forest Ensemble inference (multiple trees) using XGBoost or Random Forest.
+
+and query optimizers for detailed performance comparison and analysis. 
+
+2 System Overview 
+
+As illustrated in Fig. 1, OptBench is built on DuckDB, consisting of the following components. 
+
+2.1 Extensible ML Function Library 
+
+OptBench targets multimodal SQL+ML inference queries that embed model inference execution inside SQL via user-defined functions (UDFs). To support this setting in a self-contained way, our DuckDB-based prototype provides an extensible library of ML operators as scalar/table functions that can be used to compose SQL expres-sions. These functions cover common building blocks for inference pipelines, including linear algebra operators, data preprocessing functions, neural network operators, and tree-based models. Table 1 shows an example collection of ML functions supported in OptBench and shipped with the demo. In our query suite, these functions are composed to form higher-level inference operators (e.g., multi-layer neural networks expressed as nested linear algebra operators, or decision-forest inference expressed as aggregation of a collection of decision tree inferences). 
+
+2.2 Extensible Rewrite Actions 
+
+OptBench defines a Rewrite Action as a reusable, composable trans-formation that rewrite a logical query plan by applying a SQL-ML co-optimization technique while ensuring the equivalence of query output given the same input. These rewrite actions serve as the “building blocks” of SQL-ML query optimizers. A SQL-ML query optimizer attempts to select an optimal sequence of applying these actions to generate an improved query plan. Rule-based optimizers trigger actions when metric predicates hold, while cost-based opti-mizers enumerate and score plans obtained by applying sequences of rewrite actions. OptBench ships with a small built-in library of reusable rewrite actions, with examples shown in Table 2. They can be used to develop rule-based and cost-based optimizers. 
+
+Dense/Sparse kernel selection. This action targets matrix multi-plication expressions such as matrix_multiply(X, W) and selects between dense and sparse kernels based on profiling/metrics (e.g., non-zero ratio). Toggling can be beneficial: sparse kernels reduce wasted work when inputs are highly sparse, while dense kernels can be faster when inputs are closer to dense due to better locality and vectorization. The rewrite preserves semantics while improving performance across queries where sparsity varies by dataset. 
+
+Relationalizing ML computation into join/aggregate form. Mul2Join -
+
+AggRewriteAction rewrites matrix multiplication computations (e.g., a dot product Í𝑘 𝑥 𝑘 ·𝑤 𝑘 ) into an equivalent cross join + aggregate 
+
+plan by materializing feature/value pairs and weights as relations, pairing them by feature index, and aggregating products with SUM .
+
+DecisionForestUDF2RelationRewriteAction similarly replaces a decision-forest inference UDF with a cross join + aggregate for-mulation that computes per-tree outputs and aggregates them to obtain the final prediction. These rewrites expose ML inference as standard relational operators, enabling classic optimizations such as join reordering, pushdown, and vectorized execution while pre-serving semantics. 
+
+Fusing neural-network UDF chains into Torch operators. These ac-tions target neural-network inference written as nested scalar UDF calls (often one UDF per layer or per sub-expression). TwoLayerUDF2 -
+
+TorchNNRewriteAction handles a common two-layer pattern, while 
+
+MultiLayerUDF2Torch -NNRewriteAction generalizes to deeper networks; both replace the UDF chain with a single fused Torch NN operator that represents the full model. This reduces per-tuple in-terpretation overhead, improves vectorized execution, and gives the optimizer a clearer cost boundary for planning. MultiLayerUDF2 -
+
+TorchNNCUDArewriteAction further selects a CUDA-backed im-plementation of the fused operator when GPU support is available and beneficial, accelerating inference while preserving semantics. 
+
+ML decomposition and fine-grained pushdown. MLDecomposition -
+
+PushdownRewriteAction decomposes a compound ML inference expression into smaller sub-operators and pushes them down the plan when safe (e.g., across projections and towards filters/joins), so expensive inference runs on fewer rows by leveraging selectivity and join-cardinality behavior. MLFactorizationRewriteAction 
+
+further enables pushdown at a finer granularity for linear/affine forms (e.g., XW + b ) by factorizing the computation across joined sources: when 𝑋 = [𝑋 1 | 𝑋 2 | · · · ] , it splits 𝑊 = [𝑊 1;𝑊 2; · · · ] 
+
+and rewrites 𝑋𝑊 + 𝑏 = 𝑋 1𝑊 1 + 𝑋 2𝑊 2 + · · · + 𝑏 . Together, these rewrites move ML work closer to where features are produced, reducing post-join computation and intermediate data movement while preserving semantics. Conference acronym ’XX, June 03–05, 2018, Woodstock, NY Trovato et al. 
+
+Reducing tree inference cost using constraints ( TreeModelPruning -
+
+RewriteAction ). This action applies to tree-based models and uses constraints already present in the query (e.g., filter predicates or known feature bounds) to identify branches that can never be taken. When pruning is semantics-preserving, it removes unreachable branches from evaluation. This reduces the amount of decision logic executed per tuple and speeds up inference without changing results. 
+
+Table 2: Built-in rewrite actions in the OptBench demo ac-tion library.           
+
+> Rewrite Action Purpose (inference rewrite)
+> MatMulDense2Sparse Switch/annotate matrix multiplication to a sparse variant when sparsity metrics indicate benefit. DecisionForestUDF2Relation Rewrite decision-forest inference UDFs into an equivalent relational form to enable pushdown and reuse. MatMul2Relation Rewrite eligible multiply/aggregation patterns into a join+aggregate form to improve execution structure. ConvNN2MatMul Rewrite the convolutional operator as a matrix multiplication of the flattened image and concatenated filters. MultiLayerUDF2TorchNN Replace a multi-layer NN UDF expression with a fused neural-network operator. MLDecompositionPushdown Decompose compound ML inference expressions and push computation closer to feature sources when safe. Fuse2TorchNN Specialized rewrite for two-layer NN UDF patterns into a fused NN operator. MLFactorization Factor shared ML subexpressions/weights to reduce redundant inference work. TreeModelPruning Prune redundant parts of tree models (when safe) to reduce inference cost.
+
+Customization of Rewrite Actions. Importantly, actions are ex-tensible via a simple registration interface, allowing researchers to easily develop and plug-in new rewrite actions. Algorithm 1 shows the generic method for applying 𝐴 an action to rewrite a query plan stored as a tree structure rooted at 𝑝 through tree traverse. During the iterative tree traversal process, at each iteration, it will (1) see whether the current plan node is eligible for applying 𝐴 via 𝐴 ’s MatchesPlan method, if it matches, we will apply RewritePlan ; (2) it will then traverse the expression tree at this node (e.g., the expression tree representing a filter predicate customizing a selection operator or an expression tree that cus-tomize a projection operator), and for each expression, it applies 
+
+𝐴 ’s RewriteExpr method; and (3) it moves to the next node in the query plan tree. The algorithm returns both the rewritten plan and a boolean flag indicating whether any modification occurred, enabling optimizers to apply actions iteratively (e.g., until reaching a fixpoint or exhausting a search budget). Taking the MatMulDense2SparseRewriteAction as an example, its RewriteExpr implements a pattern match for a matrix_multiply 
+
+Algorithm 1: ActionApplyPlanRewrite (𝐴, 𝑝 )
+
+Input: Action 𝐴 , query plan tree node 𝑝 
+
+Output: Tuple (𝑚𝑜𝑑𝑖 𝑓 𝑖𝑒𝑑, 𝑝 ′) where 
+
+𝑚𝑜𝑑𝑖 𝑓 𝑖𝑒𝑑 ∈ { true , false }
+
+𝑚𝑜𝑑𝑖 𝑓 𝑖𝑒𝑑 ← false ;
+
+if 𝐴. MatchesPlan (𝑝 ) then 
+
+𝑝 ← 𝐴. RewritePlan (𝑝 );
+
+𝑚𝑜𝑑𝑖 𝑓 𝑖𝑒𝑑 ← true ;
+
+foreach expression 𝑒 contained in 𝑝 do 
+
+(𝑚 𝑒 , 𝑒 ′) ← 𝐴. RewriteExpr (𝑒 );Replace 𝑒 with 𝑒 ′ in 𝑝 ;
+
+𝑚𝑜𝑑𝑖 𝑓 𝑖𝑒𝑑 ← 𝑚𝑜𝑑𝑖 𝑓 𝑖𝑒𝑑 ∨ 𝑚 𝑒 ;
+
+foreach child plan node 𝑐 of 𝑝 do 
+
+(𝑚 𝑐 , 𝑐 ′) ← ActionApplyPlanRewrite (𝐴, 𝑐 );Replace 𝑐 with 𝑐 ′ in 𝑝 ;
+
+𝑚𝑜𝑑𝑖 𝑓 𝑖𝑒𝑑 ← 𝑚𝑜𝑑𝑖 𝑓 𝑖𝑒𝑑 ∨ 𝑚 𝑐 ;
+
+return (𝑚𝑜𝑑𝑖 𝑓 𝑖𝑒𝑑, 𝑝 );operator with dense input (the density of the input data being greater than a tunable threshold); when matched, it rewrites the operator by switching its execution mode/annotation to a sparse variant while preserving semantics. 
+
+2.3 Extensible Statistics Estimation 
+
+OptBench provides a library of statistics estimation methods that can be shared across optimizers to facilitate optimizer development. Various types of statistics are derived from (1) data statistics (e.g., the sparsity, cardinality, and arity of relations or intermediate re-sults), (2) predicate selectivity and the ratio of join input/output cardinalities (denoted as join ratio), and (3) time and space complex-ity of ML operators. We use DuckDB’s native cardinality estimation as the baseline estimate for relational operators, and augment it with targeted profiling that computes ML-relevant statistics (e.g., sparsity and structural zeros, and ML operators’ parameter size) that are typically absent from relational catalogs. Examples are illustrated in Tab. 3. To estimate ML-oriented metrics without executing the full query, OptBench issues small sampling queries over the feature inputs referenced by the plan. These samples are used to compute robust summary statistics that guide inference rewrites such as switching dense matrix multiplication to sparse kernels or delaying expensive inference until after selective operators. Sampling keeps metric collection lightweight while remaining sensitive to query-and data-dependent properties. 
+
+2.4 Diverse and Extensible Inference Queries 
+
+OptBench includes ten SQL+ML inference queries drawn from two widely used sources (Tab. 4). The first three queries are adapted from Raven[ 10 ]’s prediction-query workloads, which are evaluated on real-world datasets commonly used in data science tasks, including the Expedia and Flights relational datasets from Project Hamlet and a CreditCard fraud dataset from Kaggle. These workloads are intentionally join-heavy (e.g., Expedia is a 3-way join and OptBench : An Interactive Workbench for AI/ML-SQL Co-Optimization [Extended Demonstration Proposal] Conference acronym ’XX, June 03–05, 2018, Woodstock, NY 
+
+Table 3: Examples of supported statistics in OptBench .             
+
+> Statistics How computed
+> cardinality / selectivity estimation DuckDB estimator (baseline) nnz_ratio total non-zero elements zero_rows, zero_cols fraction of fully-zero rows/cols ML model FLOPS via ML operator’s derived get_shape() method num_parameters via ML operator’ derived get_shape() method forest_num_trees Forest model metadata
+
+Flights is a 4-way join) and feature high-dimensional, mostly one-hot encoded categorical inputs, making them representative stress tests for optimizer behavior around joins, sparsity, and inference placement. The next five queries are based on selected TPCx-AI use cases, a vendor-neutral TPC standard benchmark that specifies end-to-end AI pipelines and a suite of ten business-oriented tasks. We include (UC01) customer segmentation (clustering), (UC03) store sales fore-casting, (UC04) review spam detection (text classification), (UC08) multiclass classification over operational records, and (UC10) on-line fraud/risk scoring. Together, these eight queries cover both structured/tabular and text modalities and span a range of model families (trees/ensembles, boosting, clustering, Naive Bayes, and DNN inference), providing a compact but diverse target set for benchmarking SQL+ML rewrite actions and optimizers. Finally, we include two queries derived from IDNet [ 13 ] to cap-ture image-centric inference pipelines inside SQL. Q_IDNet1 joins identity-document images with structured toll-audit records on a shared identifier (e.g., license number) and applies a CNN in-ference UDF as a selective filter to retain only non-fraud cases; this query stresses predicate placement, join ordering, and the cost impact of running expensive vision inference before or after rela-tional operators. Q_IDNet2 models an LLM-based fraud detector where each input image is judged multiple times using different retrieved reference examples (implemented as a Cartesian join over demonstration pairs), followed by a majority-vote aggregation to produce the final label; this query highlights repeated black-box inference, aggregation-heavy post-processing, and optimizer trade-offs around reordering, caching/materialization, and pushing down selective predicates. Together, these two queries extend the suite beyond tabular and text workloads by introducing multimodal infer-ence patterns that are increasingly common in modern AI-enabled data systems. 
+
+2.5 Web Interfaces 
+
+OptBench exposes a web-based optimizer workbench (Fig. 2) orga-nized into eight panels: (1) a Query Selector that chooses a SQL+ML query from the suite, (2) a Query Plan Visualization view that ren-ders logical plans side-by-side for direct comparison, (3) a Statistics Window that displays the statistics computed for the selected query, (4) an Rewrite Actions Window that lists available rewrite actions, (5) an Optimizers panel that lists built-in and user-defined optimizer profiles, (6) an Optimizer Definition panel that lets users compose 
+
+Table 4: Summary of the benchmark query suite: dataset, task (what the query returns), and the inference model invoked.                            
+
+> Query Dataset Task / Output ML UDF
+> Q_Expedia Expedia [ 11 ] Hotel search ranking: returns a model score per candidate listing within a search instance (per (srch_id, prop_id) ) after selective filters. Decision Tree Q_Flights Flights [ 11 ]Route attribute prediction: returns a predicted label (e.g., codeshare/route property) per route after joining airline + source/destination airport metadata. Decision Forest Q_Credit Credit-Card [8] Fraud detection: returns a predicted risk/class per transaction from
+> V1..V28 and Amount .XGBoost Q_UC01 TPCx-AI [1] Customer clustering: returns a cluster assignment per customer using return-ratio and purchase-frequency features (with min–max scaling). KMeans++ Q_UC03 TPCx-AI Forecasting-style inference: returns a prediction per (store, department) from encoded categorical features and normalized week index. DNN Q_UC04 TPCx-AI Spam classification: returns
+> predicted_spam per review document using tokenization/stemming + Naive Bayes scoring. Naive Bayes Q_UC08 TPCx-AI Order classification: returns a multiclass prediction per order from aggregated lineitem/department + weekday features. DNN + Softmax Q_UC10 TPCx-AI Fraud/risk scoring: returns a sigmoid probability per transaction from normalized amount and business-hour features. DNN + Sigmoid Q_IDNet1 IDNet [ 13 ]Join + CNN filter: keep only non-fraud images after linking to toll-audit data. CNN Q_IDNet2 IDNet LLM voting: repeatedly judge fraud for each input image using references, then majority-vote the final label. LLM
+
+rule-based optimizers by mapping statistics to actions, (7) a Bench-marking Results view that summarizes end-to-end latency across the query suite, and (8) an Upload Optimizer/Action panel for im-porting external optimizer profiles and action definitions into the workbench. 
+
+3 Use Cases 
+
+In this section, we will introduce two use cases of OptBench :Optimizer Development and Performance Comparison. Conference acronym ’XX, June 03–05, 2018, Woodstock, NY Trovato et al. OPTBench Demo UI on top of DuckDB 
+
+QUERY SELECTOR 
+
+Selected query 
+
+Q1: SQL+ML Ranking (NN over features) 
+
+SQL + ML 
+
+SELECT 
+
+s.impression_id AS impression_id, 
+
+m.listing_row_id AS listing_row_id, 
+
+m.property_type AS property_type, 
+
+ml_argmax( 
+
+cdb_softmax( 
+
+-- layer 2: (h * W2) + b2 -> 1 x 2 logits 
+
+mat_add( 
+
+mat_mul( 
+
+-- layer 1: (x * W1) + b1 -> 1 x 16 hidden 
+
+mat_add( 
+
+mat_mul( 
+
+list_concat( 
+
+s.user_profile_vec, 
+
+s.search_context_vec, 
+
+QUERY PLAN VISUALIZATION 
+
+Compare the logical plans produced by any two optimizers for the same SQL+ML query. 
+
+LEFT PLAN Optimizer: No optimizer (baseline) RIGHT PLAN Optimizer: Optimizer2: ML decomposition + sparse matmul 
+
+┌───────────────────────────┐ 
+
+│ ORDER_BY │
+
+│ ──────────────────── │
+
+│ s.impression_id │
+
+└─────────────┬─────────────┘ 
+
+┌─────────────┴─────────────┐ 
+
+│ PROJECTION │
+
+│ ──────────────────── │
+
+│ Expressions: │
+
+│ impression_id │
+
+│ listing_row_id │
+
+│ property_type │
+
+│ ml_argmax(cdb_softmax │
+
+│ (mat_add(mat_mul(mat_add │
+
+│ (mat_mul(list_concat │
+
+│ (user_profile_vec, │
+
+┌───────────────────────────┐ 
+
+│ ORDER_BY │
+
+│ ──────────────────── │
+
+│ s.impression_id │
+
+└─────────────┬─────────────┘ 
+
+┌─────────────┴─────────────┐ 
+
+│ PROJECTION │
+
+│ ──────────────────── │
+
+│ Expressions: │
+
+│ impression_id │
+
+│ listing_row_id │
+
+│ property_type │
+
+│ #5 │
+
+└─────────────┬─────────────┘ 
+
+┌─────────────┴─────────────┐ 
+
+│ COMPARISON_JOIN │
+
+STATISTICS WINDOW 
+
+Data / plan statistics for this SQL+ML query (used as input to 
+
+optimizer decisions). 
+
+card _search _impressions 500000 
+
+card _listing _metadata 200000 
+
+join _cardinality 20006670 
+
+feature _nonzero _ratio 0.002 
+
+feature _width 150 
+
+REWRITE ACTIONS 
+
+Available rewrite actions that can be used by any optimizer. 
+
+TorchNN2TwoLayerUDFRewriteAction rewrite 
+
+Mul2JoinAggHorizontalRewriteAction rewrite 
+
+DecisionForestUDF2RelationRewriteAction rewrite 
+
+Mul2JoinAggRewriteAction rewrite 
+
+MultiLayerUDF2TorchNNRewriteAction rewrite 
+
+MLDecompositionPushdownRewriteAction rewrite 
+
+MatMulDense2SparseRewriteAction rewrite 
+
+TreeModelTeePruningRewriteAction rewrite 
+
+OPTIMIZERS 
+
+Existing optimizer profiles available in this demo. 
+
+No optimizer (baseline) baseline 
+
+DuckDB default plan for the SQL+ML query 
+
+Optimizer1: ML decomposition pushdown optimizer 
+
+Push NN below the join (dense matmul) 
+
+Optimizer2: ML decomposition + sparse matmul optimizer 
+
+Push NN below the join and switch to sparse matmul 
+
+OPTIMIZER DEFINITION 
+
+Definition authored using a drag-and-drop statistics & action 
+
+builder. 
+
+IF 
+
+[metric] join_ratio > 1e-5 
+
+AND 
+
+[metric] feature_nonzero_ratio < 0.30 
+
+THEN 
+
+[action] MLDecompositionPushdownRewriteAction 
+
+[action] MatMulDense2SparseRewriteAction 
+
+Add Optimizer 
+
+UPLOAD OPTIMIZER / ACTION 
+
+Upload optimizer configs or action definitions to extend the workbench during the demo. 
+
+Upload Optimizer 
+
+Upload Action Definition 
+
+Uploaded files are stored under uploads/ .
+
+no file selected Choose File 
+
+no file selected Choose File 
+
+BENCHMARKING RESULTS 
+
+Benchmark selection 
+
+All queries 
+
+Upload 
+
+Upload 
+
+1 2
+
+3 4 5 6
+
+78
+
+Figure 2: OptBench workbench overview. Users select a SQL+ML query (top-left), compare two optimizers side-by-side (top-center), and inspect the statistics, rewrite action catalog, optimizer profiles, and rule definitions (middle). The workbench also supports uploading external optimizer/action definitions (bottom-left) and benchmarking latency across the query suite (bottom-right). 
+
+3.1 Optimizer Development, Testing, and Evaluation 
+
+OptBench facilitates the development of rule-based or cost-based SQL-ML query optimizers by providing a library of rewrite ac-tions and statistics. In addition, OptBench also implements a set of queries and provides query plan visualization through its web in-terface, which will facilitate the testing, evaluation, and debugging of the query optimizer. 
+
+Optimizer profile registration. As illustrated in Listing. 1, Opt-Bench exposes a lightweight registration interface so that each optimizer is treated as a named optimizer profile that can be acti-vated and listed in the web-based user interface (UI) for selection for benchmark comparisons. Internally, a profile binds an optimizer identifier to an optimizer entry point, which receives the initial DuckDB query logical plan and the query context (including a list of statistics) and returns an optimized logical plan structure. 
+
+Listing 1: Registering an optimizer profile in OptiBench (il-lustrative) 
+
+1 struct OptimizerProfile {
+
+2 std :: string name ; 
+
+3 std :: function < void ( OptimizerExtensionInput &, 
+
+4 std :: unique_ptr < LogicalOperator >&) > optimize_fn ; 
+
+5 }; 
+
+67 void RegisterOptimizer ( OptimizerProfile p); 
+
+89 RegisterOptimizer ({ OptBench : An Interactive Workbench for AI/ML-SQL Co-Optimization [Extended Demonstration Proposal] Conference acronym ’XX, June 03–05, 2018, Woodstock, NY 
+
+Figure 3: Effect of the example rule-based optimizer on an inference query. Starting from the baseline plan (no optimizer), the optimizer fires a metric-driven rule that invokes the actions highlighted in the fig-ure (e.g., MLDecompositionPushdownRewriteAction and 
+
+MatMulDense2SparseRewriteAction ).  
+
+> 10
+
+/* name = */ "DP - CostOpt " ,  
+
+> 11
+
+/* optimize_fn = */ DPCostOpt :: Run  
+
+> 12
+
+}) ; 
+
+Example 1: Developing rule-based optimizers. A rule-based opti-mizer can be easily developed in OptBench by specifying a prior-itized set of rules that map query- and data-dependent statistics to semantics-preserving inference rewrite actions. Each rule is a predicate over the statistics or conditions regarding data, ML op-erators, expressions, or query plan, and when it fires, it triggers one or more actions from the library of registered rewrite actions. Rewrite actions are applied to the current logical plan following Algorithm 1. OptBench records a decision trace containing fired rules and the structural deltas induced by each action, enabling users to inspect how domain knowledge translates into concrete plan rewrites and how those rewrites affect latency under unified benchmarking. Figure 3 shows how the example OptiBench optimizer transforms the baseline logical plan (Plan A, no optimizer) into an optimized plan (Plan B) by applying the inference rewrites indicated in the fig-ure. The optimizer is specified as a simple metric-driven rule: when the query exhibits a large intermediate join result and sufficiently sparse feature vectors, it triggers MLDecompositionPushdown-RewriteAction followed by MatMulDense2SparseRewriteAction. At runtime, OptiBench evaluates the rule predicate over the com-puted metric vector and materializes it into a small conditional code block that invokes the registered actions using Algorithm 1. The re-sulting plan pushes NN inference below the join (so fewer tuples are scored) and switches dense mat_mul operators to sparse variants (so each scored tuple is cheaper). Together, these changes reduce end-to-end latency from 85 s to 1.976 s as shown in the figure. 
+
+Example 2: Developing cost-based optimizers. A cost-based op-timizer in OptBench selects an optimized inference plan by enu-merating alternative plans induced by the action library and choos-ing the lowest-cost candidate under a cost model and a searching strategy. In addition to the rewrite actions, OptBench ’s library of statistics methods would greatly facilitate the cost model develop-ment. However, the programmers must define the cost function and develop the search strategy. Listing 2 sketches a compact C++-style implementation of the cost-based optimizer as a depth-bounded DP enumerator using OptBench .
+
+Listing 2: Compact cost-based DP optimizer (enumerate in-ference rewrite actions)  
+
+> 1
+
+static void Run ( OptimizerExtensionInput &in ,  
+
+> 2
+
+std :: unique_ptr < LogicalOperator > &plan ) { 
+
+> 3
+
+int L = 2; // rewrite - depth budget  
+
+> 4
+
+// actions : inference rewrite actions (DecomposePushdown , Dense2Sparse , ...)  
+
+> 5
+
+// Score (p): cost model using ( in . metrics , plan features )  
+
+> 6
+
+// Hash (p): canonical plan hash ( memoization )  
+
+> 78
+
+auto best = plan -> Copy () ;  
+
+> 9
+
+double best_cost = Score ( best , in );  
+
+> 10 11
+
+std :: vector < std :: unique_ptr < LogicalOperator >> frontier { plan -> Copy () };  
+
+> 12
+
+std :: unordered_map < size_t , double > memo ; memo [ Hash ( frontier [0]) ] = best_cost ;  
+
+> 13 14
+
+for ( int d = 0; d < L; d ++) { 
+
+> 15
+
+std :: vector < std :: unique_ptr < LogicalOperator >> next ;  
+
+> 16
+
+for ( auto &p : frontier ) { 
+
+> 17
+
+for ( auto &a : actions ) { // expand all actions  
+
+> 18
+
+if (! a. Applicable (p , in )) continue ;  
+
+> 19
+
+auto p2 = p -> Copy () ; a. Apply (p2 , in );  
+
+> 20
+
+double c = Score (p2 , in ); size_t h = Hash ( p2 );  
+
+> 21
+
+if (! memo . count (h) || c < memo [h ]) { // keep best per state  
+
+> 22
+
+memo [h] = c; next . push_back (p2 -> Copy () );  
+
+> 23
+
+if (c < best_cost ) { best_cost = c; best = p2 -> Copy () ; } 
+
+> 24
+
+} 
+
+> 25
+
+} 
+
+> 26
+
+} 
+
+> 27
+
+if ( next . empty () ) break ;  
+
+> 28
+
+frontier = std :: move ( next );  
+
+> 29
+
+} 
+
+> 30
+
+plan = std :: move ( best );  
+
+> 31
+
+}Conference acronym ’XX, June 03–05, 2018, Woodstock, NY Trovato et al. 
+
+3.2 Performance Comparison and Benchmarking 
+
+OptBench benchmarks each optimizer on a shared and extensible suite of SQL+ML multimodal inference queries as described in Sec.2.4. All registered optimizers, including DuckDB’s default optimizer, our built-in rule-based and dynamic programming-based SQL-ML query optimizers, and user-developed optimizers, are evaluated using the same execution backend , the same queries, and the same data, ensuring a unified measurement environment and enabling 
+
+apples-to-apples comparison. 
+
+OptBench reports two views. First, a plan comparison view highlights structural differences between optimized plans (e.g., op-erator placement and rewrite-induced changes), making it easier to attribute performance differences to specific inference rewrites. Second, a benchmarking panel summarizes end-to-end latency (and other runtime metrics) across the shared query suite for all selected optimizers under the same backend and data. Together, these views support an apples-to-apples benchmarking workflow that connects optimizer choices to both plan-level changes and measurable per-formance outcomes. 
+
+4 Interactive Demonstration Design 
+
+In our proposed demonstration, users experience the OptBench 
+
+capabilities by (i) interactively develop a rule-based optimizer by defining rules that trigger rewrite actions based on query- and data-dependent statistics using our web-based interface, including testing, debugging, and performance evaluation; (ii) register and up-load our predefined rule-based and cost-based optimizers through the web-based interface; and (iii) benchmark multiple optimizers on one or more user-selected SQL+ML queries for transparent, apples-to-apples comparison : all optimizers are evaluated on the same query suite and executed on the same backend system (our DuckDB-based prototype), ensuring that differences in latency and plan structure are attributable to optimizer design decisions rather than imple-mentation artifacts of the underlying systems. These interactive scenarios are detailed as follows. 
+
+4.1 Scenario 1. Developing a Custom Optimizer using OptBench 
+
+Every demonstration participant can use their database system knowledge to quickly develop, test, debug, and evaluate a simple rule-based SQL-ML query optimizer using OptBench . Using Opt-Bench , the entire process may only take a few minutes for an optimizer that has only one or two rules. For example, A partici-pant wants to test a hypothesis such as: “for large joins and sparse feature vectors, it is beneficial to push ML computation downward and use sparse kernels.”, s/he could define a new rule such as "if a dense matrix_multiply operator’s input data has more than 
+
+1, 000 , 000 rows and the sparsity is above 0.7, the rewrite action named MatMulDense2SparseRewriteAction would be triggered to invoke the corresponding sparse matrix_multiply operator in-stead. Then the participant can code that rule to compose a simple query optimizer in the Optimizer Definition 6 panel. Once saved, this new optimizer profile appears alongside the other optimizers registered and listed in the Optimizers panel and benchmarking views. The user can then place any two optimizers side by side in the plan comparison pane and inspect their latency bars in the 
+
+Benchmarking Results panel, turning high-level hypotheses about metric-driven optimization into concrete, measurable experiments. In a small pilot with a new user, implementing the rule above (end-to-end, from opening the workbench to saving the optimizer) took 4 minutes. 
+
+4.2 Scenario 2. Comparing Optimizers on a SQL+ML Query 
+
+A participant starts by selecting an SQL+ML query from the Query Selector (Fig. 2). The participant then chooses two optimizers. For example, the user may select a DuckDB’s default optimizer and our developed rule-based or cost-based SQL-ML query optimizer.The baseline plan may keep the ML operator as a single high-level expression above a join with large output cardinality, while the SQL-ML query optimizer applies a sequence of rewrite actions (e.g., decomposing an ML operator and pushing computation closer to the feature sources). The side-by-side plan visualization view makes structural differences explicit, while the Benchmarking Results panel (Fig. 2) quantifies their end-to-end latency on the same backend and dataset. This scenario demonstrates how OptBench supports transparent comparisons between heterogeneous optimizers on ML-heavy workloads. 
+
+4.3 Scenario 3. Extending OptBench 
+
+Cost-based or complex rule-based optimizers are difficult to express purely as rules (e.g., complex search strategies or specialized heuris-tics) and would be hard to develop in the“Optimizer Definition 6 ”panel. To support these cases, OptBench provides an extension path for registering external optimizers, and required rewrite action definitions through the backend optimizer interface. In the demo, users can upload an optimizer profile or an action definition via the 
+
+Upload Optimizer/Action view. After registration, the external opti-mizer appears in the Optimizers panel and can be compared against built-in and rule-based optimizers using the same plan comparison and benchmarking workflow. This scenario highlights that OptBench is not limited to a sin-gle optimizer family: it provides a unified evaluation loop where both user-authored, rule-based optimizers and externally imple-mented optimizers can be inspected (via plan diffs) and compared quantitatively (via latency over the query suite). A typical demonstration workflow may also follow three steps: (1) select a query and inspect its relevant statistics (you can also se-lect multiple queries), (2) choose two or more optimizers to compare their plans and latency, and (3) optionally create a new optimizer profile (via rules and actions) or register an external optimizer (we will prepare a few such optimizers for demonstrating this step), then re-run benchmarking to quantify the impact of the new design. 
+
+References        
+
+> [1] 2021. TPCx-AI Express Benchmark. (2021). https://www.tpc.org/tpcx-ai/default5.asp [2] Lingjiao Chen, Arun Kumar, Jeffrey Naughton, and Jignesh M Patel. 2017. Towards Linear Algebra over Normalized Data. Proceedings of the VLDB Endowment 10, 11 (2017).
+
+OptBench : An Interactive Workbench for AI/ML-SQL Co-Optimization [Extended Demonstration Proposal] Conference acronym ’XX, June 03–05, 2018, Woodstock, NY 
+
+[3] Kanchan Chowdhury, Lixi Zhou, Lulu Xie, Xinwei Fu, and Jia Zou. 2025. In-ferF: Declarative Factorization of AI/ML Inferences over Joins. arXiv preprint arXiv:2511.20489 (2025). [4] Hong Guan, Saif Masood, Mahidhar Dwarampudi, Venkatesh Gunda, Hong Min, Lei Yu, Soham Nag, and Jia Zou. 2023. A Comparison of End-to-End Decision Forest Inference Pipelines. In Proceedings of the 2023 ACM Symposium on Cloud Computing . 200–215. [5] Hong Guan, Lei Yu, Lixi Zhou, Li Xiong, Kanchan Chowdhury, Lulu Xie, Xusheng Xiao, and Jia Zou. 2025. Privacy and Accuracy-Aware AI/ML Model Deduplication. 
+
+Proceedings of the ACM on Management of Data 3, 3 (2025), 1–28. [6] Joseph M Hellerstein, Christoper Ré, Florian Schoppmann, Daisy Zhe Wang, Eugene Fratkin, Aleksander Gorajek, Kee Siong Ng, Caleb Welton, Xixuan Feng, Kun Li, et al . 2012. The MADlib Analytics Library. Proceedings of the VLDB Endowment 5, 12 (2012). [7] Dimitrije Jankov, Shangyu Luo, Binhang Yuan, Zhuhua Cai, Jia Zou, Chris Jer-maine, and Zekai J Gao. 2019. Declarative recursive computation on an RDBMS: or, why you should use a database for distributed machine learning. Proceedings of the VLDB Endowment 12, 7 (2019), 822–835. [8] Kaggle. 2021. Credit Card Fraud Detection. Kaggle dataset. https://www.kaggle .com/mlg-ulb/creditcardfraud Accessed: 2026-01-13. [9] Guoliang Li, Ji Sun, Lijie Xu, Shifu Li, Jiang Wang, and Wen Nie. 2024. GaussML: An End-to-End In-Database Machine Learning System. In 2024 IEEE 40th Interna-tional Conference on Data Engineering (ICDE) . 5198–5210. doi:10.1109/ICDE6014 6.2024.00391 [10] Kwanghyun Park, Karla Saur, Dalitso Banda, Rathijit Sen, Matteo Interlandi, and Konstantinos Karanasos. 2022. End-to-end Optimization of Machine Learn-ing Prediction Queries. In Proceedings of the 2022 International Conference on Management of Data . 587–601. [11] Project Hamlet. 2021. Project Hamlet. Project website. https://adalabucsd.githu b.io/hamlet.html Accessed: 2026-01-13. [12] Maximilian Schleich, Dan Olteanu, Mahmoud Abo Khamis, Hung Q. Ngo, and XuanLong Nguyen. 2019. A Layered Aggregate Engine for Analytics Workloads. In Proceedings of the 2019 International Conference on Management of Data (Ams-terdam, Netherlands) (SIGMOD ’19) . Association for Computing Machinery, New York, NY, USA, 1642–1659. doi:10.1145/3299869.3324961 [13] Lulu Xie, Yancheng Wang, Hong Guan, Soham Nag, Rajeev Goel, Niranjan Swamy, Yingzhen Yang, Chaowei Xiao, Jonathan Prisby, Ross Maciejewski, et al . 2024. IDNet: A Novel Identity Document Dataset via Few-Shot and Quality-Driven Synthetic Data Generation. In 2024 IEEE International Conference on Big Data (BigData) . IEEE, 2244–2253. [14] Binhang Yuan, Dimitrije Jankov, Jia Zou, Yuxin Tang, Daniel Bourgeois, and Chris Jermaine. 2021. Tensor Relational Algebra for Distributed Machine Learning System Design. Proc. VLDB Endow. 14, 8 (2021), 1338–1350. doi:10.14778/3457390 .3457399 [15] Chenyang Zhang, Junxiong Peng, Chen Xu, Quanqing Xu, and Chuanhui Yang. 2025. Mitigating the Impedance Mismatch between Prediction Query Execution and Database Engine. Proc. ACM Manag. Data 3, 3, Article 189 (June 2025), 28 pages. https://doi.org/10.1145/3725326 [16] Lixi Zhou, Jiaqing Chen, Amitabh Das, Hong Min, Lei Yu, Ming Zhao, and Jia Zou. 2022. Serving Deep Learning Models with Deduplication from Relational Databases. Proc. VLDB Endow. 15, 10 (2022), 2230–2243. https://www.vldb.org/p vldb/vol15/p2230-zou.pdf [17] Lixi Zhou, Kanchan Chowdhury, Lulu Xie, Jaykumar Tandel, Hong Guan, Zhi-wei Fan, Xinwei Fu, and Jia Zou. 2026. CACTUSDB: Unlock Co-Optimization Opportunities for SQL and AI/ML Inferences. arXiv preprint arXiv:2602.23469 
+
+(2026). [18] L Zhou, Q Lin, K Chowdhury, S Masood, A Eichenberger, H Min, A Sim, J Wang, Y Wang, K Wu, et al . 2024. Serving Deep Learning Models from Relational Databases. Advances in Database Technology-EDBT 27, 3 (2024), 717–724. 
+
+A Benchmark Query Suite 
+
+Listing 3: Q_Expedia (decision tree inference)  
+
+> 1
+
+SELECT  
+
+> 2
+
+Expedia_S_listings_extension2 . prop_id ,  
+
+> 3
+
+Expedia_S_listings_extension2 . srch_id ,  
+
+> 4
+
+udf ( prop_location_score1 , prop_location_score2 , prop_log_historical_price , price_usd ,  
+
+> 5
+
+orig_destination_distance , prop_review_score , avg_bookings_usd , stdev_bookings_usd ,  
+
+> 6
+
+position , prop_country_id , prop_starrating , prop_brand_bool , count_clicks , count_bookings ,  
+
+> 7
+
+year , month , weekofyear , time , site_id , visitor_location_country_id , srch_destination_id ,  
+
+> 8
+
+srch_length_of_stay , srch_booking_window , srch_adults_count , srch_children_count ,  
+
+> 9
+
+srch_room_count , srch_saturday_night_bool , random_bool )  
+
+> 10
+
+FROM Expedia_S_listings_extension2  
+
+> 11
+
+JOIN Expedia_R1_hotels2  
+
+> 12
+
+ON Expedia_S_listings_extension2 . prop_id =Expedia_R1_hotels2 . prop_id  
+
+> 13
+
+JOIN Expedia_R2_searches  
+
+> 14
+
+ON Expedia_S_listings_extension2 . srch_id =Expedia_R2_searches . srch_id  
+
+> 15
+
+WHERE prop_location_score1 > 1 
+
+> 16
+
+AND prop_location_score2 > 0.1  
+
+> 17
+
+AND prop_log_historical_price > 4 
+
+> 18
+
+AND count_bookings > 5 
+
+> 19
+
+AND srch_booking_window > 10  
+
+> 20
+
+AND srch_length_of_stay > 1; 
+
+Listing 4: Q_Flights (decision forest inference)  
+
+> 1
+
+SELECT  
+
+> 2
+
+Flights_S_routes_extension2 . airlineid ,  
+
+> 3
+
+Flights_S_routes_extension2 . sairportid ,  
+
+> 4
+
+Flights_S_routes_extension2 . dairportid ,  
+
+> 5
+
+udf ( slatitude , slongitude , dlatitude , dlongitude , 
+
+> 6
+
+name1 , name2 , name4 , acountry , active ,  
+
+> 7
+
+scity , scountry , stimezone , sdst ,  
+
+> 8
+
+dcity , dcountry , dtimezone , ddst ) AS codeshare  
+
+> 9
+
+FROM Flights_S_routes_extension2  
+
+> 10
+
+JOIN Flights_R1_airlines2  
+
+> 11
+
+ON Flights_S_routes_extension2 . airlineid =Flights_R1_airlines2 . airlineid  
+
+> 12
+
+JOIN Flights_R2_sairports  
+
+> 13
+
+ON Flights_S_routes_extension2 . sairportid =Flights_R2_sairports . sairportid  
+
+> 14
+
+JOIN Flights_R3_dairports  
+
+> 15
+
+ON Flights_S_routes_extension2 . dairportid =Flights_R3_dairports . dairportid  
+
+> 16
+
+WHERE name2 = 't ' 
+
+> 17
+
+AND name4 = 't ' 
+
+> 18
+
+AND name1 > 2.8; 
+
+Listing 5: Q_Credit (XGBoost inference)  
+
+> 1
+
+SELECT  
+
+> 2
+
+Time ,  
+
+> 3
+
+Amount ,  
+
+> 4
+
+udf (V1 , V2 , V3 , V4 , V5 , V6 , V7 , V8 , V9 , V10 , V11 , V12 , V13 , V14 , V15 ,  
+
+> 5
+
+V16 , V17 , V18 , V19 , V20 , V21 , V22 , V23 , V24 , V25 , V26 , V27 , V28 , Amount ) AS Class  
+
+> 6
+
+FROM Credit_Card_extension  
+
+> 7
+
+WHERE V1 > 1 
+
+> 8
+
+AND V2 < 0.27  
+
+> 9
+
+AND V3 > 0.3; Conference acronym ’XX, June 03–05, 2018, Woodstock, NY Trovato et al. 
+
+Listing 6: Q_UC01 (KMeans++ inference with min–max scal-ing)  
+
+> 1
+
+WITH table_groups AS ( 
+
+> 2
+
+SELECT  
+
+> 3
+
+MIN ( EXTRACT ( YEAR FROM CAST ( date AS DATE ))) AS invoice_year ,  
+
+> 4
+
+SUM ( quantity * price ) AS row_price ,  
+
+> 5
+
+SUM ( COALESCE ( or_return_quantity , 0) * price ) AS return_row_price ,  
+
+> 6
+
+o_customer_sk AS customer_id ,  
+
+> 7
+
+o_order_id AS order_id  
+
+> 8
+
+FROM lineitem li  
+
+> 9
+
+LEFT JOIN order_returns oret  
+
+> 10
+
+ON li . li_order_id = oret . or_order_id  
+
+> 11
+
+AND li . li_product_id = oret . or_product_id  
+
+> 12
+
+JOIN " order " ord  
+
+> 13
+
+ON li . li_order_id = ord . o_order_id  
+
+> 14
+
+GROUP BY o_customer_sk , o_order_id  
+
+> 15
+
+) ,  
+
+> 16
+
+table_ratios AS ( 
+
+> 17
+
+SELECT  
+
+> 18
+
+customer_id ,  
+
+> 19
+
+AVG ( return_row_price / NULLIF ( row_price , 0) ) AS return_ratio  
+
+> 20
+
+FROM table_groups  
+
+> 21
+
+GROUP BY customer_id  
+
+> 22
+
+) ,  
+
+> 23
+
+table_frequency_groups AS ( 
+
+> 24
+
+SELECT  
+
+> 25
+
+customer_id ,  
+
+> 26
+
+invoice_year ,  
+
+> 27
+
+COUNT ( DISTINCT order_id ) AS orders_per_year  
+
+> 28
+
+FROM table_groups  
+
+> 29
+
+GROUP BY customer_id , invoice_year  
+
+> 30
+
+) ,  
+
+> 31
+
+table_frequency AS ( 
+
+> 32
+
+SELECT  
+
+> 33
+
+customer_id ,  
+
+> 34
+
+AVG ( orders_per_year ) AS frequency  
+
+> 35
+
+FROM table_frequency_groups  
+
+> 36
+
+GROUP BY customer_id  
+
+> 37
+
+) ,  
+
+> 38
+
+features_raw AS ( 
+
+> 39
+
+SELECT  
+
+> 40
+
+r. customer_id ,  
+
+> 41
+
+f. frequency ,  
+
+> 42
+
+r. return_ratio  
+
+> 43
+
+FROM table_ratios r 
+
+> 44
+
+JOIN table_frequency f 
+
+> 45
+
+ON r. customer_id = f. customer_id  
+
+> 46
+
+) ,  
+
+> 47
+
+features AS ( 
+
+> 48
+
+SELECT  
+
+> 49
+
+customer_id ,  
+
+> 50
+
+-- abstract min -- max scaling ( your min_max_scaler UDF )  
+
+> 51
+
+minmax_apply ( ' uc01_scaler ', ARRAY [ frequency , return_ratio ]) AS features  
+
+> 52
+
+FROM features_raw  
+
+> 53
+
+) 
+
+> 54
+
+SELECT  
+
+> 55
+
+customer_id ,  
+
+> 56
+
+-- abstract KMeans assignment ( cluster id )  
+
+> 57
+
+kmeans_predict ( ' uc01_kmeans_model ', features ) AS cluster_id  
+
+> 58
+
+FROM features ; 
+
+Listing 7: Q_UC03 (DNN inference over encoded store– department features)  
+
+> 12
+
+WITH base AS ( 
+
+> 3
+
+SELECT  
+
+> 4
+
+store ,  
+
+> 5
+
+department ,  
+
+> 6
+
+num_of_week ,  
+
+> 7
+
+store_id_encoder ( CAST ( store AS INTEGER )) AS store_id_encoded ,  
+
+> 8
+
+department_encoder ( department ) AS department_encoded ,  
+
+> 9
+
+CAST ( num_of_week / 156.0 AS REAL ) AS num_of_week_norm  
+
+> 10
+
+FROM store_dept  
+
+> 11
+
+) ,  
+
+> 12
+
+feat AS ( 
+
+> 13
+
+SELECT  
+
+> 14
+
+store ,  
+
+> 15
+
+department ,  
+
+> 16
+
+num_of_week ,  
+
+> 17
+
+CAST ( concat ( store_id_encoded , department_encoded , num_of_week_norm ) AS REAL []) AS features  
+
+> 18
+
+FROM base  
+
+> 19
+
+) 
+
+> 20
+
+SELECT  
+
+> 21
+
+store ,  
+
+> 22
+
+department ,  
+
+> 23
+
+num_of_week ,  
+
+> 24
+
+dnn_predict ( ' uc03_model ', features ) AS prediction  
+
+> 25
+
+FROM feat ; 
+
+Listing 8: Q_UC08 (DNN inference over order features; soft-max output)  
+
+> 12
+
+WITH ord AS ( 
+
+> 3
+
+SELECT o_order_id , CAST ( date AS TIMESTAMP ) AS ts  
+
+> 4
+
+FROM " order "  
+
+> 5
+
+) ,  
+
+> 6
+
+ord2 AS ( 
+
+> 7
+
+SELECT o_order_id , ts , day_of_week ( ts ) AS weekday  
+
+> 8
+
+FROM ord  
+
+> 9
+
+) ,  
+
+> 10
+
+j1 AS ( 
+
+> 11
+
+SELECT  
+
+> 12
+
+o. o_order_id , o.ts , o. weekday ,  
+
+> 13
+
+li . li_product_id , li . quantity  
+
+> 14
+
+FROM ord2 o 
+
+> 15
+
+JOIN lineitem li ON o. o_order_id = li . li_order_id  
+
+> 16
+
+) ,  
+
+> 17
+
+j2 AS (OptBench : An Interactive Workbench for AI/ML-SQL Co-Optimization [Extended Demonstration Proposal] Conference acronym ’XX, June 03–05, 2018, Woodstock, NY  
+
+> 18
+
+SELECT  
+
+> 19
+
+j1 . o_order_id , j1 .ts , j1 . weekday ,  
+
+> 20
+
+j1 . quantity , p. department  
+
+> 21
+
+FROM j1  
+
+> 22
+
+JOIN product p ON j1 . li_product_id = p. p_product_id  
+
+> 23
+
+) ,  
+
+> 24
+
+agg AS ( 
+
+> 25
+
+SELECT  
+
+> 26
+
+o_order_id ,  
+
+> 27
+
+ts AS date ,  
+
+> 28
+
+department ,  
+
+> 29
+
+quantity ,  
+
+> 30
+
+SUM ( quantity ) AS scan_count ,  
+
+> 31
+
+MIN ( weekday ) AS weekday  
+
+> 32
+
+FROM j2  
+
+> 33
+
+GROUP BY o_order_id , ts , department , quantity  
+
+> 34
+
+) ,  
+
+> 35
+
+feat AS ( 
+
+> 36
+
+SELECT  
+
+> 37
+
+o_order_id ,  
+
+> 38
+
+date ,  
+
+> 39
+
+CAST ( concat ( quantity , scan_count , weekday , department_encoder ( department )) AS REAL []) AS features  
+
+> 40
+
+FROM agg  
+
+> 41
+
+) 
+
+> 42
+
+SELECT  
+
+> 43
+
+o_order_id ,  
+
+> 44
+
+date ,  
+
+> 45
+
+softmax ( dnn_predict ( ' uc08_dnn_model ', features )) AS prediction  
+
+> 46
+
+FROM feat ; 
+
+Listing 9: Q_UC10 (DNN inference for fraud detection; sig-moid output)  
+
+> 1
+
+WITH tx AS ( 
+
+> 2
+
+SELECT  
+
+> 3
+
+transaction_id ,  
+
+> 4
+
+sender_id ,  
+
+> 5
+
+CAST ( hour ( CAST ( time AS TIMESTAMP )) AS DOUBLE ) AS business_hour_norm ,  
+
+> 6
+
+amount  
+
+> 7
+
+FROM financial_transactions  
+
+> 8
+
+) ,  
+
+> 9
+
+j AS ( 
+
+> 10
+
+SELECT  
+
+> 11
+
+tx . transaction_id ,  
+
+> 12
+
+tx . business_hour_norm ,  
+
+> 13
+
+tx . amount ,  
+
+> 14
+
+fa . transaction_limit  
+
+> 15
+
+FROM financial_account fa  
+
+> 16
+
+JOIN tx ON fa . fa_customer_sk = tx . sender_id  
+
+> 17
+
+) ,  
+
+> 18
+
+feat AS ( 
+
+> 19
+
+SELECT  
+
+> 20
+
+transaction_id ,  
+
+> 21
+
+CAST ( concat ( amount / transaction_limit , business_hour_norm ) AS REAL []) AS features  
+
+> 22
+
+FROM j 
+
+> 23
+
+) 
+
+> 24
+
+SELECT  
+
+> 25
+
+transaction_id ,  
+
+> 26
+
+sigmoid ( dnn_predict ( ' uc10_dnn_model ', features )) AS prediction  
+
+> 27
+
+FROM feat ; 
+
+Listing 10: Q_UC04 (Naive Bayes spam inference over tok-enized reviews)  
+
+> 1
+
+WITH docs AS ( 
+
+> 2
+
+SELECT  
+
+> 3
+
+r.id ,  
+
+> 4
+
+-- Text preprocessing UDFs ( abstracted ): clean -> tokenize -> stem  
+
+> 5
+
+ARRAY (  
+
+> 6
+
+SELECT stem_token (t) -- e.g., madlib . stem_token (t)  
+
+> 7
+
+FROM UNNEST ( tokenize ( clean ( lower (r. text )))) AS t 
+
+> 8
+
+WHERE t <> '' AND t !~ ' ^[0 -9]+ $ ' 
+
+> 9
+
+) AS tokens  
+
+> 10
+
+FROM review r 
+
+> 11
+
+) ,  
+
+> 12
+
+base_priors AS ( 
+
+> 13
+
+-- Base class priors from the labeled training set ( can also be stored as constants )  
+
+> 14
+
+SELECT  
+
+> 15
+
+LN ( SUM ( CASE WHEN spam = 1 THEN 1 ELSE 0 END ) *1.0 / COUNT (*) ) AS log_spam_prior ,  
+
+> 16
+
+LN ( SUM ( CASE WHEN spam = 0 THEN 1 ELSE 0 END ) *1.0 / COUNT (*) ) AS log_non_spam_prior  
+
+> 17
+
+FROM uc04_train_preprocessed  
+
+> 18
+
+) ,  
+
+> 19
+
+token_scores AS ( 
+
+> 20
+
+SELECT  
+
+> 21
+
+d.id ,  
+
+> 22
+
+SUM ( LN ( COALESCE (m. spam_prob , 1e -9) )) AS log_spam_score ,  
+
+> 23
+
+SUM ( LN ( COALESCE (m. non_spam_prob , 1e -9) )) AS log_non_spam_score  
+
+> 24
+
+FROM docs d 
+
+> 25
+
+CROSS JOIN UNNEST (d. tokens ) AS tok ( token )  
+
+> 26
+
+LEFT JOIN uc04_model m 
+
+> 27
+
+ON m. token = tok . token  
+
+> 28
+
+GROUP BY d. id  
+
+> 29
+
+) 
+
+> 30
+
+SELECT  
+
+> 31
+
+s.id ,  
+
+> 32
+
+CASE  
+
+> 33
+
+WHEN s. log_spam_score + p. log_spam_prior  
+
+> 34
+
+> s. log_non_spam_score + p. log_non_spam_prior  
+
+> 35
+
+THEN 1 ELSE 0 
+
+> 36
+
+END AS predicted_spam  
+
+> 37
+
+FROM token_scores s 
+
+> 38
+
+CROSS JOIN base_priors p 
+
+> 39
+
+ORDER BY s. id ; 
+
+Listing 11: Q_IDNet (Toll audit join with CNN predicate fil-tering)  
+
+> 1
+
+SELECT Conference acronym ’XX, June 03–05, 2018, Woodstock, NY Trovato et al.  
+
+> 2
+
+lst .* ,  
+
+> 3
+
+jd .*  
+
+> 4
+
+FROM idnet AS lst  
+
+> 5
+
+JOIN toll_audit AS jd  
+
+> 6
+
+ON lst . license_number = jd . license_number  
+
+> 7
+
+WHERE CAST ( cnn_predict ( lst . imageData ) AS INTEGER ) = 0; 
+
+Listing 12: Q_IDNet_LLM_Nested (nested LLM calls; majority vote)  
+
+> 1
+
+WITH  
+
+> 2
+
+input_imgs AS ( 
+
+> 3
+
+SELECT license_number , imageData  
+
+> 4
+
+FROM idnet10k  
+
+> 5
+
+USING SAMPLE 10  
+
+> 6
+
+) ,  
+
+> 7
+
+ref1 AS ( 
+
+> 8
+
+SELECT imageData AS ref_image1  
+
+> 9
+
+FROM idnet10k  
+
+> 10
+
+USING SAMPLE 500  
+
+> 11
+
+) ,  
+
+> 12
+
+ref2 AS ( 
+
+> 13
+
+SELECT imageData AS ref_image2  
+
+> 14
+
+FROM idnet10k  
+
+> 15
+
+USING SAMPLE 500  
+
+> 16
+
+) ,  
+
+> 17
+
+votes AS ( 
+
+> 18
+
+SELECT  
+
+> 19
+
+i. license_number ,  
+
+> 20
+
+llm (  
+
+> 21
+
+' Tell ␣ me ␣ whether ␣ the ␣ INPUT ␣ image ␣ is ␣ fraudulent ␣ or ␣ not ␣ using ␣ the ␣ reference ␣ image (s)␣ and ␣ the ␣ LLM ␣ responses . ', 
+
+> 22
+
+i. imageData ,  
+
+> 23
+
+r1 . ref_image1 ,  
+
+> 24
+
+llm ( 'Is ␣ this ␣ image ␣ fraudulent ?␣ Reply ␣1␣ for ␣ fraud ,␣0␣ otherwise . ', r1 . ref_image1 ) ,  
+
+> 25
+
+r2 . ref_image2 ,  
+
+> 26
+
+llm ( 'Is ␣ this ␣ image ␣ fraudulent ?␣ Reply ␣1␣ for ␣ fraud ,␣0␣ otherwise . ', r2 . ref_image2 )  
+
+> 27
+
+) AS vote  
+
+> 28
+
+FROM input_imgs i 
+
+> 29
+
+CROSS JOIN ref1 r1  
+
+> 30
+
+CROSS JOIN ref2 r2  
+
+> 31
+
+) 
+
+> 32
+
+SELECT  
+
+> 33
+
+license_number ,  
+
+> 34
+
+CASE WHEN AVG ( CAST ( vote AS DOUBLE )) >= 0.5 THEN 1 ELSE 0 END AS is_fraud ,  
+
+> 35
+
+AVG ( CAST ( vote AS DOUBLE )) AS fraud_vote_ratio ,  
+
+> 36
+
+COUNT (*) AS num_votes  
+
+> 37
+
+FROM votes  
+
+> 38
+
+GROUP BY license_number  
+
+> 39
+
+ORDER BY fraud_vote_ratio DESC ;

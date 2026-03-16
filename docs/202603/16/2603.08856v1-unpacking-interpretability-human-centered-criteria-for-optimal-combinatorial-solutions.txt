@@ -1,0 +1,1563 @@
+Title: Unpacking Interpretability: Human-Centered Criteria for Optimal Combinatorial Solutions
+
+URL Source: https://arxiv.org/pdf/2603.08856v1
+
+Published Time: Wed, 11 Mar 2026 00:09:03 GMT
+
+Number of Pages: 66
+
+Markdown Content:
+INTERPRETABILITY CRITERIA FOR COMBINATORIAL SOLUTIONS 1
+
+Unpacking Interpretability: Human-Centered Criteria for Optimal Combinatorial Solutions 
+
+Dominik Pegler 1, Frank Jäkel 2, David Steyrl 1, Frank Scharnowski 1, and Filip Melinscak 11Department of Cognition, Emotion, and Methods in Psychology, Faculty of Psychology, University of Vienna 
+
+> 2
+
+Centre for Cognitive Science & Institute of Psychology, TU Darmstadt 
+
+Author Note 
+
+Corresponding author: Dominik Pegler. E-mail: dominik.pegler@univie.ac.at 
+
+> arXiv:2603.08856v1 [cs.HC] 9 Mar 2026
+
+INTERPRETABILITY CRITERIA FOR COMBINATORIAL SOLUTIONS 2
+
+Abstract 
+
+Algorithmic support systems often return optimal solutions that are hard to understand. Effective human–algorithm collaboration, however, requires interpretability. When machine solutions are equally optimal, humans must select one, but a precise account of what makes one solution more interpretable than another remains missing. To identify structural properties of interpretable machine solutions, we present an experimental paradigm in which participants chose which of two equally optimal solutions for packing items into bins was easier to understand. We show that preferences reliably track three quantifiable properties of solution structure: alignment with a greedy heuristic, simple within-bin composition, and ordered visual representation. The strongest associations were observed for ordered representations and heuristic alignment, with compositional simplicity also showing a consistent association. Reaction-time evidence was mixed, with faster responses observed primarily when heuristic differences were larger, and aggregate webcam-based gaze did not show reliable effects of complexity. These results provide a concrete, feature-based account of interpretability in optimal packing solutions, linking solution structure to human preference. By identifying actionable properties — simple compositions, ordered representation, and heuristic alignment — our findings enable interpretability-aware optimization and presentation of machine solutions, and outline a path to quantify trade-offs between optimality and interpretability in real-world allocation and design tasks. 
+
+Keywords: Human-Machine Collaboration, Problem Solving, Interpretability, Packing Problems INTERPRETABILITY CRITERIA FOR COMBINATORIAL SOLUTIONS 3
+
+Unpacking Interpretability: Human-Centered Criteria for Optimal Combinatorial Solutions Introduction 
+
+Advances in algorithmic optimization and machine learning increasingly place automated solvers at the center of human–machine collaboration (Akata et al., 2020; Krakowski et al., 2023). In many real deployments, when these solvers produce plans or assignments, human interpretability becomes a practical prerequisite for adoption and safe use. Many optimization problems admit multiple solutions that are equally optimal but differ substantially in their structure and presentation. The open research question is: when optimal solutions are tied on value, which structural properties make one solution easier to understand than another? We study this general interpretability problem using packing-class problems as a concrete and well-controlled use case, in which multiple distinct solutions can be equally optimal yet differ markedly in how understandable they seem to people. 
+
+Combinatorial Packing and the Multiple Subset Sum Problem (MSSP) 
+
+Packing problems — such as the classical bin packing problem (Johnson et al., 1974) and multi-knapsack (Cacchiani et al., 2022) — require assigning items of varying sizes to capacity-limited bins under hard constraints. This class is foundational in operations research and has high-impact applications in resource allocation and logistics (Gunawan et al., 2021). For example, hospitals have to assign patients (items with care requirements) to a limited number of nurses (bins with capacities) (Marzouk & Kamoun, 2021). Capital budgeting similarly requires allocating limited resources across competing projects (Gurski et al., 2019). We study the multiple subset sum problem (MSSP; Caprara et al., 2000), a special case of multi-knapsack in which each item’s profit equals its size, the number and capacity of bins are fixed, and the objective is to maximize total packed size. Multiple solutions can achieve equal objective value; yet, some are easier to reason about, communicate, or modify, making them more useful in practice. Figure 1 illustrates an INTERPRETABILITY CRITERIA FOR COMBINATORIAL SOLUTIONS 4instance of the MSSP used in this study, visually represented as an assignment matrix. 
+
+Figure 1 
+
+Illustration of the Multiple Subset Sum Problem 40 70   
+
+> 80
+> 35 15
+> Filled Total 90 70 45 90 70 090 65 45 40 550 40 030 245
+> Note . An instance of the Multiple Subset Sum Problem (MSSP). Rows denote items, and columns denote bins. Item assignments are indicated by gray dots in cells. Item sizes are represented by block lengths and numerical labels. The overall objective score (total packed size) is shown in the upper-right corner.
+
+Interpreting Optimal Solutions 
+
+Even when clearly presented, optimal solutions to combinatorial problems like the MSSP can vary substantially in how readily humans can grasp their underlying structure and rationale. Following established usage, we refer to this human-centered quality as interpretability: the degree to which users can understand and effectively work with a machine-generated solution (the plan or allocation) (Doshi-Velez & Kim, 2017). Psychologically, interpretability interacts with perception, understanding, and trust: people favor solutions that align with familiar structures and that they can mentally simulate or justify, even at the cost of forgoing opaque but optimal alternatives (Kahneman, 2011; Miller, 2019; Lipton, 2017; A. Tversky & Kahneman, 1974; Dietvorst et al., 2015; Sweller, 1988; Zerilli et al., 2022; Bussone et al., 2015; Lee & See, 2004). While a substantial INTERPRETABILITY CRITERIA FOR COMBINATORIAL SOLUTIONS 5portion of research in explainable artificial intelligence (XAI) has focused on explanations for predictions (Barredo Arrieta et al., 2020; Abdul et al., 2018; Rudin, 2019), far less is known about what makes one optimal solution more intelligible than another in combinatorial settings (but see Ibs and Rothkopf, 2026; Ibs et al., 2024; Ott and Jäkel, 2023). Crucially, research on explanation interpretability has shown that increasing the complexity of explanations (e.g., through more terms or new concepts) can increase the time required for humans to verify their consistency (Narayanan et al., 2018). 
+
+Complexity-Informed Proxies for Interpretability 
+
+We focus on three solution-level properties that contribute to interpretability and align with well-established cognitive and perceptual principles. First, humans often rely on simple heuristics to solve problems, preferring structures that match familiar construction rules and finding large deviations harder to rationalize (Gigerenzer & Gaissmaier, 2011; A. Tversky & Kahneman, 1974; Cormen et al., 2009). Second, compositional simplicity reduces cognitive load: bins that are nearly empty or nearly full and contain few items are easier to encode and compare than bins with many items, or bins that are half full (Sweller, 1988; B. Tversky et al., 2002). Third, perceptual organization favors ordered layouts; sequences that can be summarized by short rules (e.g., “largest first”) are preferred under both the simplicity principle and the principle of empirical likelihood (Feldman, 2016; van der Helm, 2000; Chater, 1996; Helmholtz, 1909/1962). As shown in Figure 2, we operationalize these properties with three solution-level metrics, introduced here at a high level and defined in detail in Methods. Heuristic-related complexity (HC) quantifies deviation from a greedy packing heuristic, providing a measure of how closely a solution follows an intuitive construction. Compositional complexity (CC) is intended to quantify how challenging a bin’s contents are to grasp at a glance by combining information about the number of items in a bin, the balance of their sizes, and the amount of unused capacity, such that bins with many items and intermediate fill levels can in principle be treated as more complex than bins that are dominated by few items and INTERPRETABILITY CRITERIA FOR COMBINATORIAL SOLUTIONS 6are nearly empty or nearly full. Visual-order complexity (VC) indexes the disorder of the display of bins and items, reflecting the degree to which a solution deviates from a sorted, rule-like presentation. As a visual-layout control, we include diagonal dissimilarity (DD), a covariate that captures purely geometric similarity to an idealized diagonal-like assignment pattern. 
+
+Figure 2 
+
+Three Metrics for Describing Complexity of Solutions Simple Complex Heuristic-related complexity (HC) Compositional complexity (CC) Visual-order complexity (VC) 
+
+Note . The three panels describe our intuition behind the three hypothesized complexity metrics. Each focuses on a different aspect of the solution, as highlighted by the red annotations. HC focuses on the assignments and how much they deviate from the greedy heuristic. CC focuses on the bins and how clean/organized/filled (see definition) they are. VC focuses on whether the elements of the solution are sorted by size. 
+
+Prior Work and Gap 
+
+Explainable planning emphasizes aligning solutions with users’ mental models — through model reconciliation, contrastive rationales, or solution annotations — highlighting INTERPRETABILITY CRITERIA FOR COMBINATORIAL SOLUTIONS 7that intelligibility depends on both derivation and presentation (Fox et al., 2017; Chakraborti et al., 2017). In bin packing and knapsack research, structural regularities and greedy heuristics are well-characterized (Coffman et al., 1996; Kellerer et al., 2004). Behavioral work shows that humans rely on simple strategies and that performance depends on instance structure (MacGregor & Chu, 2011; Dumnić et al., 2019; Murawski & Bossaerts, 2016; Franco et al., 2021; Franco et al., 2022; Ibs et al., 2024). Even when asked to discriminate between solutions of varying optimality, humans may struggle to consistently identify the truly optimal option, suggesting inherent difficulties in evaluating complex combinatorial outputs (Kyritsis et al., 2022). While explainable planning offers methods for justifying and aligning plans with users’ mental models, and work on predictive explanations has advanced substantially in the field of explainable artificial intelligence (XAI; Barredo Arrieta et al., 2020; Rudin, 2019), empirical and feature-based accounts of interpretability for combinatorial optimization solutions are still emerging (Ibs et al., 2024). In parallel, work on cumulative cultural evolution in continuous optimization tasks shows that people come to prefer and reproduce solutions that match their inductive biases — prior expectations or preferences for how a “good” solution should look, such as simplicity or symmetry — and that misalignment between these biases and the true optimum can systematically limit collective performance (Thompson & Griffiths, 2021). Related work on competing solutions in other combinatorial domains likewise examines preferences without specifying solution-level structural metrics (Kyritsis et al., 2022). Our study addresses this gap by quantifying how three solution-level properties — HC, CC, and VC — predict human choices, response speed, and attention when comparing equally optimal packing solutions. Beyond describing features that shape interpretability, our practical aim is to enable interpretability-aware optimization. Embedding complexity metrics as secondary criteria — e.g., tie-breaking among equal-value optima or soft penalties in multi-objective formulations — would let optimizers return solutions that are both high in value and easy INTERPRETABILITY CRITERIA FOR COMBINATORIAL SOLUTIONS 8to understand (Ehrgott, 2005). 
+
+Pre-Registered Design, Hypotheses and Analysis Plan 
+
+We studied interpretability using the multiple subset sum problem introduced above (Caprara et al., 2000; Johnson et al., 1974). Each instance contained several bins and items and was constructed to admit at least two distinct optimal solutions. Participants first practiced solving the task and received feedback. In the main evaluation phase, they viewed two equally optimal solutions to the same problem instance side by side and answered “Which solution is easier to understand?” on a four-level scale (definitely/slightly left/right), providing a direct behavioral measure of interpretability preference. Figure 3 summarizes the workflow. 
+
+Figure 3 
+
+Experimental Workflow Which of the two solutions do you fi nd easier to understand?                
+
+> << definitely left < slightly left slightly right > definitely right >>
+> Duplicated solutions 70 60 40 35 25 15 10 5
+> 65 70 60 40 35 25 15 10 565 Filled Total 85 90 75 60 80 60 25 30 15 30 260 Filled Total 90 80 60 80 90 60 030 30 260 30
+> Assign the books to the boxes.
+> SUBMIT
+> 75 70 55
+> 30 20 Filled Total 100 95 100 100 050 100 100 045 90 195
+
+Recruitment Evaluation Debrief PSI Webcam Calibration Problem Solving Report Strategies Report Strategies 
+
+Note . Diagram shows the study workflow including questionnaire (PSI = problem-solving inventory; Heppner and Petersen, 1982), webcam calibration, seven problem-solving trials with feedback, and twenty-five evaluation trials. The left screen displays an example problem-solving trial. In evaluation trials (right screen), participants judged which of two optimal solutions was easier to understand ("definitely/slightly" left or right). INTERPRETABILITY CRITERIA FOR COMBINATORIAL SOLUTIONS 9We tested our three solution-level properties as drivers of interpretability preferences: HC, CC, and VC, with DD as a visual-layout control (full definitions in Methods). Because participants evaluated pairs of equally optimal solutions, our analyses use between-solution differences derived from these solution-level metrics: signed right–left differences as predictors of choice and gaze (to predict which option is preferred or inspected more), and absolute differences for reaction times (to test whether larger separations speed up decisions). We complement preferences with two process measures: reaction times, which reflect overall processing effort and decisional conflict (Luce, 1986), and webcam-based gaze. Webcam-based eye tracking provides aggregate dwell measures that indicate relative attention to the left versus right solution (Papoutsaki et al., 2016; Eckstein et al., 2017; Gollan & Raggam, 2025). This framing allows us to link interpretable, stimulus-level structure directly to behavioral preferences, processing speed, and attention. We conducted an exploratory study to refine metrics followed by a preregistered confirmatory study using the fixed metrics. We hypothesized that, within a pair of equally optimal solutions, participants would prefer the option with lower HC, CC, and VC; that larger absolute differences would speed up decisions; and that more complex solutions would attract relatively more dwell time. In the Results section, we report findings from the confirmatory sample and compare them with those from the exploratory sample. 
+
+Methods The Multiple Subset Sum Problem (MSSP) 
+
+As introduced, our study focused on the multiple subset sum problem (MSSP; Caprara et al., 2000), a variant of the multi-knapsack problem (Cacchiani et al., 2022) in which each item’s profit equals its size. Given m bins with capacities wi and n items with sizes zj , the task is to select a subset of items and assign each to at most one bin so as not to exceed any bin’s capacity and to maximize the total packed size, as formulated in Equation 1: INTERPRETABILITY CRITERIA FOR COMBINATORIAL SOLUTIONS 10 maximize  
+
+> xij ∈{ 0,1}
+> m∑
+> i=1
+> n∑
+> j=1
+
+zj xij ,
+
+subject to 
+
+> n∑
+> j=1
+
+zj xij ≤ wi, i = 1 , 2, . . . , m, 
+
+> m∑
+> i=1
+
+xij ≤ 1, j = 1 , 2, . . . , n. 
+
+(1) Here xij equals 1 if item j is placed in bin i, and 0 otherwise. This fixed-bin, maximization objective differs from the classical bin packing objective of minimizing the number of bins. Figure 1 illustrates an instance of our bin-packing variant and its experimental representation. Rows correspond to items and columns to bins. Block lengths and labels indicate item sizes zj , and filled cells (dots) in the assignment matrix indicate assignments 
+
+xij = 1 . The number shown at the top right is the current score, i.e., the objective value  
+
+> ∑
+> i,j
+
+zj xij in Equation 1. For the experiment, we randomly generated a large set of problem instances subject to several constraints. Each of these problem instances consisted of between 4 and 6 bins and between 7 and 9 items. In addition, all problem instances satisfied the following conditions: (1) No item size is larger than the largest bin; (2) No bin capacity is smaller than the smallest item; (3) The ratio of the sum of item sizes to sum of bin capacities is between 0.8 and 1.0; (4) There are at least two different optimal solutions. These constraints were chosen to create a sample of problems that are simple yet nontrivial. In particular, setting the size to 4–6 bins and to 7–9 items helps to reduce symmetry (especially given the approximate one-to-one relationship between the sum of item sizes and total bin capacities) and makes it less likely that the optimal solution simply corresponds to a one-to-one mapping between items and bins — a solution that would be too trivial to find or evaluate. We also assume that, in many real-world applications such as resource allocation and scheduling, there are typically more items than bins (Kellerer et al., 2004; Cacchiani et al., 2022). A detailed description of how problem instances and their optimal solutions were generated can be found in Appendix A. INTERPRETABILITY CRITERIA FOR COMBINATORIAL SOLUTIONS 11 
+
+Overview of Experimental Design 
+
+Our web-based within-subjects design comprised two studies, as outlined in the Introduction: an exploratory study to generate hypotheses and a preregistered confirmatory study to test them. The studies were conducted in accordance with the Declaration of Helsinki and approved by the Ethics Committee of the University of Vienna (IRB number: 01073). After providing informed consent, participants completed the Problem-Solving Inventory (PSI; Heppner and Petersen, 1982) and received detailed instructions, including an interactive example of our bin-packing task (see Fig. 3). Once they were confident that they understood the tasks, which were expected to take approximately 30 minutes, and once the webcam eye tracking was calibrated, the experimental tasks started. Participants first completed seven problem-solving trials and received feedback after each trial to aid understanding. Then they reported the problem-solving strategies used during this phase in a free text box. Next, participants engaged in 4 practice evaluation trials followed by 25 actual evaluation trials, reporting their preferences between two solutions based on interpretability. They then reported their evaluation strategies in another free text box. Finally, participants arrived at the debriefing screen to provide demographic details and report any study-related issues. 
+
+Experimental Procedure 
+
+Participants 
+
+The study was advertised to participants on Prolific.com (Palan & Schitter, 2018) residing in the US or UK who met the following conditions (obtained by Prolific using participants’ self-report): fluent in English; normal or corrected-to-normal vision; possession and willingness to use a webcam or built-in camera. Participants were compensated £9.00 per hour. Following the exploratory study (see Appendix C), which involved 73 participants and 1,664 observations (evaluation trials), and uncovered a significant link between INTERPRETABILITY CRITERIA FOR COMBINATORIAL SOLUTIONS 12 complexity and interpretability preferences, we used the same sample size for our confirmatory study. A total of 87 participants recruited from Prolific completed the confirmatory study, with 73 remaining after exclusion (exclusion rate = 16.1%). Ages ranged from 20 to 78 years (M = 45.00, SD = 12.65), and the sample consisted of 60.27% male and 39.73% female participants. Participants took a median of 24.72 minutes to complete the experiment (25th–75th percentile = 19.43–31.65 minutes). None of the participants in the exploratory study were permitted to participate in this confirmatory study. For the gaze analyses, only participants with usable webcam-based eye-tracking data were included, resulting in 70 participants and 1,600 evaluation trials (see Gaze Dwell Times) in the confirmatory study. Participants without any valid gaze samples, for example due to calibration or tracking failures, contributed only to the behavioral analyses. 
+
+Eye-Tracking Calibration 
+
+For webcam-based eye tracking we used the open-source JavaScript library WebGazer.js (Papoutsaki et al., 2016). Before the experimental trials, participants performed eye-tracking calibration by fixating and clicking on instructed points on the screen several times. Participants then received feedback about the WebGazer-provided accuracy of the calibration, and if the calibration accuracy was poor, a suggestion to repeat the calibration appeared in the dialog. 
+
+Experimental Trials 
+
+Problem-Solving Trials. To become familiar with our bin-packing variant, participants had to solve seven different problem instances themselves (see Figure 3). The instances were the same for all participants and were presented in increasing difficulty (the ratio of the sum of all item sizes to the sum of all bin capacities). There was no time limit and after each trial, participants were informed whether their solution was an optimal one; if not, they were shown an optimal solution side by side with their own solution. INTERPRETABILITY CRITERIA FOR COMBINATORIAL SOLUTIONS 13 
+
+Evaluation Trials. To answer the question of which solutions are more interpretable than others, the participants were shown a pair of optimal solutions to the same problem in each of the 25 evaluation trials. The participants had to answer the question “Which of the two solutions do you find easier to understand?” by clicking on one of four buttons that were positioned above the solution pair and had the following labels: 
+
+definitely left , slightly left , slightly right and definitely right (see Figure 3). There was no time limit. Among the 25 evaluation trials, two were catch trials aimed at verifying participant attention. In these trials, both solutions were identical, and participants were required to click a fifth button labeled “Duplicated solutions,” located beneath the solution pair (duplicated-solutions button ). To ensure that participants understood how to respond during the catch trials, a practice section preceded the evaluation trials. In this section, participants completed four practice trials, two of which were catch trials. After each trial, participants received feedback on whether their response was appropriate. If the practice section was not completed correctly, it had to be repeated. Three of the 25 evaluation trials were coherence trials , designed to assess the coherence of participant judgments. Participants evaluated three linked solution pairs, with coherent judgments following a logical ordering. For example, if participants rated the first solution as easier to understand than the second, the second as easier than the third, and the first as easier than the third, this indicated coherence in their evaluations across pairs. The proportion of participants who respond coherently sets the theoretical ceiling on the variance our models can capture, because it represents variance driven by systematic, stimulus-related factors. The coherence and catch trials were identical for all participants and were presented at the same point in the experiment, while the remaining 20 trials for each participant were randomly sampled from the pool of possible pairs. See Appendix A for a detailed description of how the trials were generated. INTERPRETABILITY CRITERIA FOR COMBINATORIAL SOLUTIONS 14 In the confirmatory study, a pool of 5,000 evaluation trials for a maximum of 200 participants was generated (details in Appendix A). The range and distribution of our primary predictors across trials in our confirmatory sample (1,668 trials from 73 participants) are shown in Appendix B (Figures B2 and B3). 
+
+Questionnaires 
+
+We used the Problem-Solving Inventory (PSI; Heppner and Petersen, 1982) to assess participants’ self-reported problem-solving skills . The PSI consists of 31 items, rated on a six-point Likert scale. This measure allows for an introspective assessment of individual differences in metacognitive and reflective aspects of problem solving. After the problem-solving and evaluation trial blocks, participants responded to free text response boxes, where they described the strategies they used to perform the tasks. Finally, the debrief questionnaire collected additional demographic data and feedback on participants’ overall experience, including enjoyment, interest, clarity of instructions, and study length, using Likert-scale items. 
+
+Measures 
+
+To make the data hierarchy explicit we distinguish four nested levels of variables. Participant-level variables are constant for each person (e.g., age, expertise). Problem-level variables take one value per problem instance (e.g., number of items and bins). Solution-pair-level variables are computed once for the two solutions taken together such as their maximum, sum, or difference — and are therefore shared by both solutions in that trial. Solution-level variables describe a single solution within the pair (e.g., score of the left solution, format of the right). While not reported as primary measures, they are inputs to the calculation of the solution-pair-level variables presented below. All measures reported below are tagged with these level names so that their place in the data structure is unambiguous. INTERPRETABILITY CRITERIA FOR COMBINATORIAL SOLUTIONS 15 
+
+Dependent Variables 
+
+Choice (Solution-Pair-Level). The outcome variable, choice , captured participants’ responses during evaluation trials using four ordered categories: definitely left ,
+
+slightly left , slightly right , and definitely right . This variable was treated as an ordinal factor in all statistical analyses and coded in ascending order: definitely left < slightly left 
+
+< slightly right < definitely right .
+
+Reaction Time (Solution-Pair-Level). The continuous variable reaction time 
+
+(RT) is the elapsed time during the evaluation trial that a person needed to make their choice, recorded in milliseconds from stimulus presentation to participant response. The natural logarithm of reaction time was used in analyses to normalize the positively skewed distribution typical of response time data. 
+
+Gaze Bias (Solution-Pair-Level). This solution-pair-level metric is quantified as the relative difference in gaze sample counts between the right and left stimuli, derived from eye-tracking data. For each trial, gaze samples are assigned to either the left ( L) or the right ( R) solution. For statistical analysis, these counts are modeled using a binomial generalized linear mixed model (GLMM) with a logit link function on the vector (R, L ).For descriptive reporting, a continuous bias value, 
+
+b = R − LR + L , (2) is computed, ranging from -1 to 1. Trials with no valid gaze samples ( R + L = 0 ) are excluded from the analysis. 
+
+Complexity Models 
+
+We operationalize complexity using three distinct solution-level metrics: heuristic-related complexity (HC), compositional complexity (CC), and visual-order complexity (VC) (see Figure 2). Below, we detail the derivation of each complexity measure for a single solution. To serve as solution-pair-level predictors in our statistical models, we then compute differences between the paired solutions presented in each INTERPRETABILITY CRITERIA FOR COMBINATORIAL SOLUTIONS 16 evaluation trial: signed differences (right minus left) for choice and gaze, and absolute differences for reaction time. 
+
+Heuristic-Related Complexity (HC, Solution-Level). To compute HC for a given solution, we first construct a greedy reference solution using a Largest Bin First, Largest Item First (LBF-LIF) strategy (Coffman et al., 1996; Johnson et al., 1974). This involves descendingly ordering bins by capacity and items by size. We then iterate through the sorted bins; for each bin, we greedily fill it by placing the largest available unassigned items that fit, until no more items can be placed in that bin. Ties (equal bin capacities or item sizes) are broken by preserving the original input order of bins and items. We then represent both the given and the greedy solutions as bipartite graphs (bins/items as nodes; assignments as edges) and compute their graph edit distance with unit costs for edge insertion and deletion. HC is the resulting distance, with larger values indicating deviation from the greedy reference. For statistical analyses, its signed right-left difference is denoted 
+
+∆HC and its absolute difference |∆HC |.
+
+Diagonal Dissimilarity (DD, Solution-Level; Control Covariate). Since heuristic solutions to ordered problem instances (bins and items sorted in descending order by size) often resemble a diagonal line in the assignment matrix (from the top-left to the bottom-right; see Figure 2), we included the graph edit distance to an approximated diagonal (Appendix A) as a control covariate. DD is always computed on the assignment matrix as displayed: if bins or items are visually permuted, the permuted display is compared to the diagonal reference. DD therefore captures how diagonal-like the viewed layout is. By contrast, HC is defined relative to a greedy reference that internally orders bins and items by size before assignment and is thus invariant to visual permutations. DD and HC together allow us to distinguish a preference for diagonal visual layouts (DD) from a preference for heuristic-aligned structure (HC). For statistical analyses, its signed right-left difference is denoted ∆DD and its absolute difference |∆DD |.INTERPRETABILITY CRITERIA FOR COMBINATORIAL SOLUTIONS 17 
+
+Compositional Complexity (CC, Solution-Level). This metric assesses complexity based on the composition of items in each bin. Each bin is treated as the outcome of a generative model, and we quantify how surprising that outcome is under the model. In this context, greater surprisal reflects higher complexity, as it indicates deviations from the expected patterns dictated by the model. Conversely, a low level of surprisal signifies simplicity, suggesting that the bin conforms closely to these preferred patterns. A bin is characterized by three properties: (a) the number of items, N ; (b) the vector of relative item sizes, C, which sums to one when the bin is nonempty; and (c) the unused capacity fraction, E. Assuming conditional independence, the joint density factorizes as 
+
+p(N, C, E ) = p(N ) · p(C | N ) · p(E | N ). (3) 
+
+Number of Items. N follows a geometric law starting at zero, N ∼ Geom( p).The distribution assigns higher probability to small item counts; thus, bins that hold many items contribute more to the surprise score. 
+
+Composition of Item Sizes. For N > 1, the vector C follows a symmetric Dirichlet distribution with concentration α, C ∼ Dir( α). For empty bins ( N = 0 ) and single-item bins ( N = 1 ), this term is absent. When α > 1, the model prefers evenly split items sizes; when α < 1, it favors one dominating item and several very small ones. An optional correction removes the baseline probability of the perfectly even split, ensuring that surprise, and thus complexity, reflects deviations from the preferred pattern rather than the size of the simplex. 
+
+Empty Space. The unused fraction E follows a two-component mixture distribution placing equal probability mass near 0 and 1. Consequently, bins that are almost full or almost empty are regarded as simple, whereas bins that are half-filled are deemed more surprising and therefore complex. The components can be one of three different forms. For example, in one variant we use a truncated normal mixture, INTERPRETABILITY CRITERIA FOR COMBINATORIAL SOLUTIONS 18 
+
+E ∼ 12 Norm (0 ,1) (0 , σ ) + 12 Norm (0 ,1) (1 , σ ), (4) and analogous mixtures for the truncated Laplace and continuous Bernoulli options (Loaiza-Ganem & Cunningham, 2019). A common scale parameter σ controls how sharply the mass concentrates around the extremes (selection of these parameters is addressed below). For a single bin, the negative log-probability 
+
+L = − [ln p(N ) + ln p(C | N ) + ln p(E | N )] (5) quantifies its surprise and therefore complexity — in nats. With appropriate parameter settings, this formulation allows us to assign relatively low surprise to solutions consisting of few-item bins that are either nearly empty or nearly full and whose item sizes approximate symmetric compositions, while deviations from these simple patterns can be assigned higher surprise. The resulting compositional complexity of a solution is then defined as the average surprise of its bins under this model. For statistical analyses, its signed right-left difference is denoted ∆CC and its absolute difference |∆CC |.
+
+Optimized Parameters. As noted above, the CC model includes several tunable parameters that influence the complexity evaluation. The empty space fraction can be described using different distributions, such as truncated normal, truncated Laplace, or continuous Bernoulli. The scale parameter controls the concentration of probability mass in these distributions. Additionally, parameter p determines how strongly the geometric law penalizes bins with many items, and parameter α sets the preference for symmetry in the composition of item sizes using the Dirichlet distribution. Prior to each experiment (exploratory or confirmatory), a dedicated calibration procedure was conducted to determine these parameters (see Appendix A for details). We provide information on the parameters used in the exploratory study in Appendix C. For our confirmatory analysis, this procedure yielded the following parameters: continuous Bernoulli distribution for empty space, scale parameter σ = 0.426, p = 0.043 and α = 0.984, with Dirichlet correction. INTERPRETABILITY CRITERIA FOR COMBINATORIAL SOLUTIONS 19 
+
+Visual-Order Complexity (VC, Solution-Level). This metric assesses the disorder of items and bins in a visual representation of a problem instance using an adapted version of Kendall’s τ (rank correlation). Let w = ( w1, . . . , w m) be the bin capacities and 
+
+z = ( z1, . . . , z n) the item sizes. For any sequence a = ( a1, . . . , a k) ( k ≥ 2) define 
+
+ai,asc = ai + i ε, ai,desc = ai + ( k − i + 1) ε (6) with ε = 10 −5. The corresponding rank correlations are 
+
+τasc (a) = τ (aasc , (1 , 2, . . . , k )) , τ desc (a) = τ (adesc , (1 , 2, . . . , k )) (7) Disorder is quantified as 
+
+d(a) = 1 − max (|τasc (a)|, |τdesc (a)|). (8) Finally, the visual-order complexity ( V C ) of a solution is 
+
+V C = m d (w) + n d (z)
+
+m + n , (9) where m = |w| and n = |z|.This adaptation treats adjacent bins or items of identical size as already ordered by adding a tiny offset to break the tie (Equation 6). Kendall’s τ is then computed against both an ascending and a descending reference, and the larger absolute correlation is kept (Equation 7); disorder for that sequence is defined as in Equation 8. Applying this procedure to the bin sequence and the item sequence and weighting the two disorder scores by their respective counts yields the VC (Equation 9). This expression quantifies the overall disorder of a given visual representation of a problem instance relative to an ideally ordered state. For statistical analyses, its signed right-left difference is denoted ∆VC and its absolute difference |∆VC |.INTERPRETABILITY CRITERIA FOR COMBINATORIAL SOLUTIONS 20 
+
+Further Measures 
+
+Maximum Disorder (MD, Solution-Pair-Level). This solution-pair-level metric is derived from the VC of two solutions. Rather than taking the difference between the right and left solutions, it is defined as max (V C L, V C R). We were specifically interested in how this moderator influenced HC, CC and DD. The rationale here was that disorder may impair comparisons. For a comparison between two instances to be impaired, it is sufficient for one of the instances to have a characteristic that renders the comparison difficult. Although MD and the difference in VC between two solutions capture slightly different aspects, they are derived from the same data. Therefore, we did not consider interactions of MD with ∆VC and |∆VC | in later model analyses, as we did not expect to draw any meaningful conclusions from them. 
+
+Problem Difficulty (PD, Problem-Level). This problem-level metric was operationalized as the ratio of the sum of item sizes to the sum of all bin capacities. This continuous metric ranges from 0.8 to 1.0 in the sampled problems, with higher values denoting greater difficulty of a particular problem instance (see also Generation of Problem and Solution Instances in Appendix A). This ratio captures the inherent challenge within our packing task by reflecting the relative tightness of the space to be filled. A higher ratio implies that the items collectively approach the available capacity more closely, thereby increasing the demand for optimal packing strategies, a nuance that aligns well with theoretical perspectives on resource constraints and cognitive load (Sweller, 1988). 
+
+Heuristic Optimality (HO, Problem-Level). This measure assesses the quality of a heuristic solution for a given problem instance. It is the ratio of the heuristic score to the optimal score, with values ranging from 0.0 to 1.0. A value of 1.0 indicates that the heuristic achieves the optimal solution, while lower values suggest that the heuristic is ineffective for that problem instance. INTERPRETABILITY CRITERIA FOR COMBINATORIAL SOLUTIONS 21 
+
+Self-Reported Problem-Solving Skills (PSI, Participant-Level). This metric was calculated using the sum of participants’ scores on all the items in the PSI questionnaire. 
+
+Problem-Solving Efficiency (PSE, Participant-Level). This metric assesses participants’ difficulty-weighted problem-solving efficiency (PSE), integrating their solution optimality and reaction time (RT) across the seven problem-solving trials, with harder trials contributing proportionally more to the final score. For trial i, unweighted efficiency was defined as 
+
+Ei,j = Si,j 
+
+Oi
+
+÷ RT i,j , (10) where Si,j is the score obtained by participant j, Oi is the optimal score for the problem instance in trial i, and RT i,j is the reaction time (seconds). Trial-specific difficulty weights (wi) were derived from group efficiency. Let n denote the number of problem-solving trials (here n = 7 ), and let ¯Ei be the mean E across participants on trial i. The difficulty weights were then defined as 
+
+wi = 1
+
+n − 1
+
+> (
+
+1 − ¯Ei 
+
+> ∑nk=1
+
+¯Ek
+
+> )
+
+, (11) so that trials with lower mean efficiency (harder trials) received larger weights. A participant’s overall PSE ( ηj ) was the weighted sum 
+
+ηj =
+
+> n∑
+> i=1
+
+wi Ei,j . (12) Higher values capture the ability to find solutions that are both closer to optimal and achieved more quickly, particularly on the most demanding problems. INTERPRETABILITY CRITERIA FOR COMBINATORIAL SOLUTIONS 22 
+
+Data Analysis 
+
+Data Exclusion and Preprocessing 
+
+To maintain data integrity in this study, several exclusion criteria were applied. Participants were excluded if they failed to click the duplicated-solutions button in both catch trials. Participants were also excluded if they used this button in at least two non-catch trials. Furthermore, individual trials were excluded from the analysis if participants clicked the duplicated-solutions button. Data from participants who did not complete all trials were also discarded. For the gaze analyses specifically, any trials with no on-stimulus gaze ( R + L = 0 ) were excluded. To prepare for statistical analysis, all predictors were put on a comparable scale. For the three complexity measures and diagonal dissimilarity, we first computed raw right–left differences for each trial. These raw differences were then divided by their standard deviation across all trials. We did not subtract the mean of the differences, so that a value of 0 still corresponds to “no difference between the two solutions”. Signed standardized differences were used as predictors in the choice and gaze analyses, and absolute standardized differences were used in the reaction-time analysis. The gaze outcome was not standardized. For figures and reporting, gaze is expressed as a bias, 
+
+b = ( R − L)/(R + L), with a range from -1 to 1. 
+
+Linear Mixed-Effects Models 
+
+For each analysis we fitted mixed-effects models in R v4.3.2 (R Core Team, 2023). Predictors were entered as fixed effects. We used random intercepts for participants in all models and, where convergence allowed, random slopes for the included complexity main effects (and DD, if present); interactions were not given random slopes. Appendix A details the random-effects procedure that remained consistent across the candidate models, as well as the selection routine based on the Akaike Information Criterion (AIC). This routine compared a set of candidate models motivated by theory. If the best-fitting model was at least 2 AIC units better than every alternative ( ∆AIC > 2), it was selected. When two or INTERPRETABILITY CRITERIA FOR COMBINATORIAL SOLUTIONS 23 more models lay within 2 AIC units of the minimum ( ∆AIC ≤ 2), they were considered equally supported (Burnham & Anderson, 2004) and the simplest (fewest parameters) among them was chosen. Ordinal outcomes were analyzed with clmm from the ordinal 
+
+package (Christensen, 2023; thresholds = "symmetric" , link = logit , Laplace approximation), continuous outcomes with lmer from lme4 (Bates et al., 2015; REML = FALSE ), and binomial counts with glmer from lme4 ( family = binomial ). We report Nakagawa’s marginal and conditional R2 for all three model classes using the performance 
+
+package (Lüdecke et al., 2021). All three analyses used right–left differences in HC, CC, VC, and DD as focal predictors, and drew on the same set of potential moderators or covariates: PD, PSI, PSE, HO, and MD. Across all models, MD was never entered together with VC because both are derived from the same underlying disorder scores. The three analyses differed in outcome, predictor form, and interaction policy. For 
+
+choice , the ordinal outcome (four levels) was predicted from signed standardized right–left differences, with two-way interactions between each complexity predictor and each moderator (no interactions among main effects or with DD). For reaction time , the continuous outcome (log RT) was modeled using absolute between-solution differences, with the covariates included only as additional covariates and no interactions. For gaze bias , binomial GLMMs were fitted on the counts of gaze samples on the right and left solutions, modeling the probability of gazing at the right solution given the total gaze samples on both sides; fixed effects were signed right–left differences with the same set of moderators and the same interaction policy as the choice models. 
+
+Coherence Ceiling Estimation 
+
+We inspected the three coherence trials (see Evaluation Trials) and checked whether each participant’s set of pair-wise ratings was transitive. The resulting proportion of participants meeting this criterion ( pcoh ) constituted an empirical ceiling on the variance that could be attributed to stimulus properties. We therefore compared pcoh to the INTERPRETABILITY CRITERIA FOR COMBINATORIAL SOLUTIONS 24 marginal Nakagawa R2 of the GLMM predicting ordinal choices from solution complexity, because the marginal R2 isolates variance explained by the fixed effect (complexity) alone, whereas the conditional R2 would also include variance due to random participant factors and would thus exceed what is theoretically explainable (Nakagawa & Schielzeth, 2013). This analysis was conducted with the R packages ordinal (Christensen, 2023) and 
+
+performance (Lüdecke et al., 2021). 
+
+Preregistration 
+
+We preregistered hypotheses, primary outcomes, predictors, sample size, exclusion criteria, and the analysis plan for the confirmatory study at OSF prior to data collection (https://doi.org/10.17605/OSF.IO/D2AQ7). The exploratory study preceded this registration and was used to refine metrics and stimuli. Any deviations from the preregistered plan are listed below. 
+
+Deviations from Preregistration 
+
+We implemented two deviations and logged both in the OSF record. First, for the reaction-time (RT) analyses, we added self-reported problem-solving skills (PSI; z-scored; (Heppner & Petersen, 1982)) as a potential covariate. This corrected an oversight: PSI (self-report) and PSE (behavioral performance; preregistered potential covariate) capture complementary constructs that can both influence RT. The change affected only RT models; choice and gaze analyses remained as preregistered. In the AIC-based model selection, the final RT model did not include PSI, and including PSI as a candidate ultimately did not change the pattern of significant effects or the conclusions. Second, we modified the standardization procedure for the focal predictors (HC, CC, VC, DD). Preregistered, we planned to z-standardize the pooled left and right values and then compute the difference between these z-scores (right – left). In the final analyses, we instead computed the raw right–left differences and standardized these difference scores by dividing by their empirical standard deviation, without subtracting the mean so that 0 remained an interpretable reference point (no difference between options). This change INTERPRETABILITY CRITERIA FOR COMBINATORIAL SOLUTIONS 25 only rescaled the predictors (and thus the regression coefficients) and did not affect standard errors, test statistics, or p-values; the pattern of significant effects and the conclusions remained unchanged. 
+
+Results Preference for Simpler Solutions 
+
+We tested standardized right–left differences in heuristic-related complexity (HC), compositional complexity (CC), and visual-order complexity (VC), plus diagonal dissimilarity (DD), using ordinal mixed-effects models with Akaike Information Criterion (AIC)-based selection (Table 1). As hypothesized, participants preferred the simpler option: all three complexity differences (HC, CC, VC) had negative coefficients, whereas DD did not reliably predict choice. An increase of one standard deviation in the difference reduced the odds of selecting the more complex solution by 27% (HC; OR = 0.73, 95% CI [0.64, 0.83]), 21% (CC; OR = 0.79, 95% CI [0.70, 0.90]), and 31% (VC; OR = 0.69, 95% CI [0.62, 0.77]). Across 1,668 observations from 73 participants, model fit was 0.083 (marginal 
+
+R2) and 0.201 (conditional R2), with the marginal R2 well below the empirical coherence ceiling (proportion of participants with transitive responses; see Coherence Ceiling Estimation in Methods) of 0.877 (64 participants with transitive and 9 participants with intransitive judgments), indicating that a substantial share of choice variance remains potentially attributable to systematic factors rather than mere decision noise. Figure 4 shows predicted probabilities shifting toward the less complex option with increasing difference, and Figure 5 illustrates representative stimulus pairs. Across all evaluation trials, choice proportions were: definitely left 18.4%, slightly left 38.0%, slightly right 29.5%, and definitely right 14.1%. Pairwise correlations among the focal predictors were modest ( max |r| = 0.38), indicating limited collinearity (Appendix B). These confirmatory findings generally align with the exploratory analysis. However, one notable deviation was that the main effect of DD was not statistically significant in the confirmatory sample. Cross-study summary plots are shown in Appendix D. INTERPRETABILITY CRITERIA FOR COMBINATORIAL SOLUTIONS 26 
+
+Table 1 
+
+Ordinal Mixed-Effects Model Predicting Choice                                                                          
+
+> Term Estimate SE zpCI low CI high
+> Fixed effects
+> Central Threshold 0.136 0.061 2.239 0.025 0.017 0.255 Threshold Spacing 1.898 0.054 35.063 <0.001 1.792 2.004
+> ∆HC -0.314 0.064 -4.919 <0.001 -0.439 -0.189
+> ∆CC -0.234 0.066 -3.542 <0.001 -0.363 -0.104
+> ∆VC -0.371 0.057 -6.541 <0.001 -0.482 -0.260
+> ∆DD -0.031 0.061 -0.516 0.606 -0.150 0.087
+> Random effects
+> SD (Intercept | Subject) 0.311 SD ( ∆HC | Subject) 0.287 SD ( ∆CC | Subject) 0.360 SD ( ∆VC | Subject) 0.250 SD ( ∆DD | Subject) 0.243
+> Note. Choice ∼∆HC + ∆CC + ∆VC + ∆DD + (1 + ∆HC + ∆CC + ∆VC + ∆DD | Subject). N(obs ) = 1668, N(subj ) = 73, logLik = -2101.4. The odds ratio (OR) for a 1-SD change in a predictor is OR = exp( β); the corresponding percent change in odds is 100 ·(exp( β)−1) .
+
+Reaction Time: Faster Responses with Larger Heuristic Differences 
+
+We analyzed log reaction time (RT) using a linear mixed-effects model on absolute between-solution differences in HC, CC, VC, and DD (AIC-based selection). This tested the decision-speed hypothesis that larger separations facilitate choices. As hypothesized, larger |∆HC | predicted faster responses, amounting to an average 4% reduction in RT per SD in |∆HC |. In contrast, |∆CC |, |∆VC |, and |∆DD | did not significantly predict responses; while higher problem-solving efficiency (PSE) did (Table 2). Fit was modest INTERPRETABILITY CRITERIA FOR COMBINATORIAL SOLUTIONS 27 
+
+Figure 4 
+
+Predicted Choice Probabilities as a Function of Complexity Difference 0.0 
+
+> 0.1
+> 0.2
+> 0.3
+> 0.4
+> 0.5
+
+Heuristic-related complexity ( HC) Diagonal dissimilarity ( DD)       
+
+> -3 -2 -1 0+1 +2 +3
+> 0.0
+> 0.1
+> 0.2
+> 0.3
+> 0.4
+> 0.5
+
+Compositional complexity ( CC)       
+
+> -3 -2 -1 0+1 +2 +3
+
+Visual-order complexity ( VC) 
+
+Complexity difference (R L)    
+
+> Choice probability
+> definitely left slightly left slightly right definitely right
+
+Note . Panels correspond to the three complexity metrics (HC = heuristic-related complexity, CC = compositional complexity, VC = visual-order complexity) and the covariate diagonal dissimilarity (DD). Complexity differences are standardized (0 = no difference; 1 = one standard deviation). Colored lines give the model-predicted probability of the four behavioral responses (‘definitely left’, ‘slightly left’, ‘slightly right’, ‘definitely right’); shaded ribbons denote 95% confidence intervals. INTERPRETABILITY CRITERIA FOR COMBINATORIAL SOLUTIONS 28 
+
+Figure 5 
+
+Example Pairs with Model-Predicted Choice Probabilities -3 -2 -1 0 +1 +2 +3                       
+
+> Complexity difference (R L)
+> -3 -2 -1 0+1 +2 +3
+> Complexity difference (R L)
+> -3 -2 -1 0+1 +2 +3
+> Complexity difference (R L)
+> -3 -2 -1 0+1 +2 +3
+> Complexity difference (R L)
+
+Heuristic-related complexity ( HC) Diagonal dissimilarity ( DD) 
+
+Compositional complexity ( CC) Visual-order complexity ( VC)    
+
+> definitely left slightly left slightly right definitely right
+> Choice probability
+
+25% 6% 44% 25% 
+
+> Choice probability
+
+41% 17% 32% 10% 
+
+> Choice probability
+
+42% 19% 30% 9% 
+
+> Choice probability
+
+24% 6% 44% 26% 
+
+Note . Example stimulus pairs used in the experiment across the three complexity metrics (HC, CC, VC) and the covariate diagonal dissimilarity (DD). Each panel shows the left–right solutions and their complexity difference (R–L; negative = left more complex) signified by the triangle marker. Complexity differences are standardized (0 = no difference; 1 = one standard deviation). The horizontal bar below displays model-predicted choice probabilities (%) for definitely/slightly choosing left or right (corresponding to Figure 4). INTERPRETABILITY CRITERIA FOR COMBINATORIAL SOLUTIONS 29 (marginal R2 = 0.054; conditional R2 = 0.649) across 1,668 trials from 73 participants. The corresponding raw RT had a median of 7532 ms (25th–75th percentile = 4708–12954 ms). These results contrast with our exploratory analysis, where larger absolute differences in all three complexity metrics — HC, CC, and VC — were associated with faster responses. Cross-study summary plots are shown in Appendix D. 
+
+Table 2 
+
+Linear Mixed-Effects Model Predicting Response Time                                                       
+
+> Term Estimate SE tpCI low CI high
+> Fixed effects
+> Intercept 9.010 0.068 131.771 <0.001 8.874 9.146 |∆HC| -0.042 0.019 -2.214 0.027 -0.079 -0.005 |∆CC| 0.016 0.016 1.013 0.311 -0.015 0.048 |∆VC| -0.004 0.013 -0.325 0.745 -0.030 0.022 |∆DD| -0.029 0.016 -1.780 0.075 -0.062 0.003 PSE -0.167 0.068 -2.460 0.016 -0.303 -0.032
+> Random effects
+> SD (Intercept) 0.535 SD (residual) 0.411
+> Note. RT ∼|∆HC| + | ∆CC| + | ∆VC| + | ∆DD| + PSE + (1 | Subject). Outcome: log reaction time ( log RT ). N(obs ) = 1668, N(subj ) = 73, logLik = -1018.1.
+
+No Evidence for Complexity Effects on Gaze Dwell Times 
+
+We modeled side-wise dwell with a binomial generalized linear mixed-effects model (GLMM) on the counts of gaze samples on the right (R) and left (L) solutions, using a logit link; equivalently, the outcome is p = R/ (R + L). This tested whether signed differences in complexity predicted gaze dwell asymmetry. The AIC-based comparison retained the intercept-only specification, indicating no reliable complexity effects on gaze INTERPRETABILITY CRITERIA FOR COMBINATORIAL SOLUTIONS 30 bias. The intercept was significantly negative (b = -0.400, p = < 0.001, 95% confidence interval (CI) [-0.612, -0.187]), consistent with a small overall left-gaze tendency. Fit indices were low (marginal R2 = 0.000; conditional R2 = 0.182). Gaze bias had a mean of -0.062 (SD = 0.467) and trials with no usable gaze comprised 4.1%. These results are consistent with the exploratory analysis, which likewise retained an intercept-only model. 
+
+Discussion 
+
+In this paper, we asked which properties of packing solutions make them easier to understand. We showed two optimal solutions to the same problem side by side and collected graded preferences. Participants’ choices consistently favored the solution with lower complexity along three predefined metrics — compositional complexity (CC), visual-order complexity (VC), and heuristic-related complexity (HC). Reaction times showed a selective speeding of decisions when heuristic-related differences were larger, and aggregate webcam-based gaze did not exhibit complexity-driven dwell asymmetries. Together, these findings support a feature-based account of interpretability in optimal packing solutions and suggest practical ways to align machine-generated solutions with human preferences. 
+
+Interpretable Structure: Alignment with Human Heuristics and Perceptual Organization 
+
+Our results supported the main hypothesis: all three complexity differences were predictors of choice, indicating reliable preference for simpler solutions. These convergent effects fit a simple cognitive account. First, visual order helps the perceptual system produce short, rule-like descriptions (e.g., “largest first”), consistent with simplicity/likelihood principles in everyday perception (Feldman, 2016; van der Helm, 2000; Chater, 1996; Helmholtz, 1909/1962). Second, heuristic alignment enables immediate rationalization of how a solution was constructed, reducing explanatory burden (Gigerenzer & Gaissmaier, 2011). Third, compositional simplicity reduces encoding demands: extreme INTERPRETABILITY CRITERIA FOR COMBINATORIAL SOLUTIONS 31 bin compositions (near-empty or near-full) provide summary cues that can be registered at a glance, potentially reducing the need for further perceptual processing (Sweller, 1988). Notably, the robust effect of HC suggests that participants may be applying familiar heuristics even when evaluating completed solutions, not only when generating them. This observation extends the heuristic literature (which has largely focused on solution construction; Gigerenzer and Gaissmaier, 2011; Cormen et al., 2009) to the evaluation of precomputed solutions. It also parallels findings from discrimination paradigms using Euclidean Traveling Salesman Problem solutions, where simple geometric properties guide judgments about which tour is better (Kyritsis et al., 2022). Our results show that alignment with a greedy packing heuristic systematically shifts interpretability preferences among equally optimal solutions. Framing evaluative judgments as heuristic use helps explain why solutions that align more closely with our reference greedy heuristic (lower HC) are easier to understand. Larger heuristic differences ( |∆HC |) were associated with faster evaluations, consistent with our second hypotheses and the idea that familiar construction reduces decisional conflict (Gigerenzer & Gaissmaier, 2011; Sweller, 1988). In contrast, differences in bin compositions and order ( |∆CC | and |∆VC |) did not reliably shorten decisions, suggesting these features guide preference without necessarily compressing total deliberation in our low-pressure setting. While the exploratory sample showed broader RT reductions, the HC-specific pattern here likely depends on stimulus distributions and cohort differences, leaving HC as the only robust speed effect (Luce, 1986). We hypothesized that complexity differences would manifest in attentional asymmetry; however, aggregate side-wise dwell did not reliably vary with complexity under webcam-based tracking, and the results suggested a modest left-gaze tendency. In paired presentations of equally optimal alternatives, brief or small asymmetries may be swamped by inter-trial variability. INTERPRETABILITY CRITERIA FOR COMBINATORIAL SOLUTIONS 32 
+
+Limitations 
+
+Our study has several limitations. First, our measurements of interpretability and processing were themselves constrained. Participants could have had differing interpretations of the preference elicitation prompt (“Which of the two solutions do you find easier to understand?”). It is possible that choices were influenced by factors such as visual appeal or alignment with personal biases, potentially conflating “ease of understanding” with a mere “liking” for certain visual characteristics (Feldman, 2016; van der Helm, 2000; Chater, 1996; Helmholtz, 1909/1962). However, the consistent influence of heuristic alignment (HC) suggests some engagement with solution structure beyond superficial visual cues. In addition, our use of webcam-based eye tracking for gaze measurement introduced limited spatial precision, restricting fine-grained analyses such as scanpaths and potentially reducing sensitivity to subtle, complexity-driven attentional dynamics (Papoutsaki et al., 2016). Second, our experimental setup, which involved participants judging fully computed optimal solutions without time pressure, presents a trade-off in ecological validity. While this controlled environment allowed for clear comparisons, it deviates from real-world resource allocation and design tasks, which often entail partial solutions, dynamic constraints, risks, and deadlines (Lee & See, 2004; Dietvorst et al., 2015). Third, although we designed our sampling and calibration procedures to systematically vary complexity, we cannot rule out the possibility that other, unmeasured structural properties covaried with our metrics and contributed to the observed preferences. Our indices capture theoretically motivated aspects of solution structure, but they remain proxies and may correlate only imperfectly with deeper underlying regularities that participants are sensitive to. This means that our results should be interpreted as evidence that HC, CC, and VC are informative markers of interpretability, not as proof that they exhaust the space of relevant structural factors. Finally, the generalizability of our findings is constrained by the scope of the INTERPRETABILITY CRITERIA FOR COMBINATORIAL SOLUTIONS 33 stimuli. We examined relatively small problem instances (4–6 bins, 7–9 items) and defined heuristic-related complexity based on a single greedy strategy (largest-bin, largest-item first). The applicability of these results to larger, more complex problems or alternative human-plausible heuristics (Coffman et al., 1996; Johnson et al., 1974; Kellerer et al., 2004) remains to be determined. 
+
+Future Directions 
+
+Future work should prioritize enhancing the measurement and ecological validity. Beyond subjective preferences, performance-based assessments could be developed. For instance, a process-level paradigm where participants complete partially finished solutions could yield task-based indices of solution usability, such as accuracy and time. To gather richer subjective data, future work could develop or adapt dedicated questionnaires for perceived interpretability, cognitive load, and satisfaction (Brooks et al., 2012; Doshi-Velez & Kim, 2017; Narayanan et al., 2018; Afsar et al., 2023), while also drawing deeper insights from analyses of the current dataset’s free-text evaluation reports. Concurrently, integrating laboratory eye tracking and pupillometry would offer richer insights into early attentional allocation and cognitive load dynamics related to HC, CC, and VC, directly addressing the limitations inherent in webcam-based gaze measurement (Eckstein et al., 2017; Gollan & Raggam, 2025). To better reflect real-world resource allocation and design tasks, embedding time pressure and dynamic constraints within these experimental paradigms would be essential for improving ecological validity (Lee & See, 2004; Dietvorst et al., 2015). Generalizing our findings is a crucial next step. This involves validating our metrics across a broader range of packing and knapsack variants, including larger and more complex problem instances (Kellerer et al., 2004; Cacchiani et al., 2022; Gurski et al., 2019). Furthermore, future studies should explore other human-plausible heuristics beyond the largest-bin, largest-item first strategy when computing HC Coffman et al., 1996; Johnson et al., 1974; Kellerer et al., 2004. Directly examining presentation strategies is INTERPRETABILITY CRITERIA FOR COMBINATORIAL SOLUTIONS 34 vital; this includes comparing stepwise derivations (e.g., replaying solution sequence or interactive reveals) to static final solutions. Such work could test whether showing the solution sequence improves understanding particularly for heuristic-aligned solutions (Fox et al., 2017; Chakraborti et al., 2017; B. Tversky et al., 2002). Personalizing generation and presentation of solutions based on user-specific preferences also represents a promising direction for human–algorithm collaboration (Miller, 2019; Zerilli et al., 2022). An important theoretical and practical challenge involves quantifying interpretability–optimality trade-offs. This could be achieved by integrating interpretability terms as secondary objectives within multi-objective optimization formulations (Ehrgott, 2005). Such studies would help identify when people prefer simpler, objectively worse solutions and map decision regions where interpretability might outweigh strict optimality. Ultimately, a longer-term goal is to develop a unified cognitive model that integrates HC, CC, and VC into a summarized interpretability representation to explain choices, reaction times, and attention. Validating such a model through out-of-sample prediction and physiological process measures (e.g., gaze, pupillometry) would offer a comprehensive framework for understanding human interpretability in complex decision environments (Luce, 1986; Eckstein et al., 2017; Franco et al., 2021; Franco et al., 2022). 
+
+Conclusion 
+
+Within the combinatorial packing paradigm studied here, and potentially in related optimization problems, our results indicate that human preference for interpretable machine solutions is shaped by three quantifiable structural properties: visual order, alignment with a greedy heuristic, and compositional simplicity. These findings yield actionable design principles for interpretability-aware solution presentation and optimization. For presentation, visual-order complexity can be reduced by sorting bins and items so that perceptual disorder is lower. For optimization, interpretability can be treated as a secondary criterion, for instance by preferring solutions with lower CC and HC among equally good candidates, by breaking ties in favor of lower CC/HC, by adding small INTERPRETABILITY CRITERIA FOR COMBINATORIAL SOLUTIONS 35 penalties for complexity in multi-objective formulations (Ehrgott, 2005), or by screening a shortlist of optimal solutions and presenting those that are the most interpretable. More broadly, integrating interpretability as an explicit objective alongside traditional performance criteria may help enhance transparency, accelerate appropriate human reactions, strengthen trust, and support decisive control within human–AI interactions for problem-solving tasks. 
+
+Data Availability Statement 
+
+The code, materials, and data used in this research are publicly available at the Open Science Framework (OSF) repository. All shared data have been de-identified to protect participant privacy, with direct identifiers removed and indirect identifiers minimized. Eye-tracking data consist solely of numerical measurements (gaze coordinates, fixation durations, timestamps, and related metrics); no video recordings of participants were collected or stored during the study. You can access them at the following link: https://osf.io/4wjgp/. 
+
+CRediT Authorship Contribution Statement 
+
+DP: Conceptualization, Investigation, Methodology, Software, Formal Analysis, Data Curation, Visualization, Writing - Original Draft, Writing - Review & Editing. FJ: Methodology, Writing - Review & Editing. DS: Writing - Review & Editing. FS: Resources, Supervision, Writing - Review & Editing. FM: Supervision, Conceptualization, Investigation, Methodology, Software, Writing - Original Draft, Writing - Review & Editing. 
+
+Acknowledgments 
+
+We would like to thank Rita Hansl, Alex Karner, Kathrin Kostorz, Cindy Lor, Daniel Reiter, Annika Trapple, Nicole Wimmer, and Mengfan Zhang for their contributions during the development of the web-based experiment. We thank Hermann Kaindl for helpful discussions and feedback during the development of this research. INTERPRETABILITY CRITERIA FOR COMBINATORIAL SOLUTIONS 36 
+
+Competing Interests 
+
+The authors declare no competing interests. 
+
+Funding 
+
+This research was funded by the Austrian Research Promotion Agency (FFG), Project Nos. 471030, 887474 & 927913. FM was funded by the Austrian Science Fund (FWF) [10.55776/ESP133]. 
+
+References 
+
+Abdul, A., Vermeulen, J., Wang, D., Lim, B. Y., & Kankanhalli, M. (2018). Trends and trajectories for explainable, accountable and intelligible systems: An HCI research agenda. Proceedings of the 2018 CHI Conference on Human Factors in Computing Systems , 1–18. https://doi.org/10.1145/3173574.3174156 Afsar, B., Silvennoinen, J., Misitano, G., Ruiz, F., Ruiz, A. B., & Miettinen, K. (2023). Designing empirical experiments to compare interactive multiobjective optimization methods. Journal of the Operational Research Society , 74 (11), 2327–2338. https://doi.org/10.1080/01605682.2022.2141145 Akata, Z., Balliet, D., de Rijke, M., Dignum, F., Dignum, V., Eiben, G., Fokkens, A., Grossi, D., Hindriks, K., Hoos, H., Hung, H., Jonker, C., Monz, C., Neerincx, M., Oliehoek, F., Prakken, H., Schlobach, S., van der Gaag, L., van Harmelen, F., . . . Welling, M. (2020). A Research agenda for hybrid intelligence: Augmenting human intellect with collaborative, adaptive, responsible, and explainable artificial intelligence. Computer , 53 (8), 18–28. https://doi.org/10.1109/MC.2020.2996587 Barredo Arrieta, A., Díaz-Rodríguez, N., Del Ser, J., Bennetot, A., Tabik, S., Barbado, A., Garcia, S., Gil-Lopez, S., Molina, D., Benjamins, R., Chatila, R., & Herrera, F. (2020). Explainable Artificial Intelligence (XAI): Concepts, taxonomies, opportunities and challenges toward responsible AI. Information Fusion , 58 , 82–115. https://doi.org/10.1016/j.inffus.2019.12.012 INTERPRETABILITY CRITERIA FOR COMBINATORIAL SOLUTIONS 37 Bates, D., Mächler, M., Bolker, B., & Walker, S. (2015). Fitting linear mixed-effects models using lme4 .Brooks, M., Kay-Lambkin, F., Bowman, J., & Childs, S. (2012). Self-compassion amongst clients with problematic alcohol use. Mindfulness , 3 (4), 308–317. https://doi.org/10.1007/s12671-012-0106-5 Burnham, K. P., & Anderson, D. R. (Eds.). (2004). Model Selection and Multimodel Inference . Springer New York. https://doi.org/10.1007/b97636 Bussone, A., Stumpf, S., & O’Sullivan, D. (2015). The role of explanations on trust and reliance in clinical decision support systems. 2015 International Conference on Healthcare Informatics , 160–169. https://doi.org/10.1109/ICHI.2015.26 Cacchiani, V., Iori, M., Locatelli, A., & Martello, S. (2022). Knapsack problems — an overview of recent advances. Part II: Multiple, multidimensional, and quadratic knapsack problems. Computers & Operations Research , 143 , 105693. https://doi.org/10.1016/j.cor.2021.105693 Caprara, A., Kellerer, H., & Pferschy, U. (2000). The multiple subset sum problem. SIAM Journal on Optimization , 11 (2), 308–319. https://doi.org/10.1137/S1052623498348481 Chakraborti, T., Sreedharan, S., Zhang, Y., & Kambhampati, S. (2017). Plan explanations as model reconciliation: Moving beyond explanation as soliloquy. https://doi.org/10.48550/arXiv.1701.08317 Chater, N. (1996). Reconciling simplicity and likelihood principles in perceptual organization. Psychological Review , 103 (3), 566–581. https://doi.org/10.1037/0033-295X.103.3.566 Christensen, R. H. B. (2023). Ordinal—regression models for ordinal data .https://CRAN.R-project.org/package=ordinal INTERPRETABILITY CRITERIA FOR COMBINATORIAL SOLUTIONS 38 Coffman, E. G., Garey, M. R., & Johnson, D. S. (1996). Approximation algorithms for bin packing: A survey. In Approximation algorithms for NP-hard problems (pp. 46–93). PWS Publishing Co. https://dl.acm.org/doi/10.5555/241938.241940 Cormen, T. H., Leiserson, C. E., Rivest, R. L., & Stein, C. (2009). Introduction to algorithms (Third edition). MIT Press. Dietvorst, B. J., Simmons, J. P., & Massey, C. (2015). Algorithm aversion: People erroneously avoid algorithms after seeing them err. Journal of Experimental Psychology: General , 144 (1), 114–126. https://doi.org/10.1037/xge0000033 Doshi-Velez, F., & Kim, B. (2017). Towards a rigorous science of interpretable machine learning. https://doi.org/10.48550/arXiv.1702.08608 Dumnić, S., Dupljanin, D., Božović, V., & Ćulibrk, D. (2019). PathGame: Crowdsourcing time-constrained human solutions for the travelling salesperson problem. 
+
+Computational Intelligence and Neuroscience , 2019 , 1–9. https://doi.org/10.1155/2019/2351591 Eckstein, M. K., Guerra-Carrillo, B., Miller Singley, A. T., & Bunge, S. A. (2017). Beyond eye gaze: What else can eyetracking reveal about cognition and cognitive development? Developmental Cognitive Neuroscience , 25 , 69–91. https://doi.org/10.1016/j.dcn.2016.11.001 Ehrgott, M. (2005). Multicriteria optimization (Second edition). Springer. Feldman, J. (2016). The simplicity principle in perception and cognition. WIREs Cognitive Science , 7 (5), 330–340. https://doi.org/10.1002/wcs.1406 Fox, M., Long, D., & Magazzeni, D. (2017). Explainable Planning. https://doi.org/10.48550/arXiv.1709.10256 Franco, J. P., Doroc, K., Yadav, N., Bossaerts, P., & Murawski, C. (2022). Task-independent metrics of computational hardness predict human cognitive performance. Scientific Reports , 12 (1), 12914. https://doi.org/10.1038/s41598-022-16565-w INTERPRETABILITY CRITERIA FOR COMBINATORIAL SOLUTIONS 39 Franco, J. P., Yadav, N., Bossaerts, P., & Murawski, C. (2021). Generic properties of a computational task predict human effort and performance. Journal of Mathematical Psychology , 104 , 102592. https://doi.org/10.1016/j.jmp.2021.102592 Gigerenzer, G., & Gaissmaier, W. (2011). Heuristic decision making. Annual Review of Psychology , 62 (1), 451–482. https://doi.org/10.1146/annurev-psych-120709-145346 Gollan, B., & Raggam, P. (2025). Beyond gaze: Quantifying conscious perception through an innovative eye tracking biomarker. Proc. ACM Hum.-Comput. Interact. , 9 (3), ETRA06:1–ETRA06:17. https://doi.org/10.1145/3725831 Gunawan, A., Kendall, G., Lee, L. S., McCollum, B., & Seow, H.-V. (2021). Trends in multi-disciplinary scheduling. Journal of the Operational Research Society , 72 (8), 1689–1690. https://doi.org/10.1080/01605682.2021.1947755 Gurski, F., Rehs, C., & Rethmann, J. (2019). Knapsack problems: A parameterized point of view. Theoretical Computer Science , 775 , 93–108. https://doi.org/10.1016/j.tcs.2018.12.019 Helmholtz, H. L. F. von. (1962). Treatise on physiological optics . Dover. (Original work published 1909) Heppner, P. P., & Petersen, C. H. (1982). The development and implications of a personal problem-solving inventory. Journal of Counseling Psychology , 29 (1), 66–75. https://doi.org/10.1037/0022-0167.29.1.66 Ibs, I., Ott, C., Jäkel, F., & Rothkopf, C. A. (2024). From human explanations to explainable AI: Insights from constrained optimization. Cognitive Systems Research ,101297. https://doi.org/10.1016/j.cogsys.2024.101297 Ibs, I., & Rothkopf, C. A. (2026). Generating rationales based on human explanations for constrained optimization. In R. Guidotti, U. Schmid, & L. Longo (Eds.), 
+
+Explainable Artificial Intelligence (pp. 162–184, Vol. 2576). Springer Nature Switzerland. https://doi.org/10.1007/978-3-032-08317-3_8 INTERPRETABILITY CRITERIA FOR COMBINATORIAL SOLUTIONS 40 Johnson, D. S., Demers, A., Ullman, J. D., Garey, M. R., & Graham, R. L. (1974). Worst-case performance bounds for simple one-dimensional packing algorithms. 
+
+SIAM Journal on Computing , 3 (4), 299–325. https://doi.org/10.1137/0203025 Kahneman, D. (2011). Thinking, fast and slow (1st ed). Farrar, Straus and Giroux. Kellerer, H., Pferschy, U., & Pisinger, D. (2004). Knapsack Problems . Springer Berlin Heidelberg. https://doi.org/10.1007/978-3-540-24777-7 Krakowski, S., Luger, J., & Raisch, S. (2023). Artificial intelligence and the changing sources of competitive advantage. Strategic Management Journal , 44 (6), 1425–1452. https://doi.org/10.1002/smj.3387 Kyritsis, M., Gulliver, S. R., Feredoes, E., & Stouraitis, V. (2022). Perceived optimality of competing solutions to the euclidean travelling salesperson problem. Cognitive Systems Research , 74 , 1–17. https://doi.org/10.1016/j.cogsys.2022.02.001 Lee, J. D., & See, K. A. (2004). Trust in automation: Designing for appropriate reliance. 
+
+Human Factors , 46 (1), 50–80. https://doi.org/10.1518/hfes.46.1.50_30392 Lipton, Z. C. (2017). The mythos of model interpretability. https://doi.org/10.48550/arXiv.1606.03490 Loaiza-Ganem, G., & Cunningham, J. P. (2019). The continuous Bernoulli: Fixing a pervasive error in variational autoencoders. https://doi.org/10.48550/arXiv.1907.06845 Luce, R. D. (1986). Response times: Their role in inferring elementary mental organization . Oxford University Press ; Clarendon Press. Lüdecke, D., Ben-Shachar, M. S., Patil, I., Waggoner, P., & Makowski, D. (2021). 
+
+Performance: An R package for assessment, comparison and testing of statistical models .MacGregor, J. N., & Chu, Y. (2011). Human performance on the traveling salesman and related problems: A review. The Journal of Problem Solving , 3 (2). https://doi.org/10.7771/1932-6246.1090 INTERPRETABILITY CRITERIA FOR COMBINATORIAL SOLUTIONS 41 Marzouk, M., & Kamoun, H. (2021). Nurse to patient assignment through an analogy with the bin packing problem: Case of a Tunisian hospital. Journal of the Operational Research Society , 72 (8), 1808–1821. https://doi.org/10.1080/01605682.2020.1727300 Miller, T. (2019). Explanation in artificial intelligence: Insights from the social sciences. 
+
+Artificial Intelligence , 267 , 1–38. https://doi.org/10.1016/j.artint.2018.07.007 Murawski, C., & Bossaerts, P. (2016). How humans solve complex problems: The case of the knapsack problem. Scientific Reports , 6 (1), 34851. https://doi.org/10.1038/srep34851 Nakagawa, S., & Schielzeth, H. (2013). A general and simple method for obtaining R2 from generalized linear mixed-effects models. Methods in Ecology and Evolution , 4 (2), 133–142. https://doi.org/10.1111/j.2041-210x.2012.00261.x Narayanan, M., Chen, E., He, J., Kim, B., Gershman, S., & Doshi-Velez, F. (2018). How do humans understand explanations from machine learning systems? An evaluation of the human-interpretability of explanation. https://doi.org/10.48550/arXiv.1802.00682 Ott, C., & Jäkel, F. (2023). SimplifEx: Simplifying and explaining linear programs .https://osf.io/v4xmc/ Palan, S., & Schitter, C. (2018). Prolific.ac—A subject pool for online experiments. Journal of Behavioral and Experimental Finance , 17 , 22–27. https://doi.org/10.1016/j.jbef.2017.12.004 Papoutsaki, A., Sangkloy, P., Laskey, J., Daskalova, N., Huang, J., & Hays, J. (2016). Webgazer: Scalable webcam eye tracking using user interactions. Proceedings of the Twenty-Fifth International Joint Conference on Artificial Intelligence , 3839–3845. Perron, L., & Didier, F. (2024, May 7). CP-SAT (Version v9.11). https://developers.google.com/optimization/cp/cp_solver/ R Core Team. (2023). R: A language and environment for statistical computing . Vienna, Austria. https://www.R-project.org/ INTERPRETABILITY CRITERIA FOR COMBINATORIAL SOLUTIONS 42 Rudin, C. (2019). Stop explaining black box machine learning models for high stakes decisions and use interpretable models instead. Nature Machine Intelligence , 1 (5), 206–215. https://doi.org/10.1038/s42256-019-0048-x Sweller, J. (1988). Cognitive load during problem solving: Effects on learning. Cognitive Science , 12 (2), 257–285. https://doi.org/10.1016/0364-0213(88)90023-7 Thompson, B., & Griffiths, T. L. (2021). Human biases limit cumulative innovation. 
+
+Proceedings of the Royal Society B: Biological Sciences , 288 (1946), 20202752. https://doi.org/10.1098/rspb.2020.2752 Tversky, A., & Kahneman, D. (1974). Judgment under uncertainty: Heuristics and biases. 
+
+Science , 185 (4157), 1124–1131. Retrieved February 14, 2025, from https://www.jstor.org/stable/1738360 Tversky, B., Morrison, J. B., & Betrancourt, M. (2002). Animation: Can it facilitate? 
+
+International Journal of Human-Computer Studies , 57 (4), 247–262. https://doi.org/10.1006/ijhc.2002.1017 van der Helm, P. A. (2000). Simplicity versus likelihood in visual perception: From surprisals to precisals. Psychological Bulletin , 126 (5), 770–800. https://doi.org/10.1037/0033-2909.126.5.770 Zerilli, J., Bhatt, U., & Weller, A. (2022). How transparency modulates trust in artificial intelligence. Patterns , 3 (4), 100455. https://doi.org/10.1016/j.patter.2022.100455 INTERPRETABILITY CRITERIA FOR COMBINATORIAL SOLUTIONS 43 
+
+Appendix A Supplementary Methods Model Fitting and Comparison 
+
+General conventions 
+
+• Software and estimation: clmm (thresholds = "symmetric" , link = "logit" ,Laplace approximation); lmer with REML = FALSE . All predictors z-standardized across the full sample. 
+
+• Candidate model generation: Two-way interactions only and only between complexity predictors and moderators. No interactions among main effects. maximum disorder is never entered in a model that includes visual-order complexity. Predictors may enter individually; moderators enter only with their associated main effect(s). 
+
+• Random effects (constant within each analysis): Participant random intercepts in all models; random slopes for the included complexity main effects (and diagonal, if present) where convergence allows. Interactions are not given random slopes. If the maximal structure fails, simplify uniformly across all candidates until convergence. 
+
+• Model selection: AIC-based selection; retain the model with AIC at least 2 units lower than all competitors ( ∆AIC > 2). If multiple within 2 AIC units, we consider them equivalent (Burnham & Anderson, 2004) and choose the simplest (fewest parameters). 
+
+• Preprocessing: choice and gaze use signed right–left differences for complexity predictors (and diagonal dissimilarity); RT uses absolute differences. Moderators are not differenced. 
+
+Choice (Ordinal Outcome) 
+
+• Outcome: choice (right vs left; clmm ). 
+
+• Main effects: ∆HC, ∆CC, ∆VC, ∆DD. INTERPRETABILITY CRITERIA FOR COMBINATORIAL SOLUTIONS 44 
+
+• Moderators: PD, PSI, PSE, MD, HO. 
+
+• Interactions: ∆HC /∆CC /∆VC × moderators. 
+
+• Constraint: Do not include MD with ∆VC. 
+
+Reaction Time (Continuous Outcome) 
+
+• Outcome: log RT ( lmer ; REML = FALSE ). 
+
+• Main effects: |∆HC |, |∆CC |, |∆VC |, |∆DD |.
+
+• Additional covariates: PD, PSI, PSE, HO, MD. 
+
+• No moderators/interactions 
+
+• Constraint: Do not include MD with |∆VC |.
+
+Gaze Bias (Binomial Outcome) 
+
+• Outcome: cbind(R, L) , binomial(logit), glmer .
+
+• Main effects: ∆HC, ∆CC, ∆VC, ∆DD. 
+
+• Moderators: PD, PSI, PSE, MD, HO. 
+
+• Interactions: ∆HC /∆CC /∆VC × moderators. 
+
+• Constraint: Do not include MD with ∆VC. 
+
+Stimulus and Trial Generation 
+
+Generation of Problem and Solution Instances 
+
+Problem instances were generated via a simulation process consisting of 20,000 iterations. In each simulation iteration a bin-packing problem instance was constructed by randomly determining the number of items and bins. The number of items was sampled from a discrete uniform distribution, U(7, 9), and the number of bins was sampled from INTERPRETABILITY CRITERIA FOR COMBINATORIAL SOLUTIONS 45 U(4, 6). Item sizes were drawn from a discrete uniform distribution ranging from 5 to 100 in steps of 5. Overall bin capacities were based on a load-capacity ratio sampled uniformly from [0.8, 1.0]. We then allocated the overall bin capacity across bins while respecting a minimal bin capacity of 10, a maximal bin capacity of 100, and steps of 10. To ensure meaningful problem instances, each instance was screened to ensure that no item size exceeded the largest bin capacity, and no bin capacity was smaller than the smallest item size. The resulting problem instance contained a vector of item loads and a corresponding vector of bin capacities. Optimal solutions for each problem instance were computed using a constraint programming satisfiability (CP-SAT) solver (Perron & Didier, 2024). Since the solver returned only one optimal solution by default, we iteratively added constraints to exclude previously found solutions until we obtained up to 100 distinct optimal solutions. The process stopped when either 100 solutions were found or a new solution’s objective value dropped below that of the current optimal solutions. Subsequent to optimal solution identification, redundant solutions were removed, which involved checking for equivalence in bin compositions; for instance, two solutions were deemed equivalent if they contained bins with the same set of items, such as one bin comprising items of sizes 100, 90, 80, 40 and another comprising 100, 80, 90, 40, ensuring that all bins across the solutions match in content. Finally, problem instances with only one unique optimal solution were discarded to allow comparisons between multiple solutions to the same problem instance. Additional solution-specific metrics were computed, including HC and CC, both of which are described in the main text. These 20,000 simulations resulted in 13,269 problem instances after applying all filters. 
+
+Generation of Trials 
+
+The subsequent trial-generation procedure was designed to yield trials for two distinct parts of the experiment: problem-solving trials and evaluation trials. For the INTERPRETABILITY CRITERIA FOR COMBINATORIAL SOLUTIONS 46 problem-solving trials, seven problem instances were selected using quantile sampling based on their load-capacity ratio, our metric representing problem difficulty — out of all previously generated instances. More specifically, the seven quantiles were defined at equal intervals from 0 to 1, and the corresponding problem instance was selected for each quantile. The seven resulting problem-solving trials were then complemented with an arbitrary optimal solution — the first one produced by the CP-SAT solver for each problem instance — to provide a clear example to the participant. These seven trials only had to be created once and were used for all participants in the experiment. For each participant, an individual set of 25 evaluation trials was derived from the full set of generated problem instances (and their associated solution instances). These trials were constructed by pairing solution instances within each problem instance. To ensure balanced and stratified sampling across key complexity metrics, problem instances were first categorized into difficulty levels ( low , medium , high ) based on quantiles of the load–capacity ratio. For each metric of interest (namely, absolute difference in HC and absolute difference in CC), six extremized evaluation trials were obtained by selecting, for each difficulty level, two solution pairs from the top 10th percentile with respect to the metric of interest. Moreover, three random evaluation trials were generated by stratifying sampling procedures according to problem difficulty and problem size. Another three trials were generated by cloning the previously generated random evaluation trials and applying visual manipulations (permutations of the order of items and bins): one of the three pairs received a visual manipulation on its first solution, another pair received it on its second solution, and another pair received the visual manipulation on both solutions (referred to as “duplicated random trials” in the codebase). By stratifying the sampling procedures by problem size, two additional random trials were conducted. Unlike before, each pair consisted of two identical solutions, but their visual presentation differed: the first pair received a visual manipulation of the second solution, while the second pair received a visual manipulation of the first solution (referred to as “random same trials” in the INTERPRETABILITY CRITERIA FOR COMBINATORIAL SOLUTIONS 47 codebase). These 20 trials were sampled individually for each participant. In addition, two catch trials and three coherence trials were integrated into the evaluation trials to assess participants’ attentiveness and coherence. These five trials were the same for all participants and were only sampled once. For the former, two low-difficulty problem instances featuring identical solutions were chosen so that any preference in the experiment would indicate a lack of careful engagement with the task. To generate the coherence trials, we initially filtered the problem set to identify medium-level cases in terms of problem difficulty that offered at least three optimal solutions, as coherence trials required three distinct solutions to the same problem. To ensure diversity among solutions, we assessed each candidate problem by calculating the range of a chosen metric, compositional complexity, subtracting its minimum value from its maximum. Additionally, we determined an asymmetry score by evaluating the absolute difference between the median and the mean of the metric distribution. This score helps maintain a symmetric distribution of the metric values, ensuring balanced and representative solution variability. We retained problems that met or exceeded the 95th percentile for range values to ensure substantial variability in the metric. From this refined set, we selected the problem with the smallest asymmetry score. For the chosen problem, representative solutions with minimum, median, and maximum compositional complexity values were selected and paired to create the final set of coherence trials. The entire evaluation trial sequence was constructed by assigning specific trial slots to coherence trials and catch trials while randomly distributing the remaining evaluation trials. In total, the experimental design yielded seven problem-solving trials and a structured set of evaluation trials comprising extremized, random (with and without visual manipulation), coherence, and catch trials. This careful stratification ensured that trials were balanced with respect to solution instance complexity and problem difficulty, thereby minimizing potential sampling biases. INTERPRETABILITY CRITERIA FOR COMBINATORIAL SOLUTIONS 48 
+
+Construction of the Approximated Diagonal Assignment Matrix 
+
+The approximated diagonal used to compute DD, which acts as a control for HC, is a purely theoretical assignment matrix that mimics a straight diagonal line; it is not intended as a realistic or optimal solution. Its sole purpose is to provide a simple geometric baseline against which to measure a solution’s deviation from a diagonal pattern. Below is Python code to create this matrix:                                                                                     
+
+> 1def c r e a t e _ d i a g o n a l _ m a t r i x _ a p p r o x i m a t e d ( n_rows , n_cols ) :
+> 2#1. Create an all - zero matrix Mof size rows xcols .
+> 3M=[[0 for _in range ( n_cols ) ] for _in range ( n_rows ) ]
+> 45#2. For each row i=0... rows -1
+> 6for iin range ( n_rows ) :
+> 7#a . col_index <-round [ i *( cols -1) /( rows -1) ]
+> 8col_index =round ( i *( n_cols -1) /( n_rows -1) )
+> 910 #b . Set M [i , col_index ] <-1
+> 11 M [ i ][ col_index ] =1
+> 12 13 #3. Return M .
+> 14 return M
+
+The interpolation in Step 2a evenly spreads the “1” entries from the upper-left to the lower-right corner, resulting in a staircase-like diagonal when rows ̸ = cols. 
+
+Calibration of the Compositional-Complexity Model 
+
+Calibration for Exploratory Experiment 
+
+The mixture model for compositional complexity (CC) was calibrated before data collection because (a) the trial-generation procedure relied on the complexity values that this model assigned to each solution instance and (b) the ensuing mixed-effects analyses required a single, fixed complexity estimate for each stimulus. Calibration used a corpus of 145 previously obtained optimal solutions. To create a principled target for calibration beyond random initialization, we computed three simple indices aligned with CC’s INTERPRETABILITY CRITERIA FOR COMBINATORIAL SOLUTIONS 49 intuitions and z-standardized them across the corpus, then performed a principal-components analysis (PCA) and retained the first component (largest variance share) as a univariate compound score serving as the empirical benchmark. For each solution, let x ∈ { 0, 1}n×m be the assignment matrix (items × bins), 
+
+z = ( z1, . . . , z n) the item-size vector, and w = ( w1, . . . , w m) the bin-capacity vector; for bin 
+
+i, let the set of assigned items be denoted as Ji = { j | xij = 1 }.
+
+• Assignment variance (AV) : the standard deviation across bins of the number of assigned items, 
+
+AV = sd i
+
+> 
+> n∑
+> j=1
+
+xij  
+
+> 
+
+. (A1) 
+
+• Average discrepancy (AD) : for bins with at least one assigned item, mean remaining headroom after the largest assigned item, 
+
+AD = mean i∈I∗
+
+> (
+
+wi − max 
+
+> j∈Ji
+
+zj
+
+> )
+
+, I∗ = 
+
+> 
+
+i ∣∣∣
+
+> n∑
+> j=1
+
+xij > 0 
+
+> 
+
+. (A2) 
+
+• Average ratio (AR) : for bins with at least one assigned item, define 
+
+ri = mean j (zj xij )/w i (the mean j includes zeros for unassigned items), then 
+
+AR = 1mean i∈I∗
+
+> (
+
+ri 
+
+> )
+
+. (A3) The CC model includes three continuous parameters (penalty on number of items in a bin p, scale for the empty-space mixture distribution σ, Dirichlet concentration α) and two categorical switches (empty-space distribution: normal, Laplace, or continuous Bernoulli; optional Dirichlet correction), yielding six model variants. For each variant, we fitted (p, σ, α ) with bounded quasi-Newton optimization (L-BFGS-B) under constraints 
+
+p ∈ (0 , 1) , σ > 0 (for the normal and Laplace variants; for the continuous Bernoulli, INTERPRETABILITY CRITERIA FOR COMBINATORIAL SOLUTIONS 50 
+
+σ ∈ (0 , 1) ), α > 0, using starting values p = 0 .50 , σ = 0 .05 , α = 2 .00 . The loss was the negative Pearson correlation between model-predicted complexities and the PCA compound scores, so minimizing the loss maximized correspondence. The parameter set with the highest final correlation was retained for the exploratory study (trial generation and analyses). The search identified the truncated normal empty-space, with Dirichlet correction as optimal, with parameter estimates p = 0.977 (geometric), σ = 0.103 (SD), and α = 1.620 (Dirichlet concentration). 
+
+Calibration for Confirmatory Experiment 
+
+The compositional-complexity model was re-tuned after the exploratory study because (a) the trial-generation procedure relied on the complexity values that this model assigned to each solution instance and (b) using it as a predictor in the mixed-effects analyses required a single, fixed parameter specification. Calibration relied on the right-versus-left preferences expressed in the exploratory sample (n = 73 participants, 1,664 trials). For every trial the model produced a complexity estimate for each of the two alternative solutions; their difference served as the sole predictor of the ordinal choice variable ( definitely left , slightly left , slightly right , definitely right ). As in the exploratory calibration, three continuous parameters were optimized; the geometric penalty on the number of items in a bin, the weight given to unassigned space, and the scaling factor on the entropy term. Two categorical switches were again crossed: the distribution assumed for empty assignments (normal, Laplace, or continuous Bernoulli) and the optional Dirichlet correction, yielding six discrete model variants. For each variant the three continuous parameters were fitted with bounded optimization using starting values of 0.50, 0.05, and 2.00, respectively. The loss function was the ordinal log-loss between the four-level observed choices and the probabilities implied by the model; minimizing this quantity maximized predictive accuracy. The search identified the continuous Bernoulli empty-space with Dirichlet correction as optimal, with parameter estimates p = 0.043, σ =INTERPRETABILITY CRITERIA FOR COMBINATORIAL SOLUTIONS 51 0.426, and α = 0.984. This configuration was used to generate the final trial set and was held fixed for all subsequent analyses. INTERPRETABILITY CRITERIA FOR COMBINATORIAL SOLUTIONS 52 
+
+Appendix B Supplementary Results Figure B1 
+
+Behavioral Distributions Of Dependent Variables definitely left 
+
+> slightly left
+> slightly right
+> definitely right
+> Choice
+> 0
+> 100
+> 200
+> 300
+> 400
+> 500
+> 600
+> Count
+
+N = 1668                   
+
+> 78910 11
+> log(RT in ms)
+> Count
+> N= 1668, M= 8.97, SD = 0.69
+> −1.0 −0.5 0.0 0.5 1.0
+> Gaze Bias b = (R - L) / (R + L)
+> Count
+> N= 1600, M= − 0.06, SD = 0.47
+
+Note . Histograms show the distributions of the three dependent variables across evaluation trials: choice (four ordered categories), log reaction time ( log RT ), and gaze bias b = ( R − L)/(R + L).INTERPRETABILITY CRITERIA FOR COMBINATORIAL SOLUTIONS 53 
+
+Figure B2 
+
+Scatter Matrix of Solution-Pair-Level Predictors for Choice and Gaze −2.5 0.0 2.5 
+
+0
+
+200 
+
+400 
+
+> ΔHC
+
+r = 0.09 r = 0.23 r = 0.02 r = 0.38 r = − 0.08 
+
+−2.5 0.0 2.5 
+
+−2.5 
+
+0.0 
+
+2.5 
+
+> ΔCC 0
+
+−2.5 0.0 2.5 
+
+0
+
+250 
+
+500 
+
+750 
+
+r = 0.75 r = − 0.01 r = − 0.22 r = − 0.02 
+
+−2.5 0.0 2.5 
+
+−2 
+
+0
+
+2
+
+4
+
+> ΔCC
+
+−2.5 0.0 2.5 
+
+−2 
+
+0
+
+2
+
+4
+
+−2.5 0.0 2.5 
+
+0
+
+200 
+
+400 
+
+600 
+
+r = 0.01 r = − 0.12 r = − 0.07 
+
+−2.5 0.0 2.5 
+
+−2 
+
+0
+
+2
+
+> ΔVC
+
+−2.5 0.0 2.5 
+
+−2 
+
+0
+
+2
+
+−2.5 0.0 2.5 
+
+−2 
+
+0
+
+2
+
+−2.5 0.0 2.5 
+
+0
+
+500 
+
+1000 
+
+r = 0.19 r = − 0.01 
+
+−2.5 0.0 2.5 
+
+−2 
+
+0
+
+2
+
+> ΔDD
+
+−2.5 0.0 2.5 
+
+−2 
+
+0
+
+2
+
+−2.5 0.0 2.5 
+
+−2 
+
+0
+
+2
+
+−2.5 0.0 2.5 
+
+−2 
+
+0
+
+2
+
+−2.5 0.0 2.5 
+
+0
+
+200 
+
+400 
+
+600 
+
+r = − 0.13 
+
+−2.5 0.0 2.5 
+
+ΔHC 
+
+0
+
+1
+
+2
+
+3
+
+> MD
+
+−2.5 0.0 2.5 
+
+ΔCC 0
+
+0
+
+1
+
+2
+
+3
+
+−2.5 0.0 2.5 
+
+ΔCC 
+
+0
+
+1
+
+2
+
+3
+
+−2.5 0.0 2.5 
+
+ΔVC 
+
+0
+
+1
+
+2
+
+3
+
+−2.5 0.0 2.5 
+
+ΔDD 
+
+0
+
+1
+
+2
+
+3
+
+0.0 2.5 
+
+MD 
+
+0
+
+500 
+
+1000 
+
+N = 1668 
+
+Note . Signed standardized differences used in the choice/gaze analyses ( ∆HC, ∆CC, ∆VC, ∆DD) and Maximum Disorder (MD). CC 0 corresponds to the uncalibrated CC used in the exploratory study. Upper triangles show Pearson’s r; diagonals show distributions (mean in red, standard deviations dashed). INTERPRETABILITY CRITERIA FOR COMBINATORIAL SOLUTIONS 54 
+
+Figure B3 
+
+Scatter Matrix of Solution-Pair-Level Predictors for Reaction Time 0 2
+
+0
+
+200 
+
+400 
+
+> |ΔHC|
+
+r = − 0.11 r = − 0.05 r = − 0.37 r = 0.20 r = − 0.37 
+
+0 2
+
+0
+
+2
+
+4
+
+> |ΔCC 0|
+
+0.0 2.5 
+
+0
+
+250 
+
+500 
+
+750 
+
+r = 0.65 r = − 0.29 r = 0.01 r = − 0.31 
+
+0 2
+
+0
+
+2
+
+4
+
+> |ΔCC|
+
+0.0 2.5 
+
+0
+
+2
+
+4
+
+0.0 2.5 
+
+0
+
+200 
+
+400 
+
+600 
+
+r = − 0.36 r = 0.04 r = − 0.39 
+
+0 2
+
+0
+
+1
+
+2
+
+3
+
+> |ΔVC|
+
+0.0 2.5 
+
+0
+
+1
+
+2
+
+3
+
+0.0 2.5 
+
+0
+
+1
+
+2
+
+3
+
+0.0 2.5 
+
+0
+
+500 
+
+1000 
+
+r = 0.02 r = 0.87 
+
+0 2
+
+0
+
+1
+
+2
+
+3
+
+> |ΔDD|
+
+0.0 2.5 
+
+0
+
+1
+
+2
+
+3
+
+0.0 2.5 
+
+0
+
+1
+
+2
+
+3
+
+0 2
+
+0
+
+1
+
+2
+
+3
+
+0 2
+
+0
+
+200 
+
+400 
+
+r = − 0.03 
+
+0 2
+
+|ΔHC| 
+
+0
+
+1
+
+2
+
+3
+
+> MD
+
+0.0 2.5 
+
+|ΔCC 0|
+
+0
+
+1
+
+2
+
+3
+
+0.0 2.5 
+
+|ΔCC| 
+
+0
+
+1
+
+2
+
+3
+
+0 2
+
+|ΔVC| 
+
+0
+
+1
+
+2
+
+3
+
+0 2
+
+|ΔDD| 
+
+0
+
+1
+
+2
+
+3
+
+0.0 2.5 
+
+MD 
+
+0
+
+500 
+
+1000 
+
+N = 1668 
+
+Note . Absolute standardized differences used in the RT analysis ( |∆|HC, |∆|CC, |∆|VC, |∆|DD) and Maximum Disorder (MD). CC 0 corresponds to the uncalibrated CC used in the exploratory study. Upper triangles show Pearson’s r; diagonals show distributions (mean in red, standard deviations dashed). INTERPRETABILITY CRITERIA FOR COMBINATORIAL SOLUTIONS 55 
+
+Figure B4 
+
+Participant-Level Variables 100 120 140 160                    
+
+> PSI
+> 0
+> 2
+> 4
+> 6
+> 8
+> 10
+> 12
+> Count
+> N= 73, M= 130.18, SD = 19.39
+> 0.02 0.04 0.06 0.08
+> Efficiency
+> Count
+> N= 73, M= 0.03, SD = 0.01
+> 100 120 140 160
+> PSI
+> 0.02
+> 0.04
+> 0.06
+> 0.08
+> Efficiency
+> N= 73, r= 0.15
+
+Note . Distributions and correlation (Pearson) for participant-level moderators (PSI total, problem-solving efficiency). Summary statistics are reported in the text; figures document ranges and association strength used in moderation analyses. 
+
+Figure B5 
+
+Problem-Level Variables 0.80 0.85 0.90 0.95 1.00                      
+
+> Difficulty (Load–Capacity Ratio)
+> 0
+> 50
+> 100
+> 150
+> 200
+> 250
+> 300
+> Count
+> N= 1668, M= 0.90, SD = 0.05
+> 0.80 0.85 0.90 0.95 1.00
+> Heuristic Optimality
+> Count
+> N= 1668, M= 0.98, SD = 0.03
+> 0.80 0.85 0.90 0.95 1.00
+> Difficulty
+> 0.80
+> 0.85
+> 0.90
+> 0.95
+> 1.00
+> Heuristic Optimality
+> N= 1668, r= − 0.01
+
+Note . Distributions and correlation (Pearson) for problem-level moderators (difficulty: load–capacity ratio; heuristic optimality). Shown for transparency regarding range and potential confounding in moderation tests. INTERPRETABILITY CRITERIA FOR COMBINATORIAL SOLUTIONS 56 
+
+Appendix C Exploratory Study Participants 
+
+Given the novel paradigm examined in this study, a sequential data collection approach was employed to iteratively assess outcomes and refine sample size. Initial recruitment included 3 participants to conduct a preliminary review of the study procedure and address any immediate methodological concerns. After verifying feasibility, subsequent cohorts included 6, 12, 24, 36, and 36 participants, ultimately arriving at a total sample size of 114. This stepwise increase allowed for ongoing evaluation of data variability and early detection of potential effects. The final sample size was determined based on the saturation of key findings observed, with an emphasis on capturing diverse participant responses to enhance the robustness of exploratory insights. This approach was instrumental in maintaining flexibility and optimizing resource utilization throughout the study. A total of 114 participants recruited from Prolific completed the study, with 73 participants and 1,664 evaluation trials remaining after exclusion. Ages ranged from 19 to 64 years (M = 36.49, SD = 11.06), and the sample consisted of 58.90% male and 41.10% female. Participants took a median of 29.73 minutes to complete the experiment (25th–75th percentile = 21.73–40.80 minutes). 
+
+Parameters for Compositional Complexity (CC) 
+
+Prior to each experiment (exploratory or confirmatory), a dedicated calibration procedure was conducted to determine these parameters (see Appendix A for details). For our exploratory analysis, this procedure yielded the following parameters: truncated normal distribution for empty space, with Dirichlet correction, scale parameter σ = 0.103, 
+
+p = 0.977 and α = 1.620. INTERPRETABILITY CRITERIA FOR COMBINATORIAL SOLUTIONS 57 
+
+Results 
+
+Choice 
+
+All four predictors were significant negative predictors of the ordered outcome. A one–standard-deviation increase in the difference reduced the odds of choosing the more complex solution by 33% for HC (OR = 0.67, 95% CI [0.59, 0.77]), 14% for CC (OR = 0.86, 95% CI [0.78, 0.95]), 41% for VC (OR = 0.59, 95% CI [0.51, 0.68]), and 19% for DD (OR = 0.81, 95% CI [0.71, 0.91]), with substantial between-participant variability (Table C1). Figure C1 illustrates how differences in stimulus complexity are reflected in participants’ choice behavior. The conditional Nakagawa R2 of 0.29 indicates that the model’s fixed and random effects explain about 29% of the variance in the data, while the marginal Nakagawa 
+
+R2 of 0.13 shows that the fixed effects alone account for approximately 13%. This value is well below the coherence ceiling of 0.817, derived from the 81.69% of participants who demonstrated transitive judgments (58 participants with transitive and 13 with intransitive judgments) in the coherence trials, indicating that there remains considerable decision variance that is not captured by the current set of structural predictors. Across evaluation trials, choice proportions were: definitely left 22.7%, slightly left 31.3%, slightly right 28.7%, definitely right 17.3%. Pairwise correlations among the focal predictors (signed differences) were modest (max |r| = 0.33). INTERPRETABILITY CRITERIA FOR COMBINATORIAL SOLUTIONS 58 
+
+Table C1 
+
+Ordinal Mixed-Effects Model Predicting Choice (Exploratory Study) 
+
+Term Estimate SE z p CI low CI high 
+
+Fixed effects 
+
+Central Threshold 0.123 0.066 1.871 0.061 -0.006 0.252 Threshold Spacing 1.681 0.050 33.533 < 0.001 1.583 1.779 
+
+∆HC -0.401 0.069 -5.824 < 0.001 -0.536 -0.266 
+
+∆CC -0.151 0.050 -2.986 0.003 -0.250 -0.052 
+
+∆VC -0.530 0.073 -7.266 < 0.001 -0.673 -0.387 
+
+∆DD -0.216 0.063 -3.444 < 0.001 -0.339 -0.093 
+
+Random effects 
+
+SD (Intercept | Subject) 0.381 SD ( ∆HC | Subject) 0.371 SD ( ∆CC | Subject) 0.261 SD ( ∆VC | Subject) 0.440 SD ( ∆DD | Subject) 0.299 
+
+Note. Choice ∼ ∆HC + ∆CC + ∆VC + ∆DD + (1 + ∆HC + ∆CC + ∆VC + ∆DD | Subject). N (obs ) = 1664, N (subj ) = 73, logLik = -2127.5. The odds ratio (OR) for a 1-SD change in a predictor is OR = exp( β); the corresponding percent change in odds is 100 · (exp( β) − 1) .
+
+Reaction Time 
+
+Larger absolute differences in HC, CC, and VC sped up choices, whereas the DD covariate had no reliable impact on reaction time (see Table C2). The model’s marginal R2
+
+was 0.004, and the conditional R2 was 0.604, indicating modest variance explained by fixed effects with substantial additional variance captured by random participant differences. The corresponding raw RT had a median of 10812 ms (25th–75th percentile = 6320–18378 ms). INTERPRETABILITY CRITERIA FOR COMBINATORIAL SOLUTIONS 59 
+
+Figure C1 
+
+Predicted Choice Probabilities as a Function of Complexity Difference (Exploratory Study) 0.0 
+
+> 0.2
+> 0.4
+> 0.6
+
+Heuristic-related complexity ( HC) Diagonal dissimilarity ( DD)       
+
+> -3 -2 -1 0+1 +2 +3
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+
+Compositional complexity ( CC)       
+
+> -3 -2 -1 0+1 +2 +3
+
+Visual-order complexity ( VC) 
+
+Complexity difference (R L)    
+
+> Choice probability
+> definitely left slightly left slightly right definitely right
+
+Note . Panels correspond to the three complexity metrics (HC = heuristic-related complexity, CC = compositional complexity, VC = visual-order complexity) and the covariate diagonal dissimilarity (DD). Complexity differences are standardized (0 = no difference; 1 = one standard deviation). Colored lines give the model-predicted probability of the four behavioral responses (‘definitely left’, ‘slightly left’, ‘slightly right’, ‘definitely right’); shaded ribbons denote 95% confidence intervals (CIs). INTERPRETABILITY CRITERIA FOR COMBINATORIAL SOLUTIONS 60 
+
+Table C2 
+
+Linear Mixed-Effects Model Predicting Response Time                                                  
+
+> Term Estimate SE tpCI low CI high
+> Fixed effects
+> Intercept 9.399 0.075 124.644 <0.001 9.250 9.549 |∆HC| -0.067 0.021 -3.247 0.001 -0.107 -0.027 |∆CC| -0.041 0.016 -2.552 0.011 -0.072 -0.009 |∆VC| -0.051 0.015 -3.324 <0.001 -0.080 -0.021 |∆DD| -0.009 0.019 -0.454 0.650 -0.047 0.029
+> Random effects
+> SD (Intercept) 0.586 SD (residual) 0.476
+> Note. RT ∼|∆HC| + | ∆CC| + | ∆VC| + | ∆DD| + (1 | Subject). Outcome: log reaction time ( log RT ). N(obs ) = 1664, N(subj ) = 73, logLik = -1256.5.
+
+Gaze Bias 
+
+Based on the AIC-based model selection procedure, the intercept-only model was selected. The intercept was -0.385 (SE = 0.106, 95% CI [-0.594, -0.177], p = < 0.001). Model fit indices were low (marginal R2 = 0.000; conditional R2 = 0.166), consistent with the intercept-only result and the absence of reliable complexity effects on side-wise dwell. Gaze bias (b) averaged -0.055 (SD = 0.457); trials with no usable gaze comprised 5.4%. The analysis was based on 1,574 observations from 69 participants. These results indicate no evidence that between-solution right-left differences in complexity or DD affected gaze in the exploratory study. 
+
+Descriptives INTERPRETABILITY CRITERIA FOR COMBINATORIAL SOLUTIONS 61 
+
+Figure C2 
+
+Behavioral Distributions Of Dependent Variables (Exploratory Study) definitely left 
+
+> slightly left
+> slightly right
+> definitely right
+> Choice
+> 0
+> 100
+> 200
+> 300
+> 400
+> 500
+> Count
+
+N = 1664                   
+
+> 78910 11
+> log(RT in ms)
+> Count
+> N= 1664, M= 9.29, SD = 0.76
+> −1.0 −0.5 0.0 0.5 1.0
+> Gaze Bias b = (R - L) / (R + L)
+> Count
+> N= 1574, M= − 0.05, SD = 0.46
+
+Note . Histograms show the distributions of the three dependent variables across evaluation trials: choice (four ordered categories), log reaction time ( log RT ), and gaze bias b = ( R − L)/(R + L).INTERPRETABILITY CRITERIA FOR COMBINATORIAL SOLUTIONS 62 
+
+Figure C3 
+
+Scatter Matrix of Solution-Pair-Level Predictors for Choice and Gaze (Exploratory Study) −2.5 0.0 2.5                                             
+
+> 0
+> 100
+> 200
+> 300
+> 400
+> ΔHC
+> r= 0.12 r= − 0.02 r= 0.33 r= − 0.01
+> −2.5 0.0 2.5
+> −4
+> −2
+> 0
+> 2
+> 4
+> ΔCC 0
+> −2.5 0.0 2.5
+> 0
+> 200
+> 400
+> 600
+> r= 0.01 r= 0.04 r= − 0.08
+> −2.5 0.0 2.5
+> −4
+> −2
+> 0
+> 2
+> 4
+> ΔVC
+> −2.5 0.0 2.5
+> −4
+> −2
+> 0
+> 2
+> 4
+> −2.5 0.0 2.5
+> 0
+> 500
+> 1000
+> r= − 0.01 r= − 0.00
+> −2.5 0.0 2.5
+> −2
+> 0
+> 2
+> 4
+> ΔDD
+> −2.5 0.0 2.5
+> −2
+> 0
+> 2
+> 4
+> −2.5 0.0 2.5
+> −2
+> 0
+> 2
+> 4
+> −2.5 0.0 2.5
+> 0
+> 200
+> 400
+> 600
+> 800
+> r= − 0.02
+> −2.5 0.0 2.5
+> ΔHC
+> 0
+> 1
+> 2
+> 3
+> MD
+> −2.5 0.0 2.5
+> ΔCC 0
+> 0
+> 1
+> 2
+> 3
+> −2.5 0.0 2.5
+> ΔVC
+> 0
+> 1
+> 2
+> 3
+> −2.5 0.0 2.5
+> ΔDD
+> 0
+> 1
+> 2
+> 3
+> 02
+> MD
+> 0
+> 500
+> 1000
+> N= 1664
+
+Note . Signed standardized differences used in the choice/gaze analyses ( ∆HC, ∆CC, ∆VC, ∆DD) and Maximum Disorder (MD). CC 0 corresponds to the uncalibrated CC used in the exploratory study. Upper triangles show Pearson’s r; diagonals show distributions (mean in red, standard deviations dashed). INTERPRETABILITY CRITERIA FOR COMBINATORIAL SOLUTIONS 63 
+
+Figure C4 
+
+Scatter Matrix of Solution-Pair-Level Predictors for Reaction Time (Exploratory Study) 0 2                                    
+
+> 0
+> 100
+> 200
+> 300
+> 400
+> |ΔHC|
+> r= − 0.19 r= − 0.32 r= 0.20 r= − 0.31
+> 02
+> 0
+> 1
+> 2
+> 3
+> |ΔCC 0|
+> 02
+> 0
+> 200
+> 400
+> 600
+> r= − 0.35 r= 0.19 r= − 0.39
+> 02
+> 0
+> 1
+> 2
+> 3
+> 4
+> |ΔVC|
+> 02
+> 0
+> 1
+> 2
+> 3
+> 4
+> 024
+> 0
+> 500
+> 1000
+> r= − 0.23 r= 0.87
+> 02
+> 0
+> 1
+> 2
+> 3
+> 4
+> |ΔDD|
+> 02
+> 0
+> 1
+> 2
+> 3
+> 4
+> 024
+> 0
+> 1
+> 2
+> 3
+> 4
+> 024
+> 0
+> 100
+> 200
+> 300
+> 400
+> r= − 0.24
+> 02
+> |ΔHC|
+> 0
+> 1
+> 2
+> 3
+> MD
+> 02
+> |ΔCC 0|
+> 0
+> 1
+> 2
+> 3
+> 024
+> |ΔVC|
+> 0
+> 1
+> 2
+> 3
+> 024
+> |ΔDD|
+> 0
+> 1
+> 2
+> 3
+> 02
+> MD
+> 0
+> 500
+> 1000
+> N= 1664
+
+Note . Absolute standardized differences used in the RT analysis ( |∆|HC, |∆|CC, |∆|VC, |∆|DD) and Maximum Disorder (MD). CC 0 corresponds to the uncalibrated CC used in the exploratory study. Upper triangles show Pearson’s r; diagonals show distributions (mean in red, standard deviations dashed). INTERPRETABILITY CRITERIA FOR COMBINATORIAL SOLUTIONS 64 
+
+Figure C5 
+
+Participant-Level Variables (Exploratory Study) 100 120 140 160                    
+
+> PSI
+> 0
+> 2
+> 4
+> 6
+> 8
+> 10
+> 12
+> Count
+> N= 73, M= 131.74, SD = 18.68
+> 0.02 0.04 0.06 0.08
+> Efficiency
+> Count
+> N= 73, M= 0.03, SD = 0.01
+> 100 120 140 160
+> PSI
+> 0.02
+> 0.04
+> 0.06
+> 0.08
+> Efficiency
+> N= 73, r= − 0.28
+
+Note . Distributions and correlation (Pearson) for participant-level moderators (PSI total, problem-solving efficiency). Summary statistics are reported in the text; figures document ranges and association strength used in moderation analyses. 
+
+Figure C6 
+
+Problem-Level Variables (Exploratory Study) 0.80 0.85 0.90 0.95 1.00                      
+
+> Difficulty (Load–Capacity Ratio)
+> 0
+> 100
+> 200
+> 300
+> Count
+> N= 1664, M= 0.90, SD = 0.05
+> 0.80 0.85 0.90 0.95 1.00
+> Heuristic Optimality
+> Count
+> N= 1664, M= 0.98, SD = 0.04
+> 0.80 0.85 0.90 0.95 1.00
+> Difficulty
+> 0.80
+> 0.85
+> 0.90
+> 0.95
+> 1.00
+> Heuristic Optimality
+> N= 1664, r= − 0.07
+
+Note . Distributions and correlation (Pearson) for problem-level moderators (difficulty: load–capacity ratio; heuristic optimality). Shown for transparency regarding range and potential confounding in moderation tests. INTERPRETABILITY CRITERIA FOR COMBINATORIAL SOLUTIONS 65 
+
+Appendix D Cross-Study Summaries (Forest Plots) Figure D1 
+
+Cross-study odds ratios (ORs) with 95% CIs for the effect of complexity difference on choice (HC, CC, VC, DD). Points show models fit separately to exploratory and confirmatory data; the dashed line marks OR = 1. 0.5 0.6 0.7 0.8 0.9 1.0 1.1 
+
+> Odds ratio (per 1-SD increase in complexity difference)
+> HC
+> CC
+> VC
+> DD
+
+Choice effects across studies 
+
+> Exploratory
+> Confirmatory
+
+INTERPRETABILITY CRITERIA FOR COMBINATORIAL SOLUTIONS 66 
+
+Figure D2 
+
+Percent change in reaction time per 1-SD absolute difference (| ∆|) in HC, CC, VC, DD, with 95% CIs, across exploratory and confirmatory studies. The dashed line marks 0%. 10 8 6 4 2 0 2 4     
+
+> Percent change in RT (per 1-SD | |)
+> |HC|
+> |CC|
+> |VC|
+> |DD|
+
+RT effects across studies
